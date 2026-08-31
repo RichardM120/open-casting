@@ -100,6 +100,14 @@ export async function signIn(
     );
   }
 
+  if (user.suspended_at) {
+    return invalid(
+      {},
+      "This account has been suspended. Contact the site administrator.",
+      formData,
+    );
+  }
+
   await clearFailedLogins(email);
   await pruneExpiredSessions();
   // Picks up an ADMIN_EMAILS change since this account last signed in.

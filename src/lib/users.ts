@@ -10,11 +10,12 @@ export type User = {
   name: string;
   company: string;
   role: UserRole;
+  suspended_at: Date | null;
 };
 
 type UserRow = User & { password_hash: string | null };
 
-const COLUMNS = "id, email, name, company, role";
+const COLUMNS = "id, email, name, company, role, suspended_at";
 
 /** Thrown when an email is already registered. */
 export class EmailTakenError extends Error {
@@ -172,4 +173,38 @@ export async function recordFailedLogin(email: string): Promise<void> {
 
 export async function clearFailedLogins(email: string): Promise<void> {
   await query("DELETE FROM login_attempts WHERE lower(email) = lower($1)", [email]);
+}
+
+/* ------------------------------------------------------- account admin -- */
+
+export type Account = User & { roles: number; submissions: number };
+
+/** Every account, with how much each has posted. Admin only — enforce upstream. */
+export async function listAccounts(): Promise<Account[]> {
+  return query<Account>(
+    `SELECT u.id, u.email, u.name, u.company, u.role, u.suspended_at,
+            count(DISTINCT r.id)::int AS roles,
+            count(s.id)::int          AS submissions
+       FROM users u
+       LEFT JOIN roles r       ON r.owner_id = u.id
+       LEFT JOIN submissions s ON s.role_id = r.id
+      GROUP BY u.id
+      ORDER BY u.suspended_at IS NULL DESC, lower(u.company), lower(u.name)`,
+  );
+}
+
+/**
+ * Suspends or restores an account. Suspending also drops its sessions, so
+ * somebody already signed in is out immediately rather than at expiry.
+ */
+export async function setAccountSuspended(id: string, suspended: boolean): Promise<boolean> {
+  const rows = await query<{ id: string }>(
+    `UPDATE users SET suspended_at = ${suspended ? "now()" : "NULL"}
+      WHERE id = $1 RETURNING id`,
+    [id],
+  );
+  if (suspended && rows.length > 0) {
+    await query("DELETE FROM sessions WHERE user_id = $1", [id]);
+  }
+  return rows.length > 0;
 }

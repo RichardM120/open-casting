@@ -2,9 +2,9 @@
 
 import { useActionState } from "react";
 
-import { postRole } from "@/lib/actions";
+import { editRole, postRole } from "@/lib/actions";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
-import { PAY_TYPES, PRODUCTION_TYPES, UNION_STATUSES } from "@/lib/types";
+import { PAY_TYPES, PRODUCTION_TYPES, UNION_STATUSES, type Role } from "@/lib/types";
 
 import { useErrorFocus } from "./use-error-focus";
 import { Button, ButtonLink, Checkbox, ErrorSummary, Field, Input, Select, Textarea } from "./ui";
@@ -29,13 +29,47 @@ const LABELS: Record<string, string> = {
   disclaimer: "Terms for performers",
 };
 
-export function RoleForm() {
-  const [state, formAction, pending] = useActionState(postRole, IDLE_FORM_STATE);
-  const { errors, values } = state;
+/**
+ * One form for posting and editing. In edit mode the fields fall back to the
+ * role's current values, and the action rewrites in place rather than creating.
+ */
+export function RoleForm({ role }: { role?: Role }) {
+  const [state, formAction, pending] = useActionState(
+    role ? editRole : postRole,
+    IDLE_FORM_STATE,
+  );
+  const { errors, values: submitted } = state;
   const formRef = useErrorFocus(state.status, errors);
+
+  // What was just submitted wins, so a failed save does not discard the edit;
+  // otherwise the role as it stands.
+  const values: Record<string, string> =
+    state.status === "idle" && role
+      ? {
+          production: role.production,
+          productionType: role.productionType,
+          synopsis: role.synopsis,
+          castingDirector: role.castingDirector,
+          company: role.company,
+          title: role.title,
+          characterBrief: role.characterBrief,
+          requirements: role.requirements.join("\n"),
+          ageMin: String(role.ageMin),
+          ageMax: String(role.ageMax),
+          location: role.location,
+          shootDates: role.shootDates,
+          payType: role.payType,
+          rate: role.rate,
+          unionStatus: role.unionStatus,
+          deadline: role.deadline,
+          disclaimer: role.disclaimer,
+          selfTape: role.selfTape ? "on" : "",
+        }
+      : submitted;
 
   return (
     <form ref={formRef} action={formAction} className="flex flex-col gap-8">
+      {role ? <input type="hidden" name="roleId" value={role.id} /> : null}
       {state.status === "error" ? <ErrorSummary errors={errors} labels={LABELS} /> : null}
 
       <Fieldset
@@ -225,14 +259,18 @@ export function RoleForm() {
           <Checkbox
             name="selfTape"
             label="Self-tapes accepted"
-            defaultChecked={state.status === "idle" || values.selfTape === "on"}
+            defaultChecked={role ? role.selfTape : state.status === "idle" || values.selfTape === "on"}
           />
         </div>
       </Fieldset>
 
       <Fieldset
         legend="Terms for performers"
-        description="Optional. Shown on the listing, and performers must tick to accept them before they can submit."
+        description={
+          role
+            ? "Shown on the listing, and performers must tick to accept. Changing them does not alter what anyone has already accepted — that was recorded with their submission."
+            : "Optional. Shown on the listing, and performers must tick to accept them before they can submit."
+        }
       >
         <Field
           label="Terms"
@@ -253,9 +291,13 @@ export function RoleForm() {
 
       <div className="flex flex-wrap items-center gap-4 border-t border-line pt-6">
         <Button type="submit" disabled={pending}>
-          {pending ? "Posting…" : "Post the role"}
+          {pending ? (role ? "Saving…" : "Posting…") : role ? "Save changes" : "Post the role"}
         </Button>
-        <ButtonLink href="/dashboard" variant="ghost" size="sm">
+        <ButtonLink
+          href={role ? `/dashboard/roles/${role.id}` : "/dashboard"}
+          variant="ghost"
+          size="sm"
+        >
           Cancel
         </ButtonLink>
       </div>

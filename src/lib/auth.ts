@@ -65,11 +65,15 @@ export const currentUser = cache(async (): Promise<SessionUser | null> => {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
+  // Suspension is checked here too, not only at sign-in: a session created just
+  // before an account was suspended must stop working immediately.
   const rows = await query<SessionUser>(
     `SELECT u.id, u.name, u.email, u.company, u.role
        FROM sessions s
        JOIN users u ON u.id = s.user_id
-      WHERE s.token_hash = $1 AND s.expires_at > now()`,
+      WHERE s.token_hash = $1
+        AND s.expires_at > now()
+        AND u.suspended_at IS NULL`,
     [tokenHash(token)],
   );
 

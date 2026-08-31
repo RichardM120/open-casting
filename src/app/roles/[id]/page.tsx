@@ -27,7 +27,7 @@ export default async function RolePage({ params }: PageProps<"/roles/[id]">) {
   if (!role) notFound();
 
   const submissions = await listSubmissions(role.id);
-  const open = isOpen(role.deadline);
+  const open = isOpen(role);
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-12">
@@ -43,7 +43,7 @@ export default async function RolePage({ params }: PageProps<"/roles/[id]">) {
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone="accent">{role.productionType}</Badge>
             {role.selfTape ? <Badge tone="outline">Self-tape accepted</Badge> : null}
-            <DeadlineBadge deadline={role.deadline} />
+            <DeadlineBadge role={role} />
           </div>
 
           <h1 className="mt-5 text-3xl font-semibold tracking-tight text-balance md:text-4xl">

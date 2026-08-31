@@ -5,9 +5,10 @@ import { notFound } from "next/navigation";
 import { DeadlineBadge } from "@/components/role-card";
 import { StatusBadge } from "@/components/status-badge";
 import { SubmissionStatusControl } from "@/components/submission-status-control";
-import { Badge, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
+import { Badge, Button, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
+import { removeRole, toggleRoleClosed } from "@/lib/actions";
 import { currentUser, requireUser } from "@/lib/auth";
-import { ageRange, formatDate, formatRelative, initials } from "@/lib/format";
+import { ageRange, formatDate, formatRelative, initials, isOpen } from "@/lib/format";
 import { getVisibleRole } from "@/lib/roles";
 import { listSubmissions, summarise } from "@/lib/submissions";
 import type { Submission } from "@/lib/types";
@@ -35,6 +36,8 @@ export default async function RoleSubmissionsPage({
   const [submissions, query] = await Promise.all([listSubmissions(id), searchParams]);
   const counts = summarise(submissions);
   const justPosted = query.posted === "1";
+  const justSaved = query.saved === "1";
+  const open = isOpen(role);
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-12">
@@ -42,9 +45,9 @@ export default async function RoleSubmissionsPage({
         ← Dashboard
       </Link>
 
-      {justPosted ? (
+      {justPosted || justSaved ? (
         <p className="mt-6 rounded-xl border border-line bg-positive-soft px-4 py-3 text-sm text-positive">
-          Role posted. It is live on the browse page now.
+          {justPosted ? "Role posted. It is live on the browse page now." : "Changes saved."}
         </p>
       ) : null}
 
@@ -58,12 +61,30 @@ export default async function RoleSubmissionsPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <DeadlineBadge deadline={role.deadline} />
+          <DeadlineBadge role={role} />
           <ButtonLink href={`/roles/${role.id}`} variant="secondary" size="sm">
             View public listing
           </ButtonLink>
+          <ButtonLink href={`/dashboard/roles/${role.id}/edit`} variant="secondary" size="sm">
+            Edit
+          </ButtonLink>
+          <form action={toggleRoleClosed}>
+            <input type="hidden" name="roleId" value={role.id} />
+            <input type="hidden" name="closed" value={role.closedAt ? "0" : "1"} />
+            <Button type="submit" variant="secondary" size="sm">
+              {role.closedAt ? "Reopen" : "Close early"}
+            </Button>
+          </form>
         </div>
       </div>
+
+      {!open ? (
+        <p className="mt-6 rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">
+          {role.closedAt
+            ? `Closed early on ${formatDate(role.closedAt)}. The listing stays up for reference and takes no new submissions.`
+            : "Past its closing date. The listing stays up for reference and takes no new submissions."}
+        </p>
+      ) : null}
 
       <div className="mt-8 flex flex-wrap gap-2">
         <Badge tone="outline">{counts.total} total</Badge>
@@ -72,6 +93,35 @@ export default async function RoleSubmissionsPage({
         <Count value={counts.Callback} label="callback" tone="positive" />
         <Count value={counts.Declined} label="declined" tone="danger" />
       </div>
+
+      {user.role === "admin" ? (
+        <details className="mt-10 rounded-2xl border border-danger/30 bg-surface p-6">
+          <summary className="cursor-pointer text-sm font-medium text-danger">
+            Remove this role
+          </summary>
+          <form action={removeRole} className="mt-4 flex flex-col gap-4">
+            <input type="hidden" name="roleId" value={role.id} />
+            <p className="max-w-prose text-sm leading-relaxed text-muted">
+              This deletes the listing and{" "}
+              <strong className="text-text">
+                all {counts.total} {counts.total === 1 ? "submission" : "submissions"}
+              </strong>{" "}
+              made to it, including the contact details performers gave. It cannot be undone.
+              To stop new submissions without destroying anything, use{" "}
+              <strong className="text-text">Close early</strong> instead.
+            </p>
+            <label className="flex cursor-pointer items-center gap-2.5 text-sm text-muted">
+              <input type="checkbox" name="confirm" required className="size-4 accent-accent" />
+              I understand this permanently deletes the submissions too.
+            </label>
+            <div>
+              <Button type="submit" variant="danger" size="sm">
+                Remove role and submissions
+              </Button>
+            </div>
+          </form>
+        </details>
+      ) : null}
 
       {submissions.length > 0 ? (
         <ul className="mt-8 flex flex-col gap-4">

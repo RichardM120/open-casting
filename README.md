@@ -45,6 +45,8 @@ npx tsc --noEmit                 # typecheck
 | `/login`, `/signup` | Password or Google sign-in for the casting side |
 | `/faq/performers` | What the listing fields mean and what submitting commits you to |
 | `/faq/casting-directors` | What each posting field commits you to, and writing terms |
+| `/dashboard/roles/[id]/edit` | Edit a role in place |
+| `/dashboard/accounts` | Suspend and restore accounts — admin only |
 
 ## How it is put together
 
@@ -108,6 +110,24 @@ Three roles, and one rule that decides everything:
 | `director` | Only the roles they posted |
 | `producer` | Every role posted under their company, across productions |
 | `admin` | Everything |
+
+What each may **do**, on top of that:
+
+| Action | Who |
+| --- | --- |
+| Edit a role, close it early, reopen it | Anyone who can see it |
+| Remove a role and its submissions | Admin only |
+| Suspend or restore an account | Admin only |
+
+Removal is admin-only on purpose: it destroys performers' contact details, and a
+shared company name should not be enough to authorise that. Closing early is the
+non-destructive option — it stops new submissions and keeps the listing readable.
+Closing is recorded in `closed_at` rather than by moving the deadline, so the
+listing still shows the date it advertised.
+
+Suspending an account deletes its sessions, so somebody signed in is out at
+once; `currentUser()` re-checks suspension on every request in case a session
+was created in between. Their roles stay up. An admin cannot suspend themselves.
 
 `src/lib/roles.ts` exports a single `visibility()` function returning a SQL
 fragment. The role listing, a single role, the submission counts and the status

@@ -6,13 +6,20 @@ import { redirect } from "next/navigation";
 import { requireUser } from "./auth";
 import { isOpen } from "./format";
 import { submittedValues, type FormState } from "./form-state";
-import { createRole, getRole } from "./roles";
+import {
+  createRole,
+  deleteRoleAsAdmin,
+  getRole,
+  setRoleClosed,
+  updateRole,
+} from "./roles";
 import {
   DuplicateSubmissionError,
   createSubmission,
   setSubmissionStatus,
 } from "./submissions";
 import { SUBMISSION_STATUSES, type SubmissionStatus } from "./types";
+import { setAccountSuspended } from "./users";
 import { fieldErrors, roleSchema, submissionSchema, type FieldErrors } from "./validation";
 
 function invalid(
@@ -42,7 +49,7 @@ export async function submitApplication(
   if (!role) {
     return invalid({}, "That role is no longer listed.", formData);
   }
-  if (!isOpen(role.deadline)) {
+  if (!isOpen(role)) {
     return invalid({}, "Submissions for this role have closed.", formData);
   }
 
@@ -134,5 +141,72 @@ export async function updateSubmissionStatus(formData: FormData): Promise<void> 
 
   // Silently a no-op when the submission hangs off a role this account cannot see.
   await setSubmissionStatus(id, status, user);
+  revalidateEverything();
+}
+
+/* ------------------------------------------------------------ moderation -- */
+
+export async function editRole(
+  _previous: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const id = String(formData.get("roleId") ?? "");
+  const user = await requireUser(`/dashboard/roles/${id}/edit`);
+
+  const parsed = roleSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return invalid(
+      fieldErrors(parsed.error),
+      "Check the highlighted fields and try again.",
+      formData,
+    );
+  }
+
+  // Returns null when the role is not one this account may touch.
+  const role = await updateRole(id, parsed.data, user);
+  if (!role) {
+    return invalid({}, "That role is no longer yours to edit.", formData);
+  }
+
+  revalidateEverything();
+  redirect(`/dashboard/roles/${role.id}?saved=1`);
+}
+
+/** Closes a role early, or puts it back. Anyone who can see it can do this. */
+export async function toggleRoleClosed(formData: FormData): Promise<void> {
+  const id = String(formData.get("roleId") ?? "");
+  const closed = formData.get("closed") === "1";
+  const user = await requireUser(`/dashboard/roles/${id}`);
+
+  if (!id) return;
+  await setRoleClosed(id, closed, user);
+  revalidateEverything();
+}
+
+/**
+ * Removes a role and every submission made to it. Admin only, and the
+ * confirmation has to be ticked — this destroys other people's data.
+ */
+export async function removeRole(formData: FormData): Promise<void> {
+  const id = String(formData.get("roleId") ?? "");
+  const user = await requireUser("/dashboard");
+
+  if (user.role !== "admin" || formData.get("confirm") !== "on" || !id) return;
+
+  await deleteRoleAsAdmin(id);
+  revalidateEverything();
+  redirect("/dashboard?removed=1");
+}
+
+/** Suspends or restores an account. Admin only. */
+export async function toggleAccountSuspended(formData: FormData): Promise<void> {
+  const id = String(formData.get("accountId") ?? "");
+  const suspended = formData.get("suspended") === "1";
+  const user = await requireUser("/dashboard/accounts");
+
+  // An admin locking themselves out would leave nobody able to undo it.
+  if (user.role !== "admin" || !id || id === user.id) return;
+
+  await setAccountSuspended(id, suspended);
   revalidateEverything();
 }

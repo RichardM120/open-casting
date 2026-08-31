@@ -28,7 +28,7 @@ export default async function DashboardPage() {
     (accumulator, role) => {
       const count = counts.get(role.id);
       return {
-        open: accumulator.open + (isOpen(role.deadline) ? 1 : 0),
+        open: accumulator.open + (isOpen(role) ? 1 : 0),
         submissions: accumulator.submissions + (count?.total ?? 0),
         shortlisted: accumulator.shortlisted + (count?.Shortlisted ?? 0),
         toRead: accumulator.toRead + (count?.New ?? 0),
@@ -52,7 +52,14 @@ export default async function DashboardPage() {
             Open a role to read the submissions.
           </p>
         </div>
-        <ButtonLink href="/roles/new">Post a role</ButtonLink>
+        <div className="flex flex-wrap gap-2">
+          {user.role === "admin" ? (
+            <ButtonLink href="/dashboard/accounts" variant="secondary">
+              Accounts
+            </ButtonLink>
+          ) : null}
+          <ButtonLink href="/roles/new">Post a role</ButtonLink>
+        </div>
       </div>
 
       <dl className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -89,7 +96,7 @@ export default async function DashboardPage() {
                     <Badge tone="outline">
                       {count?.total ?? 0} {count?.total === 1 ? "submission" : "submissions"}
                     </Badge>
-                    <DeadlineBadge deadline={role.deadline} />
+                    <DeadlineBadge role={role} />
                   </div>
                 </Link>
               </li>

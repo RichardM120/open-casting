@@ -32,6 +32,7 @@ const roles: Role[] = [
     castingDirector: "Priya Raman",
     company: "Raman Casting",
     disclaimer: "",
+    closedAt: null,
     postedAt: "2026-08-24T09:15:00.000Z",
   },
   {
@@ -60,6 +61,7 @@ const roles: Role[] = [
     castingDirector: "Priya Raman",
     company: "Raman Casting",
     disclaimer: "",
+    closedAt: null,
     postedAt: "2026-08-24T09:22:00.000Z",
   },
   {
@@ -89,6 +91,7 @@ const roles: Role[] = [
     castingDirector: "Tom Whitcombe",
     company: "Whitcombe & Fry Casting",
     disclaimer: "",
+    closedAt: null,
     postedAt: "2026-08-19T14:40:00.000Z",
   },
   {
@@ -114,6 +117,7 @@ const roles: Role[] = [
     castingDirector: "Tom Whitcombe",
     company: "Whitcombe & Fry Casting",
     disclaimer: "",
+    closedAt: null,
     postedAt: "2026-08-19T14:52:00.000Z",
   },
   {
@@ -144,6 +148,7 @@ const roles: Role[] = [
     company: "Ortiz Casting",
     disclaimer:
       "Usage is UK, all media, 12 months from first air date. The day rate does not include the buyout, which is negotiated separately once you are cast. Submitting does not create any engagement, and we cannot pay for self-tapes. We keep your details for the duration of this casting and delete them within 6 months of it closing.",
+    closedAt: null,
     postedAt: "2026-08-27T11:05:00.000Z",
   },
   {
@@ -172,6 +177,7 @@ const roles: Role[] = [
     castingDirector: "Ruth Adeyemi",
     company: "Sixth Floor Audio",
     disclaimer: "",
+    closedAt: null,
     postedAt: "2026-08-29T08:30:00.000Z",
   },
   {
@@ -201,6 +207,7 @@ const roles: Role[] = [
     castingDirector: "Marcus Bell",
     company: "Lantern Theatre Company",
     disclaimer: "",
+    closedAt: null,
     postedAt: "2026-08-12T16:20:00.000Z",
   },
   {
@@ -231,6 +238,7 @@ const roles: Role[] = [
     company: "Northern Film School",
     disclaimer:
       "This role is for a performer under 16. A parent or guardian must submit on their behalf and must be present for every day of the shoot. A licence from the local authority is required before filming and we will apply for it once the role is cast.",
+    closedAt: null,
     postedAt: "2026-08-22T13:00:00.000Z",
   },
 ];

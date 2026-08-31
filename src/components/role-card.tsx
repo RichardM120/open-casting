@@ -5,14 +5,14 @@ import type { Role } from "@/lib/types";
 
 import { Badge } from "./ui";
 
-export function DeadlineBadge({ deadline }: { deadline: string }) {
-  const days = daysUntil(deadline);
-  const tone = days < 0 ? "outline" : days <= 7 ? "danger" : "neutral";
-  return <Badge tone={tone}>{deadlineLabel(deadline)}</Badge>;
+export function DeadlineBadge({ role }: { role: Pick<Role, "deadline" | "closedAt"> }) {
+  const days = daysUntil(role.deadline);
+  const tone = !isOpen(role) ? "outline" : days <= 7 ? "danger" : "neutral";
+  return <Badge tone={tone}>{deadlineLabel(role)}</Badge>;
 }
 
 export function RoleCard({ role }: { role: Role }) {
-  const open = isOpen(role.deadline);
+  const open = isOpen(role);
 
   return (
     <Link
@@ -22,7 +22,7 @@ export function RoleCard({ role }: { role: Role }) {
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="accent">{role.productionType}</Badge>
         {role.selfTape ? <Badge tone="outline">Self-tape</Badge> : null}
-        <DeadlineBadge deadline={role.deadline} />
+        <DeadlineBadge role={role} />
       </div>
 
       <div>
@@ -44,7 +44,9 @@ export function RoleCard({ role }: { role: Role }) {
       </dl>
 
       {!open ? (
-        <p className="text-xs text-faint">Submissions closed. Kept for reference.</p>
+        <p className="text-xs text-faint">
+          {role.closedAt ? "Closed early. Kept for reference." : "Submissions closed. Kept for reference."}
+        </p>
       ) : null}
     </Link>
   );

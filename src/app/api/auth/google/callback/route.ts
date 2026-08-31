@@ -33,6 +33,9 @@ export async function GET(request: Request) {
 
     const profile = await fetchGoogleProfile(await exchangeCode(code, verifier, url));
     const user = await syncAdminRole(await upsertGoogleUser(profile));
+    if (user.suspended_at) {
+      return backToLogin(url.origin, "This account has been suspended.");
+    }
     await startSession(user.id);
 
     return NextResponse.redirect(new URL(next, url.origin));

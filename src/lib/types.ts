@@ -48,6 +48,8 @@ export type Role = {
   company: string;
   /** Terms the performer must accept to submit. Empty when none are set. */
   disclaimer: string;
+  /** Set when closed ahead of its deadline. ISO timestamp, or null. */
+  closedAt: string | null;
   /** ISO timestamp. */
   postedAt: string;
 };

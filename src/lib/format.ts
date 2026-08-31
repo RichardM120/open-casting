@@ -13,18 +13,21 @@ export function daysUntil(deadline: string): number {
   return Math.round((Date.parse(`${deadline}T00:00:00Z`) - startOfToday()) / MS_PER_DAY);
 }
 
-/** Submissions close at the end of the deadline day. */
-export function isOpen(deadline: string): boolean {
-  return daysUntil(deadline) >= 0;
+/**
+ * A role is open until the end of its deadline day, unless it was closed early.
+ */
+export function isOpen(role: { deadline: string; closedAt: string | null }): boolean {
+  return role.closedAt === null && daysUntil(role.deadline) >= 0;
 }
 
-export function deadlineLabel(deadline: string): string {
-  const days = daysUntil(deadline);
+export function deadlineLabel(role: { deadline: string; closedAt: string | null }): string {
+  if (role.closedAt) return "Closed early";
+  const days = daysUntil(role.deadline);
   if (days < 0) return "Closed";
   if (days === 0) return "Closes today";
   if (days === 1) return "Closes tomorrow";
   if (days <= 14) return `${days} days left`;
-  return `Closes ${formatDate(deadline)}`;
+  return `Closes ${formatDate(role.deadline)}`;
 }
 
 export function formatDate(value: string): string {

@@ -64,6 +64,7 @@ type RoleRow = {
   casting_director: string;
   company: string;
   disclaimer: string;
+  closed_at: Date | null;
   posted_at: Date;
 };
 
@@ -72,11 +73,14 @@ const COLUMNS = `
   id, slug, title, production, production_type, synopsis, character_brief,
   requirements, location, self_tape, age_min, age_max, pay_type, rate,
   union_status, shoot_dates, to_char(deadline, 'YYYY-MM-DD') AS deadline,
-  casting_director, company, disclaimer, posted_at
+  casting_director, company, disclaimer, closed_at, posted_at
 `;
 
 /** Today in UTC, matching how `isOpen` decides the same thing in JS. */
 const TODAY = "(now() AT TIME ZONE 'utc')::date";
+
+/** Open on both counts: still within the deadline, and not closed by hand. */
+const OPEN = `deadline >= ${TODAY} AND closed_at IS NULL`;
 
 function toRole(row: RoleRow): Role {
   return {
@@ -100,6 +104,7 @@ function toRole(row: RoleRow): Role {
     castingDirector: row.casting_director,
     company: row.company,
     disclaimer: row.disclaimer,
+    closedAt: row.closed_at?.toISOString() ?? null,
     postedAt: row.posted_at.toISOString(),
   };
 }
@@ -115,7 +120,7 @@ function whereClause(filters: RoleFilters): { sql: string; params: unknown[] } {
     conditions.push(condition(`$${params.length}`));
   };
 
-  if (!filters.includeClosed) conditions.push(`deadline >= ${TODAY}`);
+  if (!filters.includeClosed) conditions.push(OPEN);
   if (filters.selfTapeOnly) conditions.push("self_tape");
   if (filters.productionType) add((p) => `production_type = ${p}`, filters.productionType);
   if (filters.payType) add((p) => `pay_type = ${p}`, filters.payType);
@@ -141,7 +146,7 @@ function whereClause(filters: RoleFilters): { sql: string; params: unknown[] } {
 }
 
 /** Open roles first, then the ones closing soonest. */
-const ORDER = `ORDER BY (deadline >= ${TODAY}) DESC, deadline ASC, posted_at DESC`;
+const ORDER = `ORDER BY (${OPEN}) DESC, deadline ASC, posted_at DESC`;
 
 export async function listRoles(filters: RoleFilters = EMPTY_FILTERS): Promise<Role[]> {
   const { sql, params } = whereClause(filters);
@@ -154,7 +159,7 @@ export async function listRoles(filters: RoleFilters = EMPTY_FILTERS): Promise<R
 
 export async function listRecentRoles(limit: number): Promise<Role[]> {
   const rows = await query<RoleRow>(
-    `SELECT ${COLUMNS} FROM roles WHERE deadline >= ${TODAY} ${ORDER} LIMIT $1`,
+    `SELECT ${COLUMNS} FROM roles WHERE ${OPEN} ${ORDER} LIMIT $1`,
     [limit],
   );
   return rows.map(toRole);
@@ -217,12 +222,12 @@ export async function getVisibleRole(id: string, viewer: SessionUser): Promise<R
 
 export async function countOpenRoles(): Promise<number> {
   const rows = await query<{ count: string }>(
-    `SELECT count(*)::text AS count FROM roles WHERE deadline >= ${TODAY}`,
+    `SELECT count(*)::text AS count FROM roles WHERE ${OPEN}`,
   );
   return Number(rows[0]?.count ?? 0);
 }
 
-export type NewRole = Omit<Role, "id" | "slug" | "postedAt">;
+export type NewRole = Omit<Role, "id" | "slug" | "postedAt" | "closedAt">;
 
 export async function createRole(input: NewRole, ownerId: string): Promise<Role> {
   const rows = await query<RoleRow>(
@@ -294,4 +299,85 @@ export function parseRoleFilters(searchParams: RawSearchParams): RoleFilters {
     selfTapeOnly: one(searchParams.selftape) === "1",
     includeClosed: one(searchParams.closed) === "1",
   };
+}
+
+/* ------------------------------------------------------------ moderation -- */
+
+/**
+ * Rewrites a role in place. Scoped through the same `visibility()` rule as
+ * reading, so a director can edit their own, a producer any under their
+ * company, an admin any at all. Ownership and the closed flag are deliberately
+ * not editable here.
+ *
+ * Editing the terms does not rewrite history: what a performer accepted was
+ * copied onto their submission when they made it.
+ */
+export async function updateRole(
+  id: string,
+  input: NewRole,
+  viewer: SessionUser,
+): Promise<Role | null> {
+  const { where, params } = visibility(viewer);
+  const rows = await query<RoleRow>(
+    `UPDATE roles SET
+       title = $${params.length + 2},
+       production = $${params.length + 3},
+       production_type = $${params.length + 4},
+       synopsis = $${params.length + 5},
+       character_brief = $${params.length + 6},
+       requirements = $${params.length + 7},
+       location = $${params.length + 8},
+       self_tape = $${params.length + 9},
+       age_min = $${params.length + 10},
+       age_max = $${params.length + 11},
+       pay_type = $${params.length + 12},
+       rate = $${params.length + 13},
+       union_status = $${params.length + 14},
+       shoot_dates = $${params.length + 15},
+       deadline = $${params.length + 16},
+       casting_director = $${params.length + 17},
+       company = $${params.length + 18},
+       disclaimer = $${params.length + 19}
+     WHERE id = $${params.length + 1}${where ? ` AND ${where}` : ""}
+     RETURNING ${COLUMNS}`,
+    [
+      ...params, id,
+      input.title, input.production, input.productionType, input.synopsis,
+      input.characterBrief, input.requirements, input.location, input.selfTape,
+      input.ageMin, input.ageMax, input.payType, input.rate, input.unionStatus,
+      input.shootDates, input.deadline, input.castingDirector, input.company,
+      input.disclaimer,
+    ],
+  );
+  return rows[0] ? toRole(rows[0]) : null;
+}
+
+/** Closes a role ahead of its deadline, or puts it back. */
+export async function setRoleClosed(
+  id: string,
+  closed: boolean,
+  viewer: SessionUser,
+): Promise<boolean> {
+  const { where, params } = visibility(viewer);
+  const rows = await query<{ id: string }>(
+    `UPDATE roles SET closed_at = ${closed ? "now()" : "NULL"}
+      WHERE id = $${params.length + 1}${where ? ` AND ${where}` : ""}
+      RETURNING id`,
+    [...params, id],
+  );
+  return rows.length > 0;
+}
+
+/**
+ * Removes a role and, by the cascade on submissions, everything sent to it.
+ * Callers must confirm the account is an admin — this is not scoped by
+ * `visibility()`, because destroying other people's submissions is not
+ * something a producer should be able to do by virtue of a shared company name.
+ */
+export async function deleteRoleAsAdmin(id: string): Promise<boolean> {
+  const rows = await query<{ id: string }>(
+    "DELETE FROM roles WHERE id = $1 RETURNING id",
+    [id],
+  );
+  return rows.length > 0;
 }

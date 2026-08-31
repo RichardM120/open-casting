@@ -122,6 +122,9 @@ const SCHEMA = `
   ALTER TABLE users ADD COLUMN IF NOT EXISTS role text NOT NULL DEFAULT 'director';
   ALTER TABLE users ADD COLUMN IF NOT EXISTS google_sub text;
 
+  -- Suspended accounts cannot sign in and their sessions are revoked.
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS suspended_at timestamptz;
+
   -- An account that only ever signs in with Google has no password.
   ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
 
@@ -205,6 +208,10 @@ const SCHEMA = `
   -- them, and the wording is copied onto the submission as it stood at the time,
   -- so a later edit cannot rewrite what somebody agreed to.
   ALTER TABLE roles ADD COLUMN IF NOT EXISTS disclaimer text NOT NULL DEFAULT '';
+
+  -- Closing early is recorded separately rather than by moving the deadline,
+  -- so the listing still shows the date it originally advertised.
+  ALTER TABLE roles ADD COLUMN IF NOT EXISTS closed_at timestamptz;
   ALTER TABLE submissions ADD COLUMN IF NOT EXISTS accepted_terms text;
   ALTER TABLE submissions ADD COLUMN IF NOT EXISTS accepted_at timestamptz;
 
