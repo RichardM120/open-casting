@@ -1,5 +1,5 @@
 import Link from "next/link";
-import type { ComponentProps, ReactNode } from "react";
+import { Children, cloneElement, isValidElement, type ComponentProps, type ReactNode } from "react";
 
 export function cx(...values: Array<string | false | null | undefined>): string {
   return values.filter(Boolean).join(" ");
@@ -137,7 +137,10 @@ export function EmptyState({
 const CONTROL =
   "w-full rounded-xl border border-line bg-raised px-3.5 py-2.5 text-sm text-text " +
   "placeholder:text-faint transition-colors hover:border-line-strong " +
-  "focus:border-accent focus:outline-none";
+  "focus:border-accent focus:outline-none " +
+  // A red border alone would not reach anyone who cannot see it; it sits
+  // alongside the message the field is wired to through aria-describedby.
+  "aria-invalid:border-danger aria-invalid:hover:border-danger";
 
 export function Field({
   label,
@@ -154,14 +157,29 @@ export function Field({
   children: ReactNode;
   className?: string;
 }) {
+  const describedBy = error ? `${htmlFor}-error` : hint ? `${htmlFor}-hint` : undefined;
+
+  // The control is wired up here rather than at every call site, so no field can
+  // show an error a screen reader never announces or a red border it cannot
+  // explain. `aria-invalid` is also what the focus helper looks for.
+  const control = Children.map(children, (child) =>
+    isValidElement<{ "aria-invalid"?: boolean; "aria-describedby"?: string }>(child)
+      ? cloneElement(child, {
+          "aria-invalid": error ? true : undefined,
+          "aria-describedby": describedBy,
+        })
+      : child,
+  );
+
   return (
     <div className={cx("flex flex-col gap-1.5", className)}>
       <label htmlFor={htmlFor} className="text-sm font-medium text-text">
         {label}
       </label>
-      {children}
+      {control}
       {error ? (
-        <p id={`${htmlFor}-error`} className="text-xs text-danger">
+        <p id={`${htmlFor}-error`} className="flex items-start gap-1.5 text-xs text-danger">
+          <span aria-hidden="true" className="mt-px">⚠</span>
           {error}
         </p>
       ) : hint ? (
@@ -169,6 +187,45 @@ export function Field({
           {hint}
         </p>
       ) : null}
+    </div>
+  );
+}
+
+/**
+ * Lists what needs fixing and jumps to it. Inline messages alone are easy to
+ * miss on a long form, especially when the failure is below the fold.
+ */
+export function ErrorSummary({
+  errors,
+  labels,
+}: {
+  errors: Record<string, string>;
+  labels: Record<string, string>;
+}) {
+  const entries = Object.entries(errors).filter(([field]) => field in labels);
+  if (entries.length === 0) return null;
+
+  return (
+    <div
+      role="alert"
+      tabIndex={-1}
+      data-error-summary
+      className="rounded-xl border border-danger/40 bg-danger-soft p-4"
+    >
+      <p className="text-sm font-medium text-danger">
+        {entries.length === 1
+          ? "There is one thing to fix"
+          : `There are ${entries.length} things to fix`}
+      </p>
+      <ul className="mt-2 flex flex-col gap-1">
+        {entries.map(([field, message]) => (
+          <li key={field} className="text-sm">
+            <a href={`#${field}`} className="text-danger underline underline-offset-4">
+              {labels[field]}: {message}
+            </a>
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }

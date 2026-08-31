@@ -6,14 +6,38 @@ import { postRole } from "@/lib/actions";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
 import { PAY_TYPES, PRODUCTION_TYPES, UNION_STATUSES } from "@/lib/types";
 
-import { Button, ButtonLink, Checkbox, Field, Input, Select, Textarea } from "./ui";
+import { useErrorFocus } from "./use-error-focus";
+import { Button, ButtonLink, Checkbox, ErrorSummary, Field, Input, Select, Textarea } from "./ui";
+
+const LABELS: Record<string, string> = {
+  production: "Production title",
+  productionType: "Production type",
+  synopsis: "Synopsis",
+  castingDirector: "Casting director",
+  company: "Company",
+  title: "Role name",
+  characterBrief: "Character brief",
+  requirements: "Requirements",
+  ageMin: "Playing age from",
+  ageMax: "Playing age to",
+  location: "Location",
+  shootDates: "Shoot dates",
+  payType: "How it pays",
+  rate: "Rate",
+  unionStatus: "Union status",
+  deadline: "Submissions close",
+  disclaimer: "Terms for performers",
+};
 
 export function RoleForm() {
   const [state, formAction, pending] = useActionState(postRole, IDLE_FORM_STATE);
   const { errors, values } = state;
+  const formRef = useErrorFocus(state.status, errors);
 
   return (
-    <form action={formAction} className="flex flex-col gap-8">
+    <form ref={formRef} action={formAction} className="flex flex-col gap-8">
+      {state.status === "error" ? <ErrorSummary errors={errors} labels={LABELS} /> : null}
+
       <Fieldset
         legend="The production"
         description="What is being made, and who is casting it."
@@ -206,6 +230,27 @@ export function RoleForm() {
         </div>
       </Fieldset>
 
+      <Fieldset
+        legend="Terms for performers"
+        description="Optional. Shown on the listing, and performers must tick to accept them before they can submit."
+      >
+        <Field
+          label="Terms"
+          htmlFor="disclaimer"
+          hint="Usage and buyout, what submitting does and does not commit either side to, how long you keep their details. Leave blank for none."
+          error={errors.disclaimer}
+          className="sm:col-span-2"
+        >
+          <Textarea
+            id="disclaimer"
+            name="disclaimer"
+            rows={5}
+            defaultValue={values.disclaimer ?? ""}
+            placeholder="Usage is UK, all media, 12 months. The day rate does not include the buyout…"
+          />
+        </Field>
+      </Fieldset>
+
       <div className="flex flex-wrap items-center gap-4 border-t border-line pt-6">
         <Button type="submit" disabled={pending}>
           {pending ? "Posting…" : "Post the role"}
@@ -213,11 +258,6 @@ export function RoleForm() {
         <ButtonLink href="/dashboard" variant="ghost" size="sm">
           Cancel
         </ButtonLink>
-        {state.status === "error" ? (
-          <p className="text-sm text-danger" role="alert">
-            {state.message}
-          </p>
-        ) : null}
       </div>
     </form>
   );

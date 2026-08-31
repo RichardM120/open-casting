@@ -25,6 +25,9 @@ export const submissionSchema = z.object({
   coverNote: trimmed
     .min(20, "Tell the casting director a little more — 20 characters minimum")
     .max(1200, "Keep the cover note under 1200 characters"),
+  // Only present, and only required, when the role carries terms. The action
+  // checks it against the role rather than trusting the form.
+  acceptTerms: z.coerce.boolean().optional(),
 });
 
 export type SubmissionInput = z.infer<typeof submissionSchema>;
@@ -55,6 +58,7 @@ export const roleSchema = z
     deadline: trimmed.regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a closing date"),
     castingDirector: trimmed.min(2, "Who is casting?").max(80),
     company: trimmed.min(2, "Name the company").max(80),
+    disclaimer: trimmed.max(2000, "Keep the terms under 2000 characters"),
   })
   .refine((value) => value.ageMax >= value.ageMin, {
     path: ["ageMax"],

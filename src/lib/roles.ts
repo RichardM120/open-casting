@@ -63,6 +63,7 @@ type RoleRow = {
   deadline: string;
   casting_director: string;
   company: string;
+  disclaimer: string;
   posted_at: Date;
 };
 
@@ -71,7 +72,7 @@ const COLUMNS = `
   id, slug, title, production, production_type, synopsis, character_brief,
   requirements, location, self_tape, age_min, age_max, pay_type, rate,
   union_status, shoot_dates, to_char(deadline, 'YYYY-MM-DD') AS deadline,
-  casting_director, company, posted_at
+  casting_director, company, disclaimer, posted_at
 `;
 
 /** Today in UTC, matching how `isOpen` decides the same thing in JS. */
@@ -98,6 +99,7 @@ function toRole(row: RoleRow): Role {
     deadline: row.deadline,
     castingDirector: row.casting_director,
     company: row.company,
+    disclaimer: row.disclaimer,
     postedAt: row.posted_at.toISOString(),
   };
 }
@@ -227,8 +229,9 @@ export async function createRole(input: NewRole, ownerId: string): Promise<Role>
     `INSERT INTO roles (
        id, slug, title, production, production_type, synopsis, character_brief,
        requirements, location, self_tape, age_min, age_max, pay_type, rate,
-       union_status, shoot_dates, deadline, casting_director, company, owner_id
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+       union_status, shoot_dates, deadline, casting_director, company, owner_id,
+       disclaimer
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
      RETURNING ${COLUMNS}`,
     [
       `rol_${crypto.randomUUID().slice(0, 12)}`,
@@ -251,6 +254,7 @@ export async function createRole(input: NewRole, ownerId: string): Promise<Role>
       input.castingDirector,
       input.company,
       ownerId,
+      input.disclaimer,
     ],
   );
   return toRole(rows[0]);

@@ -8,7 +8,10 @@ import type { SessionUser } from "@/lib/auth";
 
 import { ButtonLink, cx } from "./ui";
 
-const PUBLIC_NAV = [{ href: "/roles", label: "Browse roles" }] as const;
+const PUBLIC_NAV = [
+  { href: "/roles", label: "Browse roles" },
+  { href: "/faq", label: "FAQ" },
+] as const;
 const OWNER_NAV = [{ href: "/dashboard", label: "Casting dashboard" }] as const;
 
 export function SiteHeader({ user }: { user: SessionUser | null }) {

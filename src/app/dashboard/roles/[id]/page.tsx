@@ -142,6 +142,17 @@ function SubmissionCard({ submission }: { submission: Submission }) {
         {submission.coverNote}
       </p>
 
+      {submission.acceptedTerms ? (
+        <details className="mt-4 rounded-xl border border-line bg-raised p-4">
+          <summary className="cursor-pointer text-xs text-muted">
+            Accepted your terms on {formatDate(submission.acceptedAt ?? submission.submittedAt)}
+          </summary>
+          <p className="mt-3 text-xs leading-relaxed whitespace-pre-line text-faint">
+            {submission.acceptedTerms}
+          </p>
+        </details>
+      ) : null}
+
       <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line pt-4 text-sm">
         <a
           href={`mailto:${submission.email}`}

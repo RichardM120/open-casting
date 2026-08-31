@@ -92,7 +92,11 @@ export default async function RolePage({ params }: PageProps<"/roles/[id]">) {
 
         <div className="lg:sticky lg:top-24 lg:self-start">
           {open ? (
-            <SubmissionForm roleId={role.id} roleTitle={role.title} />
+            <SubmissionForm
+              roleId={role.id}
+              roleTitle={role.title}
+              disclaimer={role.disclaimer}
+            />
           ) : (
             <SubmissionsClosed />
           )}

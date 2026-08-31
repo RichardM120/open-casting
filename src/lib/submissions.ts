@@ -41,12 +41,14 @@ type SubmissionRow = {
   profile_url: string;
   cover_note: string;
   status: string;
+  accepted_terms: string | null;
+  accepted_at: Date | null;
   submitted_at: Date;
 };
 
 const COLUMNS = `
   id, role_id, name, email, phone, location, age, union_status,
-  reel_url, profile_url, cover_note, status, submitted_at
+  reel_url, profile_url, cover_note, status, accepted_terms, accepted_at, submitted_at
 `;
 
 function toSubmission(row: SubmissionRow): Submission {
@@ -63,6 +65,8 @@ function toSubmission(row: SubmissionRow): Submission {
     profileUrl: row.profile_url,
     coverNote: row.cover_note,
     status: row.status as SubmissionStatus,
+    acceptedTerms: row.accepted_terms,
+    acceptedAt: row.accepted_at?.toISOString() ?? null,
     submittedAt: row.submitted_at.toISOString(),
   };
 }
@@ -131,8 +135,8 @@ export async function createSubmission(input: NewSubmission): Promise<Submission
     const rows = await query<SubmissionRow>(
       `INSERT INTO submissions (
          id, role_id, name, email, phone, location, age, union_status,
-         reel_url, profile_url, cover_note
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+         reel_url, profile_url, cover_note, accepted_terms, accepted_at
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
        RETURNING ${COLUMNS}`,
       [
         `sub_${crypto.randomUUID().slice(0, 12)}`,
@@ -146,6 +150,8 @@ export async function createSubmission(input: NewSubmission): Promise<Submission
         input.reelUrl,
         input.profileUrl,
         input.coverNote,
+        input.acceptedTerms,
+        input.acceptedAt,
       ],
     );
     return toSubmission(rows[0]);

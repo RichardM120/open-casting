@@ -46,6 +46,8 @@ export type Role = {
   deadline: string;
   castingDirector: string;
   company: string;
+  /** Terms the performer must accept to submit. Empty when none are set. */
+  disclaimer: string;
   /** ISO timestamp. */
   postedAt: string;
 };
@@ -63,6 +65,12 @@ export type Submission = {
   profileUrl: string;
   coverNote: string;
   status: SubmissionStatus;
+  /**
+   * The role's terms exactly as they read when this was submitted, and when
+   * they were accepted. Null when the role carried no terms.
+   */
+  acceptedTerms: string | null;
+  acceptedAt: string | null;
   /** ISO timestamp. */
   submittedAt: string;
 };

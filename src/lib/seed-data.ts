@@ -31,6 +31,7 @@ const roles: Role[] = [
     deadline: "2026-09-18",
     castingDirector: "Priya Raman",
     company: "Raman Casting",
+    disclaimer: "",
     postedAt: "2026-08-24T09:15:00.000Z",
   },
   {
@@ -58,6 +59,7 @@ const roles: Role[] = [
     deadline: "2026-09-18",
     castingDirector: "Priya Raman",
     company: "Raman Casting",
+    disclaimer: "",
     postedAt: "2026-08-24T09:22:00.000Z",
   },
   {
@@ -86,6 +88,7 @@ const roles: Role[] = [
     deadline: "2026-10-02",
     castingDirector: "Tom Whitcombe",
     company: "Whitcombe & Fry Casting",
+    disclaimer: "",
     postedAt: "2026-08-19T14:40:00.000Z",
   },
   {
@@ -110,6 +113,7 @@ const roles: Role[] = [
     deadline: "2026-10-02",
     castingDirector: "Tom Whitcombe",
     company: "Whitcombe & Fry Casting",
+    disclaimer: "",
     postedAt: "2026-08-19T14:52:00.000Z",
   },
   {
@@ -138,6 +142,8 @@ const roles: Role[] = [
     deadline: "2026-09-08",
     castingDirector: "Lena Ortiz",
     company: "Ortiz Casting",
+    disclaimer:
+      "Usage is UK, all media, 12 months from first air date. The day rate does not include the buyout, which is negotiated separately once you are cast. Submitting does not create any engagement, and we cannot pay for self-tapes. We keep your details for the duration of this casting and delete them within 6 months of it closing.",
     postedAt: "2026-08-27T11:05:00.000Z",
   },
   {
@@ -165,6 +171,7 @@ const roles: Role[] = [
     deadline: "2026-09-25",
     castingDirector: "Ruth Adeyemi",
     company: "Sixth Floor Audio",
+    disclaimer: "",
     postedAt: "2026-08-29T08:30:00.000Z",
   },
   {
@@ -193,6 +200,7 @@ const roles: Role[] = [
     deadline: "2026-10-16",
     castingDirector: "Marcus Bell",
     company: "Lantern Theatre Company",
+    disclaimer: "",
     postedAt: "2026-08-12T16:20:00.000Z",
   },
   {
@@ -221,6 +229,8 @@ const roles: Role[] = [
     deadline: "2026-09-30",
     castingDirector: "Jo Fenwick",
     company: "Northern Film School",
+    disclaimer:
+      "This role is for a performer under 16. A parent or guardian must submit on their behalf and must be present for every day of the shoot. A licence from the local authority is required before filming and we will apply for it once the role is cast.",
     postedAt: "2026-08-22T13:00:00.000Z",
   },
 ];
@@ -240,6 +250,8 @@ const submissions: Submission[] = [
     coverNote:
       "I grew up on the Blackwater estuary and have spent more of my life in a boat than out of one. The long silences in the brief are what made me want to submit.",
     status: "Shortlisted",
+    acceptedTerms: null,
+    acceptedAt: null,
     submittedAt: "2026-08-25T10:12:00.000Z",
   },
   {
@@ -256,6 +268,8 @@ const submissions: Submission[] = [
     coverNote:
       "Most recently on stage at the Old Vic. I can send an additional self-tape on water at short notice if useful.",
     status: "Callback",
+    acceptedTerms: null,
+    acceptedAt: null,
     submittedAt: "2026-08-25T18:44:00.000Z",
   },
   {
@@ -272,6 +286,8 @@ const submissions: Submission[] = [
     coverNote:
       "First feature submission. I have three shorts on my reel, the last of which played Encounters.",
     status: "New",
+    acceptedTerms: null,
+    acceptedAt: null,
     submittedAt: "2026-08-28T07:59:00.000Z",
   },
   {
@@ -288,6 +304,8 @@ const submissions: Submission[] = [
     coverNote:
       "Welsh, and I have restored two wooden boats badly enough to know how it is done properly.",
     status: "Shortlisted",
+    acceptedTerms: null,
+    acceptedAt: null,
     submittedAt: "2026-08-26T09:03:00.000Z",
   },
   {
@@ -304,6 +322,8 @@ const submissions: Submission[] = [
     coverNote:
       "Two series regular credits, both northern. Free for the whole block from January.",
     status: "New",
+    acceptedTerms: null,
+    acceptedAt: null,
     submittedAt: "2026-08-21T12:30:00.000Z",
   },
   {
@@ -319,6 +339,8 @@ const submissions: Submission[] = [
     profileUrl: "https://spotlight.com/example/hannah-pryce",
     coverNote: "Sheffield born. Tape attached, second take is the one.",
     status: "Declined",
+    acceptedTerms: null,
+    acceptedAt: null,
     submittedAt: "2026-08-20T16:15:00.000Z",
   },
   {
@@ -335,6 +357,9 @@ const submissions: Submission[] = [
     coverNote:
       "Submitting as a pair, married 46 years. We have done two commercials together, both as a couple.",
     status: "Shortlisted",
+    acceptedTerms:
+      "Usage is UK, all media, 12 months from first air date. The day rate does not include the buyout, which is negotiated separately once you are cast. Submitting does not create any engagement, and we cannot pay for self-tapes. We keep your details for the duration of this casting and delete them within 6 months of it closing.",
+    acceptedAt: "2026-08-28T14:22:00.000Z",
     submittedAt: "2026-08-28T14:22:00.000Z",
   },
   {
@@ -351,6 +376,8 @@ const submissions: Submission[] = [
     coverNote:
       "Home booth, Source Connect if you need it. Brummie, and unapologetic about it.",
     status: "New",
+    acceptedTerms: null,
+    acceptedAt: null,
     submittedAt: "2026-08-30T09:48:00.000Z",
   },
 ];

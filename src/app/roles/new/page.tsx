@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 
+import Link from "next/link";
+
 import { RoleForm } from "@/components/role-form";
 import { Eyebrow } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
@@ -19,6 +21,12 @@ export default async function NewRolePage() {
       <p className="mt-3 max-w-2xl text-muted">
         The more of this you fill in properly, the fewer wrong submissions you read. It goes live
         as soon as you post it, under {user.company}.
+      </p>
+      <p className="mt-3 text-sm text-muted">
+        <Link href="/faq/casting-directors" className="text-accent underline-offset-4 hover:underline">
+          What each field commits you to
+        </Link>{" "}
+        — rate and buyout, union status, and how to write terms worth having.
       </p>
 
       <div className="mt-10">

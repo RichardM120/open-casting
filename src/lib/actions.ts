@@ -55,8 +55,27 @@ export async function submitApplication(
     );
   }
 
+  const { acceptTerms, ...submission } = parsed.data;
+
+  // The role decides whether terms must be accepted, not the form that was
+  // posted — otherwise dropping the checkbox from the request would skip it.
+  if (role.disclaimer && !acceptTerms) {
+    return invalid(
+      { acceptTerms: "Please confirm you have read the terms for this role" },
+      "You need to accept the terms for this role before submitting.",
+      formData,
+    );
+  }
+
   try {
-    await createSubmission({ ...parsed.data, roleId });
+    await createSubmission({
+      ...submission,
+      roleId,
+      // The wording is copied as it stands now, so editing the role later
+      // cannot change what this person agreed to.
+      acceptedTerms: role.disclaimer || null,
+      acceptedAt: role.disclaimer ? new Date().toISOString() : null,
+    });
   } catch (error) {
     // The unique index is the authority here, so two simultaneous submissions
     // cannot both slip past a check-then-insert.
@@ -74,7 +93,7 @@ export async function submitApplication(
 
   return {
     status: "success",
-    message: `Thanks ${parsed.data.name.split(" ")[0]} — your submission is with ${role.castingDirector}.`,
+    message: `Thanks ${submission.name.split(" ")[0]} — your submission is with ${role.castingDirector}.`,
     errors: {},
     values: {},
   };

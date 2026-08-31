@@ -1,14 +1,38 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 
 import { submitApplication } from "@/lib/actions";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
 
-import { Button, ButtonLink, Field, Input, Select, Textarea } from "./ui";
+import { useErrorFocus } from "./use-error-focus";
+import { Button, ButtonLink, ErrorSummary, Field, Input, Select, Textarea, cx } from "./ui";
 
-export function SubmissionForm({ roleId, roleTitle }: { roleId: string; roleTitle: string }) {
+const LABELS: Record<string, string> = {
+  name: "Full name",
+  email: "Email",
+  phone: "Phone",
+  location: "Based in",
+  age: "Age",
+  unionStatus: "Union status",
+  reelUrl: "Showreel link",
+  profileUrl: "Profile link",
+  coverNote: "Cover note",
+  acceptTerms: "Terms for this role",
+};
+
+export function SubmissionForm({
+  roleId,
+  roleTitle,
+  disclaimer,
+}: {
+  roleId: string;
+  roleTitle: string;
+  disclaimer: string;
+}) {
   const [state, formAction, pending] = useActionState(submitApplication, IDLE_FORM_STATE);
+  const formRef = useErrorFocus(state.status, state.errors);
 
   if (state.status === "success") {
     return (
@@ -33,14 +57,32 @@ export function SubmissionForm({ roleId, roleTitle }: { roleId: string; roleTitl
   const { errors, values } = state;
 
   return (
-    <form action={formAction} className="rounded-2xl border border-line bg-surface p-7">
+    <form
+      ref={formRef}
+      action={formAction}
+      className="rounded-2xl border border-line bg-surface p-7"
+    >
       <h2 className="text-xl font-semibold tracking-tight">Submit for this role</h2>
       <p className="mt-2 text-sm text-muted">
         Free to submit, and no agent needed. Everything here goes straight to the casting
         director.
       </p>
+      <p className="mt-2">
+        <Link
+          href="/faq/performers"
+          className="text-sm text-accent underline-offset-4 hover:underline"
+        >
+          What each field means →
+        </Link>
+      </p>
 
       <input type="hidden" name="roleId" value={roleId} />
+
+      {state.status === "error" ? (
+        <div className="mt-5">
+          <ErrorSummary errors={errors} labels={LABELS} />
+        </div>
+      ) : null}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
         <Field label="Full name" htmlFor="name" error={errors.name}>
@@ -139,15 +181,41 @@ export function SubmissionForm({ roleId, roleTitle }: { roleId: string; roleTitl
         </Field>
       </div>
 
+      {disclaimer ? (
+        <div className="mt-6 rounded-xl border border-line-strong bg-raised p-5">
+          <h3 className="text-sm font-semibold">Terms for this role</h3>
+          <p className="mt-2 text-sm leading-relaxed whitespace-pre-line text-muted">
+            {disclaimer}
+          </p>
+          <label
+            className={cx(
+              "mt-4 flex cursor-pointer items-start gap-2.5 text-sm",
+              errors.acceptTerms ? "text-danger" : "text-text",
+            )}
+          >
+            <input
+              id="acceptTerms"
+              type="checkbox"
+              name="acceptTerms"
+              defaultChecked={values.acceptTerms === "on"}
+              aria-invalid={errors.acceptTerms ? true : undefined}
+              aria-describedby={errors.acceptTerms ? "acceptTerms-error" : undefined}
+              className="mt-0.5 size-4 shrink-0 accent-accent"
+            />
+            I have read these terms and accept them.
+          </label>
+          {errors.acceptTerms ? (
+            <p id="acceptTerms-error" className="mt-1.5 text-xs text-danger">
+              {errors.acceptTerms}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
       <div className="mt-6 flex flex-wrap items-center gap-4">
         <Button type="submit" disabled={pending}>
           {pending ? "Sending…" : "Send submission"}
         </Button>
-        {state.status === "error" ? (
-          <p className="text-sm text-danger" role="alert">
-            {state.message}
-          </p>
-        ) : null}
       </div>
     </form>
   );

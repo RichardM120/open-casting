@@ -201,6 +201,13 @@ const SCHEMA = `
   -- roles table without this column.
   ALTER TABLE roles ADD COLUMN IF NOT EXISTS owner_id text;
 
+  -- Terms the casting director sets on the role. Performers must tick to accept
+  -- them, and the wording is copied onto the submission as it stood at the time,
+  -- so a later edit cannot rewrite what somebody agreed to.
+  ALTER TABLE roles ADD COLUMN IF NOT EXISTS disclaimer text NOT NULL DEFAULT '';
+  ALTER TABLE submissions ADD COLUMN IF NOT EXISTS accepted_terms text;
+  ALTER TABLE submissions ADD COLUMN IF NOT EXISTS accepted_at timestamptz;
+
   DO $$
   BEGIN
     ALTER TABLE roles ADD CONSTRAINT roles_owner_fkey
@@ -230,11 +237,12 @@ export const UNIQUE_VIOLATION = "23505";
 function ensureSchema(): Promise<void> {
   globalThis.__openCastingSchema ??= (async () => {
     await pool().query(SCHEMA);
+    // The owner must exist before the sample roles that reference it.
+    await ensureDemoOwner();
     const { rows } = await pool().query<{ count: string }>(
       "SELECT count(*)::text AS count FROM roles",
     );
     if (rows[0]?.count === "0") await seed();
-    await ensureDemoOwner();
   })().catch((error) => {
     // Let the next request retry rather than caching a failed bootstrap.
     globalThis.__openCastingSchema = undefined;
@@ -268,16 +276,16 @@ async function seed(): Promise<void> {
            id, slug, title, production, production_type, synopsis, character_brief,
            requirements, location, self_tape, age_min, age_max, pay_type, rate,
            union_status, shoot_dates, deadline, casting_director, company, posted_at,
-           owner_id
+           owner_id, disclaimer
          ) VALUES (
-           $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21
+           $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22
          ) ON CONFLICT (id) DO NOTHING`,
         [
           role.id, role.slug, role.title, role.production, role.productionType,
           role.synopsis, role.characterBrief, role.requirements, role.location,
           role.selfTape, role.ageMin, role.ageMax, role.payType, role.rate,
           role.unionStatus, role.shootDates, role.deadline, role.castingDirector,
-          role.company, role.postedAt, DEMO_USER.id,
+          role.company, role.postedAt, DEMO_USER.id, role.disclaimer,
         ],
       );
     }
@@ -332,6 +340,6 @@ export async function resetToSeed(): Promise<void> {
   await rawTransaction(async (client) => {
     await client.query("TRUNCATE submissions, roles");
   });
-  await seed();
   await ensureDemoOwner();
+  await seed();
 }

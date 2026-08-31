@@ -43,6 +43,8 @@ npx tsc --noEmit                 # typecheck
 | `/dashboard` | The roles you may see, with submission counts — sign-in required |
 | `/dashboard/roles/[id]` | The submissions for one role, and their status |
 | `/login`, `/signup` | Password or Google sign-in for the casting side |
+| `/faq/performers` | What the listing fields mean and what submitting commits you to |
+| `/faq/casting-directors` | What each posting field commits you to, and writing terms |
 
 ## How it is put together
 
@@ -122,6 +124,16 @@ opaque random tokens in an httpOnly, SameSite=Lax cookie, with only a SHA-256
 hash of the token stored — reading the database does not yield a usable cookie.
 A failed sign-in is hashed against a decoy so response time does not reveal
 which addresses have accounts, and repeated failures are throttled per address.
+
+### Role terms
+
+A casting director can set optional terms on a role. Where they exist, the
+listing shows them and the performer must tick to accept before submitting —
+enforced against the role in the action, not by trusting the posted form.
+
+The wording is **copied onto the submission** as it read at that moment, with a
+timestamp, so editing the role later cannot change what somebody agreed to. The
+dashboard shows each submission's accepted wording alongside it.
 
 ### Google sign-in
 
