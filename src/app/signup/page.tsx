@@ -22,10 +22,11 @@ export default async function SignUpPage({ searchParams }: PageProps<"/signup">)
 
   return (
     <div className="mx-auto max-w-md px-5 py-20">
-      <Eyebrow>For casting directors</Eyebrow>
+      <Eyebrow>For the casting side</Eyebrow>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight">Create an account</h1>
       <p className="mt-3 text-sm leading-relaxed text-muted">
-        You will see only the roles you post, and only the submissions made against them.
+        Performers do not need one — browsing and submitting are open to everyone. Accounts
+        are for the people casting.
       </p>
 
       <div className="mt-8 rounded-2xl border border-line bg-surface p-7">
