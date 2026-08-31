@@ -94,6 +94,26 @@ export default async function RoleSubmissionsPage({
         <Count value={counts.Declined} label="declined" tone="danger" />
       </div>
 
+      {submissions.length > 0 ? (
+        <ul className="mt-8 flex flex-col gap-4">
+          {submissions.map((submission) => (
+            <SubmissionCard key={submission.id} submission={submission} />
+          ))}
+        </ul>
+      ) : (
+        <div className="mt-8">
+          <EmptyState
+            title="No submissions yet"
+            description="They will appear here as they come in, newest first."
+            action={
+              <ButtonLink href={`/roles/${role.id}`} variant="secondary" size="sm">
+                View the public listing
+              </ButtonLink>
+            }
+          />
+        </div>
+      )}
+
       {user.role === "admin" ? (
         <details className="mt-10 rounded-2xl border border-danger/30 bg-surface p-6">
           <summary className="cursor-pointer text-sm font-medium text-danger">
@@ -122,26 +142,6 @@ export default async function RoleSubmissionsPage({
           </form>
         </details>
       ) : null}
-
-      {submissions.length > 0 ? (
-        <ul className="mt-8 flex flex-col gap-4">
-          {submissions.map((submission) => (
-            <SubmissionCard key={submission.id} submission={submission} />
-          ))}
-        </ul>
-      ) : (
-        <div className="mt-8">
-          <EmptyState
-            title="No submissions yet"
-            description="They will appear here as they come in, newest first."
-            action={
-              <ButtonLink href={`/roles/${role.id}`} variant="secondary" size="sm">
-                View the public listing
-              </ButtonLink>
-            }
-          />
-        </div>
-      )}
     </div>
   );
 }
