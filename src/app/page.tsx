@@ -3,6 +3,10 @@ import { ButtonLink, Eyebrow } from "@/components/ui";
 import { countOpenRoles, listRecentRoles } from "@/lib/roles";
 import { countSubmissions } from "@/lib/submissions";
 
+// Counts and listings come from the database on every request, so this page is
+// never prerendered — a deploy build does not need a reachable database.
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const [roles, openRoles, submissions] = await Promise.all([
     listRecentRoles(4),

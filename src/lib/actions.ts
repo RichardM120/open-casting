@@ -3,11 +3,15 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { resetToSeed } from "./db";
 import { isOpen } from "./format";
 import { submittedValues, type FormState } from "./form-state";
 import { createRole, getRole } from "./roles";
-import { reset } from "./store";
-import { createSubmission, hasSubmitted, setSubmissionStatus } from "./submissions";
+import {
+  DuplicateSubmissionError,
+  createSubmission,
+  setSubmissionStatus,
+} from "./submissions";
 import { SUBMISSION_STATUSES, type SubmissionStatus } from "./types";
 import { fieldErrors, roleSchema, submissionSchema, type FieldErrors } from "./validation";
 
@@ -51,15 +55,21 @@ export async function submitApplication(
     );
   }
 
-  if (await hasSubmitted(roleId, parsed.data.email)) {
-    return invalid(
-      { email: "You have already submitted for this role" },
-      "We already have a submission from that email address.",
-      formData,
-    );
+  try {
+    await createSubmission({ ...parsed.data, roleId });
+  } catch (error) {
+    // The unique index is the authority here, so two simultaneous submissions
+    // cannot both slip past a check-then-insert.
+    if (error instanceof DuplicateSubmissionError) {
+      return invalid(
+        { email: "You have already submitted for this role" },
+        "We already have a submission from that email address.",
+        formData,
+      );
+    }
+    throw error;
   }
 
-  await createSubmission({ ...parsed.data, roleId });
   revalidateEverything();
 
   return {
@@ -104,7 +114,7 @@ export async function updateSubmissionStatus(formData: FormData): Promise<void> 
 
 /** Puts the demo data back, so the prototype can be handed round and reused. */
 export async function resetDemoData(): Promise<void> {
-  await reset();
+  await resetToSeed();
   revalidateEverything();
   redirect("/dashboard");
 }

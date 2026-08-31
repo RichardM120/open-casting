@@ -8,6 +8,10 @@ import { isOpen } from "@/lib/format";
 import { EMPTY_FILTERS, listRoles } from "@/lib/roles";
 import { countsByRole } from "@/lib/submissions";
 
+// Counts and listings come from the database on every request, so this page is
+// never prerendered — a deploy build does not need a reachable database.
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Casting dashboard",
   description: "Every role you have posted and every submission against it.",

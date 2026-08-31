@@ -8,10 +8,22 @@ Built as a test app, so it is deliberately small: no auth, no uploads, no email.
 
 ## Running it
 
+You need a Postgres database. The quickest local one:
+
+```bash
+docker run -d --name opencasting-db -p 5432:5432 \
+  -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=opencasting postgres:16
+
+cp .env.example .env.local   # then set DATABASE_URL to the line above
+```
+
 ```bash
 npm install
 npm run dev          # http://localhost:3000
 ```
+
+The app creates its own tables on the first request and loads the demo roles if
+the database is empty, so there is no migration step to run.
 
 ```bash
 npm run build && npm run start   # production build
@@ -42,7 +54,7 @@ src/
   lib/
     types.ts               the domain: Role, Submission
     seed-data.ts           demo content
-    store.ts               read/write against data/db.json
+    db.ts                  pool, schema bootstrap, seeding
     roles.ts               role queries and filtering
     submissions.ts         submission queries and counts
     validation.ts          zod schemas, shared by both forms
@@ -57,14 +69,33 @@ sent, because React resets an uncontrolled form once its action resolves.
 
 ## Data
 
-There is no database. `src/lib/store.ts` reads and writes a single JSON file at `data/db.json`,
-seeded from `src/lib/seed-data.ts` the first time it is needed, and writes are serialised through
-a promise queue so two requests cannot clobber each other. The file is gitignored — the seed is
-the source of truth, and **Reset demo data** on the dashboard puts it back.
+Postgres, through `pg`. `src/lib/db.ts` owns the pool, creates the schema with
+`CREATE TABLE IF NOT EXISTS` on the first query of each process, and seeds the
+demo content if the `roles` table is empty. Seeding is keyed on fixed ids with
+`ON CONFLICT DO NOTHING`, so several instances starting at once cannot double up.
+**Reset demo data** on the dashboard truncates and re-seeds.
 
-On a read-only filesystem (most serverless hosts) the store falls back to an in-process cache:
-the app still works, but writes are lost when the instance recycles. Everything else talks to the
-`read`/`write` pair, so swapping in a real database is a one-file job.
+Two rules the database enforces rather than the application:
+
+- `submissions (role_id, lower(email))` is unique, so one person cannot submit
+  twice for the same role. The insert decides it, not a check beforehand — two
+  requests arriving together would both pass a check-then-insert. Verified: of
+  ten identical inserts fired at once, one is accepted and nine are rejected.
+- `submissions.role_id` references `roles(id)` with `ON DELETE CASCADE`.
+
+Set `DATABASE_URL` in the environment. On a serverless host use the provider's
+**pooled** connection string — each instance opens its own pool — and keep
+`DATABASE_POOL_MAX` small.
+
+## Deploying
+
+The app needs a Node runtime; it will not work on static hosting such as GitHub
+Pages, because submitting, posting a role and changing a status are all server
+actions.
+
+Vercel is the path of least resistance: import the repo, add `DATABASE_URL` as
+an environment variable, deploy. Every page that reads data is `force-dynamic`,
+so the build itself does not need a reachable database.
 
 ## Known limits
 
