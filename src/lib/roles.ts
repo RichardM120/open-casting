@@ -1,5 +1,6 @@
 import "server-only";
 
+import type { SessionUser } from "./auth";
 import { query } from "./db";
 import {
   PAY_TYPES,
@@ -157,8 +158,58 @@ export async function listRecentRoles(limit: number): Promise<Role[]> {
   return rows.map(toRole);
 }
 
+/** The public listing: any role, by id. */
 export async function getRole(id: string): Promise<Role | null> {
   const rows = await query<RoleRow>(`SELECT ${COLUMNS} FROM roles WHERE id = $1`, [id]);
+  return rows[0] ? toRole(rows[0]) : null;
+}
+
+/**
+ * The one definition of what a dashboard shows, by role:
+ *
+ *  - director: only the roles they posted
+ *  - producer: every role posted under their company, across productions
+ *  - admin:    everything
+ *
+ * Returned as a fragment rather than applied here so every dashboard query —
+ * the listing, a single role, the submission counts — is scoped by the same
+ * rule and cannot drift apart.
+ */
+export function visibility(
+  viewer: SessionUser,
+  column = { owner: "owner_id", company: "company" },
+): { where: string; params: unknown[] } {
+  switch (viewer.role) {
+    case "admin":
+      return { where: "", params: [] };
+    case "producer":
+      return { where: `lower(${column.company}) = lower($1)`, params: [viewer.company] };
+    default:
+      return { where: `${column.owner} = $1`, params: [viewer.id] };
+  }
+}
+
+/** Every role this account may see on its dashboard. */
+export async function listVisibleRoles(viewer: SessionUser): Promise<Role[]> {
+  const { where, params } = visibility(viewer);
+  const rows = await query<RoleRow>(
+    `SELECT ${COLUMNS} FROM roles ${where ? `WHERE ${where}` : ""} ${ORDER}`,
+    params,
+  );
+  return rows.map(toRole);
+}
+
+/**
+ * A role only if this account may see it. Returning null rather than throwing
+ * lets the page render a 404, so someone guessing ids cannot tell an id that
+ * exists from one that does not.
+ */
+export async function getVisibleRole(id: string, viewer: SessionUser): Promise<Role | null> {
+  const { where, params } = visibility(viewer);
+  const rows = await query<RoleRow>(
+    `SELECT ${COLUMNS} FROM roles WHERE id = $${params.length + 1}${where ? ` AND ${where}` : ""}`,
+    [...params, id],
+  );
   return rows[0] ? toRole(rows[0]) : null;
 }
 
@@ -171,13 +222,13 @@ export async function countOpenRoles(): Promise<number> {
 
 export type NewRole = Omit<Role, "id" | "slug" | "postedAt">;
 
-export async function createRole(input: NewRole): Promise<Role> {
+export async function createRole(input: NewRole, ownerId: string): Promise<Role> {
   const rows = await query<RoleRow>(
     `INSERT INTO roles (
        id, slug, title, production, production_type, synopsis, character_brief,
        requirements, location, self_tape, age_min, age_max, pay_type, rate,
-       union_status, shoot_dates, deadline, casting_director, company
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+       union_status, shoot_dates, deadline, casting_director, company, owner_id
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
      RETURNING ${COLUMNS}`,
     [
       `rol_${crypto.randomUUID().slice(0, 12)}`,
@@ -199,6 +250,7 @@ export async function createRole(input: NewRole): Promise<Role> {
       input.deadline,
       input.castingDirector,
       input.company,
+      ownerId,
     ],
   );
   return toRole(rows[0]);

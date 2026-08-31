@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { PAY_TYPES, PRODUCTION_TYPES, UNION_STATUSES } from "./types";
+import { PAY_TYPES, PRODUCTION_TYPES, SIGNUP_ROLES, UNION_STATUSES } from "./types";
 
 const trimmed = z.string().trim();
 const optionalUrl = trimmed
@@ -78,3 +78,31 @@ export function fieldErrors(error: z.ZodError): FieldErrors {
   }
   return errors;
 }
+
+/* ------------------------------------------------------------- accounts -- */
+
+/**
+ * Length is the requirement that actually helps. Composition rules push people
+ * towards predictable substitutions without adding much.
+ */
+const password = z
+  .string()
+  .min(10, "Use at least 10 characters")
+  .max(200, "Keep it under 200 characters");
+
+export const signUpSchema = z.object({
+  name: trimmed.min(2, "Enter your name").max(80),
+  company: trimmed.min(2, "Name your company or agency").max(80),
+  email: trimmed.max(120).pipe(z.email("Enter a valid email address")),
+  password,
+  // Admin is absent by design — it comes from ADMIN_EMAILS, never from the form.
+  role: z.enum(SIGNUP_ROLES, { message: "Choose how you will use the board" }),
+});
+
+export const signInSchema = z.object({
+  email: trimmed.max(120).pipe(z.email("Enter a valid email address")),
+  password: z.string().min(1, "Enter your password").max(200),
+});
+
+export type SignUpInput = z.infer<typeof signUpSchema>;
+export type SignInInput = z.infer<typeof signInSchema>;

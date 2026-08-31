@@ -1,6 +1,8 @@
 import "server-only";
 
+import type { SessionUser } from "./auth";
 import { UNIQUE_VIOLATION, query } from "./db";
+import { visibility } from "./roles";
 import {
   SUBMISSION_STATUSES,
   type Submission,
@@ -75,10 +77,16 @@ export async function listSubmissions(roleId: string): Promise<Submission[]> {
   return rows.map(toSubmission);
 }
 
-/** Counts keyed by role id, so the dashboard needs a single round trip. */
-export async function countsByRole(): Promise<Map<string, SubmissionCounts>> {
+/** Counts keyed by role id, across whatever this account may see. */
+export async function countsByRole(viewer: SessionUser): Promise<Map<string, SubmissionCounts>> {
+  const { where, params } = visibility(viewer, { owner: "r.owner_id", company: "r.company" });
   const rows = await query<{ role_id: string; status: string; count: string }>(
-    "SELECT role_id, status, count(*)::text AS count FROM submissions GROUP BY role_id, status",
+    `SELECT s.role_id, s.status, count(*)::text AS count
+       FROM submissions s
+       JOIN roles r ON r.id = s.role_id
+      ${where ? `WHERE ${where}` : ""}
+      GROUP BY s.role_id, s.status`,
+    params,
   );
 
   const counts = new Map<string, SubmissionCounts>();
@@ -149,14 +157,23 @@ export async function createSubmission(input: NewSubmission): Promise<Submission
   }
 }
 
-/** Returns false when the submission no longer exists. */
+/**
+ * Returns false when the submission does not exist, or hangs off a role this
+ * account may not see. The permission check is part of the UPDATE rather than a
+ * query beforehand, so there is no window between deciding and writing.
+ */
 export async function setSubmissionStatus(
   id: string,
   status: SubmissionStatus,
+  viewer: SessionUser,
 ): Promise<boolean> {
+  const { where, params } = visibility(viewer);
   const rows = await query<{ id: string }>(
-    "UPDATE submissions SET status = $2 WHERE id = $1 RETURNING id",
-    [id, status],
+    `UPDATE submissions SET status = $${params.length + 2}
+      WHERE id = $${params.length + 1}
+        AND role_id IN (SELECT id FROM roles${where ? ` WHERE ${where}` : ""})
+      RETURNING id`,
+    [...params, id, status],
   );
   return rows.length > 0;
 }

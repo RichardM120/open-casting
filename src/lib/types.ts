@@ -67,6 +67,32 @@ export type Submission = {
   submittedAt: string;
 };
 
+/**
+ * What an account may see on the dashboard.
+ *  - director: the roles they posted, and nothing else
+ *  - producer: every role posted under their company
+ *  - admin:    everything
+ *
+ * `admin` is deliberately absent from SIGNUP_ROLES — it is granted only by the
+ * ADMIN_EMAILS environment variable, never chosen by whoever is registering.
+ */
+export const USER_ROLES = ["director", "producer", "admin"] as const;
+export type UserRole = (typeof USER_ROLES)[number];
+
+export const SIGNUP_ROLES = ["director", "producer"] as const;
+export type SignupRole = (typeof SIGNUP_ROLES)[number];
+
+export const ROLE_LABELS: Record<UserRole, string> = {
+  director: "Casting director",
+  producer: "Producer",
+  admin: "Admin",
+};
+
+export const ROLE_DESCRIPTIONS: Record<SignupRole, string> = {
+  director: "Post roles and review the submissions made against them.",
+  producer: "See every role posted under your company, across productions.",
+};
+
 export type Database = {
   roles: Role[];
   submissions: Submission[];

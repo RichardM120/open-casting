@@ -6,15 +6,17 @@ import { DeadlineBadge } from "@/components/role-card";
 import { StatusBadge } from "@/components/status-badge";
 import { SubmissionStatusControl } from "@/components/submission-status-control";
 import { Badge, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
+import { currentUser, requireUser } from "@/lib/auth";
 import { ageRange, formatDate, formatRelative, initials } from "@/lib/format";
-import { getRole } from "@/lib/roles";
+import { getVisibleRole } from "@/lib/roles";
 import { listSubmissions, summarise } from "@/lib/submissions";
 import type { Submission } from "@/lib/types";
 
 export async function generateMetadata({
   params,
 }: PageProps<"/dashboard/roles/[id]">): Promise<Metadata> {
-  const role = await getRole((await params).id);
+  const user = await currentUser();
+  const role = user ? await getVisibleRole((await params).id, user) : null;
   return { title: role ? `Submissions — ${role.title}` : "Role not found" };
 }
 
@@ -22,8 +24,12 @@ export default async function RoleSubmissionsPage({
   params,
   searchParams,
 }: PageProps<"/dashboard/roles/[id]">) {
+  const user = await requireUser(`/dashboard/roles/${(await params).id}`);
   const { id } = await params;
-  const role = await getRole(id);
+
+  // A role this account may not see is a 404, not a 403: someone guessing ids
+  // should not be able to tell which ones exist.
+  const role = await getVisibleRole(id, user);
   if (!role) notFound();
 
   const [submissions, query] = await Promise.all([listSubmissions(id), searchParams]);

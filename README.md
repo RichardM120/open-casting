@@ -4,7 +4,8 @@ A prototype casting-call board. Casting directors post a role with the brief spe
 performers browse and submit against it; every submission lands in one dashboard where it can be
 moved through New → Shortlisted → Callback → Declined.
 
-Built as a test app, so it is deliberately small: no auth, no uploads, no email.
+Performers need no account: browsing and submitting are open to anyone. The
+casting side signs in.
 
 ## Running it
 
@@ -38,9 +39,10 @@ npx tsc --noEmit                 # typecheck
 | `/` | Landing page with live counts and the roles closing soonest |
 | `/roles` | Browse and filter every open call |
 | `/roles/[id]` | The full brief, plus the submission form |
-| `/roles/new` | Post a role |
-| `/dashboard` | Every role posted, with submission counts |
+| `/roles/new` | Post a role — sign-in required |
+| `/dashboard` | The roles you may see, with submission counts — sign-in required |
 | `/dashboard/roles/[id]` | The submissions for one role, and their status |
+| `/login`, `/signup` | Password or Google sign-in for the casting side |
 
 ## How it is put together
 
@@ -94,6 +96,44 @@ instance opens its own pool. Keep `DATABASE_POOL_MAX` small.
 TLS is verified whenever the connection string asks for it. A provider using its
 own certificate authority can set `DATABASE_SSL_NO_VERIFY=1`, which keeps the
 connection encrypted but stops checking who is on the other end.
+
+## Accounts and roles
+
+Three roles, and one rule that decides everything:
+
+| Role | Sees on the dashboard |
+| --- | --- |
+| `director` | Only the roles they posted |
+| `producer` | Every role posted under their company, across productions |
+| `admin` | Everything |
+
+`src/lib/roles.ts` exports a single `visibility()` function returning a SQL
+fragment. The role listing, a single role, the submission counts and the status
+update all scope through it, so the rule cannot drift apart between the page
+that reads and the query that writes. A role an account may not see returns a
+404 rather than a 403, so guessing ids reveals nothing.
+
+**Admin is never chosen at sign-up.** It comes only from `ADMIN_EMAILS`, and is
+re-checked on every sign-in: add an address and that account is promoted, remove
+it and the account drops back to director.
+
+Passwords are hashed with scrypt (`node:crypto`, no dependency). Sessions are
+opaque random tokens in an httpOnly, SameSite=Lax cookie, with only a SHA-256
+hash of the token stored — reading the database does not yield a usable cookie.
+A failed sign-in is hashed against a decoy so response time does not reveal
+which addresses have accounts, and repeated failures are throttled per address.
+
+### Google sign-in
+
+Optional. Without `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET` the buttons are
+not rendered and password sign-in carries on. The flow is authorization code
+with PKCE (S256): `state` and the code verifier live in short-lived httpOnly
+cookies that are consumed on the callback, so a forged or replayed callback
+fails. A Google account whose email is **not verified** is refused, because
+accounts are matched to existing ones by email.
+
+Register the callback URL — `https://your-domain/api/auth/google/callback` — on
+the Google client for every origin you use, production and preview alike.
 
 ## Deploying
 

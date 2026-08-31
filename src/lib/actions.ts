@@ -3,7 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { resetToSeed } from "./db";
+import { requireUser } from "./auth";
 import { isOpen } from "./format";
 import { submittedValues, type FormState } from "./form-state";
 import { createRole, getRole } from "./roles";
@@ -84,6 +84,10 @@ export async function postRole(
   _previous: FormState,
   formData: FormData,
 ): Promise<FormState> {
+  // Checked here as well as on the page: the page redirect is for the person,
+  // this is what actually stops an unauthenticated request writing a role.
+  const user = await requireUser("/roles/new");
+
   const parsed = roleSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return invalid(
@@ -93,7 +97,7 @@ export async function postRole(
     );
   }
 
-  const role = await createRole(parsed.data);
+  const role = await createRole(parsed.data, user.id);
   revalidateEverything();
   redirect(`/dashboard/roles/${role.id}?posted=1`);
 }
@@ -103,18 +107,13 @@ function isSubmissionStatus(value: string): value is SubmissionStatus {
 }
 
 export async function updateSubmissionStatus(formData: FormData): Promise<void> {
+  const user = await requireUser("/dashboard");
   const id = String(formData.get("submissionId") ?? "");
   const status = String(formData.get("status") ?? "");
 
   if (!id || !isSubmissionStatus(status)) return;
 
-  await setSubmissionStatus(id, status);
+  // Silently a no-op when the submission hangs off a role this account cannot see.
+  await setSubmissionStatus(id, status, user);
   revalidateEverything();
-}
-
-/** Puts the demo data back, so the prototype can be handed round and reused. */
-export async function resetDemoData(): Promise<void> {
-  await resetToSeed();
-  revalidateEverything();
-  redirect("/dashboard");
 }

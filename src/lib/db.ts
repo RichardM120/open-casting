@@ -2,6 +2,7 @@ import "server-only";
 
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
 
+import { hashPassword, unusablePassword } from "./password";
 import { seedDatabase } from "./seed-data";
 
 /**
@@ -105,6 +106,58 @@ export async function transaction<T>(
 }
 
 const SCHEMA = `
+  CREATE TABLE IF NOT EXISTS users (
+    id            text PRIMARY KEY,
+    email         text        NOT NULL,
+    name          text        NOT NULL,
+    company       text        NOT NULL,
+    password_hash text        NOT NULL,
+    created_at    timestamptz NOT NULL DEFAULT now()
+  );
+
+  CREATE UNIQUE INDEX IF NOT EXISTS users_email_idx ON users (lower(email));
+
+  -- Added after the fact so an installation created before roles existed, or
+  -- before Google sign-in, migrates in place.
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS role text NOT NULL DEFAULT 'director';
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS google_sub text;
+
+  -- An account that only ever signs in with Google has no password.
+  ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
+
+  DO $$
+  BEGIN
+    ALTER TABLE users ADD CONSTRAINT users_role_check
+      CHECK (role IN ('director', 'producer', 'admin'));
+  EXCEPTION
+    WHEN duplicate_object THEN NULL;
+  END $$;
+
+  CREATE UNIQUE INDEX IF NOT EXISTS users_google_sub_idx
+    ON users (google_sub) WHERE google_sub IS NOT NULL;
+
+  -- Only the hash of a session token is kept, so reading this table does not
+  -- hand anyone a working cookie.
+  CREATE TABLE IF NOT EXISTS sessions (
+    token_hash text PRIMARY KEY,
+    user_id    text        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    expires_at timestamptz NOT NULL
+  );
+
+  CREATE INDEX IF NOT EXISTS sessions_user_idx ON sessions (user_id);
+  CREATE INDEX IF NOT EXISTS sessions_expiry_idx ON sessions (expires_at);
+
+  -- Failed sign-ins, so a public login form cannot be brute-forced freely.
+  CREATE TABLE IF NOT EXISTS login_attempts (
+    id           bigserial PRIMARY KEY,
+    email        text        NOT NULL,
+    attempted_at timestamptz NOT NULL DEFAULT now()
+  );
+
+  CREATE INDEX IF NOT EXISTS login_attempts_idx
+    ON login_attempts (lower(email), attempted_at);
+
   CREATE TABLE IF NOT EXISTS roles (
     id               text PRIMARY KEY,
     slug             text        NOT NULL,
@@ -144,8 +197,21 @@ const SCHEMA = `
     submitted_at timestamptz NOT NULL DEFAULT now()
   );
 
+  -- Added after the fact: a database seeded before accounts existed still has a
+  -- roles table without this column.
+  ALTER TABLE roles ADD COLUMN IF NOT EXISTS owner_id text;
+
+  DO $$
+  BEGIN
+    ALTER TABLE roles ADD CONSTRAINT roles_owner_fkey
+      FOREIGN KEY (owner_id) REFERENCES users(id) ON DELETE CASCADE;
+  EXCEPTION
+    WHEN duplicate_object THEN NULL;
+  END $$;
+
   CREATE INDEX IF NOT EXISTS submissions_role_idx ON submissions (role_id);
   CREATE INDEX IF NOT EXISTS roles_deadline_idx ON roles (deadline);
+  CREATE INDEX IF NOT EXISTS roles_owner_idx ON roles (owner_id);
 
   -- One submission per person per role, enforced by the database rather than by
   -- a check-then-insert that two concurrent requests could both pass.
@@ -168,6 +234,7 @@ function ensureSchema(): Promise<void> {
       "SELECT count(*)::text AS count FROM roles",
     );
     if (rows[0]?.count === "0") await seed();
+    await ensureDemoOwner();
   })().catch((error) => {
     // Let the next request retry rather than caching a failed bootstrap.
     globalThis.__openCastingSchema = undefined;
@@ -176,6 +243,19 @@ function ensureSchema(): Promise<void> {
 
   return globalThis.__openCastingSchema;
 }
+
+/**
+ * The sample listings need an owner, since the dashboard is scoped to one.
+ * Set DEMO_PASSWORD to sign in as this account and see a populated dashboard;
+ * without it the account exists but has a password nobody knows, and the roles
+ * are still publicly browsable.
+ */
+export const DEMO_USER = {
+  id: "usr_demo",
+  email: "demo@opencasting.app",
+  name: "Demo Casting",
+  company: "Open Casting Demo",
+} as const;
 
 /** Inserts the demo roles and submissions, skipping any that already exist. */
 async function seed(): Promise<void> {
@@ -187,16 +267,17 @@ async function seed(): Promise<void> {
         `INSERT INTO roles (
            id, slug, title, production, production_type, synopsis, character_brief,
            requirements, location, self_tape, age_min, age_max, pay_type, rate,
-           union_status, shoot_dates, deadline, casting_director, company, posted_at
+           union_status, shoot_dates, deadline, casting_director, company, posted_at,
+           owner_id
          ) VALUES (
-           $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20
+           $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21
          ) ON CONFLICT (id) DO NOTHING`,
         [
           role.id, role.slug, role.title, role.production, role.productionType,
           role.synopsis, role.characterBrief, role.requirements, role.location,
           role.selfTape, role.ageMin, role.ageMax, role.payType, role.rate,
           role.unionStatus, role.shootDates, role.deadline, role.castingDirector,
-          role.company, role.postedAt,
+          role.company, role.postedAt, DEMO_USER.id,
         ],
       );
     }
@@ -219,6 +300,32 @@ async function seed(): Promise<void> {
   });
 }
 
+/**
+ * Creates the demo account and claims the sample roles for it. Runs on every
+ * bootstrap, not just an empty database, so an installation seeded before
+ * accounts existed ends up in the same state as a fresh one.
+ */
+async function ensureDemoOwner(): Promise<void> {
+  const existing = await pool().query("SELECT 1 FROM users WHERE id = $1", [DEMO_USER.id]);
+
+  if (existing.rowCount === 0) {
+    // Hashing is deliberately slow, so only pay for it when the row is missing.
+    const passwordHash = await hashPassword(
+      process.env.DEMO_PASSWORD?.trim() || unusablePassword(),
+    );
+    await pool().query(
+      `INSERT INTO users (id, email, name, company, password_hash)
+       VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING`,
+      [DEMO_USER.id, DEMO_USER.email, DEMO_USER.name, DEMO_USER.company, passwordHash],
+    );
+  }
+
+  await pool().query(
+    "UPDATE roles SET owner_id = $1 WHERE owner_id IS NULL AND id = ANY($2)",
+    [DEMO_USER.id, seedDatabase().roles.map((role) => role.id)],
+  );
+}
+
 /** Drops everything and reloads the demo content. Used by the dashboard reset. */
 export async function resetToSeed(): Promise<void> {
   await ensureSchema();
@@ -226,4 +333,5 @@ export async function resetToSeed(): Promise<void> {
     await client.query("TRUNCATE submissions, roles");
   });
   await seed();
+  await ensureDemoOwner();
 }

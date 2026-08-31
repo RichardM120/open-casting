@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { DeadlineBadge } from "@/components/role-card";
-import { Badge, Button, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
-import { resetDemoData } from "@/lib/actions";
+import { Badge, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
+import { requireUser } from "@/lib/auth";
 import { isOpen } from "@/lib/format";
-import { EMPTY_FILTERS, listRoles } from "@/lib/roles";
+import { listVisibleRoles } from "@/lib/roles";
 import { countsByRole } from "@/lib/submissions";
 
 // Counts and listings come from the database on every request, so this page is
@@ -18,9 +18,10 @@ export const metadata: Metadata = {
 };
 
 export default async function DashboardPage() {
+  const user = await requireUser("/dashboard");
   const [roles, counts] = await Promise.all([
-    listRoles({ ...EMPTY_FILTERS, includeClosed: true }),
-    countsByRole(),
+    listVisibleRoles(user),
+    countsByRole(user),
   ]);
 
   const totals = roles.reduce(
@@ -43,8 +44,12 @@ export default async function DashboardPage() {
           <Eyebrow>Casting dashboard</Eyebrow>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Your roles</h1>
           <p className="mt-3 max-w-2xl text-muted">
-            Everything posted, with what has come in against it. Open a role to read the
-            submissions.
+            {user.role === "admin"
+              ? "Every role on the board, across all companies."
+              : user.role === "producer"
+                ? `Every role posted under ${user.company}, across productions.`
+                : "The roles you have posted, with what has come in against them."}{" "}
+            Open a role to read the submissions.
           </p>
         </div>
         <ButtonLink href="/roles/new">Post a role</ButtonLink>
@@ -101,14 +106,6 @@ export default async function DashboardPage() {
         </div>
       )}
 
-      <form action={resetDemoData} className="mt-12 flex items-center gap-4 border-t border-line pt-6">
-        <Button type="submit" variant="ghost" size="sm">
-          Reset demo data
-        </Button>
-        <p className="text-sm text-faint">
-          Puts the sample roles and submissions back the way they started.
-        </p>
-      </form>
     </div>
   );
 }

@@ -1,0 +1,221 @@
+"use client";
+
+import Link from "next/link";
+import { useActionState } from "react";
+
+import { signIn, signUp } from "@/lib/auth-actions";
+import { IDLE_FORM_STATE } from "@/lib/form-state";
+import { ROLE_DESCRIPTIONS, SIGNUP_ROLES } from "@/lib/types";
+
+import { Button, Field, Input, cx } from "./ui";
+
+const ROLE_HEADINGS: Record<(typeof SIGNUP_ROLES)[number], string> = {
+  director: "I cast roles",
+  producer: "I oversee a company",
+};
+
+function GoogleButton({ next, label }: { next: string; label: string }) {
+  return (
+    <>
+      <a
+        href={`/api/auth/google?next=${encodeURIComponent(next)}`}
+        className="flex w-full items-center justify-center gap-2.5 rounded-full border border-line-strong bg-raised px-5 py-2.5 text-sm font-medium transition-colors hover:border-accent hover:text-accent"
+      >
+        <GoogleMark />
+        {label}
+      </a>
+      <div className="flex items-center gap-3 text-xs text-faint">
+        <span className="h-px flex-1 bg-line" />
+        or
+        <span className="h-px flex-1 bg-line" />
+      </div>
+    </>
+  );
+}
+
+function GoogleMark() {
+  return (
+    <svg viewBox="0 0 18 18" aria-hidden="true" className="size-4">
+      <path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.92c1.7-1.57 2.68-3.88 2.68-6.62Z" />
+      <path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.92-2.26c-.81.54-1.84.86-3.04.86-2.34 0-4.32-1.58-5.03-3.7H.96v2.33A9 9 0 0 0 9 18Z" />
+      <path fill="#FBBC05" d="M3.97 10.72a5.4 5.4 0 0 1 0-3.44V4.95H.96a9 9 0 0 0 0 8.1l3.01-2.33Z" />
+      <path fill="#EA4335" d="M9 3.58c1.32 0 2.5.45 3.44 1.35l2.58-2.59C13.46.9 11.43 0 9 0A9 9 0 0 0 .96 4.95l3.01 2.33C4.68 5.16 6.66 3.58 9 3.58Z" />
+    </svg>
+  );
+}
+
+export function SignInForm({
+  next,
+  google,
+  notice,
+}: {
+  next: string;
+  google: boolean;
+  notice?: string;
+}) {
+  const [state, formAction, pending] = useActionState(signIn, IDLE_FORM_STATE);
+  const { errors, values } = state;
+
+  return (
+    <form action={formAction} className="flex flex-col gap-4">
+      <input type="hidden" name="next" value={next} />
+
+      {notice ? (
+        <p className="rounded-xl border border-line bg-danger-soft px-4 py-3 text-sm text-danger" role="alert">
+          {notice}
+        </p>
+      ) : null}
+
+      {google ? <GoogleButton next={next} label="Continue with Google" /> : null}
+
+      <Field label="Email" htmlFor="email" error={errors.email}>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          defaultValue={values.email ?? ""}
+          required
+        />
+      </Field>
+      <Field label="Password" htmlFor="password" error={errors.password}>
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          autoComplete="current-password"
+          required
+        />
+      </Field>
+
+      <Button type="submit" disabled={pending} className="mt-2 w-full">
+        {pending ? "Signing in…" : "Sign in"}
+      </Button>
+
+      {state.status === "error" ? (
+        <p className="text-sm text-danger" role="alert">
+          {state.message}
+        </p>
+      ) : null}
+
+      <p className="mt-2 text-sm text-muted">
+        No account yet?{" "}
+        <Link href="/signup" className="text-accent underline-offset-4 hover:underline">
+          Create one
+        </Link>
+      </p>
+    </form>
+  );
+}
+
+export function SignUpForm({ next, google }: { next: string; google: boolean }) {
+  const [state, formAction, pending] = useActionState(signUp, IDLE_FORM_STATE);
+  const { errors, values } = state;
+  const selectedRole = values.role ?? "director";
+
+  return (
+    <form action={formAction} className="flex flex-col gap-4">
+      <input type="hidden" name="next" value={next} />
+
+      {google ? <GoogleButton next={next} label="Sign up with Google" /> : null}
+
+      <fieldset className="flex flex-col gap-2">
+        <legend className="text-sm font-medium text-text">How will you use the board?</legend>
+        <div className="mt-1 grid gap-2">
+          {SIGNUP_ROLES.map((role) => (
+            <label
+              key={role}
+              className={cx(
+                "flex cursor-pointer gap-3 rounded-xl border p-3.5 transition-colors",
+                selectedRole === role
+                  ? "border-accent bg-accent-soft"
+                  : "border-line bg-raised hover:border-line-strong",
+              )}
+            >
+              <input
+                type="radio"
+                name="role"
+                value={role}
+                defaultChecked={selectedRole === role}
+                className="mt-0.5 size-4 accent-accent"
+              />
+              <span>
+                <span className="block text-sm font-medium">{ROLE_HEADINGS[role]}</span>
+                <span className="mt-0.5 block text-xs text-muted">
+                  {ROLE_DESCRIPTIONS[role]}
+                </span>
+              </span>
+            </label>
+          ))}
+        </div>
+        {errors.role ? <p className="text-xs text-danger">{errors.role}</p> : null}
+      </fieldset>
+
+      <Field label="Your name" htmlFor="name" error={errors.name}>
+        <Input
+          id="name"
+          name="name"
+          autoComplete="name"
+          defaultValue={values.name ?? ""}
+          required
+        />
+      </Field>
+      <Field
+        label="Company or agency"
+        htmlFor="company"
+        hint="Shown on the roles you post."
+        error={errors.company}
+      >
+        <Input
+          id="company"
+          name="company"
+          autoComplete="organization"
+          defaultValue={values.company ?? ""}
+          required
+        />
+      </Field>
+      <Field label="Email" htmlFor="email" error={errors.email}>
+        <Input
+          id="email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          defaultValue={values.email ?? ""}
+          required
+        />
+      </Field>
+      <Field
+        label="Password"
+        htmlFor="password"
+        hint="At least 10 characters. Length beats punctuation."
+        error={errors.password}
+      >
+        <Input
+          id="password"
+          name="password"
+          type="password"
+          autoComplete="new-password"
+          minLength={10}
+          required
+        />
+      </Field>
+
+      <Button type="submit" disabled={pending} className="mt-2 w-full">
+        {pending ? "Creating account…" : "Create account"}
+      </Button>
+
+      {state.status === "error" ? (
+        <p className="text-sm text-danger" role="alert">
+          {state.message}
+        </p>
+      ) : null}
+
+      <p className="mt-2 text-sm text-muted">
+        Already have an account?{" "}
+        <Link href="/login" className="text-accent underline-offset-4 hover:underline">
+          Sign in
+        </Link>
+      </p>
+    </form>
+  );
+}

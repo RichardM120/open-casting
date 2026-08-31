@@ -3,15 +3,17 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { signOut } from "@/lib/auth-actions";
+import type { SessionUser } from "@/lib/auth";
+
 import { ButtonLink, cx } from "./ui";
 
-const NAV = [
-  { href: "/roles", label: "Browse roles" },
-  { href: "/dashboard", label: "Casting dashboard" },
-] as const;
+const PUBLIC_NAV = [{ href: "/roles", label: "Browse roles" }] as const;
+const OWNER_NAV = [{ href: "/dashboard", label: "Casting dashboard" }] as const;
 
-export function SiteHeader() {
+export function SiteHeader({ user }: { user: SessionUser | null }) {
   const pathname = usePathname();
+  const nav = user ? [...PUBLIC_NAV, ...OWNER_NAV] : PUBLIC_NAV;
 
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-ink/85 backdrop-blur">
@@ -24,7 +26,7 @@ export function SiteHeader() {
         </Link>
 
         <nav className="hidden items-center gap-1 sm:flex">
-          {NAV.map((item) => {
+          {nav.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
               <Link
@@ -42,9 +44,38 @@ export function SiteHeader() {
           })}
         </nav>
 
-        <ButtonLink href="/roles/new" size="sm" className="ml-auto">
-          Post a role
-        </ButtonLink>
+        <div className="ml-auto flex items-center gap-3">
+          {user ? (
+            <>
+              <span className="hidden text-sm text-muted md:inline" title={user.email}>
+                {user.company}
+              </span>
+              <ButtonLink href="/roles/new" size="sm">
+                Post a role
+              </ButtonLink>
+              <form action={signOut}>
+                <button
+                  type="submit"
+                  className="rounded-full px-3 py-1.5 text-sm text-muted transition-colors hover:text-text"
+                >
+                  Sign out
+                </button>
+              </form>
+            </>
+          ) : (
+            <>
+              <Link
+                href="/login"
+                className="rounded-full px-3 py-1.5 text-sm text-muted transition-colors hover:text-text"
+              >
+                Sign in
+              </Link>
+              <ButtonLink href="/roles/new" size="sm">
+                Post a role
+              </ButtonLink>
+            </>
+          )}
+        </div>
       </div>
     </header>
   );
