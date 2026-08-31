@@ -83,9 +83,17 @@ Two rules the database enforces rather than the application:
   ten identical inserts fired at once, one is accepted and nine are rejected.
 - `submissions.role_id` references `roles(id)` with `ON DELETE CASCADE`.
 
-Set `DATABASE_URL` in the environment. On a serverless host use the provider's
-**pooled** connection string — each instance opens its own pool — and keep
-`DATABASE_POOL_MAX` small.
+Set `DATABASE_URL` in the environment. If a hosted integration provisions
+`POSTGRES_URL`, `POSTGRES_PRISMA_URL` or `POSTGRES_URL_NON_POOLING` instead —
+Vercel's Postgres and Neon integrations set `POSTGRES_URL` — the app reads those
+too, in that order, so a one-click database works without renaming anything.
+
+On a serverless host use the provider's **pooled** connection string; each
+instance opens its own pool. Keep `DATABASE_POOL_MAX` small.
+
+TLS is verified whenever the connection string asks for it. A provider using its
+own certificate authority can set `DATABASE_SSL_NO_VERIFY=1`, which keeps the
+connection encrypted but stops checking who is on the other end.
 
 ## Deploying
 

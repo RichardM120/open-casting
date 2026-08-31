@@ -14,28 +14,53 @@ declare global {
   var __openCastingSchema: Promise<void> | undefined;
 }
 
+/**
+ * `DATABASE_URL` is what the README documents and what to set by hand. The rest
+ * are the names hosted integrations provision automatically — Vercel's Postgres
+ * and Neon integrations set `POSTGRES_URL` rather than `DATABASE_URL`, so
+ * reading both means a one-click database works without renaming anything.
+ * Pooled strings come first: every serverless instance opens its own pool.
+ */
+const CONNECTION_VARIABLES = [
+  "DATABASE_URL",
+  "POSTGRES_URL",
+  "POSTGRES_PRISMA_URL",
+  "POSTGRES_URL_NON_POOLING",
+] as const;
+
 function connectionString(): string {
-  const url = process.env.DATABASE_URL;
-  if (!url) {
-    throw new Error(
-      "DATABASE_URL is not set. Open Casting needs a Postgres database — see the " +
-        "Database section of the README for a local one-liner and the hosted setup.",
-    );
+  for (const name of CONNECTION_VARIABLES) {
+    const value = process.env[name]?.trim();
+    if (value) return value;
   }
-  return url;
+
+  throw new Error(
+    `No Postgres connection string. Set DATABASE_URL (or one of ${CONNECTION_VARIABLES.slice(1).join(", ")}) — ` +
+      "see the Database section of the README for a local one-liner and the hosted setup.",
+  );
+}
+
+/**
+ * Verifies the server certificate by default; hosted Postgres providers use
+ * publicly trusted CAs. A provider with its own CA can opt out by setting
+ * `DATABASE_SSL_NO_VERIFY=1`, which keeps the connection encrypted but stops
+ * checking who is on the other end.
+ */
+function sslOption(url: string): boolean | { rejectUnauthorized: false } | undefined {
+  if (!/\bsslmode=(require|prefer|verify-ca|verify-full)\b/.test(url)) return undefined;
+  return process.env.DATABASE_SSL_NO_VERIFY === "1" ? { rejectUnauthorized: false } : true;
 }
 
 function pool(): Pool {
-  globalThis.__openCastingPool ??= new Pool({
-    connectionString: connectionString(),
-    // Hosted Postgres (Neon, Supabase, Vercel) terminates TLS with a certificate
-    // the container does not have a root for; the connection is still encrypted.
-    ssl: /\bsslmode=(require|prefer)\b/.test(connectionString())
-      ? { rejectUnauthorized: false }
-      : undefined,
-    max: Number(process.env.DATABASE_POOL_MAX ?? 5),
-    idleTimeoutMillis: 10_000,
-  });
+  if (!globalThis.__openCastingPool) {
+    const url = connectionString();
+    globalThis.__openCastingPool = new Pool({
+      connectionString: url,
+      ssl: sslOption(url),
+      max: Number(process.env.DATABASE_POOL_MAX ?? 5),
+      idleTimeoutMillis: 10_000,
+    });
+  }
   return globalThis.__openCastingPool;
 }
 
