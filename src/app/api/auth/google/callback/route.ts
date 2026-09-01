@@ -1,7 +1,5 @@
 import { sessionCookies } from "@/lib/auth";
 import { redirectTo } from "@/lib/redirect";
-import { sendEmail } from "@/lib/email";
-import { CHALLENGE_WINDOW_MINUTES, createChallenge, needsSecondFactor } from "@/lib/mfa";
 import {
   OAuthError,
   consumeHandshake,
@@ -32,9 +30,10 @@ export async function GET(request: Request) {
 
     const profile = await fetchGoogleProfile(await exchangeCode(code, verifier, url));
 
-    // Google can prove who someone is; it cannot grant them an account. Signing
-    // in this way works only for an address the administrator has already set
-    // up — otherwise any Google address in the world would be a way in.
+    // Google proves who someone is; it does not hand out accounts. This links to
+    // an account that already exists, or creates one only for an address named
+    // in ADMIN_EMAILS — which the operator of the deployment has already
+    // authorised. Any other Google address is refused.
     const linked = await linkGoogleUser(profile);
     if (!linked) {
       return backToLogin(
@@ -51,27 +50,15 @@ export async function GET(request: Request) {
     // A Google account has no company name until setup asks for one.
     const destination = user.onboarded_at ? next : "/welcome";
 
-    // Google proves the address, not the second factor. An account that needs
-    // one needs it here too, or this button is simply the way around it.
-    if (needsSecondFactor(user)) {
-      const token = await createChallenge(user.id, destination);
-      const delivery = await sendEmail({
-        to: user.email,
-        subject: "Your Open Casting sign-in link",
-        text: [
-          "Someone signed in to Open Casting with your Google account and needs to confirm it is you.",
-          "",
-          `Open this link to finish signing in. It works once, and expires in ${CHALLENGE_WINDOW_MINUTES} minutes:`,
-          "",
-          `${url.origin}/login/verify?token=${encodeURIComponent(token)}`,
-        ].join("\n"),
-      });
-
-      if (!delivery.delivered) {
-        return backToLogin(url.origin, `The sign-in link could not be sent — ${delivery.reason}.`);
-      }
-      return redirectTo(`/login/sent?to=${encodeURIComponent(user.email)}`);
-    }
+    // No emailed link on this path, and the reason is worth stating: the link
+    // would go to the same mailbox that just authenticated. Whoever holds the
+    // Google account holds the inbox, so sending one adds friction and no
+    // security — it is only a second factor when it reaches somewhere the first
+    // factor does not. Password sign-in still requires it, because a password
+    // and a mailbox are genuinely two different things.
+    //
+    // What this does rely on is Google having verified the address, which
+    // `fetchGoogleProfile` refuses to proceed without.
 
     const response = redirectTo(destination);
     for (const cookie of await sessionCookies(user.id, user.role)) {

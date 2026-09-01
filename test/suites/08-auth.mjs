@@ -93,6 +93,19 @@ section("6 a director signs in with a password alone");
   await c.close();
 }
 
+section("6b the Google callback refuses anything it did not start");
+{
+  const { c, p } = await ctx();
+  // No handshake cookies, so no state to consume.
+  await p.goto(`${BASE}/api/auth/google/callback?code=made-up`, { waitUntil: "networkidle" });
+  check("a callback with no handshake is refused", p.url().includes("/login?error="), p.url());
+  check("and starts no session", (await p.context().cookies()).every((x) => x.name !== "oc_session"));
+
+  await p.goto(`${BASE}/api/auth/google/callback?error=access_denied`, { waitUntil: "networkidle" });
+  check("a refusal at Google is reported, not crashed on", (await p.getByText(/cancelled/i).count()) > 0);
+  await c.close();
+}
+
 section("7 the server decides, not the cookie");
 {
   // Suspend the director while they hold a valid, correctly signed context.

@@ -123,6 +123,19 @@ One entry point, `/login`, and four layers behind it.
 **1. Password.** scrypt, with a decoy hash when the address is unknown so response
 time does not reveal which addresses have accounts, and a throttle on failures.
 
+**Google sign-in.** Links to an account that already exists, and creates one
+*only* for an address named in `ADMIN_EMAILS` — which whoever controls the
+deployment has already authorised. Any other Google address is refused, so the
+button is not a way around "no self-registration". It never runs without Google
+having verified the address.
+
+It does not then ask for an emailed link, and the reason is worth stating: that
+link would go to the same mailbox that just authenticated. Whoever holds the
+Google account holds the inbox, so it would add friction and no security — a
+second factor only counts when it reaches somewhere the first does not. Password
+sign-in still requires one, because a password and a mailbox are two different
+things.
+
 **2. A second factor, for accounts that can affect other people.** Admins always;
 anyone else if `mfa_required` is set on them. The password alone starts nothing:
 it issues a one-time link, emailed, good for 15 minutes and one use, spent inside

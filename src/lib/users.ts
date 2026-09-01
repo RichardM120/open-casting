@@ -140,28 +140,51 @@ export async function findUserByGoogleSub(sub: string): Promise<User | null> {
 }
 
 /**
- * Links a Google identity to an account that already exists, and returns null
- * when there is none.
+ * Links a Google identity to an account, and creates one only for an address on
+ * the admin allowlist.
  *
- * It deliberately does not create one. Nobody can register themselves here —
- * the administrator makes every account — and a Google button that quietly
- * created an account for any Google address would be exactly that hole,
- * reopened. Linking on a matching email is safe only because Google tells us
- * whether it verified the address; the caller must refuse an unverified one.
+ * Nobody registers themselves here — the administrator makes every account — so
+ * a Google button that created an account for any Google address would reopen
+ * exactly that hole. The one exception is an address already named in
+ * `ADMIN_EMAILS`: that env variable is the sole source of admin, so an address
+ * on it has already been authorised by whoever controls the deployment, and
+ * refusing to create the account would only mean the administrator cannot get
+ * in by the route they were told to use.
+ *
+ * Linking on a matching email is safe only because Google tells us whether it
+ * verified the address; the caller must refuse an unverified one.
  */
 export async function linkGoogleUser(profile: {
   sub: string;
   email: string;
+  name?: string;
 }): Promise<User | null> {
   const linked = await findUserByGoogleSub(profile.sub);
   if (linked) return linked;
 
   const existing = await findUserByEmail(profile.email);
-  if (!existing) return null;
+  if (existing) {
+    const rows = await query<User>(
+      `UPDATE users SET google_sub = $2 WHERE id = $1 RETURNING ${COLUMNS}`,
+      [existing.id, profile.sub],
+    );
+    return rows[0];
+  }
+
+  if (!isAdminEmail(profile.email)) return null;
 
   const rows = await query<User>(
-    `UPDATE users SET google_sub = $2 WHERE id = $1 RETURNING ${COLUMNS}`,
-    [existing.id, profile.sub],
+    `INSERT INTO users (id, email, name, company, role, google_sub, password_hash)
+     VALUES ($1, $2, $3, $4, 'admin', $5, NULL)
+     RETURNING ${COLUMNS}`,
+    [
+      `usr_${crypto.randomUUID().slice(0, 12)}`,
+      profile.email,
+      profile.name?.trim() || profile.email.split("@")[0],
+      // Asked for on the way through setup; there is nothing to guess here.
+      "Open Casting",
+      profile.sub,
+    ],
   );
   return rows[0];
 }
