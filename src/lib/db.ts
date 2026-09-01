@@ -51,23 +51,40 @@ function connectionString(): string {
   );
 }
 
+type SslOption = boolean | { rejectUnauthorized: false } | undefined;
+
 /**
- * Verifies the server certificate by default; hosted Postgres providers use
- * publicly trusted CAs. A provider with its own CA can opt out by setting
- * `DATABASE_SSL_NO_VERIFY=1`, which keeps the connection encrypted but stops
- * checking who is on the other end.
+ * The connection string with TLS decided here rather than by its `sslmode`.
+ *
+ * pg lets a URL's own `sslmode` override whatever `ssl` option it is handed,
+ * so the mode is read off the string and taken out, and the option is the one
+ * that counts. Any mode asking for TLS gets it with the certificate verified —
+ * hosted providers use publicly trusted CAs — which is what pg 8 does for
+ * every mode, warning on each cold start that pg 9 will stop doing so for
+ * `require`, the mode providers hand out. A provider with its own CA can opt
+ * out with `DATABASE_SSL_NO_VERIFY=1` (or pg's `sslmode=no-verify`), which
+ * keeps the connection encrypted but stops checking who is on the other end.
+ * A string naming a root certificate is left to pg, which verifies against it.
  */
-function sslOption(url: string): boolean | { rejectUnauthorized: false } | undefined {
-  if (!/\bsslmode=(require|prefer|verify-ca|verify-full)\b/.test(url)) return undefined;
-  return process.env.DATABASE_SSL_NO_VERIFY === "1" ? { rejectUnauthorized: false } : true;
+function connection(): { connectionString: string; ssl: SslOption } {
+  const raw = connectionString();
+  const mode = /[?&]sslmode=([^&]*)/.exec(raw)?.[1];
+  if (mode === undefined) return { connectionString: raw, ssl: undefined };
+
+  const stripped = raw.replace(/([?&])sslmode=[^&]*(&?)/, (_match, lead, tail) => (tail ? lead : ""));
+  const ssl: SslOption =
+    mode === "disable"
+      ? false
+      : mode === "no-verify" || process.env.DATABASE_SSL_NO_VERIFY === "1"
+        ? { rejectUnauthorized: false }
+        : true;
+  return { connectionString: stripped, ssl };
 }
 
 function pool(): Pool {
   if (!globalThis.__openCastingPool) {
-    const url = connectionString();
     globalThis.__openCastingPool = new Pool({
-      connectionString: url,
-      ssl: sslOption(url),
+      ...connection(),
       max: Number(process.env.DATABASE_POOL_MAX ?? 5),
       idleTimeoutMillis: 10_000,
     });

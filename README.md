@@ -144,9 +144,12 @@ too, in that order, so a one-click database works without renaming anything.
 On a serverless host use the provider's **pooled** connection string; each
 instance opens its own pool. Keep `DATABASE_POOL_MAX` small.
 
-TLS is verified whenever the connection string asks for it. A provider using its
-own certificate authority can set `DATABASE_SSL_NO_VERIFY=1`, which keeps the
-connection encrypted but stops checking who is on the other end.
+TLS is verified whenever the connection string asks for it, whichever `sslmode`
+it names: the app decides that itself rather than leaving it to the driver, so
+`sslmode=require`, the mode providers hand out, keeps verifying the certificate
+when pg 9 stops doing so. A provider using its own certificate authority can set
+`DATABASE_SSL_NO_VERIFY=1`, which keeps the connection encrypted but stops
+checking who is on the other end.
 
 ## Before launch
 
