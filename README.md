@@ -116,6 +116,37 @@ TLS is verified whenever the connection string asks for it. A provider using its
 own certificate authority can set `DATABASE_SSL_NO_VERIFY=1`, which keeps the
 connection encrypted but stops checking who is on the other end.
 
+## Signing in
+
+One entry point, `/login`, and four layers behind it.
+
+**1. Password.** scrypt, with a decoy hash when the address is unknown so response
+time does not reveal which addresses have accounts, and a throttle on failures.
+
+**2. A second factor, for accounts that can affect other people.** Admins always;
+anyone else if `mfa_required` is set on them. The password alone starts nothing:
+it issues a one-time link, emailed, good for 15 minutes and one use, spent inside
+a single `UPDATE` so two clicks cannot both win. Asking for another voids the
+first. Google sign-in goes through the same gate — it proves an address, not a
+second factor, and skipping it there would make the button the way around it.
+
+**3. The edge.** The proxy holds a signed cookie carrying the account id and role,
+verified with HMAC-SHA256 through Web Crypto — no dependency, one implementation
+for both runtimes. It gates `/dashboard/**`, and `/dashboard/accounts` for admins
+only. With no `AUTH_SECRET` it fails closed.
+
+**4. The server, which is the one that decides.** The proxy runs on the Edge
+runtime and **cannot reach Postgres**, so the signed cookie is a cache and can
+only be stale — it cannot know an account was suspended a minute ago, had its
+access ended, or changed role. Every page and every action calls `currentUser()`,
+which reads the session, the suspension and the end date from the database on
+each request. The edge check exists to turn away an obviously-wrong request
+before rendering it, never to admit one.
+
+Set `AUTH_SECRET` (32+ characters) and `RESEND_API_KEY`, or nobody can sign in to
+an admin account at all: a second factor that is skipped when the mail provider
+is down is decorative, so a failure to send is reported as a failure.
+
 ## Who can get in
 
 Open Casting is not a public board. There is no listing to browse, no search, and

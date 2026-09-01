@@ -35,6 +35,11 @@ assertion, which is what would catch a Content Security Policy regression.
 - **Rate limiting** on the open write path — submissions, by client address — and failed
   sign-ins by email. The submission form takes no account and writes to the database, so
   it needed a ceiling. Sign-ups no longer exist to throttle.
+- **A second factor on privileged accounts** — a one-time emailed link, 15 minutes,
+  single use, spent in one `UPDATE`. Required for admins and for anyone flagged, and
+  applied to Google sign-in too.
+- **Edge role checks that fail closed**, over a signed context cookie, with the
+  database still deciding on every request behind them.
 - **No self-registration.** Accounts come from the administrator only, and the Google
   callback refuses an address that has no account rather than creating one.
 - **`robots.txt` disallows everything**, and the pages reachable by share token are

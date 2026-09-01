@@ -17,6 +17,8 @@ export type User = {
   max_roles_per_session: number | null;
   /** yyyy-mm-dd. Past this the account cannot sign in. Null means open-ended. */
   access_until: string | null;
+  /** Admins always need a second factor; this turns it on for anyone else. */
+  mfa_required: boolean;
 };
 
 /** The commercial arrangement, as the administrator sets it. */
@@ -30,7 +32,7 @@ type UserRow = User & { password_hash: string | null };
 
 const COLUMNS = `
   id, email, name, company, role, suspended_at, onboarded_at,
-  max_sessions, max_roles_per_session,
+  max_sessions, max_roles_per_session, mfa_required,
   to_char(access_until, 'YYYY-MM-DD') AS access_until
 `;
 
@@ -197,7 +199,7 @@ export type Account = User & { roles: number; submissions: number; sessions: num
 export async function listAccounts(): Promise<Account[]> {
   return query<Account>(
     `SELECT u.id, u.email, u.name, u.company, u.role, u.suspended_at, u.onboarded_at,
-            u.max_sessions, u.max_roles_per_session,
+            u.max_sessions, u.max_roles_per_session, u.mfa_required,
             to_char(u.access_until, 'YYYY-MM-DD') AS access_until,
             count(DISTINCT r.id)::int  AS roles,
             count(DISTINCT sc.id)::int AS sessions,

@@ -7,10 +7,32 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 
 import { query } from "./db";
+import { signContext } from "./token";
 import type { UserRole } from "./types";
 
-const SESSION_COOKIE = "oc_session";
+export const SESSION_COOKIE = "oc_session";
+/**
+ * The signed context the proxy reads. It sits alongside the session cookie and
+ * says who this is and what role they hold, so the edge can turn away an
+ * obviously-wrong request without a database it cannot reach.
+ */
+export const CONTEXT_COOKIE = "oc_ctx";
 const SESSION_DAYS = 30;
+
+/**
+ * The key the context cookie is signed with. Deliberately fails loudly rather
+ * than falling back to a default: a predictable signing key would let anyone
+ * mint a cookie claiming to be an admin, and the proxy would believe it.
+ */
+export function authSecret(): string {
+  const secret = process.env.AUTH_SECRET?.trim();
+  if (!secret || secret.length < 32) {
+    throw new Error(
+      "AUTH_SECRET must be set to at least 32 characters. Generate one with: openssl rand -base64 32",
+    );
+  }
+  return secret;
+}
 
 /* -------------------------------------------------------------- sessions -- */
 
@@ -22,7 +44,28 @@ function tokenHash(token: string): string {
   return createHash("sha256").update(token).digest("hex");
 }
 
-export async function startSession(userId: string): Promise<void> {
+export type SessionCookie = {
+  name: string;
+  value: string;
+  httpOnly: true;
+  secure: boolean;
+  sameSite: "lax";
+  path: "/";
+  expires: Date;
+};
+
+/**
+ * Records a session and returns the cookies that carry it.
+ *
+ * Returned rather than set, because where they are set differs: a Server Action
+ * writes through `cookies()`, while a Route Handler must put them on the
+ * `NextResponse` it returns — cookies set through `cookies()` there do not
+ * reach the browser, which is a silent failure rather than an error.
+ */
+export async function sessionCookies(
+  userId: string,
+  role: UserRole,
+): Promise<SessionCookie[]> {
   const token = randomBytes(32).toString("base64url");
   const expiresAt = new Date(Date.now() + SESSION_DAYS * 86_400_000);
 
@@ -31,13 +74,33 @@ export async function startSession(userId: string): Promise<void> {
     [tokenHash(token), userId, expiresAt.toISOString()],
   );
 
-  (await cookies()).set(SESSION_COOKIE, token, {
-    httpOnly: true,
+  const shared = {
+    httpOnly: true as const,
     secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
-    path: "/",
+    sameSite: "lax" as const,
+    path: "/" as const,
     expires: expiresAt,
-  });
+  };
+
+  return [
+    { name: SESSION_COOKIE, value: token, ...shared },
+    {
+      name: CONTEXT_COOKIE,
+      value: await signContext(
+        { sub: userId, role, exp: Math.floor(expiresAt.getTime() / 1000) },
+        authSecret(),
+      ),
+      ...shared,
+    },
+  ];
+}
+
+/** Starts a session from a Server Action, where `cookies()` is writable. */
+export async function startSession(userId: string, role: UserRole): Promise<void> {
+  const store = await cookies();
+  for (const cookie of await sessionCookies(userId, role)) {
+    store.set(cookie.name, cookie.value, cookie);
+  }
 }
 
 export async function endSession(): Promise<void> {
@@ -47,6 +110,7 @@ export async function endSession(): Promise<void> {
     await query("DELETE FROM sessions WHERE token_hash = $1", [tokenHash(token)]);
   }
   store.delete(SESSION_COOKIE);
+  store.delete(CONTEXT_COOKIE);
 }
 
 export type SessionUser = {

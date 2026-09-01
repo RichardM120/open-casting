@@ -168,6 +168,24 @@ const SCHEMA = `
   CREATE INDEX IF NOT EXISTS sessions_user_idx ON sessions (user_id);
   CREATE INDEX IF NOT EXISTS sessions_expiry_idx ON sessions (expires_at);
 
+  -- Second-factor challenges. A password alone does not start a session for an
+  -- account that requires one: this row does, once the emailed link is opened.
+  -- Only a hash of the link's token is kept, for the same reason as sessions.
+  CREATE TABLE IF NOT EXISTS login_challenges (
+    token_hash text PRIMARY KEY,
+    user_id    text        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    next       text        NOT NULL DEFAULT '/dashboard',
+    created_at timestamptz NOT NULL DEFAULT now(),
+    expires_at timestamptz NOT NULL,
+    used_at    timestamptz
+  );
+
+  CREATE INDEX IF NOT EXISTS login_challenges_user_idx ON login_challenges (user_id);
+  CREATE INDEX IF NOT EXISTS login_challenges_expiry_idx ON login_challenges (expires_at);
+
+  -- Admins always need a second factor; anyone else only if this is set.
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_required boolean NOT NULL DEFAULT false;
+
   -- Failed sign-ins, so a public login form cannot be brute-forced freely.
   CREATE TABLE IF NOT EXISTS login_attempts (
     id           bigserial PRIMARY KEY,
@@ -628,16 +646,20 @@ export async function resetToSeed(): Promise<void> {
 export async function databaseStatus(): Promise<{
   ok: boolean;
   connectionVariable: string | null;
+  authSecret: "set" | "missing";
   schema: "ready" | "unavailable";
   roles?: number;
   sessions?: number;
   error?: string;
 }> {
   const variable = connectionVariable();
+  const authSecret: "set" | "missing" =
+    (process.env.AUTH_SECRET?.trim().length ?? 0) >= 32 ? "set" : "missing";
   if (!variable) {
     return {
       ok: false,
       connectionVariable: null,
+      authSecret,
       schema: "unavailable",
       error:
         "No connection string. Set DATABASE_URL (or POSTGRES_URL) in the deployment's environment and redeploy.",
@@ -650,8 +672,9 @@ export async function databaseStatus(): Promise<{
       query<{ count: string }>("SELECT count(*)::text AS count FROM sessions_casting"),
     ]);
     return {
-      ok: true,
+      ok: authSecret === "set",
       connectionVariable: variable,
+      authSecret,
       schema: "ready",
       roles: Number(roles[0]?.count ?? 0),
       sessions: Number(sessions[0]?.count ?? 0),
@@ -662,6 +685,7 @@ export async function databaseStatus(): Promise<{
     return {
       ok: false,
       connectionVariable: variable,
+      authSecret,
       schema: "unavailable",
       error: error instanceof Error ? error.message : String(error),
     };

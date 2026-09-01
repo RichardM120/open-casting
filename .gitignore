@@ -43,3 +43,5 @@ next-env.d.ts
 
 # test artefacts
 /test/screenshots/
+test/server.log
+test/mailbox.json

@@ -4,10 +4,9 @@ import {
   launch,
   reporter,
   session,
-  ADMIN,
   adminSession,
   provisionOnly,
-  signIn,
+  signInAsAdmin,
 } from "./_helpers.mjs";
 
 const { check, section, finish, errors } = reporter();
@@ -87,7 +86,7 @@ await admin.p.screenshot({ path: `${SHOTS}/wizard-admin.png`, fullPage: true });
 
 section("7 navigation fixes");
 const m = await ctx({ width: 390, height: 844 });
-await signIn(m.p, ADMIN.email, ADMIN.password);
+await signInAsAdmin(m.p);
 await m.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 const visible = await m.p.locator("header nav a").evaluateAll((els) =>
   els.filter((el) => el.offsetParent !== null).map((el) => el.textContent.trim()));

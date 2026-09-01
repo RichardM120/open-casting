@@ -1,3 +1,6 @@
+import { readFileSync } from "node:fs";
+import { setTimeout as sleep } from "node:timers/promises";
+
 import { chromium } from "playwright";
 
 export const BASE = process.env.BASE_URL ?? "http://127.0.0.1:3100";
@@ -76,9 +79,43 @@ export async function signIn(page, email, password) {
   await page.waitForTimeout(1500);
 }
 
-/** The one account that exists before any other. */
+/** Everything the app has sent to the stand-in mail provider. */
+function mailbox() {
+  try {
+    return JSON.parse(readFileSync(process.env.MAILBOX ?? "test/mailbox.json", "utf8"));
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * The newest sign-in link the app has emailed. The harness runs a stand-in for
+ * the mail provider, so this is the link a person would actually receive.
+ */
+export async function latestSignInLink({ after = 0 } = {}) {
+  for (let attempt = 0; attempt < 60; attempt += 1) {
+    const links = mailbox()
+      .flatMap((message) => message.text.match(/http:\/\/\S+\/login\/verify\?token=\S+/g) ?? []);
+    if (links.length > after) return links[links.length - 1];
+    await sleep(250);
+  }
+  throw new Error("no sign-in link reached the mailbox");
+}
+
+export function countSignInLinks() {
+  return mailbox().filter((message) => /\/login\/verify\?token=/.test(message.text)).length;
+}
+
+/**
+ * Signs in as the administrator, which needs a second factor: password, then
+ * the one-time link. Every suite goes through this because every suite needs
+ * the admin to make its accounts.
+ */
 export async function signInAsAdmin(page) {
+  const before = countSignInLinks();
   await signIn(page, ADMIN.email, ADMIN.password);
+  const link = await latestSignInLink({ after: before });
+  await page.goto(link, { waitUntil: "networkidle" });
 }
 
 /**

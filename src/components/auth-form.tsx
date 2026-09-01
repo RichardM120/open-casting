@@ -49,6 +49,23 @@ export function SignInForm({
   const [state, formAction, pending] = useActionState(signIn, IDLE_FORM_STATE);
   const { errors, values } = state;
 
+  // A second factor was required and a link has gone out. There is nothing
+  // useful left on this page, so the form gets out of the way.
+  if (state.status === "success") {
+    return (
+      <div>
+        <p className="text-xs font-semibold tracking-[0.18em] text-positive uppercase">
+          Check your email
+        </p>
+        <p className="mt-3 text-sm leading-relaxed text-text">{state.message}</p>
+        <p className="mt-3 text-sm leading-relaxed text-muted">
+          This account can see and change other people&rsquo;s work, so a password on its own is
+          not enough to sign in to it.
+        </p>
+      </div>
+    );
+  }
+
   return (
     <form action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="next" value={next} />

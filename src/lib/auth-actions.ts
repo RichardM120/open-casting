@@ -4,6 +4,14 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import { endSession, pruneExpiredSessions, requireUser, startSession } from "./auth";
+import { sendEmail } from "./email";
+import {
+  CHALLENGE_WINDOW_MINUTES,
+  createChallenge,
+  needsSecondFactor,
+  pruneExpiredChallenges,
+} from "./mfa";
+import { requestOrigin } from "./origin";
 import { submittedValues, type FormState } from "./form-state";
 import { decoyPasswordHash, verifyPassword } from "./password";
 import {
@@ -95,14 +103,77 @@ export async function signIn(
 
   await clearFailedLogins(email);
   await pruneExpiredSessions();
-  // Picks up an ADMIN_EMAILS change since this account last signed in.
-  await syncAdminRole(user);
-  await startSession(user.id);
+  await pruneExpiredChallenges();
+
+  // Picks up an ADMIN_EMAILS change since this account last signed in — which
+  // is also what can make this account need a second factor for the first time.
+  const current = await syncAdminRole(user);
 
   // An account made by the administrator has never been through setup, and its
   // holder has only ever seen a password someone sent them. Take them through
   // it rather than dropping them on a dashboard with no context.
-  redirect(user.onboarded_at ? safeNext(formData.get("next")) : "/welcome");
+  const next = current.onboarded_at ? safeNext(formData.get("next")) : "/welcome";
+
+  if (needsSecondFactor(current)) {
+    return sendSignInLink(current.id, current.email, next, formData);
+  }
+
+  try {
+    await startSession(current.id, current.role);
+  } catch (error) {
+    // Almost always AUTH_SECRET missing. Say so: a 500 here sends whoever is
+    // trying to sign in hunting for a problem that is not theirs.
+    console.error("[auth] could not start a session", error);
+    return invalid({}, "This deployment is not configured for sign-in yet. Tell the administrator: AUTH_SECRET is missing.", formData);
+  }
+  redirect(next);
+}
+
+/**
+ * The second factor: a one-time link, emailed. The password alone has not
+ * started a session at this point and will not until the link is opened.
+ *
+ * Failing to send is reported as a failure rather than waved through. An
+ * account that requires a second factor does not get to skip it because the
+ * mail provider is down — that would make the requirement decorative.
+ */
+async function sendSignInLink(
+  userId: string,
+  email: string,
+  next: string,
+  formData: FormData,
+): Promise<FormState> {
+  const token = await createChallenge(userId, next);
+  const link = `${await requestOrigin()}/login/verify?token=${encodeURIComponent(token)}`;
+
+  const delivery = await sendEmail({
+    to: email,
+    subject: "Your Open Casting sign-in link",
+    text: [
+      "Someone signed in to Open Casting with your password and needs to confirm it is you.",
+      "",
+      `Open this link to finish signing in. It works once, and expires in ${CHALLENGE_WINDOW_MINUTES} minutes:`,
+      "",
+      link,
+      "",
+      "If this was not you, your password is known to somebody else — change it, and tell the administrator.",
+    ].join("\n"),
+  });
+
+  if (!delivery.delivered) {
+    return invalid(
+      {},
+      `Your password was accepted, but the sign-in link could not be sent — ${delivery.reason}. Nobody can sign in to this account until email is working.`,
+      formData,
+    );
+  }
+
+  return {
+    status: "success",
+    message: `Check ${email}. A one-time sign-in link is on its way, and expires in ${CHALLENGE_WINDOW_MINUTES} minutes.`,
+    errors: {},
+    values: {},
+  };
 }
 
 export async function signOut(): Promise<void> {

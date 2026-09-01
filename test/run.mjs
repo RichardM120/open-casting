@@ -6,7 +6,8 @@
  * fresh data needs a fresh server rather than a truncate.
  */
 import { spawn } from "node:child_process";
-import { mkdirSync, readdirSync } from "node:fs";
+import { createServer } from "node:http";
+import { mkdirSync, openSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { setTimeout as sleep } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
@@ -23,6 +24,9 @@ const PORT = Number(process.env.TEST_PORT ?? 3100);
 const ADMIN_EMAIL = "boss@example.com";
 const ADMIN_PASSWORD = "bootstrap-admin-password";
 const CRON_SECRET = "test-cron-secret";
+const AUTH_SECRET = "test-auth-secret-at-least-32-characters-long";
+const MAIL_PORT = PORT + 1;
+const MAILBOX = path.join(here, "mailbox.json");
 const BASE = `http://127.0.0.1:${PORT}`;
 
 const SUITES = readdirSync(path.join(here, "suites"))
@@ -34,6 +38,13 @@ mkdirSync(path.join(here, "screenshots"), { recursive: true });
 function run(command, args, options = {}) {
   return spawn(command, args, { cwd: root, stdio: "inherit", ...options });
 }
+
+/**
+ * The server's own output, kept so a suite can read the sign-in link out of it.
+ * With no mail provider configured the link is logged instead of sent, which is
+ * exactly the hook a test needs — and is why it never happens in production.
+ */
+const MAIL_LOG = path.join(here, "server.log");
 
 /**
  * `npx next start` is a shell wrapping node, so killing the child leaves the
@@ -71,6 +82,34 @@ async function resetDatabase() {
   await pool.end();
 }
 
+/**
+ * A stand-in for the mail provider. The app posts to it exactly as it posts to
+ * Resend, so the delivery path under test is the real one; the messages land in
+ * a file a suite can read instead of an inbox.
+ */
+function startMailbox() {
+  writeFileSync(MAILBOX, "[]");
+  const server = createServer((request, response) => {
+    let body = "";
+    request.on("data", (chunk) => { body += chunk; });
+    request.on("end", () => {
+      try {
+        const sent = JSON.parse(readFileSync(MAILBOX, "utf8"));
+        sent.push({ at: Date.now(), ...JSON.parse(body) });
+        writeFileSync(MAILBOX, JSON.stringify(sent, null, 2));
+      } catch (error) {
+        console.error("mailbox could not record a message:", error.message);
+      }
+      response.writeHead(200, { "content-type": "application/json" });
+      response.end(JSON.stringify({ id: "test" }));
+    });
+  });
+  server.listen(MAIL_PORT, "127.0.0.1");
+  return server;
+}
+
+const mailbox = startMailbox();
+
 let failures = 0;
 
 for (const suite of SUITES) {
@@ -79,14 +118,20 @@ for (const suite of SUITES) {
   await resetDatabase();
 
   const signal = { exited: false };
+  writeFileSync(MAIL_LOG, "");
+  const log = openSync(MAIL_LOG, "a");
   const server = run("npx", ["next", "start", "--port", String(PORT)], {
     detached: true,
+    stdio: ["ignore", log, log],
     env: {
       ...process.env,
       NODE_ENV: "production",
       ADMIN_EMAILS: ADMIN_EMAIL,
       ADMIN_BOOTSTRAP_PASSWORD: ADMIN_PASSWORD,
       CRON_SECRET,
+      AUTH_SECRET,
+      RESEND_API_KEY: "test-key",
+      RESEND_API_URL: `http://127.0.0.1:${MAIL_PORT}/emails`,
     },
   });
   server.on("exit", () => { signal.exited = true; });
@@ -102,11 +147,18 @@ for (const suite of SUITES) {
           ADMIN_EMAIL,
           ADMIN_PASSWORD,
           CRON_SECRET,
+          AUTH_SECRET,
+          MAIL_LOG,
+          MAILBOX,
         },
       });
       child.on("exit", resolve);
     });
-    if (code !== 0) failures++;
+    if (code !== 0) {
+      failures++;
+      console.log("--- server output ---");
+      console.log(readFileSync(MAIL_LOG, "utf8").split("\n").slice(-40).join("\n"));
+    }
   } catch (error) {
     console.error(`  ${suite} could not run:`, error.message);
     failures++;
@@ -117,5 +169,6 @@ for (const suite of SUITES) {
   }
 }
 
+mailbox.close();
 console.log(`\n${failures === 0 ? "All suites passed" : `${failures} suite(s) failed`}`);
 process.exit(failures === 0 ? 0 : 1);

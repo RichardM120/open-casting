@@ -1,5 +1,17 @@
 import { NextResponse, type NextRequest } from "next/server";
 
+import { verifyContext } from "@/lib/token";
+
+/**
+ * What each area needs. The proxy can only turn requests away — it cannot let
+ * anyone in, because the page and the action behind it check the database
+ * again regardless. See `src/lib/token.ts` for why that division exists.
+ */
+const GUARDED: { prefix: string; role?: "admin" }[] = [
+  { prefix: "/dashboard/accounts", role: "admin" },
+  { prefix: "/dashboard" },
+];
+
 /**
  * Security headers, and a Content Security Policy with a per-request nonce.
  *
@@ -7,7 +19,7 @@ import { NextResponse, type NextRequest } from "next/server";
  * guess it. Every page is dynamically rendered, which is what a fresh nonce per
  * request requires.
  */
-export function proxy(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   const nonce = Buffer.from(crypto.randomUUID()).toString("base64");
   const isDev = process.env.NODE_ENV === "development";
 
@@ -30,6 +42,31 @@ export function proxy(request: NextRequest) {
   const headers = new Headers(request.headers);
   headers.set("x-nonce", nonce);
   headers.set("Content-Security-Policy", csp);
+
+  const path = request.nextUrl.pathname;
+  const guard = GUARDED.find((entry) => path === entry.prefix || path.startsWith(`${entry.prefix}/`));
+
+  if (guard) {
+    const secret = process.env.AUTH_SECRET?.trim();
+
+    // No key means no way to check the signature. Fail closed: sending someone
+    // to sign in is recoverable, waving them through is not.
+    const context = secret
+      ? await verifyContext(request.cookies.get("oc_ctx")?.value, secret)
+      : null;
+
+    if (!context) {
+      const login = new URL("/login", request.url);
+      login.searchParams.set("next", path + request.nextUrl.search);
+      return NextResponse.redirect(login);
+    }
+
+    // A role this area does not admit is a 404, the same answer the page gives,
+    // so the proxy does not become a way to enumerate what exists.
+    if (guard.role && context.role !== guard.role) {
+      return NextResponse.rewrite(new URL("/not-found", request.url), { status: 404 });
+    }
+  }
 
   const response = NextResponse.next({ request: { headers } });
 

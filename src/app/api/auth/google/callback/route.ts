@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 
-import { startSession } from "@/lib/auth";
+import { sessionCookies } from "@/lib/auth";
+import { redirectTo } from "@/lib/redirect";
+import { sendEmail } from "@/lib/email";
+import { CHALLENGE_WINDOW_MINUTES, createChallenge, needsSecondFactor } from "@/lib/mfa";
 import {
   OAuthError,
   consumeHandshake,
@@ -9,10 +12,8 @@ import {
 } from "@/lib/oauth";
 import { linkGoogleUser, syncAdminRole } from "@/lib/users";
 
-function backToLogin(origin: string, message: string) {
-  return NextResponse.redirect(
-    new URL(`/login?error=${encodeURIComponent(message)}`, origin),
-  );
+function backToLogin(_origin: string, message: string) {
+  return redirectTo(`/login?error=${encodeURIComponent(message)}`);
 }
 
 export async function GET(request: Request) {
@@ -48,11 +49,37 @@ export async function GET(request: Request) {
     if (user.suspended_at) {
       return backToLogin(url.origin, "This account has been suspended.");
     }
-    await startSession(user.id);
 
     // A Google account has no company name until setup asks for one.
     const destination = user.onboarded_at ? next : "/welcome";
-    return NextResponse.redirect(new URL(destination, url.origin));
+
+    // Google proves the address, not the second factor. An account that needs
+    // one needs it here too, or this button is simply the way around it.
+    if (needsSecondFactor(user)) {
+      const token = await createChallenge(user.id, destination);
+      const delivery = await sendEmail({
+        to: user.email,
+        subject: "Your Open Casting sign-in link",
+        text: [
+          "Someone signed in to Open Casting with your Google account and needs to confirm it is you.",
+          "",
+          `Open this link to finish signing in. It works once, and expires in ${CHALLENGE_WINDOW_MINUTES} minutes:`,
+          "",
+          `${url.origin}/login/verify?token=${encodeURIComponent(token)}`,
+        ].join("\n"),
+      });
+
+      if (!delivery.delivered) {
+        return backToLogin(url.origin, `The sign-in link could not be sent — ${delivery.reason}.`);
+      }
+      return redirectTo(`/login/sent?to=${encodeURIComponent(user.email)}`);
+    }
+
+    const response = redirectTo(destination);
+    for (const cookie of await sessionCookies(user.id, user.role)) {
+      response.cookies.set(cookie);
+    }
+    return response;
   } catch (error) {
     if (error instanceof OAuthError) return backToLogin(url.origin, error.message);
     console.error("[oauth] google callback failed", error);
