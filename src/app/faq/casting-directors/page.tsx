@@ -116,13 +116,15 @@ export default function CastingDirectorFaqPage() {
         </FaqItem>
         <FaqItem q="How long do you keep the submissions?">
           <p>
-            Six months after the call closes, the performers&rsquo; details are deleted — names,
-            addresses, phone numbers, links, cover notes. The production, its roles and the
-            counts are kept, so you keep a record of what you ran.
+            Thirty days after the production finishes, the performers&rsquo; details are deleted
+            — names, addresses, phone numbers, links, cover notes. The clock runs from the
+            production end date you set, not from when casting closed, because a shoot can run
+            for months after the call shut. The production, its roles and the counts are kept.
           </p>
           <p>
             It runs on a schedule rather than waiting for anyone to remember, and the date is on
-            the production&rsquo;s page. Act on what you need before it.
+            the production&rsquo;s page. You are emailed 14 days and 48 hours beforehand. Act on
+            what you need before then — it cannot be recovered afterwards.
           </p>
         </FaqItem>
         <FaqItem q="When is the submission form actually shown?">

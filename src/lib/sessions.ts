@@ -16,6 +16,7 @@ type Row = {
   closed_at: Date | null;
   published_at: Date | null;
   purged_at: Date | null;
+  production_ends_at: string;
   public_token: string;
   created_at: Date;
 };
@@ -25,6 +26,7 @@ export const SESSION_COLUMNS = `
   id, slug, name, synopsis, owner_id, company,
   to_char(opens_at, 'YYYY-MM-DD')  AS opens_at,
   to_char(closes_at, 'YYYY-MM-DD') AS closes_at,
+  to_char(production_ends_at, 'YYYY-MM-DD') AS production_ends_at,
   closed_at, published_at, purged_at, public_token, created_at
 `;
 
@@ -41,6 +43,7 @@ export function toSession(row: Row): CastingSession {
     closedAt: row.closed_at?.toISOString() ?? null,
     publishedAt: row.published_at?.toISOString() ?? null,
     purgedAt: row.purged_at?.toISOString() ?? null,
+    productionEndsAt: row.production_ends_at,
     publicToken: row.public_token,
     createdAt: row.created_at.toISOString(),
   };
@@ -155,6 +158,8 @@ export type NewSession = {
   company: string;
   opensAt: string;
   closesAt: string;
+  /** When the production wraps. The retention clock runs from here. */
+  productionEndsAt: string;
 };
 
 export async function createSession(
@@ -163,8 +168,9 @@ export async function createSession(
 ): Promise<CastingSession> {
   const rows = await query<Row>(
     `INSERT INTO sessions_casting
-       (id, slug, name, synopsis, owner_id, company, opens_at, closes_at, public_token)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       (id, slug, name, synopsis, owner_id, company, opens_at, closes_at,
+        production_ends_at, public_token)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      RETURNING ${SESSION_COLUMNS}`,
     [
       `ses_${crypto.randomUUID().slice(0, 12)}`,
@@ -175,6 +181,7 @@ export async function createSession(
       input.company,
       input.opensAt,
       input.closesAt,
+      input.productionEndsAt,
       shareToken(),
     ],
   );
@@ -194,13 +201,14 @@ export async function updateSession(
        synopsis = $${params.length + 4},
        company = $${params.length + 5},
        opens_at = $${params.length + 6},
-       closes_at = $${params.length + 7}
+       closes_at = $${params.length + 7},
+       production_ends_at = $${params.length + 8}
      WHERE id = $${params.length + 1}${where ? ` AND ${where}` : ""}
      RETURNING ${SESSION_COLUMNS}`,
     [
       ...params, id,
       input.name, slugify(input.name), input.synopsis, input.company,
-      input.opensAt, input.closesAt,
+      input.opensAt, input.closesAt, input.productionEndsAt,
     ],
   );
   if (!rows[0]) return null;

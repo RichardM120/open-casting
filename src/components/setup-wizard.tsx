@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, type ReactNode } from "react";
 
-import { finishSetup, saveProfile } from "@/lib/auth-actions";
+import { acceptAgreement, finishSetup, saveProfile } from "@/lib/auth-actions";
 import type { SessionUser } from "@/lib/auth";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
 
@@ -26,6 +26,53 @@ export function StepIndicator({ step, total }: { step: number; total: number }) 
         />
       ))}
     </ol>
+  );
+}
+
+/**
+ * The gate on everything else: the customer reads the Master Services Agreement
+ * and Data Processing Schedule and accepts it, in their own account, before the
+ * platform will let them do anything with performers' data.
+ */
+export function AgreementStep({ nextStep, children }: { nextStep: number; children: ReactNode }) {
+  const [state, formAction, pending] = useActionState(acceptAgreement, IDLE_FORM_STATE);
+
+  return (
+    <form action={formAction} className="flex flex-col gap-5">
+      <input type="hidden" name="nextStep" value={nextStep} />
+
+      {children}
+
+      {state.status === "error" ? (
+        <p role="alert" className="rounded-xl border border-danger/40 bg-danger-soft p-4 text-sm text-danger">
+          {state.message}
+        </p>
+      ) : null}
+
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-raised p-4 text-sm leading-relaxed text-muted">
+        <input
+          type="checkbox"
+          name="accept"
+          aria-invalid={state.errors.accept ? true : undefined}
+          className="mt-0.5 size-4 shrink-0 accent-accent"
+        />
+        <span>
+          I have read and accept the Master Services Agreement and the Data Processing Schedule,
+          and I am authorised to accept them on behalf of my company.
+        </span>
+      </label>
+
+      <div>
+        <Button type="submit" disabled={pending}>
+          {pending ? "Recording…" : "Accept and continue"}
+        </Button>
+      </div>
+
+      <p className="text-xs leading-relaxed text-faint">
+        Your acceptance is recorded against your account with the version and the date, and you
+        can read it again at any time from your dashboard.
+      </p>
+    </form>
   );
 }
 

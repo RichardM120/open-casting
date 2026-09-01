@@ -3,6 +3,8 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { SUBMISSION_TERMS } from "@/content/legal";
+
 import { record, describeChanges, describeSessionChanges } from "./activity";
 import { requireUser } from "./auth";
 import {
@@ -32,7 +34,7 @@ import {
   setSubmissionStatus,
   submissionContext,
 } from "./submissions";
-import { ROLE_LABELS, SUBMISSION_STATUSES, type SubmissionStatus } from "./types";
+import { ADULT_AGE, ROLE_LABELS, SUBMISSION_STATUSES, type SubmissionStatus } from "./types";
 import {
   EmailTakenError,
   accountUsage,
@@ -107,7 +109,48 @@ export async function submitApplication(
     );
   }
 
-  const { acceptTerms, ...submission } = parsed.data;
+  const {
+    acceptTerms,
+    acceptSubmissionTerms,
+    guardianName,
+    guardianEmail,
+    guardianConsent,
+    ...submission
+  } = parsed.data;
+
+  // The platform's own terms apply to every submission, whether or not the
+  // casting director set any of their own.
+  if (!acceptSubmissionTerms) {
+    return invalid(
+      { acceptSubmissionTerms: "Please accept the Terms of Submission to continue" },
+      "You need to accept the Terms of Submission and Acceptable Use Policy before submitting.",
+      formData,
+    );
+  }
+
+  // A minor's submission has to come from a parent or legal guardian. Decided
+  // from the age given, not from whether the form troubled to send the fields.
+  const minor = submission.age < ADULT_AGE;
+  if (minor) {
+    const missing: FieldErrors = {};
+    if (!guardianName || guardianName.length < 2) {
+      missing.guardianName = "Enter the parent or guardian's full name";
+    }
+    if (!guardianEmail || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(guardianEmail)) {
+      missing.guardianEmail = "Enter the parent or guardian's email address";
+    }
+    if (!guardianConsent) {
+      missing.guardianConsent =
+        "Confirm you are the parent or legal guardian and consent to this submission";
+    }
+    if (Object.keys(missing).length > 0) {
+      return invalid(
+        missing,
+        `This applicant is under ${ADULT_AGE}, so the submission has to be made by a parent or legal guardian.`,
+        formData,
+      );
+    }
+  }
 
   // The role decides whether terms must be accepted, not the form that was
   // posted — otherwise dropping the checkbox from the request would skip it.
@@ -128,6 +171,11 @@ export async function submitApplication(
       // cannot change what this person agreed to.
       acceptedTerms: role.disclaimer || null,
       acceptedAt: role.disclaimer ? new Date().toISOString() : null,
+      // Recorded so it is possible to say afterwards exactly what was agreed.
+      termsVersion: SUBMISSION_TERMS.version,
+      guardianName: minor ? (guardianName ?? null) : null,
+      guardianEmail: minor ? (guardianEmail ?? null) : null,
+      guardianConsentAt: minor ? new Date().toISOString() : null,
     });
   } catch (error) {
     // The unique index is the authority here, so two simultaneous submissions
@@ -363,14 +411,14 @@ export async function createAccount(
   }
 
   const password = generatePassword();
-  const { maxSessions, maxRolesPerSession, accessUntil, ...profile } = parsed.data;
+  const { tier, maxSessions, maxRolesPerSession, accessUntil, ...profile } = parsed.data;
 
   let created;
   try {
     created = await createUser({
       ...profile,
       password,
-      limits: { maxSessions, maxRolesPerSession, accessUntil },
+      limits: { tier, maxSessions, maxRolesPerSession, accessUntil },
     });
   } catch (error) {
     if (error instanceof EmailTakenError) {

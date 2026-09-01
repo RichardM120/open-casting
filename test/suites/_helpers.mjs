@@ -155,9 +155,23 @@ export async function provisionOnly(browser, errors, admin, user) {
   return { ...ctx, password };
 }
 
+/**
+ * Accepts the Master Services Agreement, which is the first thing setup asks
+ * and the gate on the dashboard. Every fixture account has to get past it.
+ */
+export async function acceptAgreement(page) {
+  await page.goto(`${BASE}/welcome`, { waitUntil: "networkidle" });
+  const box = page.locator('input[name="accept"]');
+  if ((await box.count()) === 0) return;
+  await box.check();
+  await page.getByRole("button", { name: "Accept and continue" }).click();
+  await page.waitForURL(/welcome\?step=/, { timeout: 20000 });
+}
+
 /** As `provisionOnly`, then past the wizard, which most suites do not care about. */
 export async function provision(browser, errors, admin, user) {
   const ctx = await provisionOnly(browser, errors, admin, user);
+  await acceptAgreement(ctx.p);
   await ctx.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
   return ctx;
 }
@@ -180,6 +194,7 @@ export async function openSession(page, fields) {
   await page.fill("#company", fields.company);
   await page.fill("#opensAt", fields.opensAt ?? day(0));
   await page.fill("#closesAt", fields.closesAt ?? day(30));
+  await page.fill("#productionEndsAt", fields.productionEndsAt ?? day(60));
   await page.getByRole("button", { name: "Open the session" }).click();
   await page.waitForURL(/\/dashboard\/sessions\/ses_/, { timeout: 20000 });
   return page.url().match(/sessions\/(ses_[^?]+)/)[1];
@@ -262,5 +277,6 @@ export async function submit(page, token, roleId, performer, { acceptTerms = fal
     performer.coverNote ?? "A cover note comfortably longer than the twenty character minimum.",
   );
   if (acceptTerms) await page.check("#acceptTerms");
+  await page.check("#acceptSubmissionTerms");
   await page.getByRole("button", { name: "Send submission" }).click();
 }

@@ -77,13 +77,15 @@ export default function PerformerFaqPage() {
         </FaqItem>
         <FaqItem q="How long do you keep my details?">
           <p>
-            Six months after the casting call closes, your name, email, phone number, location,
-            age, links and cover note are deleted. Not hidden — deleted. What survives is the
-            production and its roles, so the casting director keeps a record of what they ran,
-            with nobody&rsquo;s personal data in it.
+            Thirty days after the production finishes — not when casting closes — your name,
+            email, phone number, location, age, links and cover note are deleted. Not hidden,
+            deleted. What survives is the production and its roles, so the casting director
+            keeps a record of what they ran, with nobody&rsquo;s personal data in it.
           </p>
           <p>
-            That happens whether or not anyone remembers to do it; it is on a schedule.
+            That happens whether or not anyone remembers to do it; it is on a schedule. You can
+            also ask for your data to be erased sooner — see{" "}
+            <Link href="/legal/submission-terms">the Terms of Submission</Link>.
           </p>
         </FaqItem>
         <FaqItem q="What happens to my details?">

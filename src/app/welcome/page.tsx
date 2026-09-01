@@ -1,7 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { FinishStep, ProfileStep, StepIndicator } from "@/components/setup-wizard";
+import { AgreementStep, FinishStep, ProfileStep, StepIndicator } from "@/components/setup-wizard";
+import { LegalScroller } from "@/components/legal-document";
+import { MSA } from "@/content/legal";
+import { hasAccepted } from "@/lib/agreements";
 import { ButtonLink, Eyebrow } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { ROLE_LABELS, type UserRole } from "@/lib/types";
@@ -47,18 +50,29 @@ const WHAT_YOU_SEE: Record<UserRole, { heading: string; points: string[]; cta: {
 export default async function WelcomePage({ searchParams }: PageProps<"/welcome">) {
   const user = await requireUser("/welcome");
   const raw = (await searchParams).step;
-  const step = Math.min(3, Math.max(1, Number(Array.isArray(raw) ? raw[0] : raw) || 1));
   const guide = WHAT_YOU_SEE[user.role];
+
+  // The administrator is the service provider, not a customer of it, so there is
+  // no agreement for them to accept. Everyone else starts there.
+  const needsAgreement = user.role !== "admin" && !(await hasAccepted(user.id, MSA));
+  const total = user.role === "admin" ? 3 : 4;
+  const offset = user.role === "admin" ? 0 : 1;
+
+  const asked = Math.min(total, Math.max(1, Number(Array.isArray(raw) ? raw[0] : raw) || 1));
+  // Nothing past the agreement is reachable until it is accepted.
+  const step = needsAgreement ? 1 : Math.max(asked, offset + 1);
 
   return (
     <div className="mx-auto max-w-2xl px-5 py-16">
       <Eyebrow>Setting up</Eyebrow>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
-        {step === 1
+        {needsAgreement
           ? `Welcome, ${user.name.split(" ")[0]}`
-          : step === 2
-            ? guide.heading
-            : "One last thing"}
+          : step === offset + 1
+            ? `Welcome, ${user.name.split(" ")[0]}`
+            : step === offset + 2
+              ? guide.heading
+              : "One last thing"}
       </h1>
       <p className="mt-3 text-muted">
         You are set up as a{" "}
@@ -69,21 +83,37 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
       </p>
 
       <div className="mt-8">
-        <StepIndicator step={step} total={3} />
+        <StepIndicator step={step} total={total} />
       </div>
 
       <div className="mt-8 rounded-2xl border border-line bg-surface p-7">
-        {step === 1 ? (
+        {needsAgreement ? (
+          <>
+            <h2 className="text-lg font-semibold tracking-tight">
+              Your agreement with opencasting.app
+            </h2>
+            <p className="mt-2 mb-6 max-w-prose text-sm leading-relaxed text-muted">
+              Before anything else. This sets out who owns what, who is responsible for the
+              submissions you collect, and how long performers&rsquo; details are kept. You are
+              the data controller for everything performers send you; we process it for you.
+            </p>
+            <AgreementStep nextStep={offset + 1}>
+              <LegalScroller document={MSA} />
+            </AgreementStep>
+          </>
+        ) : null}
+
+        {!needsAgreement && step === offset + 1 ? (
           <>
             <h2 className="text-lg font-semibold tracking-tight">Check your details</h2>
             <p className="mt-2 mb-6 text-sm leading-relaxed text-muted">
               These appear on the roles you post, so performers know who is casting.
             </p>
-            <ProfileStep user={user} nextStep={2} />
+            <ProfileStep user={user} nextStep={offset + 2} />
           </>
         ) : null}
 
-        {step === 2 ? (
+        {!needsAgreement && step === offset + 2 ? (
           <>
             <h2 className="text-lg font-semibold tracking-tight">What that means</h2>
             <ul className="mt-5 flex flex-col gap-3">
@@ -95,15 +125,15 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
               ))}
             </ul>
             <div className="mt-7 flex flex-wrap gap-3">
-              <ButtonLink href="/welcome?step=3">Continue</ButtonLink>
-              <ButtonLink href="/welcome?step=1" variant="ghost" size="sm">
+              <ButtonLink href={`/welcome?step=${offset + 3}`}>Continue</ButtonLink>
+              <ButtonLink href={`/welcome?step=${offset + 1}`} variant="ghost" size="sm">
                 Back
               </ButtonLink>
             </div>
           </>
         ) : null}
 
-        {step === 3 ? (
+        {!needsAgreement && step === offset + 3 ? (
           <>
             <h2 className="text-lg font-semibold tracking-tight">Worth reading first</h2>
             <p className="mt-2 text-sm leading-relaxed text-muted">

@@ -7,7 +7,7 @@ import { NewAccountForm } from "@/components/new-account-form";
 import { Badge, Button, Eyebrow } from "@/components/ui";
 import { toggleAccountSuspended } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
-import { ROLE_LABELS } from "@/lib/types";
+import { ROLE_LABELS, TIERS, type Tier } from "@/lib/types";
 import { listAccounts } from "@/lib/users";
 
 export const metadata: Metadata = { title: "Accounts" };
@@ -64,6 +64,9 @@ export default async function AccountsPage() {
                   <Badge tone={account.role === "admin" ? "accent" : "outline"}>
                     {ROLE_LABELS[account.role]}
                   </Badge>
+                  {account.tier && account.tier in TIERS ? (
+                    <Badge tone="outline">{TIERS[account.tier as Tier].label}</Badge>
+                  ) : null}
                   {isSuspended ? <Badge tone="danger">Suspended</Badge> : null}
                   {account.id === user.id ? <Badge tone="neutral">You</Badge> : null}
                 </div>

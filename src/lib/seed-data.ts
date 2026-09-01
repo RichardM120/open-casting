@@ -250,6 +250,7 @@ const sessions: SeedSession[] = [
     company: "Raman Casting",
     opensAt: "2026-08-24",
     closesAt: "2026-09-18",
+    productionEndsAt: "2026-11-06",
   },
   {
     id: "ses_northbank",
@@ -261,6 +262,7 @@ const sessions: SeedSession[] = [
     company: "Whitcombe & Fry Casting",
     opensAt: "2026-08-19",
     closesAt: "2026-10-02",
+    productionEndsAt: "2026-12-18",
   },
   {
     id: "ses_hearth",
@@ -272,6 +274,7 @@ const sessions: SeedSession[] = [
     company: "Ortiz Casting",
     opensAt: "2026-08-27",
     closesAt: "2026-09-08",
+    productionEndsAt: "2026-10-02",
   },
   {
     id: "ses_glasshouse",
@@ -283,6 +286,7 @@ const sessions: SeedSession[] = [
     company: "Sixth Floor Audio",
     opensAt: "2026-08-29",
     closesAt: "2026-09-25",
+    productionEndsAt: "2026-11-20",
   },
   {
     id: "ses_lantern",
@@ -294,6 +298,7 @@ const sessions: SeedSession[] = [
     company: "Lantern Theatre Company",
     opensAt: "2026-08-12",
     closesAt: "2026-10-16",
+    productionEndsAt: "2027-01-29",
   },
   {
     id: "ses_kestrel",
@@ -305,6 +310,7 @@ const sessions: SeedSession[] = [
     company: "Northern Film School",
     opensAt: "2026-08-22",
     closesAt: "2026-09-30",
+    productionEndsAt: "2026-10-30",
   },
 ];
 
@@ -318,7 +324,7 @@ const SESSION_BY_PRODUCTION: Record<string, string> = {
   Kestrel: "ses_kestrel",
 };
 
-const submissions: Omit<Submission, "sessionId">[] = [
+const submissions: Omit<Submission, "sessionId" | "termsVersion" | "guardianName" | "guardianEmail" | "guardianConsentAt">[] = [
   {
     id: "sub_0001",
     roleId: "rol_saltmarsh_nell",
@@ -485,7 +491,15 @@ export function seedDatabase(): Database {
   const seedSubmissions = structuredClone(submissions).map((submission) => {
     const sessionId = sessionByRole.get(submission.roleId);
     if (!sessionId) throw new Error(`No role for submission ${submission.id}`);
-    return { ...submission, sessionId };
+    return {
+      ...submission,
+      sessionId,
+      // Demo submissions predate the platform terms, and none is a minor.
+      termsVersion: null,
+      guardianName: null,
+      guardianEmail: null,
+      guardianConsentAt: null,
+    };
   });
 
   return {

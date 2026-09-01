@@ -1,5 +1,3 @@
-import { NextResponse } from "next/server";
-
 import { sessionCookies } from "@/lib/auth";
 import { redirectTo } from "@/lib/redirect";
 import { sendEmail } from "@/lib/email";

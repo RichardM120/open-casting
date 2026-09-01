@@ -191,14 +191,49 @@ not strong enough for a value that is doing this job.
 6. **The call closes**, on its date or early.
 7. **Six months later the performers' details are destroyed** — see below.
 
+## Agreements
+
+Two documents, in `src/content/legal.ts`, each with a version. An acceptance is
+only worth having if you can say afterwards exactly what was accepted, so the
+text for a version never changes — a wording change is a new version, which
+people are asked to accept again.
+
+- **Master Services Agreement and Data Processing Schedule.** The first thing
+  setup asks a new customer, before anything else, and enforced by the dashboard
+  layout rather than only by the path through setup — an agreement that can be
+  navigated past is not enforced. Accepted by the customer in their own account,
+  never ticked on their behalf at account creation, and recorded with the
+  version, the timestamp and the IP. Readable again at `/legal/agreement`. The
+  administrator operates the service rather than buying it, so there is nothing
+  for them to accept.
+- **Terms of Submission and Acceptable Use Policy.** On every submission form,
+  summarised in four lines with the full text a click away at
+  `/legal/submission-terms`, and required — separately from any terms the casting
+  director sets on the role. The accepted version is stored on the submission.
+
+**Under-18s.** Typing an age below 18 opens a parental consent section: the
+guardian's name, their email, and an explicit consent statement. The action
+decides that from the age given, not from whether the form troubled to send the
+fields, so removing them from the request does not skip it. All three are stored
+against the submission.
+
 ## Retention
 
-Six months after a casting call closes, every submission made to it is deleted:
-names, emails, phone numbers, locations, ages, links, cover notes. The
+Thirty days after a production **finishes**, every submission made to it is
+deleted: names, emails, phone numbers, locations, ages, links, cover notes. The
 production, its roles and the fact that submissions were received survive, so
 the casting director keeps a record of what they ran without holding anybody's
 personal data. The session is marked `purged_at` so the dashboard says what
 happened rather than showing an empty list.
+
+The clock runs from the **Production End Date**, not the casting close date: a
+shoot can run for months after its call shut, and the shortlist is needed until
+it wraps. The casting director sets it when opening the production and can move
+it if the schedule does.
+
+The MSA promises a warning at 14 days and again at 48 hours, and both are sent
+by the same sweep. Claiming a threshold is part of the `UPDATE` that selects it,
+so two overlapping sweeps cannot send the same warning twice.
 
 It runs two ways, deliberately:
 

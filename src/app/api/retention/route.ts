@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
-import { purgeExpiredSubmissions } from "@/lib/retention";
+import { sendEmail } from "@/lib/email";
+import { claimPurgeWarnings, purgeExpiredSubmissions } from "@/lib/retention";
 
 export const dynamic = "force-dynamic";
 
@@ -25,10 +26,31 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
 
+  // Warn before deleting, in that order: a production whose warning and purge
+  // fall on the same sweep should still hear about it.
+  const warnings = await claimPurgeWarnings();
+  for (const warning of warnings) {
+    await sendEmail({
+      to: warning.email,
+      subject:
+        warning.days === 14
+          ? `${warning.name}: performer details are deleted in 14 days`
+          : `${warning.name}: performer details are deleted in 48 hours`,
+      text: [
+        `The casting data for ${warning.name} is scheduled for permanent deletion on ${warning.purgeOn}.`,
+        "",
+        `That is ${warning.submissions} ${warning.submissions === 1 ? "submission" : "submissions"} — names, contact details, notes and any links performers gave you.`,
+        "",
+        "Export anything you still need before then. After the deletion the production and its roles remain, but the personal data is gone and cannot be recovered.",
+      ].join("\n"),
+    });
+  }
+
   const purged = await purgeExpiredSubmissions();
   return NextResponse.json(
     {
       ok: true,
+      warned: warnings.length,
       sessions: purged.length,
       submissions: purged.reduce((total, entry) => total + entry.submissions, 0),
     },

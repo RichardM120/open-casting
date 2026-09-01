@@ -4,7 +4,7 @@ import { useActionState } from "react";
 
 import { createAccount } from "@/lib/actions";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
-import { ROLE_DESCRIPTIONS, SIGNUP_ROLES } from "@/lib/types";
+import { ROLE_DESCRIPTIONS, SIGNUP_ROLES, TIERS, TIER_KEYS } from "@/lib/types";
 
 import { useErrorFocus } from "./use-error-focus";
 import { Button, ErrorSummary, Field, Input, Select } from "./ui";
@@ -14,6 +14,7 @@ const LABELS: Record<string, string> = {
   company: "Company or agency",
   email: "Email",
   role: "What they can see",
+  tier: "Tier",
   maxSessions: "Productions",
   maxRolesPerSession: "Roles per production",
   accessUntil: "Access until",
@@ -117,9 +118,24 @@ export function NewAccountForm() {
         <fieldset className="rounded-xl border border-line bg-raised p-5">
           <legend className="px-2 text-sm font-medium">What the arrangement covers</legend>
           <p className="text-xs leading-relaxed text-muted">
-            Leave any of these blank for no limit. They are enforced when the account tries to
-            post, not merely displayed, and you can change them later.
+            The tier is the fee schedule from the Master Services Agreement; the rest is what
+            you agreed on top of it. Leave any of them blank for no limit. They are enforced
+            when the account tries to post, not merely displayed, and you can change them later.
           </p>
+          <div className="mt-4">
+            <Field label="Tier" htmlFor="tier" error={errors.tier}>
+              <Select id="tier" name="tier" defaultValue={values.tier ?? "indie"}>
+                {TIER_KEYS.map((key) => (
+                  <option key={key} value={key}>
+                    {TIERS[key].label}
+                    {TIERS[key].submissions
+                      ? ` — up to ${TIERS[key].submissions!.toLocaleString("en-GB")} submissions`
+                      : " — agreed separately"}
+                  </option>
+                ))}
+              </Select>
+            </Field>
+          </div>
           <div className="mt-4 grid gap-4 sm:grid-cols-3">
             <Field label="Productions" htmlFor="maxSessions" error={errors.maxSessions}>
               <Input

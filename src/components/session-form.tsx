@@ -15,6 +15,7 @@ const LABELS: Record<string, string> = {
   company: "Company",
   opensAt: "Submissions open",
   closesAt: "Submissions close",
+  productionEndsAt: "Production finishes",
 };
 
 /**
@@ -45,6 +46,7 @@ export function SessionForm({
           company: session.company,
           opensAt: session.opensAt,
           closesAt: session.closesAt,
+          productionEndsAt: session.productionEndsAt,
         }
       : submitted;
 
@@ -138,6 +140,33 @@ export function SessionForm({
               name="closesAt"
               type="date"
               defaultValue={values.closesAt ?? ""}
+              required
+            />
+          </Field>
+        </div>
+      </fieldset>
+
+      <fieldset className="rounded-2xl border border-line bg-surface p-6 md:p-7">
+        <legend className="px-2 text-sm font-semibold tracking-tight">
+          When the production finishes
+        </legend>
+        <p className="max-w-prose text-sm text-muted">
+          The date the shoot or run wraps — not when casting closes. Everything performers send
+          you is destroyed 30 days after it, which is what your agreement and their terms both
+          promise them. You will be emailed 14 days and 48 hours beforehand.
+        </p>
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <Field
+            label="Production finishes"
+            htmlFor="productionEndsAt"
+            hint="Change it if the schedule moves; the deletion date follows."
+            error={errors.productionEndsAt}
+          >
+            <Input
+              id="productionEndsAt"
+              name="productionEndsAt"
+              type="date"
+              defaultValue={values.productionEndsAt ?? ""}
               required
             />
           </Field>

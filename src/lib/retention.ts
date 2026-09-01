@@ -13,36 +13,60 @@ export type Runner = <T extends Record<string, unknown>>(
 ) => Promise<T[]>;
 
 /**
- * How long a performer's details survive after the casting call they were sent
- * to closes. Six months is long enough for a production to finish casting and
- * come back to a shortlist, and short enough that the tool is not sitting on
- * contact details for people who applied for something that wrapped a year ago.
+ * How long a performer's details survive after the production they applied to
+ * finishes. Thirty days, as the Master Services Agreement and the public Terms
+ * of Submission both promise.
+ *
+ * The clock runs from the production end date, not the casting close date: a
+ * shoot can run for months after its casting call shut, and the casting
+ * director needs the shortlist until it wraps.
  */
-export const RETENTION_MONTHS = 6;
+export const RETENTION_DAYS = 30;
 
-/** The day a session's submissions are destroyed, as `yyyy-mm-dd`. */
-export function purgeDate(closesAt: string): string {
-  const date = new Date(`${closesAt}T00:00:00Z`);
-  date.setUTCMonth(date.getUTCMonth() + RETENTION_MONTHS);
-  return date.toISOString().slice(0, 10);
+/** The MSA promises a warning at fourteen days and again at forty-eight hours. */
+export const WARN_DAYS = [14, 2] as const;
+
+const MS_PER_DAY = 86_400_000;
+
+/** The day a production's submissions are destroyed, as `yyyy-mm-dd`. */
+export function purgeDate(productionEndsAt: string): string {
+  return new Date(Date.parse(`${productionEndsAt}T00:00:00Z`) + RETENTION_DAYS * MS_PER_DAY)
+    .toISOString()
+    .slice(0, 10);
+}
+
+/** Whole days until that happens. Negative once it has. */
+export function daysUntilPurge(productionEndsAt: string): number {
+  const now = new Date();
+  const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
+  return Math.round((Date.parse(`${purgeDate(productionEndsAt)}T00:00:00Z`) - today) / MS_PER_DAY);
 }
 
 export type Purged = { sessionId: string; name: string; submissions: number };
+export type Warning = {
+  sessionId: string;
+  name: string;
+  email: string;
+  days: number;
+  submissions: number;
+  purgeOn: string;
+};
 
 /**
- * Destroys the performers' details for every casting session that closed more
- * than the retention period ago, and marks the session so the dashboard can say
- * what happened rather than showing an empty list.
+ * Destroys the performers' details for every production that finished more than
+ * the retention period ago, and marks the session so the dashboard can say what
+ * happened rather than showing an empty list.
  *
  * The production, its roles and the fact that submissions were received all
  * survive — the casting director keeps a record of what they ran without
  * holding anybody's personal data. This is a real delete, not a flag.
  */
 export async function purgeExpiredSubmissions(run: Runner = query): Promise<Purged[]> {
-  const due = await run<{ id: string; name: string; owner_id: string | null; company: string }>(
-    `SELECT id, name, owner_id, company FROM sessions_casting
+  const due = await run<{ id: string; name: string }>(
+    `SELECT id, name FROM sessions_casting
       WHERE purged_at IS NULL
-        AND closes_at < (now() AT TIME ZONE 'utc')::date - interval '${RETENTION_MONTHS} months'`,
+        AND production_ends_at IS NOT NULL
+        AND production_ends_at < (now() AT TIME ZONE 'utc')::date - interval '${RETENTION_DAYS} days'`,
   );
 
   const purged: Purged[] = [];
@@ -61,4 +85,49 @@ export async function purgeExpiredSubmissions(run: Runner = query): Promise<Purg
   }
 
   return purged;
+}
+
+/**
+ * Productions whose purge is close enough to warn about, and which have not
+ * been warned at that threshold yet. Claiming the threshold is part of the same
+ * `UPDATE`, so two sweeps overlapping cannot both send the same warning.
+ */
+export async function claimPurgeWarnings(run: Runner = query): Promise<Warning[]> {
+  const warnings: Warning[] = [];
+
+  for (const days of WARN_DAYS) {
+    const column = days === 14 ? "purge_warned_14d" : "purge_warned_48h";
+
+    const due = await run<{ id: string; name: string; email: string; purge_on: string }>(
+      `UPDATE sessions_casting s SET ${column} = now()
+         FROM users u
+        WHERE u.id = s.owner_id
+          AND s.${column} IS NULL
+          AND s.purged_at IS NULL
+          AND s.production_ends_at IS NOT NULL
+          AND (s.production_ends_at + interval '${RETENTION_DAYS} days')
+              <= (now() AT TIME ZONE 'utc')::date + interval '${days} days'
+          AND (s.production_ends_at + interval '${RETENTION_DAYS} days')
+              >= (now() AT TIME ZONE 'utc')::date
+        RETURNING s.id, s.name, u.email,
+                  to_char(s.production_ends_at + interval '${RETENTION_DAYS} days', 'YYYY-MM-DD') AS purge_on`,
+    );
+
+    for (const row of due) {
+      const [{ count }] = await run<{ count: string }>(
+        "SELECT count(*)::text AS count FROM submissions WHERE session_id = $1",
+        [row.id],
+      );
+      warnings.push({
+        sessionId: row.id,
+        name: row.name,
+        email: row.email,
+        days,
+        submissions: Number(count),
+        purgeOn: row.purge_on,
+      });
+    }
+  }
+
+  return warnings;
 }

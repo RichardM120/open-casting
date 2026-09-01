@@ -99,6 +99,7 @@ section("4b a performer submits through the link");
   await p.fill("#name", "Perry Former"); await p.fill("#email", `pf${t}@example.com`);
   await p.fill("#phone", "07700 900777"); await p.fill("#location", "Leeds"); await p.fill("#age", "30");
   await p.fill("#coverNote", "A cover note comfortably longer than the twenty character minimum.");
+  await p.check("#acceptSubmissionTerms");
   await p.getByRole("button", { name: "Send submission" }).click();
   await p.getByText("Submission sent").waitFor({ timeout: 20000 });
   check("the submission goes through", true);
@@ -117,11 +118,11 @@ check("with a reason given", (await dir.p.getByText(/used them all/).count()) > 
 
 section("6 the retention promise is stated where it matters");
 await dir.p.goto(`${BASE}/dashboard/sessions/${first}`, { waitUntil: "networkidle" });
-check("names the date the details go", (await dir.p.getByText(/Performers.{0,3} details are kept for 6 months/).count()) > 0);
+check("names the date the details go", (await dir.p.getByText(/destroyed 30 days later/).count()) > 0);
 {
   const { c, p } = await ctx();
   await p.goto(`${BASE}/faq/performers`, { waitUntil: "networkidle" });
-  check("and performers are told the same", (await p.getByText(/Six months after the casting call closes/).count()) > 0);
+  check("and performers are told the same", (await p.getByText(/Thirty days after the production finishes/).count()) > 0);
   await c.close();
 }
 
@@ -161,7 +162,10 @@ section("10 six months on, the performers' details are destroyed");
   const { Pool } = await import("pg");
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   await pool.query(
-    "UPDATE sessions_casting SET closes_at = (now() AT TIME ZONE 'utc')::date - interval '7 months' WHERE id = $1",
+    `UPDATE sessions_casting
+        SET production_ends_at = (now() AT TIME ZONE 'utc')::date - interval '45 days',
+            closes_at = (now() AT TIME ZONE 'utc')::date - interval '60 days'
+      WHERE id = $1`,
     [first],
   );
 

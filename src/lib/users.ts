@@ -19,10 +19,13 @@ export type User = {
   access_until: string | null;
   /** Admins always need a second factor; this turns it on for anyone else. */
   mfa_required: boolean;
+  /** The commercial tier from the MSA's fee schedule. */
+  tier: string | null;
 };
 
 /** The commercial arrangement, as the administrator sets it. */
 export type AccountLimits = {
+  tier?: string;
   maxSessions: number | null;
   maxRolesPerSession: number | null;
   accessUntil: string | null;
@@ -32,7 +35,7 @@ type UserRow = User & { password_hash: string | null };
 
 const COLUMNS = `
   id, email, name, company, role, suspended_at, onboarded_at,
-  max_sessions, max_roles_per_session, mfa_required,
+  max_sessions, max_roles_per_session, mfa_required, tier,
   to_char(access_until, 'YYYY-MM-DD') AS access_until
 `;
 
@@ -98,8 +101,8 @@ export async function createUser(input: {
     const rows = await query<User>(
       `INSERT INTO users
          (id, email, name, company, password_hash, role,
-          max_sessions, max_roles_per_session, access_until)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+          max_sessions, max_roles_per_session, access_until, tier)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
        RETURNING ${COLUMNS}`,
       [
         `usr_${crypto.randomUUID().slice(0, 12)}`,
@@ -111,6 +114,7 @@ export async function createUser(input: {
         input.limits?.maxSessions ?? null,
         input.limits?.maxRolesPerSession ?? null,
         input.limits?.accessUntil ?? null,
+        input.limits?.tier ?? null,
       ],
     );
     return rows[0];
@@ -199,7 +203,7 @@ export type Account = User & { roles: number; submissions: number; sessions: num
 export async function listAccounts(): Promise<Account[]> {
   return query<Account>(
     `SELECT u.id, u.email, u.name, u.company, u.role, u.suspended_at, u.onboarded_at,
-            u.max_sessions, u.max_roles_per_session, u.mfa_required,
+            u.max_sessions, u.max_roles_per_session, u.mfa_required, u.tier,
             to_char(u.access_until, 'YYYY-MM-DD') AS access_until,
             count(DISTINCT r.id)::int  AS roles,
             count(DISTINCT sc.id)::int AS sessions,
@@ -232,9 +236,10 @@ export async function setAccountSuspended(id: string, suspended: boolean): Promi
 /** Changes what an account is allowed. Admin only — enforce upstream. */
 export async function setAccountLimits(id: string, limits: AccountLimits): Promise<boolean> {
   const rows = await query<{ id: string }>(
-    `UPDATE users SET max_sessions = $2, max_roles_per_session = $3, access_until = $4
+    `UPDATE users SET max_sessions = $2, max_roles_per_session = $3, access_until = $4,
+            tier = coalesce($5, tier)
       WHERE id = $1 RETURNING id`,
-    [id, limits.maxSessions, limits.maxRolesPerSession, limits.accessUntil],
+    [id, limits.maxSessions, limits.maxRolesPerSession, limits.accessUntil, limits.tier ?? null],
   );
   return rows.length > 0;
 }

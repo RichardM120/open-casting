@@ -102,6 +102,7 @@ section("6 removal is admin only and destroys the submissions");
   await p.fill("#coverNote", "A cover note comfortably longer than the twenty character minimum.");
   // The edit in step 1 gave this role terms, so acceptance is now required.
   await p.check("#acceptTerms");
+  await p.check("#acceptSubmissionTerms");
   await p.getByRole("button", { name: "Send submission" }).click();
   await p.getByText("Submission sent").waitFor({ timeout: 20000 });
   await c.close();

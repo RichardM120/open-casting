@@ -49,6 +49,12 @@ export type CastingSession = {
   /** Set when the performers' details were destroyed under the retention policy. */
   purgedAt: string | null;
   /**
+   * yyyy-mm-dd. When the production itself finishes — which is what the
+   * retention clock runs from, not the casting close date. A shoot can run for
+   * months after its casting call shut, and the material is needed until it wraps.
+   */
+  productionEndsAt: string;
+  /**
    * The unguessable half of the share link. Performers reach a production only
    * by holding this — there is no public index — so it is never rendered
    * anywhere a performer could see another production's.
@@ -93,6 +99,9 @@ export type Role = {
   postedAt: string;
 };
 
+/** Under this, a submission must come from a parent or legal guardian. */
+export const ADULT_AGE = 18;
+
 export type Submission = {
   id: string;
   roleId: string;
@@ -114,6 +123,12 @@ export type Submission = {
    */
   acceptedTerms: string | null;
   acceptedAt: string | null;
+  /** Which version of the platform's Terms of Submission was accepted. */
+  termsVersion: string | null;
+  /** Set only for an under-18: who consented, and when. */
+  guardianName: string | null;
+  guardianEmail: string | null;
+  guardianConsentAt: string | null;
   /** ISO timestamp. */
   submittedAt: string;
 };
@@ -148,6 +163,17 @@ export type UserRole = (typeof USER_ROLES)[number];
 
 export const SIGNUP_ROLES = ["director", "producer"] as const;
 export type SignupRole = (typeof SIGNUP_ROLES)[number];
+
+/** The MSA's fee schedule, as the thing an account is actually sold. */
+export const TIERS = {
+  indie: { label: "Indie", submissions: 500 },
+  commercial: { label: "Commercial", submissions: 2500 },
+  series: { label: "Series / Feature", submissions: 10000 },
+  enterprise: { label: "Enterprise", submissions: null },
+} as const;
+
+export type Tier = keyof typeof TIERS;
+export const TIER_KEYS = Object.keys(TIERS) as Tier[];
 
 export const ROLE_LABELS: Record<UserRole, string> = {
   director: "Casting director",

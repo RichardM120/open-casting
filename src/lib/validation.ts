@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-import { PAY_TYPES, PRODUCTION_TYPES, SIGNUP_ROLES, UNION_STATUSES } from "./types";
+import { PAY_TYPES, PRODUCTION_TYPES, SIGNUP_ROLES, TIER_KEYS, UNION_STATUSES } from "./types";
 
 const trimmed = z.string().trim();
 const optionalUrl = trimmed
@@ -28,6 +28,16 @@ export const submissionSchema = z.object({
   // Only present, and only required, when the role carries terms. The action
   // checks it against the role rather than trusting the form.
   acceptTerms: z.coerce.boolean().optional(),
+
+  // The platform's own terms, which apply to every submission whether or not
+  // the casting director set any of their own.
+  acceptSubmissionTerms: z.coerce.boolean().optional(),
+
+  // Only asked for, and only required, when the age given is under 18. The
+  // action decides that from the age, not from whether the fields were sent.
+  guardianName: trimmed.max(80).optional(),
+  guardianEmail: trimmed.max(120).optional(),
+  guardianConsent: z.coerce.boolean().optional(),
 });
 
 export type SubmissionInput = z.infer<typeof submissionSchema>;
@@ -108,6 +118,7 @@ const optionalDate = trimmed
   .transform((value) => (value === "" ? null : value));
 
 export const limitsSchema = z.object({
+  tier: z.enum(TIER_KEYS as [string, ...string[]]).optional(),
   maxSessions: optionalCount,
   maxRolesPerSession: optionalCount,
   accessUntil: optionalDate,
@@ -152,6 +163,10 @@ export const sessionSchema = z
     company: trimmed.min(2, "Name the company").max(80),
     opensAt: trimmed.regex(/^\d{4}-\d{2}-\d{2}$/, "Choose an opening date"),
     closesAt: trimmed.regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a closing date"),
+    productionEndsAt: trimmed.regex(
+      /^\d{4}-\d{2}-\d{2}$/,
+      "Enter when the production finishes",
+    ),
   })
   .refine((value) => value.closesAt >= value.opensAt, {
     path: ["closesAt"],
@@ -160,6 +175,10 @@ export const sessionSchema = z
   .refine((value) => Date.parse(`${value.closesAt}T23:59:59Z`) > Date.now(), {
     path: ["closesAt"],
     message: "Choose a closing date in the future",
+  })
+  .refine((value) => value.productionEndsAt >= value.closesAt, {
+    path: ["productionEndsAt"],
+    message: "The production cannot finish before casting closes",
   });
 
 export type SessionInput = z.infer<typeof sessionSchema>;

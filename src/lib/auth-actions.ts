@@ -3,6 +3,9 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { MSA } from "@/content/legal";
+
+import { recordAcceptance } from "./agreements";
 import { endSession, pruneExpiredSessions, requireUser, startSession } from "./auth";
 import { sendEmail } from "./email";
 import {
@@ -199,6 +202,33 @@ export async function saveProfile(
   }
 
   await updateProfile(user.id, parsed.data);
+  revalidatePath("/", "layout");
+  redirect(`/welcome?step=${String(formData.get("nextStep") ?? "2")}`);
+}
+
+/**
+ * Records that this account accepts the Master Services Agreement, which is the
+ * first thing setup asks and the gate on the rest of it.
+ *
+ * Accepted by the customer themselves rather than ticked on their behalf when
+ * the account was made: an agreement someone else accepted for you is not much
+ * of an agreement.
+ */
+export async function acceptAgreement(
+  _previous: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await requireUser("/welcome");
+
+  if (formData.get("accept") !== "on") {
+    return invalid(
+      { accept: "You need to accept the agreement to use the platform" },
+      "Tick to confirm you accept the Master Services Agreement and Data Processing Schedule.",
+      formData,
+    );
+  }
+
+  await recordAcceptance(user.id, MSA);
   revalidatePath("/", "layout");
   redirect(`/welcome?step=${String(formData.get("nextStep") ?? "2")}`);
 }

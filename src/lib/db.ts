@@ -186,6 +186,23 @@ const SCHEMA = `
   -- Admins always need a second factor; anyone else only if this is set.
   ALTER TABLE users ADD COLUMN IF NOT EXISTS mfa_required boolean NOT NULL DEFAULT false;
 
+  -- The commercial tier the account was sold, from the MSA's fee schedule.
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS tier text;
+
+  -- Which version of which agreement an account has accepted. Insert-only: the
+  -- record of what was agreed, and when, is the point of having it.
+  CREATE TABLE IF NOT EXISTS agreement_acceptances (
+    id          bigserial PRIMARY KEY,
+    user_id     text        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    document    text        NOT NULL,
+    version     text        NOT NULL,
+    accepted_at timestamptz NOT NULL DEFAULT now(),
+    ip          text
+  );
+
+  CREATE UNIQUE INDEX IF NOT EXISTS agreement_acceptances_idx
+    ON agreement_acceptances (user_id, document, version);
+
   -- Failed sign-ins, so a public login form cannot be brute-forced freely.
   CREATE TABLE IF NOT EXISTS login_attempts (
     id           bigserial PRIMARY KEY,
@@ -244,8 +261,22 @@ const SCHEMA = `
   -- policy, so the dashboard can say so rather than showing an empty list.
   ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS purged_at timestamptz;
 
+  -- When the production itself finishes, which is what the retention clock runs
+  -- from — not the casting close date. A production may still be shooting long
+  -- after its casting call shut, and the material is needed until it wraps.
+  ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS production_ends_at date;
+
+  -- The MSA promises warnings before the purge. Recorded so a warning is sent
+  -- once rather than on every sweep.
+  ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS purge_warned_14d timestamptz;
+  ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS purge_warned_48h timestamptz;
+
+  -- Existing projects predate the field; the casting close date is the only
+  -- honest guess at when they wrapped.
+  UPDATE sessions_casting SET production_ends_at = closes_at WHERE production_ends_at IS NULL;
+
   CREATE INDEX IF NOT EXISTS casting_owner_idx ON sessions_casting (owner_id);
-  CREATE INDEX IF NOT EXISTS casting_retention_idx ON sessions_casting (closes_at)
+  CREATE INDEX IF NOT EXISTS casting_retention_idx ON sessions_casting (production_ends_at)
     WHERE purged_at IS NULL;
   CREATE INDEX IF NOT EXISTS casting_company_idx ON sessions_casting (lower(company));
   CREATE INDEX IF NOT EXISTS casting_window_idx ON sessions_casting (opens_at, closes_at);
@@ -362,6 +393,12 @@ const SCHEMA = `
   -- once, not once per role. Enforced by the database rather than by a
   -- check-then-insert that two concurrent requests could both pass.
   DROP INDEX IF EXISTS submissions_role_email_idx;
+  -- What the performer accepted, and the guardian who accepted it for a child.
+  ALTER TABLE submissions ADD COLUMN IF NOT EXISTS terms_version text;
+  ALTER TABLE submissions ADD COLUMN IF NOT EXISTS guardian_name text;
+  ALTER TABLE submissions ADD COLUMN IF NOT EXISTS guardian_email text;
+  ALTER TABLE submissions ADD COLUMN IF NOT EXISTS guardian_consent_at timestamptz;
+
   CREATE UNIQUE INDEX IF NOT EXISTS submissions_session_email_idx
     ON submissions (session_id, lower(email))
     WHERE session_id IS NOT NULL;
@@ -420,12 +457,12 @@ async function seed(): Promise<void> {
       await client.query(
         `INSERT INTO sessions_casting
            (id, slug, name, synopsis, owner_id, company, opens_at, closes_at,
-            public_token, published_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, now()) ON CONFLICT (id) DO NOTHING`,
+            production_ends_at, public_token, published_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, now()) ON CONFLICT (id) DO NOTHING`,
         [
           session.id, session.slug, session.name, session.synopsis,
           DEMO_USER.id, session.company, session.opensAt, session.closesAt,
-          session.publicToken,
+          session.productionEndsAt, session.publicToken,
         ],
       );
     }

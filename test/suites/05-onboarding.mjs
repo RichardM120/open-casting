@@ -21,8 +21,12 @@ const dir = await provisionOnly(browser, errors, admin.p, {
 });
 check("lands on /welcome", dir.p.url().includes("/welcome"), dir.p.url());
 check("greets by first name", (await dir.p.getByText("Welcome, Ada").count()) > 0);
-check("shows a 3-step indicator", (await dir.p.getByLabel(/Step 1 of 3/).count()) > 0);
-check("step 1 is the profile", (await dir.p.locator("#company").count()) === 1);
+check("shows a 4-step indicator", (await dir.p.getByLabel(/Step 1 of 4/).count()) > 0);
+check("step 1 is the agreement", (await dir.p.locator('input[name="accept"]').count()) === 1);
+await dir.p.locator('input[name="accept"]').check();
+await dir.p.getByRole("button", { name: "Accept and continue" }).click();
+await dir.p.waitForURL(/welcome\?step=2/, { timeout: 20000 });
+check("then the profile", (await dir.p.locator("#company").count()) === 1);
 await dir.p.screenshot({ path: `${SHOTS}/wizard-1.png`, fullPage: true });
 
 section("2 step 1 validates and saves");
@@ -33,8 +37,8 @@ check("rejects a too-short company", true);
 await dir.p.fill("#company", `Wiz Co ${t}`);
 await dir.p.fill("#name", "Ada Director");
 await dir.p.getByRole("button", { name: "Save and continue" }).click();
-await dir.p.waitForURL("**step=2**", { timeout: 20000 });
-check("moves to step 2", true);
+await dir.p.waitForURL("**step=3**", { timeout: 20000 });
+check("moves on", true);
 check("name saved into the header", (await dir.p.locator("header").textContent()).includes(`Wiz Co ${t}`));
 
 section("3 step 2 explains the director's own scope");
@@ -46,8 +50,8 @@ check(
 );
 await dir.p.screenshot({ path: `${SHOTS}/wizard-2.png`, fullPage: true });
 await dir.p.getByRole("link", { name: "Continue" }).click();
-await dir.p.waitForURL("**step=3**", { timeout: 20000 });
-check("step 3 mentions the data duty", (await dir.p.getByText(/UK GDPR/).count()) > 0);
+await dir.p.waitForURL("**step=4**", { timeout: 20000 });
+check("the last step mentions the data duty", (await dir.p.getByText(/UK GDPR/).count()) > 0);
 check("links the casting guide", (await dir.p.getByRole("link", { name: /casting director guide/ }).count()) > 0);
 
 section("3b accounts cannot be self-registered");
@@ -71,9 +75,19 @@ section("5 an unfinished setup is nudged from the dashboard");
 const half = await provisionOnly(browser, errors, admin.p, {
   name: "Half Done", company: `Half ${t}`, email: `hf${t}@example.com`, role: "producer",
 });
+// Before the agreement, the dashboard is not reachable at all.
 await half.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
-check("banner shown", (await half.p.getByText(/setup is not finished/).count()) > 0);
-await half.p.goto(`${BASE}/welcome?step=2`, { waitUntil: "networkidle" });
+check("no dashboard until the agreement is accepted", half.p.url().includes("/welcome"), half.p.url());
+
+await half.p.locator('input[name="accept"]').check();
+await half.p.getByRole("button", { name: "Accept and continue" }).click();
+await half.p.waitForTimeout(1500);
+
+// Accepted but setup unfinished: the dashboard opens, and nudges.
+await half.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
+check("banner shown once past the agreement", (await half.p.getByText(/setup is not finished/).count()) > 0);
+
+await half.p.goto(`${BASE}/welcome?step=3`, { waitUntil: "networkidle" });
 check("producer gets company-wide wording", (await half.p.getByText(/every role posted under your company/i).count()) > 0);
 
 section("6 an admin is told what admin actually means");

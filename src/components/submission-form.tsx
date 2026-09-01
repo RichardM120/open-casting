@@ -1,10 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { submitApplication } from "@/lib/actions";
+import { SUBMISSION_TERMS } from "@/content/legal";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
+import { ADULT_AGE } from "@/lib/types";
 
 import { useErrorFocus } from "./use-error-focus";
 import { Button, ButtonLink, ErrorSummary, Field, Input, Select, Textarea, cx } from "./ui";
@@ -20,6 +22,10 @@ const LABELS: Record<string, string> = {
   profileUrl: "Profile link",
   coverNote: "Cover note",
   acceptTerms: "Terms for this role",
+  acceptSubmissionTerms: "Terms of Submission",
+  guardianName: "Parent or guardian's name",
+  guardianEmail: "Parent or guardian's email",
+  guardianConsent: "Parental consent",
 };
 
 export function SubmissionForm({
@@ -41,6 +47,12 @@ export function SubmissionForm({
 }) {
   const [state, formAction, pending] = useActionState(submitApplication, IDLE_FORM_STATE);
   const formRef = useErrorFocus(state.status, state.errors);
+
+  // Watched rather than read on submit, so the guardian section appears as soon
+  // as an age under 18 is typed — asking for it only after a refusal is a worse
+  // way to find out, and this is the one part of the form a child cannot fill in.
+  const [age, setAge] = useState(state.values.age ?? "");
+  const minor = age !== "" && Number(age) > 0 && Number(age) < ADULT_AGE;
 
   if (state.status === "success") {
     return (
@@ -142,7 +154,8 @@ export function SubmissionForm({
             type="number"
             min={5}
             max={100}
-            defaultValue={values.age ?? ""}
+            value={age}
+            onChange={(event) => setAge(event.target.value)}
             required
           />
         </Field>
@@ -229,6 +242,118 @@ export function SubmissionForm({
           ) : null}
         </div>
       ) : null}
+
+      {minor ? (
+        <div className="mt-6 rounded-xl border border-accent/40 bg-accent-soft p-5">
+          <h3 className="text-sm font-semibold tracking-tight">
+            This applicant is under {ADULT_AGE}
+          </h3>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            A submission for a child has to be made by a parent or someone with legal parental
+            responsibility. Please fill this in yourself rather than passing it to them.
+          </p>
+
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <Field
+              label="Parent or guardian's name"
+              htmlFor="guardianName"
+              error={errors.guardianName}
+            >
+              <Input
+                id="guardianName"
+                name="guardianName"
+                autoComplete="name"
+                defaultValue={values.guardianName ?? ""}
+              />
+            </Field>
+            <Field
+              label="Parent or guardian's email"
+              htmlFor="guardianEmail"
+              hint="Where the casting director will reply."
+              error={errors.guardianEmail}
+            >
+              <Input
+                id="guardianEmail"
+                name="guardianEmail"
+                type="email"
+                autoComplete="email"
+                defaultValue={values.guardianEmail ?? ""}
+              />
+            </Field>
+          </div>
+
+          <label
+            className={cx(
+              "mt-4 flex cursor-pointer items-start gap-2.5 text-sm leading-relaxed",
+              errors.guardianConsent ? "text-danger" : "text-text",
+            )}
+          >
+            <input
+              id="guardianConsent"
+              type="checkbox"
+              name="guardianConsent"
+              defaultChecked={values.guardianConsent === "on"}
+              aria-invalid={errors.guardianConsent ? true : undefined}
+              aria-describedby={errors.guardianConsent ? "guardianConsent-error" : undefined}
+              className="mt-0.5 size-4 shrink-0 accent-accent"
+            />
+            I am the parent or legal guardian of this applicant, and I consent to their name, age,
+            contact details and any material submitted being processed solely for casting
+            consideration on this project.
+          </label>
+          {errors.guardianConsent ? (
+            <p id="guardianConsent-error" className="mt-1.5 text-xs text-danger">
+              {errors.guardianConsent}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="mt-6 rounded-xl border border-line bg-raised p-5">
+        <h3 className="text-sm font-semibold tracking-tight">Terms of Submission</h3>
+        <p className="mt-2 text-sm leading-relaxed text-muted">
+          You keep ownership of everything you send. Nothing is sold, and nothing is used to
+          train AI. Your details are destroyed 30 days after the production finishes. Nudity,
+          abuse, hate speech and copyrighted material are not allowed and are removed and
+          reported.
+        </p>
+        <p className="mt-2 text-sm">
+          <Link
+            href="/legal/submission-terms"
+            target="_blank"
+            rel="noopener"
+            className="text-accent underline-offset-4 hover:underline"
+          >
+            Read the full Terms of Submission and Acceptable Use Policy ↗
+          </Link>
+        </p>
+
+        <label
+          className={cx(
+            "mt-4 flex cursor-pointer items-start gap-2.5 text-sm leading-relaxed",
+            errors.acceptSubmissionTerms ? "text-danger" : "text-text",
+          )}
+        >
+          <input
+            id="acceptSubmissionTerms"
+            type="checkbox"
+            name="acceptSubmissionTerms"
+            defaultChecked={values.acceptSubmissionTerms === "on"}
+            aria-invalid={errors.acceptSubmissionTerms ? true : undefined}
+            aria-describedby={
+              errors.acceptSubmissionTerms ? "acceptSubmissionTerms-error" : undefined
+            }
+            className="mt-0.5 size-4 shrink-0 accent-accent"
+          />
+          I have read and accept the Terms of Submission and Acceptable Use Policy.
+        </label>
+        {errors.acceptSubmissionTerms ? (
+          <p id="acceptSubmissionTerms-error" className="mt-1.5 text-xs text-danger">
+            {errors.acceptSubmissionTerms}
+          </p>
+        ) : null}
+        <p className="mt-3 text-xs text-faint">Version {SUBMISSION_TERMS.version}</p>
+      </div>
 
       <div className="mt-6 flex flex-wrap items-center gap-4">
         <Button type="submit" disabled={pending}>

@@ -10,7 +10,7 @@ import { currentUser, requireUser } from "@/lib/auth";
 import { formatDate, isOpen, notYetOpen } from "@/lib/format";
 import { listSessionRoles } from "@/lib/roles";
 import { requestOrigin } from "@/lib/origin";
-import { RETENTION_MONTHS, purgeDate } from "@/lib/retention";
+import { RETENTION_DAYS, daysUntilPurge, purgeDate } from "@/lib/retention";
 import { getVisibleSession } from "@/lib/sessions";
 import { countsByRole } from "@/lib/submissions";
 
@@ -182,8 +182,12 @@ export default async function SessionPage({
 
       <p className="mt-4 max-w-prose rounded-xl border border-line bg-raised px-4 py-3 text-xs leading-relaxed text-muted">
         {session.purgedAt
-          ? `The performers' details were removed on ${formatDate(session.purgedAt)}, ${RETENTION_MONTHS} months after this call closed. The roles and the counts are kept; the names, addresses and notes are gone.`
-          : `Performers' details are kept for ${RETENTION_MONTHS} months after this call closes, then destroyed — on ${formatDate(purgeDate(session.closesAt))} for this production. Export or act on anything you need before then. The production and its roles are kept.`}
+          ? `The performers' details were removed on ${formatDate(session.purgedAt)}, ${RETENTION_DAYS} days after this production finished. The roles and the counts are kept; the names, addresses and notes are gone.`
+          : `This production finishes on ${formatDate(session.productionEndsAt)}. Performers' details are destroyed ${RETENTION_DAYS} days later — on ${formatDate(purgeDate(session.productionEndsAt))}${
+              daysUntilPurge(session.productionEndsAt) <= 14
+                ? `, which is ${daysUntilPurge(session.productionEndsAt)} days away`
+                : ""
+            }. Export anything you need before then; the production and its roles are kept.`}
       </p>
 
       {roles.length > 0 ? (
