@@ -6,15 +6,12 @@ import { redirect } from "next/navigation";
 import { endSession, pruneExpiredSessions, requireUser, startSession } from "./auth";
 import { submittedValues, type FormState } from "./form-state";
 import { decoyPasswordHash, verifyPassword } from "./password";
-import { clientAddress, overLimit } from "./rate-limit";
 import {
-  EmailTakenError,
   markOnboarded,
   syncAdminRole,
   updateProfile,
   THROTTLE_WINDOW_MINUTES,
   clearFailedLogins,
-  createUser,
   findUserByEmail,
   isThrottled,
   recentFailures,
@@ -24,7 +21,6 @@ import {
   fieldErrors,
   profileSchema,
   signInSchema,
-  signUpSchema,
   type FieldErrors,
 } from "./validation";
 
@@ -36,41 +32,6 @@ function invalid(errors: FieldErrors, message: string, formData: FormData): Form
 function safeNext(value: FormDataEntryValue | null): string {
   const path = String(value ?? "");
   return /^\/(?!\/)/.test(path) ? path : "/dashboard";
-}
-
-export async function signUp(
-  _previous: FormState,
-  formData: FormData,
-): Promise<FormState> {
-  if (await overLimit("signup", await clientAddress())) {
-    return invalid({}, "Too many accounts created from here. Try again later.", formData);
-  }
-
-  const parsed = signUpSchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) {
-    return invalid(
-      fieldErrors(parsed.error),
-      "Check the highlighted fields and try again.",
-      formData,
-    );
-  }
-
-  let user;
-  try {
-    user = await createUser(parsed.data);
-  } catch (error) {
-    if (error instanceof EmailTakenError) {
-      return invalid(
-        { email: "An account with that email already exists" },
-        "That email is already registered — sign in instead.",
-        formData,
-      );
-    }
-    throw error;
-  }
-
-  await startSession(user.id);
-  redirect("/welcome");
 }
 
 export async function signIn(
@@ -127,7 +88,11 @@ export async function signIn(
   // Picks up an ADMIN_EMAILS change since this account last signed in.
   await syncAdminRole(user);
   await startSession(user.id);
-  redirect(safeNext(formData.get("next")));
+
+  // An account made by the administrator has never been through setup, and its
+  // holder has only ever seen a password someone sent them. Take them through
+  // it rather than dropping them on a dashboard with no context.
+  redirect(user.onboarded_at ? safeNext(formData.get("next")) : "/welcome");
 }
 
 export async function signOut(): Promise<void> {

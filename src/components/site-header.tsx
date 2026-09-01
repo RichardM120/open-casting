@@ -8,10 +8,8 @@ import type { SessionUser } from "@/lib/auth";
 
 import { ButtonLink, cx } from "./ui";
 
-const PUBLIC_NAV = [
-  { href: "/roles", label: "Browse roles" },
-  { href: "/faq", label: "FAQ" },
-] as const;
+// Nothing to browse: signed out, there is only the way in and the help pages.
+const PUBLIC_NAV = [{ href: "/faq", label: "FAQ" }] as const;
 const OWNER_NAV = [
   { href: "/dashboard", label: "Casting dashboard" },
   { href: "/dashboard/sessions", label: "Sessions" },
@@ -61,7 +59,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
               <span className="hidden text-sm text-muted md:inline" title={user.email}>
                 {user.company}
               </span>
-              <ButtonLink href="/roles/new" size="sm">
+              <ButtonLink href="/dashboard/roles/new" size="sm">
                 Post a role
               </ButtonLink>
               <form action={signOut}>
@@ -75,14 +73,8 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
             </>
           ) : (
             <>
-              <Link
-                href="/login"
-                className="rounded-full px-3 py-1.5 text-sm text-muted transition-colors hover:text-text"
-              >
+              <ButtonLink href="/login" size="sm">
                 Sign in
-              </Link>
-              <ButtonLink href="/roles/new" size="sm">
-                Post a role
               </ButtonLink>
             </>
           )}

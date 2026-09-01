@@ -30,10 +30,12 @@ import {
   setSubmissionStatus,
   submissionContext,
 } from "./submissions";
-import { SUBMISSION_STATUSES, type SubmissionStatus } from "./types";
-import { findAccount, setAccountSuspended } from "./users";
+import { ROLE_LABELS, SUBMISSION_STATUSES, type SubmissionStatus } from "./types";
+import { EmailTakenError, createUser, findAccount, setAccountSuspended } from "./users";
+import { generatePassword } from "./password";
 import {
   fieldErrors,
+  newAccountSchema,
   roleSchema,
   sessionSchema,
   submissionSchema,
@@ -155,7 +157,7 @@ export async function postRole(
 ): Promise<FormState> {
   // Checked here as well as on the page: the page redirect is for the person,
   // this is what actually stops an unauthenticated request writing a role.
-  const user = await requireUser("/roles/new");
+  const user = await requireUser("/dashboard/roles/new");
 
   const parsed = roleSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
@@ -310,6 +312,66 @@ export async function removeRole(formData: FormData): Promise<void> {
   await deleteRoleAsAdmin(id);
   revalidateEverything();
   redirect("/dashboard?removed=1");
+}
+
+/**
+ * Creates an account for someone. Admin only — this is the only way anyone gets
+ * one, so the check here is the whole of the registration policy.
+ *
+ * The password is generated rather than chosen, and returned in the action's
+ * result so it can be read once and handed over. It is never stored in the
+ * clear and cannot be retrieved afterwards; if it is lost, make another account
+ * or reset it.
+ */
+export async function createAccount(
+  _previous: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await requireUser("/dashboard/accounts");
+  if (user.role !== "admin") {
+    return invalid({}, "Only the administrator can create accounts.", formData);
+  }
+
+  const parsed = newAccountSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return invalid(
+      fieldErrors(parsed.error),
+      "Check the highlighted fields and try again.",
+      formData,
+    );
+  }
+
+  const password = generatePassword();
+
+  let created;
+  try {
+    created = await createUser({ ...parsed.data, password });
+  } catch (error) {
+    if (error instanceof EmailTakenError) {
+      return invalid(
+        { email: "An account with that email already exists" },
+        "That email already has an account.",
+        formData,
+      );
+    }
+    throw error;
+  }
+
+  await record({
+    action: "account.created",
+    actorId: user.id,
+    actorName: user.name,
+    detail: `${created.name} · ${created.company} · ${ROLE_LABELS[created.role]}`,
+  });
+
+  revalidateEverything();
+  return {
+    status: "success",
+    message: `Account created for ${created.name}.`,
+    errors: {},
+    values: {},
+    data: { email: created.email, password },
+  };
 }
 
 /** Suspends or restores an account. Admin only. */

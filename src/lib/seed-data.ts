@@ -242,6 +242,7 @@ const roles: SeedRole[] = [
 const sessions: SeedSession[] = [
   {
     id: "ses_saltmarsh",
+    publicToken: "demo-saltmarsh-4f21c9ba7e",
     slug: "saltmarsh",
     name: "Saltmarsh",
     synopsis:
@@ -252,6 +253,7 @@ const sessions: SeedSession[] = [
   },
   {
     id: "ses_northbank",
+    publicToken: "demo-northbank-7c03ae5d18",
     slug: "northbank",
     name: "Northbank",
     synopsis:
@@ -262,6 +264,7 @@ const sessions: SeedSession[] = [
   },
   {
     id: "ses_hearth",
+    publicToken: "demo-hearth-2b96fd40ac",
     slug: "hearth-winter-campaign",
     name: "Hearth — Winter Campaign",
     synopsis:
@@ -272,6 +275,7 @@ const sessions: SeedSession[] = [
   },
   {
     id: "ses_glasshouse",
+    publicToken: "demo-glasshouse-e81a37f65d",
     slug: "the-glasshouse",
     name: "The Glasshouse",
     synopsis:
@@ -282,6 +286,7 @@ const sessions: SeedSession[] = [
   },
   {
     id: "ses_lantern",
+    publicToken: "demo-lantern-93cd6b02fa",
     slug: "lantern",
     name: "Lantern",
     synopsis:
@@ -292,6 +297,7 @@ const sessions: SeedSession[] = [
   },
   {
     id: "ses_kestrel",
+    publicToken: "demo-kestrel-6d40ba18ce",
     slug: "kestrel",
     name: "Kestrel",
     synopsis:

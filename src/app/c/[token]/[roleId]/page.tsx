@@ -2,29 +2,34 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { DeadlineBadge } from "@/components/role-card";
+import { DeadlineBadge } from "@/components/deadline-badge";
 import { SubmissionForm, SubmissionsClosed } from "@/components/submission-form";
 import { Badge, Eyebrow } from "@/components/ui";
 import { ageRange, formatDate, formatRelative, isOpen, notYetOpen, roleWindow } from "@/lib/format";
 import { getRole } from "@/lib/roles";
+import { getSessionByToken } from "@/lib/sessions";
 import { listSubmissions } from "@/lib/submissions";
+
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
-}: PageProps<"/roles/[id]">): Promise<Metadata> {
-  const role = await getRole((await params).id);
-  if (!role) return { title: "Role not found" };
-
+}: PageProps<"/c/[token]/[roleId]">): Promise<Metadata> {
+  const role = await getRole((await params).roleId);
   return {
-    title: `${role.title} — ${role.production}`,
-    description: role.characterBrief.slice(0, 160),
+    title: role ? `${role.title} — ${role.production}` : "Role not found",
+    description: role?.characterBrief.slice(0, 160),
+    robots: { index: false, follow: false },
   };
 }
 
-export default async function RolePage({ params }: PageProps<"/roles/[id]">) {
-  const { id } = await params;
-  const role = await getRole(id);
-  if (!role) notFound();
+export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId]">) {
+  const { token, roleId } = await params;
+
+  // The token authorises, and the role must belong to the production it names.
+  // Checking both stops one production's link being used to read another's.
+  const [session, role] = await Promise.all([getSessionByToken(token), getRole(roleId)]);
+  if (!session || !role || role.sessionId !== session.id) notFound();
 
   const submissions = await listSubmissions(role.id);
   const window = roleWindow(role);
@@ -34,10 +39,10 @@ export default async function RolePage({ params }: PageProps<"/roles/[id]">) {
   return (
     <div className="mx-auto max-w-6xl px-5 py-12">
       <Link
-        href="/roles"
+        href={`/c/${token}`}
         className="text-sm text-muted transition-colors hover:text-text"
       >
-        ← All roles
+        ← All roles for {role.session.name}
       </Link>
 
       <div className="mt-6 grid gap-10 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-12">
@@ -111,11 +116,13 @@ export default async function RolePage({ params }: PageProps<"/roles/[id]">) {
               session={role.session.name}
               closesOn={formatDate(role.session.closesAt)}
               disclaimer={role.disclaimer}
+              backTo={`/c/${token}`}
             />
           ) : (
             <SubmissionsClosed
               session={role.session.name}
               opensOn={upcoming ? formatDate(role.session.opensAt) : undefined}
+              backTo={`/c/${token}`}
             />
           )}
         </div>

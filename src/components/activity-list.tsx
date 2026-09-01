@@ -19,6 +19,7 @@ const SHAPE: Record<Action, { verb: string; tone: string }> = {
   "role.removed": { verb: "removed", tone: "bg-danger" },
   "submission.received": { verb: "submitted for", tone: "bg-accent" },
   "submission.status": { verb: "updated a submission on", tone: "bg-muted" },
+  "account.created": { verb: "created an account for", tone: "bg-positive" },
   "account.suspended": { verb: "suspended", tone: "bg-danger" },
   "account.restored": { verb: "restored", tone: "bg-positive" },
 };

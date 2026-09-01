@@ -2,12 +2,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { DeadlineBadge } from "@/components/role-card";
+import { DeadlineBadge } from "@/components/deadline-badge";
+import { ShareLink } from "@/components/share-link";
 import { Badge, Button, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
 import { removeSession, toggleSessionClosed } from "@/lib/actions";
 import { currentUser, requireUser } from "@/lib/auth";
 import { formatDate, isOpen, notYetOpen } from "@/lib/format";
 import { listSessionRoles } from "@/lib/roles";
+import { requestOrigin } from "@/lib/origin";
 import { getVisibleSession } from "@/lib/sessions";
 import { countsByRole } from "@/lib/submissions";
 
@@ -31,11 +33,13 @@ export default async function SessionPage({
   const session = await getVisibleSession(id, user);
   if (!session) notFound();
 
-  const [roles, counts, query] = await Promise.all([
+  const [roles, counts, query, origin] = await Promise.all([
     listSessionRoles(id),
     countsByRole(user),
     searchParams,
+    requestOrigin(),
   ]);
+  const shareUrl = `${origin}/c/${session.publicToken}`;
 
   const submissions = roles.reduce(
     (total, role) => total + (counts.get(role.id)?.total ?? 0),
@@ -81,7 +85,7 @@ export default async function SessionPage({
               {session.closedAt ? "Reopen" : "Close early"}
             </Button>
           </form>
-          <ButtonLink href={`/roles/new?session=${session.id}`} size="sm">
+          <ButtonLink href={`/dashboard/roles/new?session=${session.id}`} size="sm">
             Post a role
           </ButtonLink>
         </div>
@@ -96,6 +100,19 @@ export default async function SessionPage({
               ? `Accepting submissions until the end of ${formatDate(session.closesAt)}. A performer may submit to this session once, whichever role they go for.`
               : `Past its closing date. The roles stay up for reference and take no new submissions.`}
       </p>
+
+      <section className="mt-8 rounded-2xl border border-accent/30 bg-accent-soft p-6">
+        <h2 className="text-lg font-semibold tracking-tight">The link for performers</h2>
+        <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
+          Send this to anyone you want to submit. It opens {session.name} and nothing else — there
+          is no listing on Open Casting to browse, so this link is the whole of the casting call.
+          Anyone holding it can submit while the session is open, so circulate it as widely, or as
+          narrowly, as you want the call to go.
+        </p>
+        <div className="mt-4">
+          <ShareLink url={shareUrl} />
+        </div>
+      </section>
 
       <div className="mt-8 flex flex-wrap gap-2">
         <Badge tone="outline">
@@ -144,7 +161,7 @@ export default async function SessionPage({
             title="No roles in this session yet"
             description="Post the roles you are casting for this production. They inherit the session's dates, so you do not set a closing date per role."
             action={
-              <ButtonLink href={`/roles/new?session=${session.id}`} size="sm">
+              <ButtonLink href={`/dashboard/roles/new?session=${session.id}`} size="sm">
                 Post a role
               </ButtonLink>
             }

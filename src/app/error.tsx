@@ -29,13 +29,13 @@ export default function Error({
       </h1>
       <p className="mt-3 max-w-prose text-muted">
         The error is on our side, not yours. Nothing you submitted has been lost — if you were
-        part-way through a submission, go back to the role and it will still be there.
+        part-way through a submission, open the casting link again and it will still be there.
       </p>
 
       <div className="mt-8 flex flex-wrap gap-3">
         <Button onClick={reset}>Try again</Button>
-        <ButtonLink href="/roles" variant="secondary">
-          Browse open roles
+        <ButtonLink href="/" variant="secondary">
+          Back to the start
         </ButtonLink>
       </div>
 

@@ -91,6 +91,20 @@ const password = z
   .min(10, "Use at least 10 characters")
   .max(200, "Keep it under 200 characters");
 
+/**
+ * What the administrator fills in to make somebody an account. There is no
+ * password field: one is generated and shown once, so a weak shared password
+ * is not something anyone can choose here.
+ */
+export const newAccountSchema = z.object({
+  name: trimmed.min(2, "Enter their name").max(80),
+  company: trimmed.min(2, "Name their company or agency").max(80),
+  email: trimmed.max(120).pipe(z.email("Enter a valid email address")),
+  role: z.enum(SIGNUP_ROLES, { message: "Choose what they will be able to see" }),
+});
+
+export type NewAccountInput = z.infer<typeof newAccountSchema>;
+
 export const signUpSchema = z.object({
   name: trimmed.min(2, "Enter your name").max(80),
   company: trimmed.min(2, "Name your company or agency").max(80),

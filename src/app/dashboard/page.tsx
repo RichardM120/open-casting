@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 
 import { ActivityList } from "@/components/activity-list";
-import { DeadlineBadge } from "@/components/role-card";
+import { DeadlineBadge } from "@/components/deadline-badge";
 import { Badge, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
 import { listActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
@@ -78,7 +78,7 @@ export default async function DashboardPage() {
               Accounts
             </ButtonLink>
           ) : null}
-          <ButtonLink href="/roles/new">Post a role</ButtonLink>
+          <ButtonLink href="/dashboard/roles/new">Post a role</ButtonLink>
         </div>
       </div>
 

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { NewAccountForm } from "@/components/new-account-form";
 import { Badge, Button, Eyebrow } from "@/components/ui";
 import { toggleAccountSuspended } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
@@ -30,10 +31,22 @@ export default async function AccountsPage() {
         <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Accounts</h1>
         <p className="mt-3 max-w-2xl text-muted">
           {accounts.length} {accounts.length === 1 ? "account" : "accounts"}
-          {suspended > 0 ? `, ${suspended} suspended` : ""}. Suspending signs someone out
-          immediately and blocks them from signing back in; their roles stay up.
+          {suspended > 0 ? `, ${suspended} suspended` : ""}. Nobody can register themselves —
+          every account here was made on this page. Suspending signs someone out immediately and
+          blocks them from signing back in; their roles stay up.
         </p>
       </div>
+
+      <section className="mt-10 rounded-2xl border border-line bg-surface p-6 md:p-7">
+        <h2 className="text-lg font-semibold tracking-tight">Create an account</h2>
+        <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
+          For a casting director or a production team. You will be given a password to pass on;
+          it is shown once.
+        </p>
+        <div className="mt-6">
+          <NewAccountForm />
+        </div>
+      </section>
 
       <ul className="mt-10 flex flex-col gap-3">
         {accounts.map((account) => {

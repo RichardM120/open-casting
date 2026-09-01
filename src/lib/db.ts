@@ -1,5 +1,7 @@
 import "server-only";
 
+import { randomBytes } from "node:crypto";
+
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
 
 import { hashPassword, unusablePassword } from "./password";
@@ -197,6 +199,19 @@ const SCHEMA = `
     created_at timestamptz NOT NULL DEFAULT now()
   );
 
+  -- The unguessable half of a project's share link. Performers reach a casting
+  -- session only by holding this; there is no index to browse and nothing links
+  -- to it, so the token is the whole of the access control.
+  ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS public_token text;
+
+  -- Filled in by backfillTokens(), from Node's CSPRNG: gen_random_bytes() is
+  -- pgcrypto, which is not guaranteed to be installed, and the weaker SQL
+  -- alternatives (random(), md5(clock_timestamp())) are not acceptable for a
+  -- value that is the whole of the access control.
+
+  CREATE UNIQUE INDEX IF NOT EXISTS casting_token_idx
+    ON sessions_casting (public_token) WHERE public_token IS NOT NULL;
+
   CREATE INDEX IF NOT EXISTS casting_owner_idx ON sessions_casting (owner_id);
   CREATE INDEX IF NOT EXISTS casting_company_idx ON sessions_casting (lower(company));
   CREATE INDEX IF NOT EXISTS casting_window_idx ON sessions_casting (opens_at, closes_at);
@@ -336,6 +351,8 @@ function ensureSchema(): Promise<void> {
     );
     if (rows[0]?.count === "0") await seed();
     await backfillSessions();
+  await backfillTokens();
+  await bootstrapAdmin();
   })().catch((error) => {
     // Let the next request retry rather than caching a failed bootstrap.
     globalThis.__openCastingSchema = undefined;
@@ -367,11 +384,12 @@ async function seed(): Promise<void> {
     for (const session of sessions) {
       await client.query(
         `INSERT INTO sessions_casting
-           (id, slug, name, synopsis, owner_id, company, opens_at, closes_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (id) DO NOTHING`,
+           (id, slug, name, synopsis, owner_id, company, opens_at, closes_at, public_token)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT (id) DO NOTHING`,
         [
           session.id, session.slug, session.name, session.synopsis,
           DEMO_USER.id, session.company, session.opensAt, session.closesAt,
+          session.publicToken,
         ],
       );
     }
@@ -412,6 +430,60 @@ async function seed(): Promise<void> {
       );
     }
   });
+}
+
+/** A share token: 24 bytes of CSPRNG, url-safe, and not worth guessing. */
+export function shareToken(): string {
+  return randomBytes(24).toString("base64url");
+}
+
+/**
+ * Gives every casting session a share token. Done here rather than in SQL
+ * because the token is the only thing standing between a link and a
+ * production's casting brief, so it comes from a real CSPRNG.
+ */
+async function backfillTokens(): Promise<void> {
+  const rows = await pool().query<{ id: string }>(
+    "SELECT id FROM sessions_casting WHERE public_token IS NULL",
+  );
+  for (const row of rows.rows) {
+    await pool().query("UPDATE sessions_casting SET public_token = $2 WHERE id = $1", [
+      row.id,
+      shareToken(),
+    ]);
+  }
+}
+
+/**
+ * Creates the administrator's account, once, from the environment.
+ *
+ * Nobody can register themselves, so without this there would be no way into a
+ * fresh deployment. It only ever inserts: an existing account is left alone, so
+ * changing the password here later does nothing — change it in the app.
+ */
+async function bootstrapAdmin(): Promise<void> {
+  const email = (process.env.ADMIN_EMAILS ?? "").split(",")[0]?.trim();
+  const password = process.env.ADMIN_BOOTSTRAP_PASSWORD?.trim();
+  if (!email || !password) return;
+
+  const existing = await pool().query("SELECT 1 FROM users WHERE lower(email) = lower($1)", [
+    email,
+  ]);
+  if (existing.rowCount && existing.rowCount > 0) return;
+
+  await pool().query(
+    `INSERT INTO users (id, email, name, company, password_hash, role, onboarded_at)
+     VALUES ($1, $2, $3, $4, $5, 'admin', NULL)
+     ON CONFLICT DO NOTHING`,
+    [
+      `usr_${crypto.randomUUID().slice(0, 12)}`,
+      email,
+      email.split("@")[0],
+      "Open Casting",
+      await hashPassword(password),
+    ],
+  );
+  console.log(`[bootstrap] created the administrator account for ${email}`);
 }
 
 /**
@@ -495,6 +567,8 @@ export async function resetToSeed(): Promise<void> {
   await ensureDemoOwner();
   await seed();
   await backfillSessions();
+  await backfillTokens();
+  await bootstrapAdmin();
 }
 
 /**

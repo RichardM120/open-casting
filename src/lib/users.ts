@@ -62,6 +62,10 @@ export async function syncAdminRole(user: User): Promise<User> {
 
 /* --------------------------------------------------------------- queries -- */
 
+/**
+ * Creates an account. Only the administrator reaches this — there is no
+ * self-registration — so the caller must have checked that first.
+ */
 export async function createUser(input: {
   name: string;
   email: string;
@@ -108,41 +112,28 @@ export async function findUserByGoogleSub(sub: string): Promise<User | null> {
 }
 
 /**
- * Links a Google identity to the account with the same email, or creates one.
+ * Links a Google identity to an account that already exists, and returns null
+ * when there is none.
  *
- * Linking on a matching email is only safe because Google tells us whether it
- * verified the address; the caller must refuse an unverified one.
+ * It deliberately does not create one. Nobody can register themselves here —
+ * the administrator makes every account — and a Google button that quietly
+ * created an account for any Google address would be exactly that hole,
+ * reopened. Linking on a matching email is safe only because Google tells us
+ * whether it verified the address; the caller must refuse an unverified one.
  */
-export async function upsertGoogleUser(profile: {
+export async function linkGoogleUser(profile: {
   sub: string;
   email: string;
-  name: string;
-}): Promise<User> {
+}): Promise<User | null> {
   const linked = await findUserByGoogleSub(profile.sub);
   if (linked) return linked;
 
   const existing = await findUserByEmail(profile.email);
-  if (existing) {
-    const rows = await query<User>(
-      `UPDATE users SET google_sub = $2 WHERE id = $1 RETURNING ${COLUMNS}`,
-      [existing.id, profile.sub],
-    );
-    return rows[0];
-  }
+  if (!existing) return null;
 
   const rows = await query<User>(
-    `INSERT INTO users (id, email, name, company, role, google_sub)
-     VALUES ($1, $2, $3, $4, $5, $6)
-     RETURNING ${COLUMNS}`,
-    [
-      `usr_${crypto.randomUUID().slice(0, 12)}`,
-      profile.email,
-      profile.name,
-      // Company is asked for at sign-up; a Google-first account fills it in later.
-      profile.name,
-      roleForEmail(profile.email, "director"),
-      profile.sub,
-    ],
+    `UPDATE users SET google_sub = $2 WHERE id = $1 RETURNING ${COLUMNS}`,
+    [existing.id, profile.sub],
   );
   return rows[0];
 }

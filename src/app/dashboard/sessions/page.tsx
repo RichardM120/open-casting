@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { DeadlineBadge } from "@/components/role-card";
+import { DeadlineBadge } from "@/components/deadline-badge";
 import { Badge, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { formatDate, isOpen } from "@/lib/format";

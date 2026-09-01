@@ -41,8 +41,8 @@ export default function CastingDirectorFaqPage() {
               company name, across productions.
             </li>
             <li>
-              <strong className="text-text">Admin</strong> — everything on the board. Granted by
-              the site operator, never chosen when signing up.
+              <strong className="text-text">Admin</strong> — everything on the system, and the
+              only account that can create other accounts.
             </li>
           </ul>
           <p>
@@ -54,6 +54,25 @@ export default function CastingDirectorFaqPage() {
           <p>
             No, and deliberately so. An account requirement is the fastest way to lose the people
             an open call exists to reach.
+          </p>
+        </FaqItem>
+        <FaqItem q="How do performers find my roles?">
+          <p>
+            You send them the link. Every casting session has one, on its page in your dashboard,
+            and it opens that production and nothing else. There is no public listing on Open
+            Casting and no search, so the call goes exactly as far as you circulate it — an
+            agent mailout, a union board, a social post, whichever you would normally use.
+          </p>
+          <p>
+            Anyone holding the link can submit while the session is open. Treat it as you would
+            the call sheet: not secret, but not something to leave lying about either.
+          </p>
+        </FaqItem>
+        <FaqItem q="Who can get an account?">
+          <p>
+            Whoever the administrator sets one up for. Nobody can register themselves, which is
+            what keeps the account list to the people actually working on your productions.
+            Ask the administrator and they will send you the credentials.
           </p>
         </FaqItem>
         <FaqItem q="Can I edit or take down a role after posting?">
@@ -263,7 +282,7 @@ export default function CastingDirectorFaqPage() {
       <NotLegalAdvice />
 
       <div className="mt-10 flex flex-wrap gap-3">
-        <ButtonLink href="/roles/new">Post a role</ButtonLink>
+        <ButtonLink href="/dashboard/sessions/new">Open a casting session</ButtonLink>
         <ButtonLink href="/faq/performers" variant="secondary">
           FAQ for performers
         </ButtonLink>

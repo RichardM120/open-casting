@@ -41,6 +41,12 @@ export type CastingSession = {
   closesAt: string;
   /** Set when closed ahead of closesAt. ISO timestamp, or null. */
   closedAt: string | null;
+  /**
+   * The unguessable half of the share link. Performers reach a production only
+   * by holding this — there is no public index — so it is never rendered
+   * anywhere a performer could see another production's.
+   */
+  publicToken: string;
   createdAt: string;
 };
 

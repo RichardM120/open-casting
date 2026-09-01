@@ -41,9 +41,9 @@ deliberately left alone.
 
 | Route | What it does |
 | --- | --- |
-| `/` | Landing page with live counts and the roles closing soonest |
-| `/roles` | Browse and filter every open call |
-| `/roles/[id]` | The full brief, plus the submission form |
+| `/` | The way in: admin sign-in, production sign-in, and a note for performers |
+| `/c/[token]` | One production's casting call — the only page a performer sees |
+| `/c/[token]/[roleId]` | The full brief, plus the submission form |
 | `/roles/new` | Post a role into a casting session — sign-in required |
 | `/dashboard` | The roles you may see, with submission counts — sign-in required |
 | `/dashboard/sessions` | Your productions, and the window each is open for |
@@ -51,12 +51,12 @@ deliberately left alone.
 | `/dashboard/sessions/[id]` | One production: its window, its roles, close early, remove |
 | `/dashboard/sessions/[id]/edit` | Move a production's dates, taking its roles with them |
 | `/dashboard/roles/[id]` | The submissions for one role, and their status |
-| `/login`, `/signup` | Password or Google sign-in for the casting side |
+| `/login` | Password or Google sign-in. There is no `/signup` |
 | `/welcome` | Three-step setup, tailored to the account's role |
 | `/faq/performers` | What the listing fields mean and what submitting commits you to |
 | `/faq/casting-directors` | What each posting field commits you to, and writing terms |
 | `/dashboard/roles/[id]/edit` | Edit a role in place |
-| `/dashboard/accounts` | Suspend and restore accounts — admin only |
+| `/dashboard/accounts` | Create, suspend and restore accounts — admin only |
 | `/dashboard/activity` | The audit trail, scoped like everything else |
 | `/api/health` | Whether the deployment can reach its database. No data, no secrets |
 
@@ -115,6 +115,29 @@ instance opens its own pool. Keep `DATABASE_POOL_MAX` small.
 TLS is verified whenever the connection string asks for it. A provider using its
 own certificate authority can set `DATABASE_SSL_NO_VERIFY=1`, which keeps the
 connection encrypted but stops checking who is on the other end.
+
+## Who can get in
+
+Open Casting is not a public board. There is no listing to browse, no search, and
+nothing to register for.
+
+- **Accounts are created by the administrator**, on `/dashboard/accounts`, and by
+  nobody else. The password is generated there and shown once. Google sign-in
+  links an address that already has an account and will not create one.
+- **The administrator's own account** is created from the environment on first
+  boot — see *Deploying* — because otherwise a fresh deployment would have no
+  way in at all.
+- **Performers never sign in.** A casting session has a share link carrying an
+  unguessable token, shown on its page in the dashboard. That link is the whole
+  of the access control: whoever holds it can read that production and submit to
+  it while it is open, and can reach nothing else. `robots.txt` disallows
+  everything and the casting pages carry `noindex`, so a token cannot turn up in
+  a search result.
+
+The token is 24 bytes from Node's CSPRNG, url-safe, and unique. It is generated
+in the application rather than in SQL: `gen_random_bytes()` is pgcrypto, which is
+not guaranteed to be installed, and the alternatives available in plain SQL are
+not strong enough for a value that is doing this job.
 
 ## Casting sessions
 
@@ -259,7 +282,17 @@ Pages, because submitting, posting a role and changing a status are all server
 actions.
 
 Vercel is the path of least resistance: import the repo, add `DATABASE_URL` as
-an environment variable, deploy. Every page that reads data is `force-dynamic`,
+an environment variable, deploy.
+
+Two more variables decide who the administrator is:
+
+| Variable | What it does |
+| --- | --- |
+| `ADMIN_EMAILS` | Comma-separated. An account with one of these addresses is an admin, re-checked on every sign-in. Nothing else grants it. |
+| `ADMIN_BOOTSTRAP_PASSWORD` | Creates the first address in `ADMIN_EMAILS` as an account, once, if it does not already exist. Ignored afterwards — change the password in the app, not here. |
+
+Set both before the first request, sign in, and then every other account is made
+from `/dashboard/accounts`. Every page that reads data is `force-dynamic`,
 so the build itself does not need a reachable database.
 
 That last point cuts both ways: a deployment with no reachable database builds
@@ -271,6 +304,9 @@ printing the connection string.
 
 ## Known limits
 
+Anyone holding a share link can submit; there is no per-performer identity, so a
+link that is forwarded is a link that works. Regenerating a token is not exposed
+in the UI yet — closing the session is the way to stop a leaked link today.
 Headshots and tapes are links, not uploads. Nobody is emailed when a submission
 arrives or a status changes — the performer's address is on every submission, and
 replying is a manual step. A role cannot be moved between casting sessions.

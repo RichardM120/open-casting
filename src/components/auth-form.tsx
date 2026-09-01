@@ -1,18 +1,11 @@
 "use client";
 
-import Link from "next/link";
 import { useActionState } from "react";
 
-import { signIn, signUp } from "@/lib/auth-actions";
+import { signIn } from "@/lib/auth-actions";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
-import { ROLE_DESCRIPTIONS, SIGNUP_ROLES } from "@/lib/types";
 
-import { Button, Field, Input, cx } from "./ui";
-
-const ROLE_HEADINGS: Record<(typeof SIGNUP_ROLES)[number], string> = {
-  director: "I cast roles",
-  producer: "I oversee a company",
-};
+import { Button, Field, Input } from "./ui";
 
 function GoogleButton({ next, label }: { next: string; label: string }) {
   return (
@@ -98,123 +91,9 @@ export function SignInForm({
         </p>
       ) : null}
 
-      <p className="mt-2 text-sm text-muted">
-        No account yet?{" "}
-        <Link href="/signup" className="text-accent underline-offset-4 hover:underline">
-          Create one
-        </Link>
-      </p>
-    </form>
-  );
-}
-
-export function SignUpForm({ next, google }: { next: string; google: boolean }) {
-  const [state, formAction, pending] = useActionState(signUp, IDLE_FORM_STATE);
-  const { errors, values } = state;
-  const selectedRole = values.role ?? "director";
-
-  return (
-    <form action={formAction} className="flex flex-col gap-4">
-      <input type="hidden" name="next" value={next} />
-
-      {google ? <GoogleButton next={next} label="Sign up with Google" /> : null}
-
-      <fieldset className="flex flex-col gap-2">
-        <legend className="text-sm font-medium text-text">How will you use the board?</legend>
-        <div className="mt-1 grid gap-2">
-          {SIGNUP_ROLES.map((role) => (
-            <label
-              key={role}
-              className={cx(
-                "flex cursor-pointer gap-3 rounded-xl border p-3.5 transition-colors",
-                selectedRole === role
-                  ? "border-accent bg-accent-soft"
-                  : "border-line bg-raised hover:border-line-strong",
-              )}
-            >
-              <input
-                type="radio"
-                name="role"
-                value={role}
-                defaultChecked={selectedRole === role}
-                className="mt-0.5 size-4 accent-accent"
-              />
-              <span>
-                <span className="block text-sm font-medium">{ROLE_HEADINGS[role]}</span>
-                <span className="mt-0.5 block text-xs text-muted">
-                  {ROLE_DESCRIPTIONS[role]}
-                </span>
-              </span>
-            </label>
-          ))}
-        </div>
-        {errors.role ? <p className="text-xs text-danger">{errors.role}</p> : null}
-      </fieldset>
-
-      <Field label="Your name" htmlFor="name" error={errors.name}>
-        <Input
-          id="name"
-          name="name"
-          autoComplete="name"
-          defaultValue={values.name ?? ""}
-          required
-        />
-      </Field>
-      <Field
-        label="Company or agency"
-        htmlFor="company"
-        hint="Shown on the roles you post."
-        error={errors.company}
-      >
-        <Input
-          id="company"
-          name="company"
-          autoComplete="organization"
-          defaultValue={values.company ?? ""}
-          required
-        />
-      </Field>
-      <Field label="Email" htmlFor="email" error={errors.email}>
-        <Input
-          id="email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          defaultValue={values.email ?? ""}
-          required
-        />
-      </Field>
-      <Field
-        label="Password"
-        htmlFor="password"
-        hint="At least 10 characters. Length beats punctuation."
-        error={errors.password}
-      >
-        <Input
-          id="password"
-          name="password"
-          type="password"
-          autoComplete="new-password"
-          minLength={10}
-          required
-        />
-      </Field>
-
-      <Button type="submit" disabled={pending} className="mt-2 w-full">
-        {pending ? "Creating account…" : "Create account"}
-      </Button>
-
-      {state.status === "error" ? (
-        <p className="text-sm text-danger" role="alert">
-          {state.message}
-        </p>
-      ) : null}
-
-      <p className="mt-2 text-sm text-muted">
-        Already have an account?{" "}
-        <Link href="/login" className="text-accent underline-offset-4 hover:underline">
-          Sign in
-        </Link>
+      <p className="mt-2 text-sm leading-relaxed text-muted">
+        Accounts are created by the administrator — there is nothing to register for. If you do
+        not have one, ask whoever runs the casting for this production.
       </p>
     </form>
   );

@@ -31,7 +31,8 @@ export default function PerformerFaqPage() {
       <FaqSection title="The basics">
         <FaqItem q="Do I need an account?">
           <p>
-            No. Browsing and submitting are open to anyone. Accounts are only for the people
+            No, and there is nothing to register for. You submit through the link the production
+            sent you, and that link is all you need. Accounts are only for the people
             casting, so they can post roles and read what comes in.
           </p>
         </FaqItem>
@@ -200,6 +201,17 @@ export default function PerformerFaqPage() {
       />
 
       <FaqSection title="Being careful">
+        <FaqItem q="Why can I not search for other roles?">
+          <p>
+            Because Open Casting is not a job board. It is the tool a production uses to run its
+            own casting, so there is no index of everything on it and no way to browse from one
+            production to another. A casting call reaches you because someone circulated it.
+          </p>
+          <p>
+            That also means the link is worth keeping. If you lose it, ask whoever sent it — we
+            cannot look it up for you.
+          </p>
+        </FaqItem>
         <FaqItem q="How do I know a listing is genuine?">
           <p>
             Every listing names the casting director and the company. Look them up. Real casting
@@ -227,7 +239,7 @@ export default function PerformerFaqPage() {
       <NotLegalAdvice />
 
       <div className="mt-10 flex flex-wrap gap-3">
-        <ButtonLink href="/roles">Browse open roles</ButtonLink>
+        <ButtonLink href="/">Back to the start</ButtonLink>
         <ButtonLink href="/faq/casting-directors" variant="secondary">
           FAQ for casting directors
         </ButtonLink>

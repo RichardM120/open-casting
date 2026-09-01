@@ -50,7 +50,10 @@ export function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     {
-      source: "/((?!api|_next/static|_next/image|favicon.ico).*)",
+      // robots.txt is text/plain with nothing to execute, and the browser's own
+      // plain-text viewer styles it inline — so a policy there protects nothing
+      // and reports a violation the page did not cause.
+      source: "/((?!api|_next/static|_next/image|favicon.ico|robots.txt).*)",
       missing: [{ type: "header", key: "next-router-prefetch" }],
     },
   ],

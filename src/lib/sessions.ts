@@ -1,7 +1,7 @@
 import "server-only";
 
 import type { SessionUser } from "./auth";
-import { query } from "./db";
+import { query, shareToken } from "./db";
 import type { CastingSession } from "./types";
 
 type Row = {
@@ -14,6 +14,7 @@ type Row = {
   opens_at: string;
   closes_at: string;
   closed_at: Date | null;
+  public_token: string;
   created_at: Date;
 };
 
@@ -22,7 +23,7 @@ export const SESSION_COLUMNS = `
   id, slug, name, synopsis, owner_id, company,
   to_char(opens_at, 'YYYY-MM-DD')  AS opens_at,
   to_char(closes_at, 'YYYY-MM-DD') AS closes_at,
-  closed_at, created_at
+  closed_at, public_token, created_at
 `;
 
 export function toSession(row: Row): CastingSession {
@@ -36,6 +37,7 @@ export function toSession(row: Row): CastingSession {
     opensAt: row.opens_at,
     closesAt: row.closes_at,
     closedAt: row.closed_at?.toISOString() ?? null,
+    publicToken: row.public_token,
     createdAt: row.created_at.toISOString(),
   };
 }
@@ -90,11 +92,28 @@ export async function getVisibleSession(
   return rows[0] ? toSession(rows[0]) : null;
 }
 
-/** The public view: any session, by id. */
+/** Any session, by id. For the dashboard side, which has already authorised. */
 export async function getSession(id: string): Promise<CastingSession | null> {
   const rows = await query<Row>(
     `SELECT ${SESSION_COLUMNS} FROM sessions_casting WHERE id = $1`,
     [id],
+  );
+  return rows[0] ? toSession(rows[0]) : null;
+}
+
+/**
+ * The one public entry point: a production, by its share token. Holding the
+ * token is the authorisation — there is nothing else to check, and nothing
+ * else in the app will hand a performer one.
+ */
+export async function getSessionByToken(token: string): Promise<CastingSession | null> {
+  // Length-checked before the query so an absurd URL is not a database round
+  // trip, and so a token cannot be a wildcard.
+  if (!/^[A-Za-z0-9_-]{16,64}$/.test(token)) return null;
+
+  const rows = await query<Row>(
+    `SELECT ${SESSION_COLUMNS} FROM sessions_casting WHERE public_token = $1`,
+    [token],
   );
   return rows[0] ? toSession(rows[0]) : null;
 }
@@ -139,8 +158,8 @@ export async function createSession(
 ): Promise<CastingSession> {
   const rows = await query<Row>(
     `INSERT INTO sessions_casting
-       (id, slug, name, synopsis, owner_id, company, opens_at, closes_at)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       (id, slug, name, synopsis, owner_id, company, opens_at, closes_at, public_token)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
      RETURNING ${SESSION_COLUMNS}`,
     [
       `ses_${crypto.randomUUID().slice(0, 12)}`,
@@ -151,6 +170,7 @@ export async function createSession(
       input.company,
       input.opensAt,
       input.closesAt,
+      shareToken(),
     ],
   );
   return toSession(rows[0]);

@@ -12,7 +12,9 @@ import {
   postRole,
   reporter,
   session,
-  signUp,
+  adminSession,
+  provision,
+  shareTokenForRole,
   submit,
 } from "./_helpers.mjs";
 
@@ -22,11 +24,11 @@ const ctx = (viewport) => session(browser, errors, viewport);
 const t = Date.now();
 const CO = `Session Co ${t}`;
 
-const dir = await ctx();
-await signUp(dir.p, { name: "Sam Dir", company: CO, email: `sd${t}@example.com`, role: "director" });
+const admin = await adminSession(browser, errors);
+const dir = await provision(browser, errors, admin.p, { name: "Sam Dir", company: CO, email: `sd${t}@example.com`, role: "director" });
 
 section("1 a role cannot be posted without a session");
-await dir.p.goto(`${BASE}/roles/new`, { waitUntil: "networkidle" });
+await dir.p.goto(`${BASE}/dashboard/roles/new`, { waitUntil: "networkidle" });
 check("the form is replaced by an explanation", (await dir.p.getByText("Open a casting session first").count()) > 0);
 check("no role fields to fill in", (await dir.p.locator("#title").count()) === 0);
 check("offers the way forward", (await dir.p.getByRole("link", { name: "Open a session" }).count()) > 0);
@@ -40,10 +42,20 @@ check("says it is accepting submissions", (await dir.p.getByText(/Accepting subm
 
 const roleA = await postRole(dir.p, { title: `LEAD-${t}`, company: CO, sessionId: live });
 const roleB = await postRole(dir.p, { title: `SUPPORT-${t}`, company: CO, sessionId: live });
+const token = await shareTokenForRole(dir.p, roleA);
 await dir.p.goto(`${BASE}/dashboard/sessions/${live}`, { waitUntil: "networkidle" });
 check("both roles listed under the session", (await dir.p.locator("main li").filter({ hasText: `-${t}` }).count()) === 2);
 check("counts the roles", (await dir.p.getByText("2 roles").count()) > 0);
 await dir.p.screenshot({ path: `${SHOTS}/session-detail.png`, fullPage: true });
+
+section("2b the session hands over a link to circulate");
+await dir.p.goto(`${BASE}/dashboard/sessions/${live}`, { waitUntil: "networkidle" });
+check("the link is shown in full", (await dir.p.locator("code.select-all").count()) === 1);
+const shown = (await dir.p.locator("code.select-all").textContent()).trim();
+check("it points at this production", shown.endsWith(`/c/${token}`), shown);
+check("it is offered for copying", (await dir.p.getByRole("button", { name: "Copy link" }).count()) === 1);
+check("and explained", (await dir.p.getByText(/whole of the casting call/).count()) > 0);
+await dir.p.screenshot({ path: `${SHOTS}/share-link.png`, fullPage: true });
 
 section("3 a role has no closing date of its own");
 await dir.p.goto(`${BASE}/dashboard/roles/${roleA}/edit`, { waitUntil: "networkidle" });
@@ -53,12 +65,12 @@ check("says where the dates live", (await dir.p.getByText(/Change the dates on t
 section("4 one submission per person per session, across roles");
 {
   const { c, p } = await ctx();
-  await submit(p, roleA, { name: "Perry One", email: `p1${t}@example.com` });
+  await submit(p, token, roleA, { name: "Perry One", email: `p1${t}@example.com` });
   await p.getByText("Submission sent").waitFor({ timeout: 20000 });
   check("first submission goes through", true);
   check("says it covers the production", (await p.getByText(/any other role in it/).count()) > 0);
 
-  await submit(p, roleB, { name: "Perry One", email: `p1${t}@example.com` });
+  await submit(p, token, roleB, { name: "Perry One", email: `p1${t}@example.com` });
   await p.waitForTimeout(2500);
   check("a second role in the same session is refused", (await p.getByText("Submission sent").count()) === 0);
   check("the error is on the email field", (await p.locator("#email-error").count()) === 1);
@@ -70,7 +82,7 @@ section("4 one submission per person per session, across roles");
 section("5 a different person may still submit for the same role");
 {
   const { c, p } = await ctx();
-  await submit(p, roleB, { name: "Perry Two", email: `p2${t}@example.com` });
+  await submit(p, token, roleB, { name: "Perry Two", email: `p2${t}@example.com` });
   await p.getByText("Submission sent").waitFor({ timeout: 20000 });
   check("second performer is fine", true);
   await c.close();
@@ -84,17 +96,19 @@ const upcoming = await openSession(dir.p, {
   closesAt: day(40),
 });
 const laterRole = await postRole(dir.p, { title: `LATER-${t}`, company: CO, sessionId: upcoming });
+const laterToken = await shareTokenForRole(dir.p, laterRole);
 {
   const { c, p } = await ctx();
-  const response = await p.goto(`${BASE}/roles/${laterRole}`, { waitUntil: "networkidle" });
-  check("the role page is public", response.status() === 200);
+  const response = await p.goto(`${BASE}/c/${laterToken}/${laterRole}`, { waitUntil: "networkidle" });
+  check("the role page opens on its link", response.status() === 200);
   check("no submission form", (await p.locator("#coverNote").count()) === 0);
   check("says it has not opened", (await p.getByText("Submissions have not opened yet").count()) > 0);
   check("gives the opening date", (await p.getByText(/takes submissions from/).count()) > 0);
   await p.screenshot({ path: `${SHOTS}/session-upcoming.png`, fullPage: true });
 
-  await p.goto(`${BASE}/roles`, { waitUntil: "networkidle" });
-  check("not listed among open roles", (await p.getByText(`LATER-${t}`).count()) === 0);
+  await p.goto(`${BASE}/c/${laterToken}`, { waitUntil: "networkidle" });
+  check("still listed on its own production page", (await p.getByText(`LATER-${t}`).count()) > 0);
+  check("with no way to submit yet", (await p.locator("#coverNote").count()) === 0);
   await c.close();
 }
 
@@ -106,7 +120,7 @@ check("the session reads as closed", (await dir.p.getByText(/Closed early on/).c
 {
   const { c, p } = await ctx();
   for (const [label, id] of [["first", roleA], ["second", roleB]]) {
-    await p.goto(`${BASE}/roles/${id}`, { waitUntil: "networkidle" });
+    await p.goto(`${BASE}/c/${token}/${id}`, { waitUntil: "networkidle" });
     check(`${label} role stops taking submissions`, (await p.locator("#coverNote").count()) === 0);
     check(`${label} role says casting is closed`, (await p.getByText("Submissions have closed").count()) > 0);
   }
@@ -118,7 +132,7 @@ await dir.p.getByRole("button", { name: "Reopen" }).click();
 await dir.p.waitForTimeout(2500);
 {
   const { c, p } = await ctx();
-  await p.goto(`${BASE}/roles/${roleA}`, { waitUntil: "networkidle" });
+  await p.goto(`${BASE}/c/${token}/${roleA}`, { waitUntil: "networkidle" });
   check("the form is back", (await p.locator("#coverNote").count()) === 1);
   await c.close();
 }
@@ -129,9 +143,9 @@ await dir.p.getByRole("button", { name: "Close early" }).click();
 await dir.p.waitForTimeout(2500);
 {
   const { c, p } = await ctx();
-  await p.goto(`${BASE}/roles/${roleA}`, { waitUntil: "networkidle" });
+  await p.goto(`${BASE}/c/${token}/${roleA}`, { waitUntil: "networkidle" });
   check("the closed role takes no submissions", (await p.locator("#coverNote").count()) === 0);
-  await p.goto(`${BASE}/roles/${roleB}`, { waitUntil: "networkidle" });
+  await p.goto(`${BASE}/c/${token}/${roleB}`, { waitUntil: "networkidle" });
   check("the other role in the session is unaffected", (await p.locator("#coverNote").count()) === 1);
   await c.close();
 }
@@ -139,16 +153,14 @@ await dir.p.getByRole("button", { name: "Reopen" }).click();
 await dir.p.waitForTimeout(2500);
 
 section("9 sessions are scoped like roles");
-const other = await ctx();
-await signUp(other.p, { name: "Other Dir", company: `Other ${t}`, email: `od${t}@example.com`, role: "director" });
+const other = await provision(browser, errors, admin.p, { name: "Other Dir", company: `Other ${t}`, email: `od${t}@example.com`, role: "director" });
 await other.p.goto(`${BASE}/dashboard/sessions`, { waitUntil: "networkidle" });
 check("a stranger sees none of them", (await other.p.getByText(`Live ${t}`).count()) === 0);
 check("a stranger's list is empty", (await other.p.getByText("No casting sessions yet").count()) > 0);
 const direct = await other.p.goto(`${BASE}/dashboard/sessions/${live}`, { waitUntil: "networkidle" });
 check("guessing the id is a 404", direct.status() === 404, String(direct.status()));
 
-const prod = await ctx();
-await signUp(prod.p, { name: "Pat Prod", company: CO, email: `pp${t}@example.com`, role: "producer" });
+const prod = await provision(browser, errors, admin.p, { name: "Pat Prod", company: CO, email: `pp${t}@example.com`, role: "producer" });
 await prod.p.goto(`${BASE}/dashboard/sessions`, { waitUntil: "networkidle" });
 check("a producer at the company sees them", (await prod.p.getByText(`Live ${t}`).count()) > 0);
 check("including the upcoming one", (await prod.p.getByText(`Upcoming ${t}`).count()) > 0);
@@ -156,8 +168,6 @@ check("including the upcoming one", (await prod.p.getByText(`Upcoming ${t}`).cou
 section("10 only an admin can remove a session");
 check("no delete control for the director", (await dir.p.getByText("Remove this casting session").count()) === 0);
 
-const admin = await ctx();
-await signUp(admin.p, { name: "Boss", company: `Admin ${t}`, email: "boss@example.com", role: "director" });
 await admin.p.goto(`${BASE}/dashboard/sessions/${live}`, { waitUntil: "networkidle" });
 check("the admin sees the session", (await admin.p.getByText(`Live ${t}`).count()) > 0);
 await admin.p.getByText("Remove this casting session").click();
@@ -168,14 +178,14 @@ await admin.p.waitForURL(/\/dashboard\/sessions\?removed=1/, { timeout: 20000 })
 check("says what happened", (await admin.p.getByText(/casting session was removed/).count()) > 0);
 {
   const { c, p } = await ctx();
-  const gone = await p.goto(`${BASE}/roles/${roleA}`, { waitUntil: "networkidle" });
+  const gone = await p.goto(`${BASE}/c/${token}/${roleA}`, { waitUntil: "networkidle" });
   check("its roles went with it", gone.status() === 404, String(gone.status()));
   await c.close();
 }
 check(
   "the removal is in the trail",
   (await admin.p.goto(`${BASE}/dashboard/activity`, { waitUntil: "networkidle" })) &&
-    (await admin.p.getByText(/Boss removed a casting session/).count()) > 0,
+    (await admin.p.getByText(/removed a casting session/).count()) > 0,
 );
 
 for (const s of [dir, other, prod, admin]) await s.c.close();

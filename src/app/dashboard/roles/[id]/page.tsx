@@ -3,7 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ActivityList } from "@/components/activity-list";
-import { DeadlineBadge } from "@/components/role-card";
+import { DeadlineBadge } from "@/components/deadline-badge";
 import { StatusBadge } from "@/components/status-badge";
 import { SubmissionStatusControl } from "@/components/submission-status-control";
 import { Badge, Button, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
@@ -68,8 +68,12 @@ export default async function RoleSubmissionsPage({
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <DeadlineBadge session={roleWindow(role)} />
-          <ButtonLink href={`/roles/${role.id}`} variant="secondary" size="sm">
-            View public listing
+          <ButtonLink
+            href={`/c/${role.session.publicToken}/${role.id}`}
+            variant="secondary"
+            size="sm"
+          >
+            View as a performer
           </ButtonLink>
           <ButtonLink href={`/dashboard/roles/${role.id}/edit`} variant="secondary" size="sm">
             Edit
@@ -114,8 +118,12 @@ export default async function RoleSubmissionsPage({
             title="No submissions yet"
             description="They will appear here as they come in, newest first."
             action={
-              <ButtonLink href={`/roles/${role.id}`} variant="secondary" size="sm">
-                View the public listing
+              <ButtonLink
+                href={`/c/${role.session.publicToken}/${role.id}`}
+                variant="secondary"
+                size="sm"
+              >
+                View as a performer
               </ButtonLink>
             }
           />

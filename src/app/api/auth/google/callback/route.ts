@@ -7,7 +7,7 @@ import {
   exchangeCode,
   fetchGoogleProfile,
 } from "@/lib/oauth";
-import { syncAdminRole, upsertGoogleUser } from "@/lib/users";
+import { linkGoogleUser, syncAdminRole } from "@/lib/users";
 
 function backToLogin(origin: string, message: string) {
   return NextResponse.redirect(
@@ -32,7 +32,19 @@ export async function GET(request: Request) {
     if (!code) throw new OAuthError("Google did not return an authorization code");
 
     const profile = await fetchGoogleProfile(await exchangeCode(code, verifier, url));
-    const user = await syncAdminRole(await upsertGoogleUser(profile));
+
+    // Google can prove who someone is; it cannot grant them an account. Signing
+    // in this way works only for an address the administrator has already set
+    // up — otherwise any Google address in the world would be a way in.
+    const linked = await linkGoogleUser(profile);
+    if (!linked) {
+      return backToLogin(
+        url.origin,
+        "There is no account for that Google address. Accounts are created by the administrator.",
+      );
+    }
+
+    const user = await syncAdminRole(linked);
     if (user.suspended_at) {
       return backToLogin(url.origin, "This account has been suspended.");
     }

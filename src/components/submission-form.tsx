@@ -28,6 +28,7 @@ export function SubmissionForm({
   session,
   closesOn,
   disclaimer,
+  backTo,
 }: {
   roleId: string;
   roleTitle: string;
@@ -35,6 +36,8 @@ export function SubmissionForm({
   session: string;
   closesOn: string;
   disclaimer: string;
+  /** The production's own page. There is nowhere else for a performer to go. */
+  backTo: string;
 }) {
   const [state, formAction, pending] = useActionState(submitApplication, IDLE_FORM_STATE);
   const formRef = useErrorFocus(state.status, state.errors);
@@ -51,8 +54,8 @@ export function SubmissionForm({
           {session}, so nothing else is needed for {roleTitle} or any other role in it.
         </p>
         <div className="mt-6">
-          <ButtonLink href="/roles" variant="secondary" size="sm">
-            Browse more roles
+          <ButtonLink href={backTo} variant="secondary" size="sm">
+            Back to {session}
           </ButtonLink>
         </div>
       </div>
@@ -245,10 +248,12 @@ export function SubmissionForm({
 export function SubmissionsClosed({
   session,
   opensOn,
+  backTo,
 }: {
   session: string;
   /** Set when the session has not opened yet, as a formatted date. */
   opensOn?: string;
+  backTo: string;
 }) {
   return (
     <div className="rounded-2xl border border-dashed border-line-strong p-7">
@@ -264,13 +269,13 @@ export function SubmissionsClosed({
         ) : (
           <>
             Casting for {session} is closed. The call is kept up so you can see what was asked
-            for. Have a look at what is open now.
+            for.
           </>
         )}
       </p>
       <div className="mt-5">
-        <ButtonLink href="/roles" variant="secondary" size="sm">
-          Browse open roles
+        <ButtonLink href={backTo} variant="secondary" size="sm">
+          The other roles for {session}
         </ButtonLink>
       </div>
     </div>

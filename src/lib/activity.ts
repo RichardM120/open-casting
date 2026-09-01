@@ -19,6 +19,7 @@ export const ACTIONS = [
   "role.removed",
   "submission.received",
   "submission.status",
+  "account.created",
   "account.suspended",
   "account.restored",
 ] as const;

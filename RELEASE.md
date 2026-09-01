@@ -32,9 +32,13 @@ assertion, which is what would catch a Content Security Policy regression.
   `Referrer-Policy`, `Permissions-Policy` and `Strict-Transport-Security` — `src/proxy.ts`.
   `script-src` carries no `'unsafe-inline'`; the one inline style attribute in the app was
   moved to a class so `style-src` did not need loosening either.
-- **Rate limiting** on the two open write paths: submissions and sign-ups, by client
-  address, and failed sign-ins by email. The submission form takes no account and writes
-  to the database, so it needed a ceiling.
+- **Rate limiting** on the open write path — submissions, by client address — and failed
+  sign-ins by email. The submission form takes no account and writes to the database, so
+  it needed a ceiling. Sign-ups no longer exist to throttle.
+- **No self-registration.** Accounts come from the administrator only, and the Google
+  callback refuses an address that has no account rather than creating one.
+- **`robots.txt` disallows everything**, and the pages reachable by share token are
+  `noindex` — a token in a search result would defeat the point of having one.
 - **Lockfile committed**, and the Node version pinned in `engines`.
 - **Fonts** are self-hosted through `next/font`, so no external font request and no
   `font-src` beyond `'self'`.

@@ -7,14 +7,12 @@ export default function NotFound() {
       <h1 className="mt-4 text-3xl font-semibold tracking-tight md:text-4xl">
         That page is not here
       </h1>
-      <p className="mt-3 text-muted">
-        The role may have been taken down, or the link may have been mistyped.
+      <p className="mt-3 max-w-prose text-muted">
+        The casting call may have been taken down, or the link may have been mistyped — they are
+        long, so a truncated one is the usual cause. Ask whoever sent it for the link again.
       </p>
       <div className="mt-8 flex gap-3">
-        <ButtonLink href="/roles">Browse open roles</ButtonLink>
-        <ButtonLink href="/" variant="secondary">
-          Back to the start
-        </ButtonLink>
+        <ButtonLink href="/">Back to the start</ButtonLink>
       </div>
     </div>
   );

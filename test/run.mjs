@@ -14,6 +14,14 @@ import path from "node:path";
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, "..");
 const PORT = Number(process.env.TEST_PORT ?? 3100);
+
+/**
+ * Nobody can register themselves any more, so every suite needs the one account
+ * that exists before anything else does. The server creates it from these on
+ * first boot; the suites sign in as it and make the rest.
+ */
+const ADMIN_EMAIL = "boss@example.com";
+const ADMIN_PASSWORD = "bootstrap-admin-password";
 const BASE = `http://127.0.0.1:${PORT}`;
 
 const SUITES = readdirSync(path.join(here, "suites"))
@@ -72,7 +80,12 @@ for (const suite of SUITES) {
   const signal = { exited: false };
   const server = run("npx", ["next", "start", "--port", String(PORT)], {
     detached: true,
-    env: { ...process.env, NODE_ENV: "production" },
+    env: {
+      ...process.env,
+      NODE_ENV: "production",
+      ADMIN_EMAILS: ADMIN_EMAIL,
+      ADMIN_BOOTSTRAP_PASSWORD: ADMIN_PASSWORD,
+    },
   });
   server.on("exit", () => { signal.exited = true; });
 
@@ -80,7 +93,13 @@ for (const suite of SUITES) {
     await waitForServer(signal);
     const code = await new Promise((resolve) => {
       const child = run("node", [path.join(here, "suites", suite)], {
-        env: { ...process.env, BASE_URL: BASE, SHOTS: path.join(here, "screenshots") },
+        env: {
+          ...process.env,
+          BASE_URL: BASE,
+          SHOTS: path.join(here, "screenshots"),
+          ADMIN_EMAIL,
+          ADMIN_PASSWORD,
+        },
       });
       child.on("exit", resolve);
     });

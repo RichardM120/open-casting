@@ -4,22 +4,19 @@ export function SiteFooter() {
   return (
     <footer className="mt-24 border-t border-line">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-8 text-sm text-faint sm:flex-row sm:items-center sm:justify-between">
-        <p>Open Casting — a prototype. Every role and performer here is invented.</p>
+        <p>
+          Open Casting — the tool a production runs its casting with. The sample productions on
+          it are invented.
+        </p>
         <div className="flex flex-wrap gap-x-5 gap-y-2">
-          <Link href="/roles" className="transition-colors hover:text-text">
-            Browse roles
-          </Link>
           <Link href="/faq/performers" className="transition-colors hover:text-text">
             Performer FAQ
           </Link>
           <Link href="/faq/casting-directors" className="transition-colors hover:text-text">
             Casting FAQ
           </Link>
-          <Link href="/roles/new" className="transition-colors hover:text-text">
-            Post a role
-          </Link>
-          <Link href="/dashboard" className="transition-colors hover:text-text">
-            Dashboard
+          <Link href="/login" className="transition-colors hover:text-text">
+            Sign in
           </Link>
         </div>
       </div>

@@ -52,3 +52,22 @@ export function decoyPasswordHash(): Promise<string> {
 export function unusablePassword(): string {
   return randomBytes(32).toString("base64");
 }
+
+/**
+ * A password to hand to someone whose account was just made for them.
+ *
+ * Four words from a CSPRNG, which is both long enough to be worth having and
+ * short enough to read down a phone. The alphabet excludes characters that are
+ * misread when they are dictated or written down.
+ */
+const WORD_ALPHABET = "abcdefghjkmnpqrstuvwxyz";
+const DIGITS = "23456789";
+
+export function generatePassword(): string {
+  const pick = (alphabet: string, length: number) =>
+    Array.from(randomBytes(length), (byte) => alphabet[byte % alphabet.length]).join("");
+
+  return [pick(WORD_ALPHABET, 5), pick(WORD_ALPHABET, 5), pick(WORD_ALPHABET, 5), pick(DIGITS, 3)].join(
+    "-",
+  );
+}

@@ -4,7 +4,9 @@ import {
   postRole,
   reporter,
   session,
-  signUp,
+  adminSession,
+  provision,
+  shareTokenForRole,
 } from "./_helpers.mjs";
 
 const { check, section, finish, errors } = reporter();
@@ -14,9 +16,10 @@ const t = Date.now();
 
 const CO = `Mod Co ${t}`;
 
-const dir = await ctx();
-await signUp(dir.p, { name: "Mod Dir", company: CO, email: `md${t}@example.com`, role: "director" });
+const admin0 = await adminSession(browser, errors);
+const dir = await provision(browser, errors, admin0.p, { name: "Mod Dir", company: CO, email: `md${t}@example.com`, role: "director" });
 const roleId = await postRole(dir.p, { title: `MOD-${t}`, company: CO });
+const token = await shareTokenForRole(dir.p, roleId);
 
 section("1 owner can edit their own role");
 await dir.p.goto(`${BASE}/dashboard/roles/${roleId}/edit`, { waitUntil: "networkidle" });
@@ -29,7 +32,7 @@ await dir.p.getByText("Changes saved").waitFor({ timeout: 20000 });
 check("save confirmed", true);
 {
   const { c, p } = await ctx();
-  await p.goto(`${BASE}/roles/${roleId}`, { waitUntil: "networkidle" });
+  await p.goto(`${BASE}/c/${token}/${roleId}`, { waitUntil: "networkidle" });
   check("edit is live publicly", (await p.getByText("£999/day").count()) > 0);
   check("new terms shown", (await p.getByText("Edited terms").count()) > 0);
   await c.close();
@@ -42,13 +45,12 @@ await dir.p.waitForTimeout(2000);
 check("marked closed early", (await dir.p.getByText(/Closed early on/).count()) > 0);
 {
   const { c, p } = await ctx();
-  await p.goto(`${BASE}/roles/${roleId}`, { waitUntil: "networkidle" });
+  await p.goto(`${BASE}/c/${token}/${roleId}`, { waitUntil: "networkidle" });
   check("public form gone", (await p.locator("#coverNote").count()) === 0);
   check("listing still readable", (await p.getByText(`MOD-${t}`).count()) > 0);
   await p.goto(`${BASE}/roles`, { waitUntil: "networkidle" });
-  check("dropped from open browse", (await p.getByText(`MOD-${t}`).count()) === 0);
-  await p.goto(`${BASE}/roles?closed=1`, { waitUntil: "networkidle" });
-  check("visible with closed roles included", (await p.getByText(`MOD-${t}`).count()) > 0);
+  await p.goto(`${BASE}/c/${token}`, { waitUntil: "networkidle" });
+  check("still listed on its production, for reference", (await p.getByText(`MOD-${t}`).count()) > 0);
   await c.close();
 }
 await dir.p.getByRole("button", { name: "Reopen" }).click();
@@ -56,14 +58,13 @@ await dir.p.waitForTimeout(2000);
 check("reopen works", (await dir.p.getByText("Close early").count()) > 0);
 
 section("3 a director elsewhere cannot edit it");
-const other = await ctx();
-await signUp(other.p, { name: "Other", company: `Other ${t}`, email: `ot${t}@example.com`, role: "director" });
+const other = await provision(browser, errors, admin0.p, { name: "Other", company: `Other ${t}`, email: `ot${t}@example.com`, role: "director" });
 check("404 on the edit page", (await other.p.goto(`${BASE}/dashboard/roles/${roleId}/edit`, { waitUntil: "networkidle" })).status() === 404);
 
 section("4 accounts page is admin only");
 check("non-admin gets 404", (await other.p.goto(`${BASE}/dashboard/accounts`, { waitUntil: "networkidle" })).status() === 404);
-const admin = await ctx();
-await signUp(admin.p, { name: "Boss", company: `Admin ${t}`, email: "boss@example.com", role: "director" });
+// The bootstrapped administrator, not a made account: there is only one.
+const admin = admin0;
 check("admin reaches it", (await admin.p.goto(`${BASE}/dashboard/accounts`, { waitUntil: "networkidle" })).status() === 200);
 check("lists other accounts", (await admin.p.getByText(`md${t}@example.com`).count()) > 0);
 check("cannot suspend self", (await admin.p.getByText("Cannot suspend yourself").count()) > 0);
@@ -76,13 +77,13 @@ check("marked suspended", (await row.getByText("Suspended").count()) > 0);
 await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 check("existing session revoked", dir.p.url().includes("/login"), dir.p.url());
 await dir.p.fill("#email", `md${t}@example.com`);
-await dir.p.fill("#password", "correct horse battery");
+await dir.p.fill("#password", dir.password);
 await dir.p.getByRole("button", { name: "Sign in" }).click();
 await dir.p.waitForTimeout(2000);
 check("cannot sign back in", (await dir.p.getByText(/suspended/i).count()) > 0);
 {
   const { c, p } = await ctx();
-  await p.goto(`${BASE}/roles/${roleId}`, { waitUntil: "networkidle" });
+  await p.goto(`${BASE}/c/${token}/${roleId}`, { waitUntil: "networkidle" });
   check("their listing stays up", (await p.getByText(`MOD-${t}`).count()) > 0);
   await c.close();
 }
@@ -95,7 +96,7 @@ check("restore works", (await admin.p.getByText(`md${t}@example.com`).count()) >
 section("6 removal is admin only and destroys the submissions");
 {
   const { c, p } = await ctx();
-  await p.goto(`${BASE}/roles/${roleId}`, { waitUntil: "networkidle" });
+  await p.goto(`${BASE}/c/${token}/${roleId}`, { waitUntil: "networkidle" });
   await p.fill("#name", "Doomed Sub"); await p.fill("#email", `dm${t}@example.com`);
   await p.fill("#phone", "07700 900555"); await p.fill("#location", "York"); await p.fill("#age", "30");
   await p.fill("#coverNote", "A cover note comfortably longer than the twenty character minimum.");
@@ -116,10 +117,10 @@ await admin.p.getByRole("button", { name: "Remove role and submissions" }).click
 await admin.p.waitForTimeout(2500);
 {
   const { c, p } = await ctx();
-  check("role is gone", (await p.goto(`${BASE}/roles/${roleId}`, { waitUntil: "networkidle" })).status() === 404);
+  check("role is gone", (await p.goto(`${BASE}/c/${token}/${roleId}`, { waitUntil: "networkidle" })).status() === 404);
   await c.close();
 }
 
-for (const s of [dir, other, admin]) await s.c.close();
+for (const s of [dir, other, admin0]) await s.c.close();
 await browser.close();
 finish();

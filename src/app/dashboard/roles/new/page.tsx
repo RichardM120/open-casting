@@ -12,8 +12,8 @@ export const metadata: Metadata = {
   description: "Put a casting call up with the brief, the rate and the dates spelled out.",
 };
 
-export default async function NewRolePage({ searchParams }: PageProps<"/roles/new">) {
-  const user = await requireUser("/roles/new");
+export default async function NewRolePage({ searchParams }: PageProps<"/dashboard/roles/new">) {
+  const user = await requireUser("/dashboard/roles/new");
   const [sessions, query] = await Promise.all([listVisibleSessions(user), searchParams]);
 
   // A role has to belong to a session, so there is nothing to fill in until one

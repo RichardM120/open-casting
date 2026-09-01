@@ -56,7 +56,10 @@ export async function session(browser, errors, viewport) {
   return { c, p };
 }
 
-export const PASSWORD = "correct horse battery";
+export const ADMIN = {
+  email: process.env.ADMIN_EMAIL ?? "boss@example.com",
+  password: process.env.ADMIN_PASSWORD ?? "bootstrap-admin-password",
+};
 
 /** A `yyyy-mm-dd` date relative to today, so the fixtures do not rot. */
 export function day(offset) {
@@ -65,30 +68,61 @@ export function day(offset) {
   return date.toISOString().slice(0, 10);
 }
 
-/** Signs up and stops on the wizard, for the suite that tests the wizard. */
-export async function signUpOnly(page, user) {
-  await page.goto(`${BASE}/signup`, { waitUntil: "networkidle" });
-  await page.fill("#name", user.name);
-  await page.fill("#company", user.company);
-  await page.fill("#email", user.email);
-  await page.fill("#password", PASSWORD);
-  await page.check(`input[name="role"][value="${user.role}"]`);
-  await page.getByRole("button", { name: "Create account" }).click();
-  await page.waitForURL("**/welcome**", { timeout: 20000 });
-}
-
-/** Signs up and steps past the wizard, which most suites do not care about. */
-export async function signUp(page, user) {
-  await signUpOnly(page, user);
-  await page.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
-}
-
-export async function signIn(page, email) {
+export async function signIn(page, email, password) {
   await page.goto(`${BASE}/login`, { waitUntil: "networkidle" });
   await page.fill("#email", email);
-  await page.fill("#password", PASSWORD);
+  await page.fill("#password", password);
   await page.getByRole("button", { name: "Sign in" }).click();
   await page.waitForTimeout(1500);
+}
+
+/** The one account that exists before any other. */
+export async function signInAsAdmin(page) {
+  await signIn(page, ADMIN.email, ADMIN.password);
+}
+
+/**
+ * Creates an account the way the administrator does, and reads back the
+ * generated password — there is no other way to get one, which is the point.
+ */
+export async function createAccount(adminPage, user) {
+  await adminPage.goto(`${BASE}/dashboard/accounts`, { waitUntil: "networkidle" });
+  await adminPage.fill("#name", user.name);
+  await adminPage.fill("#email", user.email);
+  await adminPage.fill("#company", user.company);
+  await adminPage.selectOption("#role", user.role ?? "director");
+  await adminPage.getByRole("button", { name: "Create the account" }).click();
+
+  const shown = adminPage.locator("dd.select-all");
+  await shown.waitFor({ timeout: 20000 });
+  return (await shown.textContent()).trim();
+}
+
+/**
+ * The whole way in for a suite's fixture account: the admin makes it, then it
+ * signs in in its own browser context. Stops on the wizard, where a new account
+ * actually lands.
+ */
+export async function provisionOnly(browser, errors, admin, user) {
+  const password = await createAccount(admin, user);
+  const ctx = await session(browser, errors);
+  await signIn(ctx.p, user.email, password);
+  await ctx.p.waitForURL("**/welcome**", { timeout: 20000 });
+  return { ...ctx, password };
+}
+
+/** As `provisionOnly`, then past the wizard, which most suites do not care about. */
+export async function provision(browser, errors, admin, user) {
+  const ctx = await provisionOnly(browser, errors, admin, user);
+  await ctx.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
+  return ctx;
+}
+
+/** An admin context of its own, for a suite that needs to make accounts. */
+export async function adminSession(browser, errors) {
+  const ctx = await session(browser, errors);
+  await signInAsAdmin(ctx.p);
+  return ctx;
 }
 
 /** Opens a casting session and returns its id. */
@@ -121,7 +155,7 @@ export async function postRole(page, fields) {
       closesAt: fields.closesAt,
     }));
 
-  await page.goto(`${BASE}/roles/new`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE}/dashboard/roles/new`, { waitUntil: "networkidle" });
   await page.selectOption("#sessionId", sessionId);
   await page.fill("#production", fields.production ?? `${fields.title} Production`);
   await page.fill("#synopsis", fields.synopsis ?? "A production used by the test suite.");
@@ -137,13 +171,30 @@ export async function postRole(page, fields) {
   await page.fill("#rate", fields.rate ?? "£400/day");
   if (fields.disclaimer) await page.fill("#disclaimer", fields.disclaimer);
   await page.getByRole("button", { name: "Post the role" }).click();
-  await page.waitForURL("**/dashboard/roles/**", { timeout: 20000 });
+  await page.waitForURL(/\/dashboard\/roles\/rol_/, { timeout: 20000 });
   return page.url().match(/roles\/(rol_[^?]+)/)[1];
 }
 
-/** Fills and sends the public submission form. */
-export async function submit(page, roleId, performer, { acceptTerms = false } = {}) {
-  await page.goto(`${BASE}/roles/${roleId}`, { waitUntil: "networkidle" });
+/** The share link for a casting session, read off its dashboard page. */
+export async function shareToken(page, sessionId) {
+  await page.goto(`${BASE}/dashboard/sessions/${sessionId}`, { waitUntil: "networkidle" });
+  const url = (await page.locator("code.select-all").first().textContent()).trim();
+  return url.split("/c/")[1];
+}
+
+/**
+ * The share token for whichever production a role belongs to, read off the
+ * "View as a performer" link on the role's own dashboard page.
+ */
+export async function shareTokenForRole(page, roleId) {
+  await page.goto(`${BASE}/dashboard/roles/${roleId}`, { waitUntil: "networkidle" });
+  const href = await page.getByRole("link", { name: "View as a performer" }).first().getAttribute("href");
+  return href.split("/c/")[1].split("/")[0];
+}
+
+/** Fills and sends the submission form, reached the way a performer reaches it. */
+export async function submit(page, token, roleId, performer, { acceptTerms = false } = {}) {
+  await page.goto(`${BASE}/c/${token}/${roleId}`, { waitUntil: "networkidle" });
   await page.fill("#name", performer.name);
   await page.fill("#email", performer.email);
   await page.fill("#phone", performer.phone ?? "07700 900000");
