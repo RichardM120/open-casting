@@ -684,6 +684,7 @@ export async function databaseStatus(): Promise<{
   ok: boolean;
   connectionVariable: string | null;
   authSecret: "set" | "missing";
+  email: "configured" | "missing";
   schema: "ready" | "unavailable";
   roles?: number;
   sessions?: number;
@@ -692,11 +693,17 @@ export async function databaseStatus(): Promise<{
   const variable = connectionVariable();
   const authSecret: "set" | "missing" =
     (process.env.AUTH_SECRET?.trim().length ?? 0) >= 32 ? "set" : "missing";
+  // Without a mail provider an account that needs a second factor cannot sign
+  // in at all, so this belongs next to the other two things that stop it dead.
+  const email: "configured" | "missing" = process.env.RESEND_API_KEY?.trim()
+    ? "configured"
+    : "missing";
   if (!variable) {
     return {
       ok: false,
       connectionVariable: null,
       authSecret,
+      email,
       schema: "unavailable",
       error:
         "No connection string. Set DATABASE_URL (or POSTGRES_URL) in the deployment's environment and redeploy.",
@@ -712,6 +719,7 @@ export async function databaseStatus(): Promise<{
       ok: authSecret === "set",
       connectionVariable: variable,
       authSecret,
+      email,
       schema: "ready",
       roles: Number(roles[0]?.count ?? 0),
       sessions: Number(sessions[0]?.count ?? 0),
@@ -723,6 +731,7 @@ export async function databaseStatus(): Promise<{
       ok: false,
       connectionVariable: variable,
       authSecret,
+      email,
       schema: "unavailable",
       error: error instanceof Error ? error.message : String(error),
     };

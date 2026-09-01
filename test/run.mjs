@@ -22,6 +22,8 @@ const PORT = Number(process.env.TEST_PORT ?? 3100);
  * first boot; the suites sign in as it and make the rest.
  */
 const ADMIN_EMAIL = "boss@example.com";
+/** A second admin address, to prove the allowlist admits more than one. */
+const SECOND_ADMIN = "richard@cwcasting.co.uk";
 const ADMIN_PASSWORD = "bootstrap-admin-password";
 const CRON_SECRET = "test-cron-secret";
 const AUTH_SECRET = "test-auth-secret-at-least-32-characters-long";
@@ -126,7 +128,7 @@ for (const suite of SUITES) {
     env: {
       ...process.env,
       NODE_ENV: "production",
-      ADMIN_EMAILS: ADMIN_EMAIL,
+      ADMIN_EMAILS: `${ADMIN_EMAIL},${SECOND_ADMIN}`,
       ADMIN_BOOTSTRAP_PASSWORD: ADMIN_PASSWORD,
       CRON_SECRET,
       AUTH_SECRET,
@@ -146,6 +148,7 @@ for (const suite of SUITES) {
           SHOTS: path.join(here, "screenshots"),
           ADMIN_EMAIL,
           ADMIN_PASSWORD,
+          SECOND_ADMIN,
           CRON_SECRET,
           AUTH_SECRET,
           MAIL_LOG,

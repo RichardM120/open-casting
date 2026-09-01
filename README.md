@@ -147,6 +147,26 @@ Set `AUTH_SECRET` (32+ characters) and `RESEND_API_KEY`, or nobody can sign in t
 an admin account at all: a second factor that is skipped when the mail provider
 is down is decorative, so a failure to send is reported as a failure.
 
+### Verifying sign-in on a live deployment
+
+`test/suites/10-magic-link.mjs` covers this against a stand-in mail provider on
+every push. To check a real deployment end to end:
+
+1. **`/api/health`** — `authSecret` must read `set` and `email` `configured`. If
+   either is missing, an admin cannot sign in at all and there is no point going
+   further. Nothing in the response leaks a connection string.
+2. **Sign in at `/login`** with the admin address and password. You should land
+   on “Check your email”, and **no session cookie should be set** — the password
+   alone starts nothing.
+3. **Open the emailed link.** It is good for 15 minutes and one use.
+4. **Open it a second time.** It must refuse, saying it has already been used.
+5. **Sign in again without opening the new link, then open the first one.** The
+   superseded link must be dead.
+
+`ADMIN_EMAILS` is comma-separated, so more than one address can hold admin —
+`richard@seaglassdigital.co.uk,richard@cwcasting.co.uk` grants both. An address
+added there is promoted on its next sign-in; removed, it drops back to director.
+
 ## Who can get in
 
 Open Casting is not a public board. There is no listing to browse, no search, and
