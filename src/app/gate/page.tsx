@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 
 import { GateForm } from "@/components/gate-form";
 import { Eyebrow } from "@/components/ui";
-import { gateEnabled } from "@/lib/gate";
+import { gateEnabled, gateOperable } from "@/lib/gate";
 
 export const dynamic = "force-dynamic";
 
@@ -29,7 +29,17 @@ export default async function GatePage({ searchParams }: PageProps<"/gate">) {
       </p>
 
       <div className="mt-8 rounded-2xl border border-line bg-surface p-7">
-        <GateForm next={next} />
+        {gateOperable() ? (
+          <GateForm next={next} />
+        ) : (
+          // No form: it could only ever say no. Whoever is setting the site up
+          // is the only person who can reach this, and this is what they need.
+          <p role="alert" className="text-sm leading-relaxed text-danger">
+            The passcode cannot be checked yet. This deployment has no{" "}
+            <code className="text-text">AUTH_SECRET</code> — set it in the environment and
+            redeploy, and the gate will open.
+          </p>
+        )}
       </div>
 
       <p className="mt-6 text-xs leading-relaxed text-faint">

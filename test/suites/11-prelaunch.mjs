@@ -98,12 +98,32 @@ const inside = await ctx();
   check("the wall stays open for the rest of the site", (await p.getByRole("heading", { name: "Saltmarsh" }).count()) > 0);
 }
 
-section("6 sign-in is clickable and checks nothing");
+section("6 OAuth is withdrawn while the wall is up");
+{
+  const { p } = inside;
+  await p.goto(`${BASE}/login`, { waitUntil: "networkidle" });
+  check("no Google button behind the wall", (await p.getByRole("link", { name: /Continue with Google/ }).count()) === 0);
+
+  // The route itself, before any browser follows it: a refusal, and a relative
+  // one. A redirect built from the server's own address moves the browser to
+  // another host and drops every cookie it holds — the gate cookie included.
+  const refusal = await fetch(`${BASE}/api/auth/google?next=%2Fdashboard`, { redirect: "manual" });
+  check("google sign-in refuses", refusal.status === 303, String(refusal.status));
+  check("and never leaves this origin", refusal.headers.get("location")?.startsWith("/login?error=google-unavailable") === true, refusal.headers.get("location"));
+
+  // Checked signed out on purpose: the sign-in page sends anyone already signed
+  // in straight on, notice and all, which is right but shows nothing.
+  await p.goto(`${BASE}/api/auth/google?next=%2Fdashboard`, { waitUntil: "networkidle" });
+  check("the browser lands back on sign-in", new URL(p.url()).pathname === "/login", p.url());
+  check("told why", (await p.getByRole("alert").filter({ hasText: "google-unavailable" }).count()) === 1);
+  check("with the wall still open", (await p.context().cookies()).some((c) => c.name === "oc_gate"));
+}
+
+section("7 sign-in is clickable and checks nothing");
 {
   const { p } = inside;
   const email = `whoever${t}@example.com`;
   await p.goto(`${BASE}/login`, { waitUntil: "networkidle" });
-  check("no Google button behind the wall", (await p.getByRole("link", { name: /Continue with Google/ }).count()) === 0);
 
   await p.fill("#email", email);
   await p.fill("#password", "anything-at-all");
@@ -122,17 +142,6 @@ section("6 sign-in is clickable and checks nothing");
   await p.waitForURL("**/welcome**", { timeout: 20000 });
   check("the same address again on a different password", p.url().includes("/welcome"), p.url());
   await p.screenshot({ path: `${SHOTS}/open-access.png`, fullPage: true });
-}
-
-section("7 OAuth is withdrawn while the wall is up");
-{
-  const { p } = inside;
-  await p.goto(`${BASE}/api/auth/google?next=%2Fdashboard`, { waitUntil: "networkidle" });
-  check("google sign-in refuses", p.url().includes("google-unavailable"), p.url());
-  // Also that the refusal stayed on the origin the browser is using. A redirect
-  // built from the server's own address moves the browser to another host and
-  // drops every cookie it holds — the gate cookie included.
-  check("and never leaves this origin", new URL(p.url()).origin === new URL(BASE).origin, p.url());
 }
 
 section("8 being closed is impossible to miss");

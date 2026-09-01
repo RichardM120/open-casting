@@ -4,7 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 import { authSecret, currentUser } from "./auth";
-import { GATE_COOKIE, GATE_DAYS, gatePasscode } from "./gate";
+import { GATE_COOKIE, GATE_DAYS, gateOperable, gatePasscode } from "./gate";
 import { submittedValues, type FormState } from "./form-state";
 import { clientAddress, overLimit } from "./rate-limit";
 import { signValue } from "./token";
@@ -38,6 +38,19 @@ export async function unlockSite(
       status: "error",
       message: "That passcode is not right.",
       errors: { passcode: "Check it and try again" },
+      values: {},
+    };
+  }
+
+  // The right passcode, and still no way through: the cookie cannot be signed.
+  // Said plainly, as sign-in does, rather than thrown — a generic error page
+  // sends whoever is setting this up looking for a fault that is not there.
+  if (!gateOperable()) {
+    return {
+      status: "error",
+      message:
+        "The passcode is right, but this deployment cannot open its gate yet. Tell the administrator: AUTH_SECRET is missing.",
+      errors: {},
       values: {},
     };
   }

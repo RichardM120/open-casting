@@ -44,3 +44,13 @@ export function gateExempt(pathname: string): boolean {
     pathname === "/favicon.ico"
   );
 }
+
+/**
+ * Whether the wall can be opened at all. "This browser has entered the
+ * passcode" is a cookie signed with AUTH_SECRET, and the proxy turns away any
+ * it cannot verify — so with no key there is no way through, right passcode or
+ * not. The threshold is the one `authSecret()` enforces.
+ */
+export function gateOperable(): boolean {
+  return (process.env.AUTH_SECRET?.trim().length ?? 0) >= 32;
+}

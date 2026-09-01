@@ -30,7 +30,7 @@ the database is empty, so there is no migration step to run.
 npm run build && npm run start   # production build
 npm run lint                     # eslint
 npx tsc --noEmit                 # typecheck
-npm run test:e2e                 # 101 browser checks, needs DATABASE_URL
+npm run test:e2e                 # browser suites, needs DATABASE_URL; `node test/run.mjs 11` runs one
 ```
 
 CI runs all four on every push. See [RELEASE.md](RELEASE.md) for what is enforced
@@ -173,6 +173,12 @@ launch, and everything reverts to real sign-in with no code change.
 Both the passcode and the sign-in behind it are throttled by address, because a
 shared secret with only a per-email throttle is no throttle at all — an attacker
 just varies the address.
+
+The wall needs `AUTH_SECRET` as well: "this browser has entered the passcode" is
+a signed cookie, and the proxy turns away any it cannot verify. With the
+passcode set and the key missing, the wall is up and nothing can open it — the
+interstitial says so in place of the form, and `/api/health` reports
+`authSecret: "missing"`. Set it and redeploy.
 
 ## Keeping it out of search
 

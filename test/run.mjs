@@ -4,6 +4,9 @@
  * Each suite gets a database in a known state: the app seeds itself on first
  * request, and `ensureSchema()` memoises per process, so a suite that needs
  * fresh data needs a fresh server rather than a truncate.
+ *
+ * Arguments narrow the run to suites whose name contains one of them:
+ * `node test/run.mjs 11 12`. No arguments runs everything, which is what CI does.
  */
 import { spawn } from "node:child_process";
 import { createServer } from "node:http";
@@ -35,14 +38,24 @@ const AUTH_SECRET = "test-auth-secret-at-least-32-characters-long";
  */
 const SUITE_ENV = {
   "11-prelaunch.mjs": { SITE_PASSCODE: "test-site-passcode" },
+  // The wall with its signing key missing — the one misconfiguration that
+  // leaves a right passcode unable to open it.
+  "12-unconfigured.mjs": { SITE_PASSCODE: "test-site-passcode", AUTH_SECRET: "" },
 };
 const MAIL_PORT = PORT + 1;
 const MAILBOX = path.join(here, "mailbox.json");
 const BASE = `http://127.0.0.1:${PORT}`;
 
+const ONLY = process.argv.slice(2);
 const SUITES = readdirSync(path.join(here, "suites"))
   .filter((name) => name.endsWith(".mjs") && !name.startsWith("_"))
+  .filter((name) => ONLY.length === 0 || ONLY.some((part) => name.includes(part)))
   .sort();
+
+if (SUITES.length === 0) {
+  console.error(`No suite matches ${ONLY.join(", ")}`);
+  process.exit(1);
+}
 
 mkdirSync(path.join(here, "screenshots"), { recursive: true });
 
