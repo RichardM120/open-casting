@@ -44,6 +44,50 @@ async function key(secret: string): Promise<CryptoKey> {
   );
 }
 
+/**
+ * A signed, expiring value with no meaning of its own — used for the pre-launch
+ * gate, where all that matters is "this browser has entered the passcode".
+ */
+export async function signValue(
+  value: string,
+  seconds: number,
+  secret: string,
+): Promise<string> {
+  const payload = base64url(
+    encoder.encode(JSON.stringify({ v: value, exp: Math.floor(Date.now() / 1000) + seconds })),
+  );
+  const signature = await crypto.subtle.sign("HMAC", await key(secret), encoder.encode(payload));
+  return `${payload}.${base64url(new Uint8Array(signature))}`;
+}
+
+export async function verifyValue(
+  token: string | undefined,
+  secret: string,
+): Promise<string | null> {
+  if (!token) return null;
+  const [payload, signature] = token.split(".");
+  if (!payload || !signature) return null;
+
+  try {
+    const valid = await crypto.subtle.verify(
+      "HMAC",
+      await key(secret),
+      fromBase64url(signature),
+      encoder.encode(payload),
+    );
+    if (!valid) return null;
+
+    const body = JSON.parse(new TextDecoder().decode(fromBase64url(payload))) as {
+      v?: string;
+      exp?: number;
+    };
+    if (typeof body.exp !== "number" || body.exp * 1000 < Date.now()) return null;
+    return body.v ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export type Context = {
   /** Account id. */
   sub: string;

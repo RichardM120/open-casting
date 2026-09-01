@@ -685,6 +685,9 @@ export async function databaseStatus(): Promise<{
   connectionVariable: string | null;
   authSecret: "set" | "missing";
   email: "configured" | "missing";
+  /** Pre-launch switches. Both must read "off" before this is a live service. */
+  gate: "closed" | "open to the public";
+  openAccess: "off" | "ON — any password signs in";
   schema: "ready" | "unavailable";
   roles?: number;
   sessions?: number;
@@ -698,12 +701,19 @@ export async function databaseStatus(): Promise<{
   const email: "configured" | "missing" = process.env.RESEND_API_KEY?.trim()
     ? "configured"
     : "missing";
+  const gate: "closed" | "open to the public" = process.env.SITE_PASSCODE?.trim()
+    ? "closed"
+    : "open to the public";
+  const openAccess: "off" | "ON — any password signs in" =
+    process.env.OPEN_ACCESS?.trim() === "1" ? "ON — any password signs in" : "off";
   if (!variable) {
     return {
       ok: false,
       connectionVariable: null,
       authSecret,
       email,
+      gate,
+      openAccess,
       schema: "unavailable",
       error:
         "No connection string. Set DATABASE_URL (or POSTGRES_URL) in the deployment's environment and redeploy.",
@@ -720,6 +730,8 @@ export async function databaseStatus(): Promise<{
       connectionVariable: variable,
       authSecret,
       email,
+      gate,
+      openAccess,
       schema: "ready",
       roles: Number(roles[0]?.count ?? 0),
       sessions: Number(sessions[0]?.count ?? 0),
@@ -732,6 +744,8 @@ export async function databaseStatus(): Promise<{
       connectionVariable: variable,
       authSecret,
       email,
+      gate,
+      openAccess,
       schema: "unavailable",
       error: error instanceof Error ? error.message : String(error),
     };

@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { MSA } from "@/content/legal";
 
 import { recordAcceptance } from "./agreements";
+import { openAccess } from "./gate";
 import { endSession, pruneExpiredSessions, requireUser, startSession } from "./auth";
 import { sendEmail } from "./email";
 import {
@@ -17,7 +18,10 @@ import {
 import { requestOrigin } from "./origin";
 import { submittedValues, type FormState } from "./form-state";
 import { decoyPasswordHash, verifyPassword } from "./password";
+import { randomBytes } from "node:crypto";
+
 import {
+  createUser,
   markOnboarded,
   syncAdminRole,
   updateProfile,
@@ -68,7 +72,29 @@ export async function signIn(
     );
   }
 
-  const user = await findUserByEmail(email);
+  let user = await findUserByEmail(email);
+
+  // Pre-launch only: any email, any password, and an account made on the spot.
+  // Guarded by an env flag, announced on every page while it is on, and
+  // reported by /api/health — see openAccess() for why it is defensible only
+  // while the deployment is closed to the public.
+  if (openAccess()) {
+    if (!user) {
+      await createUser({
+        name: email.split("@")[0],
+        email,
+        company: "Open Casting",
+        password: randomBytes(24).toString("base64url"),
+        role: "director",
+      });
+      user = await findUserByEmail(email);
+    }
+    if (user && !user.suspended_at) {
+      await syncAdminRole(user);
+      await startSession(user.id, user.role);
+      redirect(user.onboarded_at ? safeNext(formData.get("next")) : "/welcome");
+    }
+  }
 
   // Hash against a decoy when the email is unknown, so both paths cost the same
   // and response time does not reveal which addresses have accounts.

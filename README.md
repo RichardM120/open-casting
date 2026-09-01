@@ -116,6 +116,35 @@ TLS is verified whenever the connection string asks for it. A provider using its
 own certificate authority can set `DATABASE_SSL_NO_VERIFY=1`, which keeps the
 connection encrypted but stops checking who is on the other end.
 
+## Before launch
+
+Two switches, both off by default, both reported by `/api/health` so neither can
+be forgotten quietly.
+
+| Variable | What it does |
+| --- | --- |
+| `SITE_PASSCODE` | Closes the deployment to the public. Every route — the sign-in page, the FAQ, casting share links — redirects to `/gate` until the passcode is entered. Checked in the proxy, so it runs before any page. Unset it to launch. |
+| `OPEN_ACCESS=1` | Any email and any password signs in, creating an account on the spot if there is none. Removes the entire sign-in check. |
+
+`OPEN_ACCESS` is only defensible while `SITE_PASSCODE` is set, and it is not
+subtle about being on: a red banner sits above every page, including casting
+links, for as long as it is. **Turn it off before there is a real performer's
+name in the database, let alone a child's.** It never grants admin — that still
+comes only from `ADMIN_EMAILS`.
+
+Neither replaces the other. The gate decides whether the public sees anything;
+the sign-in behind it still decides who sees what.
+
+## Keeping it out of search
+
+- **`robots.txt`** disallows everything.
+- **`X-Robots-Tag: noindex, nofollow, noarchive, nosnippet`** on every response
+  from the proxy, not only pages that set it in their metadata — that covers API
+  routes and anything added later that forgets.
+- **Page metadata** carries `noindex` as well.
+- With `SITE_PASSCODE` set there is nothing for a crawler to reach in the first
+  place, which is the only one of the four that is not merely advisory.
+
 ## Signing in
 
 One entry point, `/login`, and four layers behind it.

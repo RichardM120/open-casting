@@ -27,6 +27,15 @@ const SECOND_ADMIN = "richard@cwcasting.co.uk";
 const ADMIN_PASSWORD = "bootstrap-admin-password";
 const CRON_SECRET = "test-cron-secret";
 const AUTH_SECRET = "test-auth-secret-at-least-32-characters-long";
+
+/**
+ * Extra environment for one suite only. The pre-launch switches change the
+ * whole site, so every other suite has to run with them off — which is also the
+ * arrangement that matters at launch.
+ */
+const SUITE_ENV = {
+  "11-prelaunch.mjs": { SITE_PASSCODE: "test-passcode", OPEN_ACCESS: "1" },
+};
 const MAIL_PORT = PORT + 1;
 const MAILBOX = path.join(here, "mailbox.json");
 const BASE = `http://127.0.0.1:${PORT}`;
@@ -134,6 +143,7 @@ for (const suite of SUITES) {
       AUTH_SECRET,
       RESEND_API_KEY: "test-key",
       RESEND_API_URL: `http://127.0.0.1:${MAIL_PORT}/emails`,
+      ...(SUITE_ENV[suite] ?? {}),
     },
   });
   server.on("exit", () => { signal.exited = true; });
@@ -153,6 +163,7 @@ for (const suite of SUITES) {
           AUTH_SECRET,
           MAIL_LOG,
           MAILBOX,
+          ...(SUITE_ENV[suite] ?? {}),
         },
       });
       child.on("exit", resolve);

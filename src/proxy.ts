@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { verifyContext } from "@/lib/token";
+import { GATE_COOKIE, gateEnabled, gateExempt } from "@/lib/gate";
+import { verifyContext, verifyValue } from "@/lib/token";
 
 /**
  * What each area needs. The proxy can only turn requests away — it cannot let
@@ -44,6 +45,21 @@ export async function proxy(request: NextRequest) {
   headers.set("Content-Security-Policy", csp);
 
   const path = request.nextUrl.pathname;
+
+  // The pre-launch gate comes before everything, including the share links: the
+  // point of it is that the deployment shows the public nothing at all.
+  if (gateEnabled() && !gateExempt(path)) {
+    const secret = process.env.AUTH_SECRET?.trim();
+    const open =
+      secret && (await verifyValue(request.cookies.get(GATE_COOKIE)?.value, secret)) === "open";
+
+    if (!open) {
+      const gate = new URL("/gate", request.url);
+      gate.searchParams.set("next", path + request.nextUrl.search);
+      return NextResponse.redirect(gate);
+    }
+  }
+
   const guard = GUARDED.find((entry) => path === entry.prefix || path.startsWith(`${entry.prefix}/`));
 
   if (guard) {
@@ -72,6 +88,8 @@ export async function proxy(request: NextRequest) {
 
   response.headers.set("Content-Security-Policy", csp);
   response.headers.set("X-Content-Type-Options", "nosniff");
+  // On every response, not only pages that remember to set it in metadata.
+  response.headers.set("X-Robots-Tag", "noindex, nofollow, noarchive, nosnippet");
   response.headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
   // Nothing here uses a camera, microphone or location.
   response.headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
