@@ -4,7 +4,9 @@ import {
   launch,
   reporter,
   session,
+  day,
   signUp,
+  openSession,
 } from "./_helpers.mjs";
 
 const { check, section, finish, errors } = reporter();
@@ -15,27 +17,47 @@ const CO = `Act Co ${t}`;
 
 const dir = await ctx();
 await signUp(dir.p, { name: "Ada Dir", company: CO, email: `ad${t}@example.com`, role: "director" });
+const sessionId = await openSession(dir.p, { name: `Act Session ${t}`, company: CO });
 await dir.p.goto(`${BASE}/roles/new`, { waitUntil: "networkidle" });
+await dir.p.selectOption("#sessionId", sessionId);
 await dir.p.fill("#production", "Act Prod"); await dir.p.fill("#synopsis", "Verifying the activity trail records what happens.");
 await dir.p.fill("#castingDirector", "Ada Dir"); await dir.p.fill("#company", CO);
 await dir.p.fill("#title", `ACT-${t}`);
 await dir.p.fill("#characterBrief", "A character brief comfortably long enough to pass validation.");
 await dir.p.fill("#location", "Leeds"); await dir.p.fill("#shootDates", "Apr 2027");
-await dir.p.fill("#rate", "£300/day"); await dir.p.fill("#deadline", "2026-11-30");
+await dir.p.fill("#rate", "£300/day");
 await dir.p.getByRole("button", { name: "Post the role" }).click();
 await dir.p.waitForURL("**/dashboard/roles/**", { timeout: 20000 });
 const id = dir.p.url().match(/roles\/(rol_[^?]+)/)[1];
 
 section("1 posting is recorded");
 check("role page shows it", (await dir.p.getByText(/Ada Dir.*posted/).count()) > 0);
+await dir.p.goto(`${BASE}/dashboard/activity`, { waitUntil: "networkidle" });
+check(
+  "opening the session is recorded too",
+  (await dir.p.getByText(/Ada Dir opened a casting session/).count()) > 0,
+);
+await dir.p.goto(`${BASE}/dashboard/roles/${id}`, { waitUntil: "networkidle" });
 
 section("2 an edit says what changed");
 await dir.p.goto(`${BASE}/dashboard/roles/${id}/edit`, { waitUntil: "networkidle" });
-await dir.p.fill("#rate", "£350/day"); await dir.p.fill("#deadline", "2026-12-15");
+await dir.p.fill("#rate", "£350/day"); await dir.p.fill("#shootDates", "May 2027");
 await dir.p.getByRole("button", { name: "Save changes" }).click();
 await dir.p.getByText("Changes saved").waitFor({ timeout: 20000 });
 const trail = await dir.p.locator("main ol").last().textContent();
-check("names the changed fields", trail.includes("rate") && trail.includes("closing date"), trail.slice(0, 160));
+check("names the changed fields", trail.includes("rate") && trail.includes("shoot dates"), trail.slice(0, 160));
+
+section("2b moving the session's dates is recorded against the session");
+await dir.p.goto(`${BASE}/dashboard/sessions/${sessionId}/edit`, { waitUntil: "networkidle" });
+await dir.p.fill("#closesAt", day(45));
+await dir.p.getByRole("button", { name: "Save changes" }).click();
+await dir.p.waitForURL(/\/dashboard\/sessions\/ses_[^/]+\?saved=1/, { timeout: 20000 });
+await dir.p.goto(`${BASE}/dashboard/activity`, { waitUntil: "networkidle" });
+check(
+  "names the closing date",
+  (await dir.p.getByText(/edited a casting session.*closing date/).count()) > 0,
+);
+await dir.p.goto(`${BASE}/dashboard/roles/${id}`, { waitUntil: "networkidle" });
 
 section("3 a performer's submission is recorded");
 {

@@ -44,8 +44,12 @@ deliberately left alone.
 | `/` | Landing page with live counts and the roles closing soonest |
 | `/roles` | Browse and filter every open call |
 | `/roles/[id]` | The full brief, plus the submission form |
-| `/roles/new` | Post a role — sign-in required |
+| `/roles/new` | Post a role into a casting session — sign-in required |
 | `/dashboard` | The roles you may see, with submission counts — sign-in required |
+| `/dashboard/sessions` | Your productions, and the window each is open for |
+| `/dashboard/sessions/new` | Open a casting session |
+| `/dashboard/sessions/[id]` | One production: its window, its roles, close early, remove |
+| `/dashboard/sessions/[id]/edit` | Move a production's dates, taking its roles with them |
 | `/dashboard/roles/[id]` | The submissions for one role, and their status |
 | `/login`, `/signup` | Password or Google sign-in for the casting side |
 | `/welcome` | Three-step setup, tailored to the account's role |
@@ -54,6 +58,7 @@ deliberately left alone.
 | `/dashboard/roles/[id]/edit` | Edit a role in place |
 | `/dashboard/accounts` | Suspend and restore accounts — admin only |
 | `/dashboard/activity` | The audit trail, scoped like everything else |
+| `/api/health` | Whether the deployment can reach its database. No data, no secrets |
 
 ## How it is put together
 
@@ -90,11 +95,14 @@ demo content if the `roles` table is empty. Seeding is keyed on fixed ids with
 
 Two rules the database enforces rather than the application:
 
-- `submissions (role_id, lower(email))` is unique, so one person cannot submit
-  twice for the same role. The insert decides it, not a check beforehand — two
-  requests arriving together would both pass a check-then-insert. Verified: of
-  ten identical inserts fired at once, one is accepted and nine are rejected.
-- `submissions.role_id` references `roles(id)` with `ON DELETE CASCADE`.
+- `submissions (session_id, lower(email))` is unique, so one person cannot submit
+  twice into the same casting session — whichever of its roles they go for. The
+  insert decides it, not a check beforehand: two requests arriving together would
+  both pass a check-then-insert.
+- `submissions.role_id` references `roles(id)`, and both `roles.session_id` and
+  `submissions.session_id` reference `sessions_casting(id)`, all with
+  `ON DELETE CASCADE`. Removing a production takes its roles and their
+  submissions with it, in one statement.
 
 Set `DATABASE_URL` in the environment. If a hosted integration provisions
 `POSTGRES_URL`, `POSTGRES_PRISMA_URL` or `POSTGRES_URL_NON_POOLING` instead —
@@ -107,6 +115,36 @@ instance opens its own pool. Keep `DATABASE_POOL_MAX` small.
 TLS is verified whenever the connection string asks for it. A provider using its
 own certificate authority can set `DATABASE_SSL_NO_VERIFY=1`, which keeps the
 connection encrypted but stops checking who is on the other end.
+
+## Casting sessions
+
+A **casting session** is one production's casting window. It owns the production
+name, the synopsis, the company and the two dates submissions run between. Roles
+belong to a session; they do not carry dates of their own.
+
+That buys three things:
+
+- **One window per production.** Every role opens and closes together, so two
+  roles on the same film cannot disagree about when casting closes. Moving the
+  dates moves all of them at once.
+- **One submission per performer per production.** A performer picks the role
+  that fits and submits once, rather than once per role. The unique index
+  `submissions (session_id, lower(email))` decides it, so two requests arriving
+  together cannot both get through.
+- **A real off switch.** *Close early* on the session stops every role in it at
+  the same moment, and is reversible. Removing is the destructive one, is
+  admin-only, and takes the roles and their submissions with it.
+
+Outside the window the roles stay listed and readable — a performer can read the
+brief and prepare a tape — but the submission form is not rendered, and the
+action refuses the write even if the form is replayed.
+
+`roles.deadline` mirrors the session's closing date. The session is the
+authority; the column is kept in step on write so it can be used for ordering
+without a join, and it never contradicts the session.
+
+Roles do not move between sessions. Moving one would change the dates it was
+posted under and separate it from the submissions already made into its session.
 
 ## Accounts and roles
 
@@ -224,8 +262,16 @@ Vercel is the path of least resistance: import the repo, add `DATABASE_URL` as
 an environment variable, deploy. Every page that reads data is `force-dynamic`,
 so the build itself does not need a reachable database.
 
+That last point cuts both ways: a deployment with no reachable database builds
+and deploys cleanly, then returns a server error on every page that reads data.
+**`/api/health` is the first thing to check** when a deployed page errors. It
+answers in one line whether a connection string is set, which variable it came
+from, and whether the query went through — without the runtime logs, and without
+printing the connection string.
+
 ## Known limits
 
-Anyone can post a role or read the dashboard — there is no sign-in, and the dashboard shows every
-role rather than yours. Headshots and tapes are links, not uploads. Nobody is emailed when a
-submission arrives or a status changes.
+Headshots and tapes are links, not uploads. Nobody is emailed when a submission
+arrives or a status changes — the performer's address is on every submission, and
+replying is a manual step. A role cannot be moved between casting sessions.
+There is no export: submissions are read in the dashboard.

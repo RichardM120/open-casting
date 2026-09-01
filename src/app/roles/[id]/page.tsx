@@ -5,7 +5,7 @@ import { notFound } from "next/navigation";
 import { DeadlineBadge } from "@/components/role-card";
 import { SubmissionForm, SubmissionsClosed } from "@/components/submission-form";
 import { Badge, Eyebrow } from "@/components/ui";
-import { ageRange, formatDate, formatRelative, isOpen } from "@/lib/format";
+import { ageRange, formatDate, formatRelative, isOpen, notYetOpen, roleWindow } from "@/lib/format";
 import { getRole } from "@/lib/roles";
 import { listSubmissions } from "@/lib/submissions";
 
@@ -27,7 +27,9 @@ export default async function RolePage({ params }: PageProps<"/roles/[id]">) {
   if (!role) notFound();
 
   const submissions = await listSubmissions(role.id);
-  const open = isOpen(role);
+  const window = roleWindow(role);
+  const open = isOpen(window);
+  const upcoming = notYetOpen(window);
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-12">
@@ -43,7 +45,7 @@ export default async function RolePage({ params }: PageProps<"/roles/[id]">) {
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone="accent">{role.productionType}</Badge>
             {role.selfTape ? <Badge tone="outline">Self-tape accepted</Badge> : null}
-            <DeadlineBadge role={role} />
+            <DeadlineBadge session={window} />
           </div>
 
           <h1 className="mt-5 text-3xl font-semibold tracking-tight text-balance md:text-4xl">
@@ -53,6 +55,16 @@ export default async function RolePage({ params }: PageProps<"/roles/[id]">) {
             {role.production} · cast by {role.castingDirector} at {role.company}
           </p>
 
+          <p className="mt-4 max-w-prose rounded-xl border border-line bg-raised px-4 py-3 text-sm leading-relaxed text-muted">
+            Part of the <strong className="text-text">{role.session.name}</strong> casting
+            session, which takes submissions from {formatDate(role.session.opensAt)} to{" "}
+            {formatDate(role.session.closesAt)}
+            {role.session.closedAt
+              ? `, and was closed early on ${formatDate(role.session.closedAt)}`
+              : ""}
+            . One submission per person per production, whichever role you go for.
+          </p>
+
           <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 rounded-2xl border border-line bg-surface p-6 sm:grid-cols-3">
             <Detail label="Location" value={role.location} />
             <Detail label="Playing age" value={ageRange(role.ageMin, role.ageMax)} />
@@ -60,7 +72,8 @@ export default async function RolePage({ params }: PageProps<"/roles/[id]">) {
             <Detail label="Pay" value={role.payType} />
             <Detail label="Rate" value={role.rate} />
             <Detail label="Shoot dates" value={role.shootDates} />
-            <Detail label="Closes" value={formatDate(role.deadline)} />
+            <Detail label="Opens" value={formatDate(role.session.opensAt)} />
+            <Detail label="Closes" value={formatDate(role.session.closesAt)} />
             <Detail label="Posted" value={formatRelative(role.postedAt)} />
             <Detail
               label="Submissions"
@@ -95,10 +108,15 @@ export default async function RolePage({ params }: PageProps<"/roles/[id]">) {
             <SubmissionForm
               roleId={role.id}
               roleTitle={role.title}
+              session={role.session.name}
+              closesOn={formatDate(role.session.closesAt)}
               disclaimer={role.disclaimer}
             />
           ) : (
-            <SubmissionsClosed />
+            <SubmissionsClosed
+              session={role.session.name}
+              opensOn={upcoming ? formatDate(role.session.opensAt) : undefined}
+            />
           )}
         </div>
       </div>

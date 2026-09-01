@@ -29,6 +29,14 @@ const CONNECTION_VARIABLES = [
   "POSTGRES_URL_NON_POOLING",
 ] as const;
 
+/** The variable the connection string came from, or null if none is set. */
+function connectionVariable(): string | null {
+  for (const name of CONNECTION_VARIABLES) {
+    if (process.env[name]?.trim()) return name;
+  }
+  return null;
+}
+
 function connectionString(): string {
   for (const name of CONNECTION_VARIABLES) {
     const value = process.env[name]?.trim();
@@ -173,6 +181,26 @@ const SCHEMA = `
 
   CREATE INDEX IF NOT EXISTS rate_limits_idx ON rate_limits (bucket, subject, at);
 
+  -- A casting session is one production's casting window. Roles belong to it and
+  -- open and close together, because a production casts as a unit.
+  CREATE TABLE IF NOT EXISTS sessions_casting (
+    id         text PRIMARY KEY,
+    slug       text        NOT NULL,
+    name       text        NOT NULL,
+    synopsis   text        NOT NULL DEFAULT '',
+    owner_id   text        REFERENCES users(id) ON DELETE CASCADE,
+    company    text        NOT NULL,
+    opens_at   date        NOT NULL,
+    closes_at  date        NOT NULL,
+    -- Set when closed ahead of closes_at.
+    closed_at  timestamptz,
+    created_at timestamptz NOT NULL DEFAULT now()
+  );
+
+  CREATE INDEX IF NOT EXISTS casting_owner_idx ON sessions_casting (owner_id);
+  CREATE INDEX IF NOT EXISTS casting_company_idx ON sessions_casting (lower(company));
+  CREATE INDEX IF NOT EXISTS casting_window_idx ON sessions_casting (opens_at, closes_at);
+
   CREATE TABLE IF NOT EXISTS roles (
     id               text PRIMARY KEY,
     slug             text        NOT NULL,
@@ -258,14 +286,36 @@ const SCHEMA = `
   CREATE INDEX IF NOT EXISTS activity_recent_idx ON activity (created_at DESC);
   CREATE INDEX IF NOT EXISTS activity_scope_idx ON activity (owner_id, company);
 
+  ALTER TABLE roles ADD COLUMN IF NOT EXISTS session_id text;
+  ALTER TABLE submissions ADD COLUMN IF NOT EXISTS session_id text;
+
+  DO $$
+  BEGIN
+    ALTER TABLE roles ADD CONSTRAINT roles_session_fkey
+      FOREIGN KEY (session_id) REFERENCES sessions_casting(id) ON DELETE CASCADE;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END $$;
+
+  DO $$
+  BEGIN
+    ALTER TABLE submissions ADD CONSTRAINT submissions_session_fkey
+      FOREIGN KEY (session_id) REFERENCES sessions_casting(id) ON DELETE CASCADE;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END $$;
+
+  CREATE INDEX IF NOT EXISTS roles_session_idx ON roles (session_id);
+  CREATE INDEX IF NOT EXISTS submissions_session_idx ON submissions (session_id);
   CREATE INDEX IF NOT EXISTS submissions_role_idx ON submissions (role_id);
   CREATE INDEX IF NOT EXISTS roles_deadline_idx ON roles (deadline);
   CREATE INDEX IF NOT EXISTS roles_owner_idx ON roles (owner_id);
 
-  -- One submission per person per role, enforced by the database rather than by
-  -- a check-then-insert that two concurrent requests could both pass.
-  CREATE UNIQUE INDEX IF NOT EXISTS submissions_role_email_idx
-    ON submissions (role_id, lower(email));
+  -- One submission per person per casting session — a production considers you
+  -- once, not once per role. Enforced by the database rather than by a
+  -- check-then-insert that two concurrent requests could both pass.
+  DROP INDEX IF EXISTS submissions_role_email_idx;
+  CREATE UNIQUE INDEX IF NOT EXISTS submissions_session_email_idx
+    ON submissions (session_id, lower(email))
+    WHERE session_id IS NOT NULL;
 `;
 
 /** Postgres error code for a unique constraint violation. */
@@ -285,6 +335,7 @@ function ensureSchema(): Promise<void> {
       "SELECT count(*)::text AS count FROM roles",
     );
     if (rows[0]?.count === "0") await seed();
+    await backfillSessions();
   })().catch((error) => {
     // Let the next request retry rather than caching a failed bootstrap.
     globalThis.__openCastingSchema = undefined;
@@ -309,25 +360,38 @@ export const DEMO_USER = {
 
 /** Inserts the demo roles and submissions, skipping any that already exist. */
 async function seed(): Promise<void> {
-  const { roles, submissions } = seedDatabase();
+  const { sessions, roles, submissions } = seedDatabase();
 
   await rawTransaction(async (client) => {
+    // Sessions first: the roles reference them.
+    for (const session of sessions) {
+      await client.query(
+        `INSERT INTO sessions_casting
+           (id, slug, name, synopsis, owner_id, company, opens_at, closes_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8) ON CONFLICT (id) DO NOTHING`,
+        [
+          session.id, session.slug, session.name, session.synopsis,
+          DEMO_USER.id, session.company, session.opensAt, session.closesAt,
+        ],
+      );
+    }
+
     for (const role of roles) {
       await client.query(
         `INSERT INTO roles (
            id, slug, title, production, production_type, synopsis, character_brief,
            requirements, location, self_tape, age_min, age_max, pay_type, rate,
            union_status, shoot_dates, deadline, casting_director, company, posted_at,
-           owner_id, disclaimer
+           owner_id, disclaimer, session_id
          ) VALUES (
-           $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22
+           $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23
          ) ON CONFLICT (id) DO NOTHING`,
         [
           role.id, role.slug, role.title, role.production, role.productionType,
           role.synopsis, role.characterBrief, role.requirements, role.location,
           role.selfTape, role.ageMin, role.ageMax, role.payType, role.rate,
           role.unionStatus, role.shootDates, role.deadline, role.castingDirector,
-          role.company, role.postedAt, DEMO_USER.id, role.disclaimer,
+          role.company, role.postedAt, DEMO_USER.id, role.disclaimer, role.sessionId,
         ],
       );
     }
@@ -335,18 +399,62 @@ async function seed(): Promise<void> {
     for (const submission of submissions) {
       await client.query(
         `INSERT INTO submissions (
-           id, role_id, name, email, phone, location, age, union_status,
+           id, role_id, session_id, name, email, phone, location, age, union_status,
            reel_url, profile_url, cover_note, status, submitted_at
-         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
          ON CONFLICT (id) DO NOTHING`,
         [
-          submission.id, submission.roleId, submission.name, submission.email,
-          submission.phone, submission.location, submission.age,
+          submission.id, submission.roleId, submission.sessionId, submission.name,
+          submission.email, submission.phone, submission.location, submission.age,
           submission.unionStatus, submission.reelUrl, submission.profileUrl,
           submission.coverNote, submission.status, submission.submittedAt,
         ],
       );
     }
+  });
+}
+
+/**
+ * Gives every role a casting session. Roles predate sessions, so one is derived
+ * per production per owner: it opens when the earliest of its roles was posted
+ * and closes on the latest deadline any of them advertised, which preserves
+ * what performers were already told.
+ *
+ * The id is a hash of the grouping key rather than random, so running this
+ * twice cannot produce two sessions for the same production.
+ */
+async function backfillSessions(): Promise<void> {
+  await rawTransaction(async (client) => {
+    await client.query(`
+      INSERT INTO sessions_casting
+        (id, slug, name, synopsis, owner_id, company, opens_at, closes_at)
+      SELECT
+        'ses_' || substr(md5(coalesce(owner_id, '') || '|' || lower(production)), 1, 12),
+        regexp_replace(lower(production), '[^a-z0-9]+', '-', 'g'),
+        min(production),
+        min(synopsis),
+        owner_id,
+        min(company),
+        min(posted_at)::date,
+        max(deadline)
+      FROM roles
+      WHERE session_id IS NULL
+      GROUP BY owner_id, lower(production)
+      ON CONFLICT (id) DO NOTHING
+    `);
+
+    await client.query(`
+      UPDATE roles SET session_id =
+        'ses_' || substr(md5(coalesce(owner_id, '') || '|' || lower(production)), 1, 12)
+      WHERE session_id IS NULL
+    `);
+
+    // Submissions carry the session too, so the uniqueness rule has a column to
+    // sit on without a join.
+    await client.query(`
+      UPDATE submissions s SET session_id = r.session_id
+        FROM roles r WHERE r.id = s.role_id AND s.session_id IS NULL
+    `);
   });
 }
 
@@ -380,8 +488,59 @@ async function ensureDemoOwner(): Promise<void> {
 export async function resetToSeed(): Promise<void> {
   await ensureSchema();
   await rawTransaction(async (client) => {
-    await client.query("TRUNCATE submissions, roles");
+    // sessions_casting cascades to roles and their submissions; naming all
+    // three keeps it explicit that everything posted goes.
+    await client.query("TRUNCATE submissions, roles, sessions_casting CASCADE");
   });
   await ensureDemoOwner();
   await seed();
+  await backfillSessions();
+}
+
+/**
+ * A yes/no on whether this deployment can talk to its database, for the health
+ * endpoint. Deliberately reports the environment variable's *name* and never
+ * its value, and counts rather than any data.
+ */
+export async function databaseStatus(): Promise<{
+  ok: boolean;
+  connectionVariable: string | null;
+  schema: "ready" | "unavailable";
+  roles?: number;
+  sessions?: number;
+  error?: string;
+}> {
+  const variable = connectionVariable();
+  if (!variable) {
+    return {
+      ok: false,
+      connectionVariable: null,
+      schema: "unavailable",
+      error:
+        "No connection string. Set DATABASE_URL (or POSTGRES_URL) in the deployment's environment and redeploy.",
+    };
+  }
+
+  try {
+    const [roles, sessions] = await Promise.all([
+      query<{ count: string }>("SELECT count(*)::text AS count FROM roles"),
+      query<{ count: string }>("SELECT count(*)::text AS count FROM sessions_casting"),
+    ]);
+    return {
+      ok: true,
+      connectionVariable: variable,
+      schema: "ready",
+      roles: Number(roles[0]?.count ?? 0),
+      sessions: Number(sessions[0]?.count ?? 0),
+    };
+  } catch (error) {
+    // The message can carry a host name but never a password: `pg` does not put
+    // the connection string in its errors.
+    return {
+      ok: false,
+      connectionVariable: variable,
+      schema: "unavailable",
+      error: error instanceof Error ? error.message : String(error),
+    };
+  }
 }

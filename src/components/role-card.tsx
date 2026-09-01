@@ -1,18 +1,37 @@
 import Link from "next/link";
 
-import { ageRange, daysUntil, deadlineLabel, isOpen } from "@/lib/format";
-import type { Role } from "@/lib/types";
+import {
+  ageRange,
+  daysUntil,
+  deadlineLabel,
+  isOpen,
+  notYetOpen,
+  roleWindow,
+  type Window,
+} from "@/lib/format";
+import type { ListedRole } from "@/lib/roles";
 
 import { Badge } from "./ui";
 
-export function DeadlineBadge({ role }: { role: Pick<Role, "deadline" | "closedAt"> }) {
-  const days = daysUntil(role.deadline);
-  const tone = !isOpen(role) ? "outline" : days <= 7 ? "danger" : "neutral";
-  return <Badge tone={tone}>{deadlineLabel(role)}</Badge>;
+/**
+ * The window belongs to the casting session, so that is what this reads —
+ * pass `roleWindow(role)` for a role, which folds in an early close of its own.
+ */
+export function DeadlineBadge({ session }: { session: Window }) {
+  const days = daysUntil(session.closesAt);
+  const tone = !isOpen(session)
+    ? "outline"
+    : notYetOpen(session)
+      ? "accent"
+      : days <= 7
+        ? "danger"
+        : "neutral";
+  return <Badge tone={tone}>{deadlineLabel(session)}</Badge>;
 }
 
-export function RoleCard({ role }: { role: Role }) {
-  const open = isOpen(role);
+export function RoleCard({ role }: { role: ListedRole }) {
+  const window = roleWindow(role);
+  const open = isOpen(window);
 
   return (
     <Link
@@ -22,7 +41,7 @@ export function RoleCard({ role }: { role: Role }) {
       <div className="flex flex-wrap items-center gap-2">
         <Badge tone="accent">{role.productionType}</Badge>
         {role.selfTape ? <Badge tone="outline">Self-tape</Badge> : null}
-        <DeadlineBadge role={role} />
+        <DeadlineBadge session={window} />
       </div>
 
       <div>
@@ -45,7 +64,11 @@ export function RoleCard({ role }: { role: Role }) {
 
       {!open ? (
         <p className="text-xs text-faint">
-          {role.closedAt ? "Closed early. Kept for reference." : "Submissions closed. Kept for reference."}
+          {notYetOpen(window)
+            ? "Not open yet. Submissions start on the opening date."
+            : window.closedAt
+              ? "Closed early. Kept for reference."
+              : "Submissions closed. Kept for reference."}
         </p>
       ) : null}
     </Link>

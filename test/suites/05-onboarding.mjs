@@ -37,16 +37,20 @@ check("name saved into the header", (await dir.p.locator("header").textContent()
 section("3 step 2 explains the director's own scope");
 check("director wording", (await dir.p.getByText(/roles you post, and nothing else/).count()) > 0);
 check("warns colleagues cannot see it", (await dir.p.getByText(/cannot see your roles/).count()) > 0);
+check(
+  "explains casting sessions come first",
+  (await dir.p.getByText(/opening a casting session for the production/).count()) > 0,
+);
 await dir.p.screenshot({ path: `${SHOTS}/wizard-2.png`, fullPage: true });
 await dir.p.getByRole("link", { name: "Continue" }).click();
 await dir.p.waitForURL("**step=3**", { timeout: 20000 });
 check("step 3 mentions the data duty", (await dir.p.getByText(/UK GDPR/).count()) > 0);
 check("links the casting guide", (await dir.p.getByRole("link", { name: /casting director guide/ }).count()) > 0);
 
-section("4 finishing sends a director to post a role");
-await dir.p.getByRole("button", { name: "Post your first role" }).click();
-await dir.p.waitForURL("**/roles/new", { timeout: 20000 });
-check("lands on the posting form", true);
+section("4 finishing sends a director to open a casting session");
+await dir.p.getByRole("button", { name: "Open your first casting session" }).click();
+await dir.p.waitForURL("**/dashboard/sessions/new", { timeout: 20000 });
+check("lands on the session form", true);
 await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 check("the nudge banner is gone", (await dir.p.getByText(/setup is not finished/).count()) === 0);
 
@@ -79,6 +83,7 @@ await m.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 const visible = await m.p.locator("header nav a").evaluateAll((els) =>
   els.filter((el) => el.offsetParent !== null).map((el) => el.textContent.trim()));
 check(`nav visible on a phone: ${JSON.stringify(visible)}`, visible.includes("Casting dashboard"));
+check("sessions reachable on a phone", visible.includes("Sessions"));
 check("no horizontal overflow", (await m.p.evaluate(() =>
   document.documentElement.scrollWidth - document.documentElement.clientWidth)) === 0);
 await m.p.keyboard.press("Tab");

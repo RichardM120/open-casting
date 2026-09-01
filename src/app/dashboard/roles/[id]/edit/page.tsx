@@ -6,6 +6,7 @@ import { RoleForm } from "@/components/role-form";
 import { Eyebrow } from "@/components/ui";
 import { currentUser, requireUser } from "@/lib/auth";
 import { getVisibleRole } from "@/lib/roles";
+import { listVisibleSessions } from "@/lib/sessions";
 
 export async function generateMetadata({
   params,
@@ -24,6 +25,8 @@ export default async function EditRolePage({
   const role = await getVisibleRole(id, user);
   if (!role) notFound();
 
+  const sessions = await listVisibleSessions(user);
+
   return (
     <div className="mx-auto max-w-3xl px-5 py-12">
       <Link
@@ -40,12 +43,12 @@ export default async function EditRolePage({
         </h1>
         <p className="mt-3 max-w-prose text-muted">
           Changes go live immediately. Anyone who has already submitted keeps the terms they
-          accepted at the time.
+          accepted at the time. The dates belong to the casting session, so change those there.
         </p>
       </div>
 
       <div className="mt-10">
-        <RoleForm role={role} />
+        <RoleForm role={role} sessions={sessions} />
       </div>
     </div>
   );

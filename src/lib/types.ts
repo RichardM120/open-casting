@@ -25,6 +25,25 @@ export const SUBMISSION_STATUSES = [
 ] as const;
 export type SubmissionStatus = (typeof SUBMISSION_STATUSES)[number];
 
+/**
+ * One production's casting window. Roles belong to a session and open and close
+ * with it, because a production casts as a unit rather than role by role.
+ */
+export type CastingSession = {
+  id: string;
+  slug: string;
+  name: string;
+  synopsis: string;
+  ownerId: string | null;
+  company: string;
+  /** yyyy-mm-dd. Live from the start of opensAt to the end of closesAt. */
+  opensAt: string;
+  closesAt: string;
+  /** Set when closed ahead of closesAt. ISO timestamp, or null. */
+  closedAt: string | null;
+  createdAt: string;
+};
+
 export type Role = {
   id: string;
   slug: string;
@@ -42,7 +61,10 @@ export type Role = {
   rate: string;
   unionStatus: UnionStatus;
   shootDates: string;
-  /** ISO date, yyyy-mm-dd. Submissions close at the end of this day. */
+  /**
+   * Mirrors the session's closing date. The session is the authority; this is
+   * kept in step on write so the column never contradicts it.
+   */
   deadline: string;
   castingDirector: string;
   company: string;
@@ -52,6 +74,8 @@ export type Role = {
   closedAt: string | null;
   /** The account that posted it. Null only for rows predating accounts. */
   ownerId: string | null;
+  /** The casting session it belongs to, which owns its live dates. */
+  sessionId: string;
   /** ISO timestamp. */
   postedAt: string;
 };
@@ -59,6 +83,8 @@ export type Role = {
 export type Submission = {
   id: string;
   roleId: string;
+  /** The casting session the role belonged to. One submission per person per session. */
+  sessionId: string;
   name: string;
   email: string;
   phone: string;
@@ -79,8 +105,14 @@ export type Submission = {
   submittedAt: string;
 };
 
-/** Seed content is written before any account exists, so it carries no owner. */
-export type SeedRole = Omit<Role, "ownerId">;
+/**
+ * Seed content is written before any account or session exists; the bootstrap
+ * assigns the owner and the backfill derives the session from the production.
+ */
+export type SeedRole = Omit<Role, "ownerId" | "sessionId" | "deadline">;
+
+/** A demo casting session. The owner is attached when it is seeded. */
+export type SeedSession = Omit<CastingSession, "ownerId" | "closedAt" | "createdAt">;
 
 /**
  * What an account may see on the dashboard.
@@ -109,6 +141,8 @@ export const ROLE_DESCRIPTIONS: Record<SignupRole, string> = {
 };
 
 export type Database = {
-  roles: SeedRole[];
+  sessions: SeedSession[];
+  /** Assembled with the session they belong to, and its closing date. */
+  roles: (SeedRole & { sessionId: string; deadline: string })[];
   submissions: Submission[];
 };

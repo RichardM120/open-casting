@@ -55,7 +55,8 @@ export const roleSchema = z
     rate: trimmed.min(2, "State the rate, or say what is offered instead").max(120),
     unionStatus: z.enum(UNION_STATUSES, { message: "Choose a union status" }),
     shootDates: trimmed.min(2, "When does it shoot?").max(120),
-    deadline: trimmed.regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a closing date"),
+    // The closing date belongs to the casting session, not the role.
+    sessionId: trimmed.min(1, "Choose the casting session this role belongs to"),
     castingDirector: trimmed.min(2, "Who is casting?").max(80),
     company: trimmed.min(2, "Name the company").max(80),
     disclaimer: trimmed.max(2000, "Keep the terms under 2000 characters"),
@@ -63,10 +64,6 @@ export const roleSchema = z
   .refine((value) => value.ageMax >= value.ageMin, {
     path: ["ageMax"],
     message: "Maximum age must be the same as or above the minimum",
-  })
-  .refine((value) => Date.parse(`${value.deadline}T23:59:59Z`) > Date.now(), {
-    path: ["deadline"],
-    message: "Choose a closing date in the future",
   });
 
 export type RoleInput = z.infer<typeof roleSchema>;
@@ -115,3 +112,22 @@ export const profileSchema = z.object({
   name: trimmed.min(2, "Enter your name").max(80),
   company: trimmed.min(2, "Name your company or agency").max(80),
 });
+
+export const sessionSchema = z
+  .object({
+    name: trimmed.min(2, "Name the production").max(80),
+    synopsis: trimmed.min(20, "Describe the production in a sentence or two").max(600),
+    company: trimmed.min(2, "Name the company").max(80),
+    opensAt: trimmed.regex(/^\d{4}-\d{2}-\d{2}$/, "Choose an opening date"),
+    closesAt: trimmed.regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a closing date"),
+  })
+  .refine((value) => value.closesAt >= value.opensAt, {
+    path: ["closesAt"],
+    message: "The closing date cannot be before the opening date",
+  })
+  .refine((value) => Date.parse(`${value.closesAt}T23:59:59Z`) > Date.now(), {
+    path: ["closesAt"],
+    message: "Choose a closing date in the future",
+  });
+
+export type SessionInput = z.infer<typeof sessionSchema>;

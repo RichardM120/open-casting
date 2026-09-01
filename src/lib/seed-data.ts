@@ -1,4 +1,4 @@
-import type { Database, SeedRole, Submission } from "./types";
+import type { Database, SeedRole, SeedSession, Submission } from "./types";
 
 /**
  * Demo content. The store falls back to this whenever the data file is
@@ -28,7 +28,6 @@ const roles: SeedRole[] = [
     rate: "£950/week + accommodation and travel",
     unionStatus: "Either",
     shootDates: "12 Oct – 6 Nov 2026",
-    deadline: "2026-09-18",
     castingDirector: "Priya Raman",
     company: "Raman Casting",
     disclaimer: "",
@@ -57,7 +56,6 @@ const roles: SeedRole[] = [
     rate: "£950/week + accommodation and travel",
     unionStatus: "Either",
     shootDates: "19 Oct – 1 Nov 2026",
-    deadline: "2026-09-18",
     castingDirector: "Priya Raman",
     company: "Raman Casting",
     disclaimer: "",
@@ -87,7 +85,6 @@ const roles: SeedRole[] = [
     rate: "Equity broadcast rates, negotiable on experience",
     unionStatus: "Union",
     shootDates: "Jan – Apr 2027",
-    deadline: "2026-10-02",
     castingDirector: "Tom Whitcombe",
     company: "Whitcombe & Fry Casting",
     disclaimer: "",
@@ -113,7 +110,6 @@ const roles: SeedRole[] = [
     rate: "£420/day",
     unionStatus: "Either",
     shootDates: "Feb – Mar 2027",
-    deadline: "2026-10-02",
     castingDirector: "Tom Whitcombe",
     company: "Whitcombe & Fry Casting",
     disclaimer: "",
@@ -143,7 +139,6 @@ const roles: SeedRole[] = [
     rate: "£1,200/day + buyout",
     unionStatus: "Either",
     shootDates: "22 Sep 2026",
-    deadline: "2026-09-08",
     castingDirector: "Lena Ortiz",
     company: "Ortiz Casting",
     disclaimer:
@@ -173,7 +168,6 @@ const roles: SeedRole[] = [
     rate: "£300 per session",
     unionStatus: "Either",
     shootDates: "Nov 2026 – Jan 2027",
-    deadline: "2026-09-25",
     castingDirector: "Ruth Adeyemi",
     company: "Sixth Floor Audio",
     disclaimer: "",
@@ -203,7 +197,6 @@ const roles: SeedRole[] = [
     rate: "ITC/Equity minimum + touring allowance",
     unionStatus: "Either",
     shootDates: "Rehearsals from 8 Feb 2027, tour to 30 May 2027",
-    deadline: "2026-10-16",
     castingDirector: "Marcus Bell",
     company: "Lantern Theatre Company",
     disclaimer: "",
@@ -233,7 +226,6 @@ const roles: SeedRole[] = [
     rate: "£150/day + expenses",
     unionStatus: "Non-Union",
     shootDates: "7–8 and 14–15 Nov 2026",
-    deadline: "2026-09-30",
     castingDirector: "Jo Fenwick",
     company: "Northern Film School",
     disclaimer:
@@ -243,7 +235,84 @@ const roles: SeedRole[] = [
   },
 ];
 
-const submissions: Submission[] = [
+/**
+ * One casting session per production. The session owns the live window, so the
+ * roles inside it open and close together and a performer submits to it once.
+ */
+const sessions: SeedSession[] = [
+  {
+    id: "ses_saltmarsh",
+    slug: "saltmarsh",
+    name: "Saltmarsh",
+    synopsis:
+      "A low-budget feature about a marine biologist who returns to the Essex coast to close her late father's boatyard and finds the tide has taken more than the land.",
+    company: "Raman Casting",
+    opensAt: "2026-08-24",
+    closesAt: "2026-09-18",
+  },
+  {
+    id: "ses_northbank",
+    slug: "northbank",
+    name: "Northbank",
+    synopsis:
+      "Series two of a returning police procedural set on the Tyne, shooting in and around Newcastle.",
+    company: "Whitcombe & Fry Casting",
+    opensAt: "2026-08-19",
+    closesAt: "2026-10-02",
+  },
+  {
+    id: "ses_hearth",
+    slug: "hearth-winter-campaign",
+    name: "Hearth — Winter Campaign",
+    synopsis:
+      "A national television and online campaign for a home heating brand, shot over two days in a studio build.",
+    company: "Ortiz Casting",
+    opensAt: "2026-08-27",
+    closesAt: "2026-09-08",
+  },
+  {
+    id: "ses_glasshouse",
+    slug: "the-glasshouse",
+    name: "The Glasshouse",
+    synopsis:
+      "An eight-part audio drama for a podcast network, recorded remotely and in studio in London.",
+    company: "Sixth Floor Audio",
+    opensAt: "2026-08-29",
+    closesAt: "2026-09-25",
+  },
+  {
+    id: "ses_lantern",
+    slug: "lantern",
+    name: "Lantern",
+    synopsis:
+      "A new ensemble piece opening at the Lantern before a twelve-week regional tour.",
+    company: "Lantern Theatre Company",
+    opensAt: "2026-08-12",
+    closesAt: "2026-10-16",
+  },
+  {
+    id: "ses_kestrel",
+    slug: "kestrel",
+    name: "Kestrel",
+    synopsis:
+      "A graduation short shot on 16mm over five days in the Yorkshire Dales.",
+    company: "Northern Film School",
+    opensAt: "2026-08-22",
+    closesAt: "2026-09-30",
+  },
+];
+
+/** Which session each production's roles belong to. */
+const SESSION_BY_PRODUCTION: Record<string, string> = {
+  Saltmarsh: "ses_saltmarsh",
+  Northbank: "ses_northbank",
+  "Hearth — Winter Campaign": "ses_hearth",
+  "The Glasshouse": "ses_glasshouse",
+  Lantern: "ses_lantern",
+  Kestrel: "ses_kestrel",
+};
+
+const submissions: Omit<Submission, "sessionId">[] = [
   {
     id: "sub_0001",
     roleId: "rol_saltmarsh_nell",
@@ -390,9 +459,32 @@ const submissions: Submission[] = [
   },
 ];
 
+/**
+ * Assembles the demo data. Each role is attached to its production's session and
+ * takes the session's closing date, so the seed cannot contradict itself the way
+ * a hand-written deadline per role could.
+ */
 export function seedDatabase(): Database {
+  const byId = new Map(sessions.map((session) => [session.id, session]));
+
+  const seedRoles = structuredClone(roles).map((role) => {
+    const sessionId = SESSION_BY_PRODUCTION[role.production];
+    const session = sessionId ? byId.get(sessionId) : undefined;
+    if (!session) throw new Error(`No casting session for ${role.production}`);
+    return { ...role, sessionId: session.id, deadline: session.closesAt };
+  });
+
+  const sessionByRole = new Map(seedRoles.map((role) => [role.id, role.sessionId]));
+
+  const seedSubmissions = structuredClone(submissions).map((submission) => {
+    const sessionId = sessionByRole.get(submission.roleId);
+    if (!sessionId) throw new Error(`No role for submission ${submission.id}`);
+    return { ...submission, sessionId };
+  });
+
   return {
-    roles: structuredClone(roles),
-    submissions: structuredClone(submissions),
+    sessions: structuredClone(sessions),
+    roles: seedRoles,
+    submissions: seedSubmissions,
   };
 }

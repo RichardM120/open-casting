@@ -25,10 +25,15 @@ const LABELS: Record<string, string> = {
 export function SubmissionForm({
   roleId,
   roleTitle,
+  session,
+  closesOn,
   disclaimer,
 }: {
   roleId: string;
   roleTitle: string;
+  /** The casting session's name, and when it closes, as a formatted date. */
+  session: string;
+  closesOn: string;
   disclaimer: string;
 }) {
   const [state, formAction, pending] = useActionState(submitApplication, IDLE_FORM_STATE);
@@ -42,8 +47,8 @@ export function SubmissionForm({
         </p>
         <h2 className="mt-3 text-xl font-semibold tracking-tight">{state.message}</h2>
         <p className="mt-3 text-sm leading-relaxed text-muted">
-          You will hear back through the email address you gave. Nothing else is needed for{" "}
-          {roleTitle} — submitting twice does not help.
+          You will hear back through the email address you gave. That is your one submission to{" "}
+          {session}, so nothing else is needed for {roleTitle} or any other role in it.
         </p>
         <div className="mt-6">
           <ButtonLink href="/roles" variant="secondary" size="sm">
@@ -67,6 +72,11 @@ export function SubmissionForm({
         Free to submit, and no agent needed. Everything here goes straight to the casting
         director.
       </p>
+      <p className="mt-2 text-sm text-muted">
+        This is one submission to <strong className="text-text">{session}</strong>, open until{" "}
+        <strong className="text-text">{closesOn}</strong>. One per person per production — pick
+        the role that fits you best rather than submitting for several.
+      </p>
       <p className="mt-2">
         <Link
           href="/faq/performers"
@@ -79,7 +89,12 @@ export function SubmissionForm({
       <input type="hidden" name="roleId" value={roleId} />
 
       {state.status === "error" ? (
-        <div className="mt-5">
+        <div className="mt-5 flex flex-col gap-3">
+          {state.message ? (
+            <p role="alert" className="rounded-xl border border-danger/40 bg-danger-soft p-4 text-sm text-danger">
+              {state.message}
+            </p>
+          ) : null}
           <ErrorSummary errors={errors} labels={LABELS} />
         </div>
       ) : null}
@@ -222,12 +237,36 @@ export function SubmissionForm({
 }
 
 /** Shown in place of the form once a role has closed. */
-export function SubmissionsClosed() {
+/**
+ * Shown in place of the form outside the casting session's window. Not-yet-open
+ * and closed are different situations for a performer, so they read differently:
+ * one is worth coming back for.
+ */
+export function SubmissionsClosed({
+  session,
+  opensOn,
+}: {
+  session: string;
+  /** Set when the session has not opened yet, as a formatted date. */
+  opensOn?: string;
+}) {
   return (
     <div className="rounded-2xl border border-dashed border-line-strong p-7">
-      <h2 className="text-lg font-semibold tracking-tight">Submissions have closed</h2>
+      <h2 className="text-lg font-semibold tracking-tight">
+        {opensOn ? "Submissions have not opened yet" : "Submissions have closed"}
+      </h2>
       <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
-        This call is kept up so you can see what was asked for. Have a look at what is open now.
+        {opensOn ? (
+          <>
+            {session} takes submissions from <strong className="text-text">{opensOn}</strong>. The
+            role is up now so you can prepare; come back on the day and the form will be here.
+          </>
+        ) : (
+          <>
+            Casting for {session} is closed. The call is kept up so you can see what was asked
+            for. Have a look at what is open now.
+          </>
+        )}
       </p>
       <div className="mt-5">
         <ButtonLink href="/roles" variant="secondary" size="sm">

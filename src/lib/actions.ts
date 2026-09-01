@@ -3,9 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { record, describeChanges } from "./activity";
+import { record, describeChanges, describeSessionChanges } from "./activity";
 import { requireUser } from "./auth";
-import { isOpen } from "./format";
+import {
+  createSession,
+  deleteSessionAsAdmin,
+  getSession,
+  getVisibleSession,
+  setSessionClosed,
+  updateSession,
+} from "./sessions";
+import { isOpen, notYetOpen, roleWindow } from "./format";
 import { clientAddress, overLimit } from "./rate-limit";
 import { submittedValues, type FormState } from "./form-state";
 import {
@@ -24,7 +32,13 @@ import {
 } from "./submissions";
 import { SUBMISSION_STATUSES, type SubmissionStatus } from "./types";
 import { findAccount, setAccountSuspended } from "./users";
-import { fieldErrors, roleSchema, submissionSchema, type FieldErrors } from "./validation";
+import {
+  fieldErrors,
+  roleSchema,
+  sessionSchema,
+  submissionSchema,
+  type FieldErrors,
+} from "./validation";
 
 function invalid(
   errors: FieldErrors,
@@ -53,8 +67,15 @@ export async function submitApplication(
   if (!role) {
     return invalid({}, "That role is no longer listed.", formData);
   }
-  if (!isOpen(role)) {
-    return invalid({}, "Submissions for this role have closed.", formData);
+  const window = roleWindow(role);
+  if (!isOpen(window)) {
+    return invalid(
+      {},
+      notYetOpen(window)
+        ? `Submissions for ${role.session.name} do not open until ${role.session.opensAt}.`
+        : "This role is no longer accepting submissions.",
+      formData,
+    );
   }
 
   if (await overLimit("submission", await clientAddress())) {
@@ -90,6 +111,7 @@ export async function submitApplication(
     await createSubmission({
       ...submission,
       roleId,
+      sessionId: role.sessionId,
       // The wording is copied as it stands now, so editing the role later
       // cannot change what this person agreed to.
       acceptedTerms: role.disclaimer || null,
@@ -100,8 +122,8 @@ export async function submitApplication(
     // cannot both slip past a check-then-insert.
     if (error instanceof DuplicateSubmissionError) {
       return invalid(
-        { email: "You have already submitted for this role" },
-        "We already have a submission from that email address.",
+        { email: "You have already submitted for this production" },
+        `We already have a submission from that email address for ${role.session.name}. A production considers you once, not once per role.`,
         formData,
       );
     }
@@ -144,7 +166,17 @@ export async function postRole(
     );
   }
 
-  const role = await createRole(parsed.data, user.id);
+  const { sessionId, ...fields } = parsed.data;
+  const session = await getVisibleSession(sessionId, user);
+  if (!session) {
+    return invalid(
+      { sessionId: "That casting session is not one of yours" },
+      "Choose a casting session you can post into.",
+      formData,
+    );
+  }
+
+  const role = await createRole(fields, session, user.id);
   await record({
     action: "role.posted",
     actorId: user.id,
@@ -205,7 +237,9 @@ export async function editRole(
 
   const before = await getVisibleRole(id, user);
 
-  // Returns null when the role is not one this account may touch.
+  // `sessionId` is part of the schema so posting can pick a session. A role does
+  // not move between sessions afterwards, so `updateRole` ignores it: moving one
+  // would change its dates and orphan the submissions already made under it.
   const role = await updateRole(id, parsed.data, user);
   if (!role) {
     return invalid({}, "That role is no longer yours to edit.", formData);
@@ -298,4 +332,131 @@ export async function toggleAccountSuspended(formData: FormData): Promise<void> 
     detail: `${account.name} · ${account.company}`,
   });
   revalidateEverything();
+}
+
+/* ----------------------------------------------------- casting sessions -- */
+
+/**
+ * Opens a casting session. The session owns the live dates, so this is the
+ * first thing a casting director does — roles are posted into it afterwards.
+ */
+export async function createCastingSession(
+  _previous: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await requireUser("/dashboard/sessions/new");
+
+  const parsed = sessionSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return invalid(
+      fieldErrors(parsed.error),
+      "Check the highlighted fields and try again.",
+      formData,
+    );
+  }
+
+  const session = await createSession(parsed.data, user.id);
+  await record({
+    action: "session.created",
+    actorId: user.id,
+    actorName: user.name,
+    ownerId: session.ownerId,
+    company: session.company,
+    detail: `${session.name} · ${session.opensAt} to ${session.closesAt}`,
+  });
+
+  revalidateEverything();
+  redirect(`/dashboard/sessions/${session.id}?created=1`);
+}
+
+export async function editCastingSession(
+  _previous: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const id = String(formData.get("sessionId") ?? "");
+  const user = await requireUser(`/dashboard/sessions/${id}`);
+
+  const parsed = sessionSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return invalid(
+      fieldErrors(parsed.error),
+      "Check the highlighted fields and try again.",
+      formData,
+    );
+  }
+
+  const before = await getVisibleSession(id, user);
+
+  // Returns null when the session is not one this account may touch.
+  const session = await updateSession(id, parsed.data, user);
+  if (!session) {
+    return invalid({}, "That casting session is no longer yours to edit.", formData);
+  }
+
+  await record({
+    action: "session.edited",
+    actorId: user.id,
+    actorName: user.name,
+    ownerId: session.ownerId,
+    company: session.company,
+    detail: `${session.name} — ${before ? describeSessionChanges(before, session) : "edited"}`,
+  });
+
+  revalidateEverything();
+  redirect(`/dashboard/sessions/${session.id}?saved=1`);
+}
+
+/**
+ * Closes a session ahead of its closing date, or puts it back. Every role in it
+ * stops accepting submissions at the same moment, which is the point of the
+ * session owning the window.
+ */
+export async function toggleSessionClosed(formData: FormData): Promise<void> {
+  const id = String(formData.get("sessionId") ?? "");
+  const closed = formData.get("closed") === "1";
+  const user = await requireUser(`/dashboard/sessions/${id}`);
+
+  if (!id) return;
+
+  const session = await getVisibleSession(id, user);
+  if (!session || !(await setSessionClosed(id, closed, user))) return;
+
+  await record({
+    action: closed ? "session.closed" : "session.reopened",
+    actorId: user.id,
+    actorName: user.name,
+    ownerId: session.ownerId,
+    company: session.company,
+    detail: session.name,
+  });
+  revalidateEverything();
+}
+
+/**
+ * Removes a session, every role in it and every submission made to those roles.
+ * Admin only, and the confirmation has to be ticked — this destroys other
+ * people's data on a scale a single role does not.
+ */
+export async function removeSession(formData: FormData): Promise<void> {
+  const id = String(formData.get("sessionId") ?? "");
+  const user = await requireUser("/dashboard/sessions");
+
+  if (user.role !== "admin" || formData.get("confirm") !== "on" || !id) return;
+
+  // Described before it goes: afterwards there is nothing left to describe.
+  const session = await getSession(id);
+  if (!session) return;
+
+  await record({
+    action: "session.removed",
+    actorId: user.id,
+    actorName: user.name,
+    ownerId: session.ownerId,
+    company: session.company,
+    detail: `${session.name} · ${session.company}`,
+  });
+
+  await deleteSessionAsAdmin(id);
+  revalidateEverything();
+  redirect("/dashboard/sessions?removed=1");
 }

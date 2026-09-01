@@ -58,6 +58,13 @@ export async function session(browser, errors, viewport) {
 
 export const PASSWORD = "correct horse battery";
 
+/** A `yyyy-mm-dd` date relative to today, so the fixtures do not rot. */
+export function day(offset) {
+  const date = new Date();
+  date.setUTCDate(date.getUTCDate() + offset);
+  return date.toISOString().slice(0, 10);
+}
+
 /** Signs up and stops on the wizard, for the suite that tests the wizard. */
 export async function signUpOnly(page, user) {
   await page.goto(`${BASE}/signup`, { waitUntil: "networkidle" });
@@ -84,9 +91,38 @@ export async function signIn(page, email) {
   await page.waitForTimeout(1500);
 }
 
-/** Posts a role and returns its id. */
+/** Opens a casting session and returns its id. */
+export async function openSession(page, fields) {
+  await page.goto(`${BASE}/dashboard/sessions/new`, { waitUntil: "networkidle" });
+  await page.fill("#name", fields.name);
+  await page.fill(
+    "#synopsis",
+    fields.synopsis ?? "A production used by the test suite, described at length.",
+  );
+  await page.fill("#company", fields.company);
+  await page.fill("#opensAt", fields.opensAt ?? day(0));
+  await page.fill("#closesAt", fields.closesAt ?? day(30));
+  await page.getByRole("button", { name: "Open the session" }).click();
+  await page.waitForURL(/\/dashboard\/sessions\/ses_/, { timeout: 20000 });
+  return page.url().match(/sessions\/(ses_[^?]+)/)[1];
+}
+
+/**
+ * Posts a role and returns its id. A role must belong to a casting session, so
+ * one is opened first unless the caller passes `sessionId`.
+ */
 export async function postRole(page, fields) {
+  const sessionId =
+    fields.sessionId ??
+    (await openSession(page, {
+      name: fields.production ?? `${fields.title} Production`,
+      company: fields.company,
+      opensAt: fields.opensAt,
+      closesAt: fields.closesAt,
+    }));
+
   await page.goto(`${BASE}/roles/new`, { waitUntil: "networkidle" });
+  await page.selectOption("#sessionId", sessionId);
   await page.fill("#production", fields.production ?? `${fields.title} Production`);
   await page.fill("#synopsis", fields.synopsis ?? "A production used by the test suite.");
   await page.fill("#castingDirector", fields.castingDirector ?? "Test Director");
@@ -99,7 +135,6 @@ export async function postRole(page, fields) {
   await page.fill("#location", fields.location ?? "Leeds, UK");
   await page.fill("#shootDates", fields.shootDates ?? "Mar 2027");
   await page.fill("#rate", fields.rate ?? "£400/day");
-  await page.fill("#deadline", fields.deadline ?? "2026-12-20");
   if (fields.disclaimer) await page.fill("#disclaimer", fields.disclaimer);
   await page.getByRole("button", { name: "Post the role" }).click();
   await page.waitForURL("**/dashboard/roles/**", { timeout: 20000 });

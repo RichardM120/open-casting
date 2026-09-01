@@ -16,7 +16,7 @@ every pull request. It fails the build rather than warning.
 | `npm run lint` | ESLint, including the React hooks rules. |
 | `npx tsc --noEmit` | Types. Most of this app's invariants are expressed in them. |
 | `npm run build` **with no `DATABASE_URL`** | Every data page is `force-dynamic`; a build that needs a live database is a deploy that breaks when the database is slow. |
-| `npm run test:e2e` | 101 browser checks against a production build and a real Postgres. |
+| `npm run test:e2e` | Browser checks against a production build and a real Postgres — six suites, including the casting-session window and the one-submission-per-production rule. |
 
 The end-to-end suites live in `test/suites/` and run through `test/run.mjs`,
 which gives each suite a dropped-and-reseeded database and its own server —
@@ -40,6 +40,14 @@ assertion, which is what would catch a Content Security Policy regression.
   `font-src` beyond `'self'`.
 - **No images or third-party scripts** to optimise yet. Revisit when headshots arrive —
   they will need `next/image` and a widened `img-src`.
+- **`/api/health`** answers whether the running deployment can reach its database, which
+  variable the connection string came from, and whether the schema is there. It is the
+  first thing to check when a deployed page returns a server error, because a build
+  succeeds with no database and only fails at request time. It returns no data and never
+  the connection string.
+- **A visible error boundary** — `src/app/error.tsx`. Without one, a server error shows the
+  platform's own page, which says only that one happened. This one shows the digest, which
+  is what matches a report to a log line.
 
 ## Yours — Vercel dashboard
 

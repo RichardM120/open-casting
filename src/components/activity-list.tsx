@@ -7,6 +7,11 @@ import { EmptyState } from "./ui";
 
 /** Verb and tone per action, so the trail reads at a glance. */
 const SHAPE: Record<Action, { verb: string; tone: string }> = {
+  "session.created": { verb: "opened a casting session", tone: "bg-positive" },
+  "session.edited": { verb: "edited a casting session", tone: "bg-accent" },
+  "session.closed": { verb: "closed a casting session", tone: "bg-muted" },
+  "session.reopened": { verb: "reopened a casting session", tone: "bg-positive" },
+  "session.removed": { verb: "removed a casting session", tone: "bg-danger" },
   "role.posted": { verb: "posted", tone: "bg-positive" },
   "role.edited": { verb: "edited", tone: "bg-accent" },
   "role.closed": { verb: "closed", tone: "bg-muted" },

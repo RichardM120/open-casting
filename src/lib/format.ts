@@ -13,21 +13,44 @@ export function daysUntil(deadline: string): number {
   return Math.round((Date.parse(`${deadline}T00:00:00Z`) - startOfToday()) / MS_PER_DAY);
 }
 
-/**
- * A role is open until the end of its deadline day, unless it was closed early.
- */
-export function isOpen(role: { deadline: string; closedAt: string | null }): boolean {
-  return role.closedAt === null && daysUntil(role.deadline) >= 0;
+export type Window = { opensAt: string; closesAt: string; closedAt: string | null };
+
+/** Before the session opens, nothing about it accepts submissions. */
+export function notYetOpen(window: Window): boolean {
+  return daysUntil(window.opensAt) > 0;
 }
 
-export function deadlineLabel(role: { deadline: string; closedAt: string | null }): string {
-  if (role.closedAt) return "Closed early";
-  const days = daysUntil(role.deadline);
+/**
+ * A session is live from the start of its opening day to the end of its closing
+ * day, unless it was closed by hand.
+ */
+export function isOpen(window: Window): boolean {
+  return (
+    window.closedAt === null && !notYetOpen(window) && daysUntil(window.closesAt) >= 0
+  );
+}
+
+/**
+ * The window a role actually accepts submissions in: its session's, unless the
+ * role itself was closed early. A role can be shut before the rest of the
+ * production, never opened after the session has closed.
+ */
+export function roleWindow(role: { closedAt: string | null; session: Window }): Window {
+  return { ...role.session, closedAt: role.closedAt ?? role.session.closedAt };
+}
+
+export function deadlineLabel(window: Window): string {
+  if (window.closedAt) return "Closed early";
+  if (notYetOpen(window)) {
+    const days = daysUntil(window.opensAt);
+    return days === 1 ? "Opens tomorrow" : `Opens ${formatDate(window.opensAt)}`;
+  }
+  const days = daysUntil(window.closesAt);
   if (days < 0) return "Closed";
   if (days === 0) return "Closes today";
   if (days === 1) return "Closes tomorrow";
   if (days <= 14) return `${days} days left`;
-  return `Closes ${formatDate(role.deadline)}`;
+  return `Closes ${formatDate(window.closesAt)}`;
 }
 
 export function formatDate(value: string): string {

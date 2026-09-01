@@ -3,10 +3,15 @@ import "server-only";
 import type { SessionUser } from "./auth";
 import { query } from "./db";
 import { visibility } from "./roles";
-import type { Role } from "./types";
+import type { CastingSession, Role } from "./types";
 
 /** Every kind of thing worth recording. */
 export const ACTIONS = [
+  "session.created",
+  "session.edited",
+  "session.closed",
+  "session.reopened",
+  "session.removed",
   "role.posted",
   "role.edited",
   "role.closed",
@@ -132,18 +137,37 @@ const TRACKED: { key: keyof Role; label: string }[] = [
   { key: "rate", label: "rate" },
   { key: "unionStatus", label: "union status" },
   { key: "shootDates", label: "shoot dates" },
-  { key: "deadline", label: "closing date" },
   { key: "castingDirector", label: "casting director" },
   { key: "company", label: "company" },
   { key: "disclaimer", label: "terms" },
 ];
 
 export function describeChanges(before: Role, after: Role): string {
+  return diff(before, after, TRACKED);
+}
+
+/** The session fields worth naming when one is edited. */
+const TRACKED_SESSION: { key: keyof CastingSession; label: string }[] = [
+  { key: "name", label: "production" },
+  { key: "synopsis", label: "synopsis" },
+  { key: "company", label: "company" },
+  { key: "opensAt", label: "opening date" },
+  { key: "closesAt", label: "closing date" },
+];
+
+export function describeSessionChanges(
+  before: CastingSession,
+  after: CastingSession,
+): string {
+  return diff(before, after, TRACKED_SESSION);
+}
+
+function diff<T>(before: T, after: T, tracked: { key: keyof T; label: string }[]): string {
   const changed = new Set<string>();
 
-  for (const { key, label } of TRACKED) {
-    const a = before[key];
-    const b = after[key];
+  for (const { key, label } of tracked) {
+    const a: unknown = before[key];
+    const b: unknown = after[key];
     const same = Array.isArray(a) && Array.isArray(b)
       ? a.length === b.length && a.every((value, index) => value === b[index])
       : a === b;

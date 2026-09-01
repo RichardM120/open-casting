@@ -10,7 +10,7 @@ import { Badge, Button, ButtonLink, EmptyState, Eyebrow } from "@/components/ui"
 import { removeRole, toggleRoleClosed } from "@/lib/actions";
 import { listActivity } from "@/lib/activity";
 import { currentUser, requireUser } from "@/lib/auth";
-import { ageRange, formatDate, formatRelative, initials, isOpen } from "@/lib/format";
+import { ageRange, formatDate, formatRelative, initials, isOpen, roleWindow } from "@/lib/format";
 import { getVisibleRole } from "@/lib/roles";
 import { listSubmissions, summarise } from "@/lib/submissions";
 import type { Submission } from "@/lib/types";
@@ -43,7 +43,7 @@ export default async function RoleSubmissionsPage({
   const counts = summarise(submissions);
   const justPosted = query.posted === "1";
   const justSaved = query.saved === "1";
-  const open = isOpen(role);
+  const open = isOpen(roleWindow(role));
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-12">
@@ -67,7 +67,7 @@ export default async function RoleSubmissionsPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <DeadlineBadge role={role} />
+          <DeadlineBadge session={roleWindow(role)} />
           <ButtonLink href={`/roles/${role.id}`} variant="secondary" size="sm">
             View public listing
           </ButtonLink>
@@ -88,7 +88,9 @@ export default async function RoleSubmissionsPage({
         <p className="mt-6 rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">
           {role.closedAt
             ? `Closed early on ${formatDate(role.closedAt)}. The listing stays up for reference and takes no new submissions.`
-            : "Past its closing date. The listing stays up for reference and takes no new submissions."}
+            : role.session.closedAt
+              ? `${role.production} was closed early on ${formatDate(role.session.closedAt)}, which closed every role in it.`
+              : "Outside its casting session's window. The listing stays up for reference and takes no new submissions."}
         </p>
       ) : null}
 

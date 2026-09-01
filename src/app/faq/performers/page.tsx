@@ -48,17 +48,30 @@ export default function PerformerFaqPage() {
             do not go in twice.
           </p>
         </FaqItem>
-        <FaqItem q="Can I submit more than once for the same role?">
+        <FaqItem q="Can I submit more than once for the same production?">
           <p>
-            No — one submission per email address per role. If you need to correct something,
-            email the casting director directly rather than submitting again.
+            No — one submission per email address per casting session, and a casting session is
+            one production. If a production has five roles up, you pick the one that fits you
+            best and submit for that; submitting for all five is not possible and would not help
+            if it were.
+          </p>
+          <p>
+            If you need to correct something, email the casting director directly rather than
+            submitting again.
+          </p>
+        </FaqItem>
+        <FaqItem q="A role is listed but there is no form. Why?">
+          <p>
+            Its casting session has not opened yet, or it has closed. The page tells you which,
+            and gives the date submissions open on if it is still to come. Roles go up before
+            they open on purpose, so you have time to read the brief and prepare a tape.
           </p>
         </FaqItem>
         <FaqItem q="Will I hear back?">
           <p>
             Only if they want to take it further. Casting directors read every submission but
             almost never reply to all of them; that is normal and is not a judgement on your
-            work. A role shows its closing date on the listing.
+            work. Every role shows the dates its production is open for on the listing.
           </p>
         </FaqItem>
         <FaqItem q="What happens to my details?">
@@ -137,8 +150,8 @@ export default function PerformerFaqPage() {
             means: "When the work happens. Only submit if you are genuinely free for all of it — pulling out late is what makes casting directors stop using open calls.",
           },
           {
-            term: "Closing date",
-            means: "Submissions close at the end of that day. After it, the listing stays up for reference but the form is gone.",
+            term: "Opens and closes",
+            means: "The production's casting window. The form appears at the start of the opening day and stops at the end of the closing day. A casting director may also close early once they have what they need, and the listing then stays up for reference without a form.",
           },
         ]}
       />

@@ -3,8 +3,15 @@
 import { useActionState } from "react";
 
 import { editRole, postRole } from "@/lib/actions";
+import { formatDate } from "@/lib/format";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
-import { PAY_TYPES, PRODUCTION_TYPES, UNION_STATUSES, type Role } from "@/lib/types";
+import {
+  PAY_TYPES,
+  PRODUCTION_TYPES,
+  UNION_STATUSES,
+  type CastingSession,
+  type Role,
+} from "@/lib/types";
 
 import { useErrorFocus } from "./use-error-focus";
 import { Button, ButtonLink, Checkbox, ErrorSummary, Field, Input, Select, Textarea } from "./ui";
@@ -25,7 +32,7 @@ const LABELS: Record<string, string> = {
   payType: "How it pays",
   rate: "Rate",
   unionStatus: "Union status",
-  deadline: "Submissions close",
+  sessionId: "Casting session",
   disclaimer: "Terms for performers",
 };
 
@@ -33,7 +40,16 @@ const LABELS: Record<string, string> = {
  * One form for posting and editing. In edit mode the fields fall back to the
  * role's current values, and the action rewrites in place rather than creating.
  */
-export function RoleForm({ role }: { role?: Role }) {
+export function RoleForm({
+  role,
+  sessions,
+  defaultSessionId,
+}: {
+  role?: Role;
+  /** The sessions this account may post into. Empty is handled by the page. */
+  sessions: CastingSession[];
+  defaultSessionId?: string;
+}) {
   const [state, formAction, pending] = useActionState(
     role ? editRole : postRole,
     IDLE_FORM_STATE,
@@ -61,7 +77,7 @@ export function RoleForm({ role }: { role?: Role }) {
           payType: role.payType,
           rate: role.rate,
           unionStatus: role.unionStatus,
-          deadline: role.deadline,
+          sessionId: role.sessionId,
           disclaimer: role.disclaimer,
           selfTape: role.selfTape ? "on" : "",
         }
@@ -71,6 +87,57 @@ export function RoleForm({ role }: { role?: Role }) {
     <form ref={formRef} action={formAction} className="flex flex-col gap-8">
       {role ? <input type="hidden" name="roleId" value={role.id} /> : null}
       {state.status === "error" ? <ErrorSummary errors={errors} labels={LABELS} /> : null}
+
+      <Fieldset
+        legend="Casting session"
+        description={
+          role
+            ? "The session that dates this role. Roles do not move between sessions — submissions are recorded against the session they were made into."
+            : "The production this role is cast for. The session decides when the role accepts submissions, so there is no closing date to set here."
+        }
+      >
+        {role ? (
+          <div className="sm:col-span-2">
+            <input type="hidden" name="sessionId" value={role.sessionId} />
+            <p className="text-sm text-muted">
+              Part of{" "}
+              <a
+                href={`/dashboard/sessions/${role.sessionId}`}
+                className="text-accent underline-offset-4 hover:underline"
+              >
+                {sessions.find((session) => session.id === role.sessionId)?.name ??
+                  role.production}
+              </a>
+              . Change the dates on the session, not here.
+            </p>
+          </div>
+        ) : (
+          <Field
+            label="Casting session"
+            htmlFor="sessionId"
+            hint="Every role in a session opens and closes with it."
+            error={errors.sessionId}
+            className="sm:col-span-2"
+          >
+            <Select
+              id="sessionId"
+              name="sessionId"
+              defaultValue={values.sessionId ?? defaultSessionId ?? ""}
+              required
+            >
+              <option value="" disabled>
+                Choose a casting session
+              </option>
+              {sessions.map((session) => (
+                <option key={session.id} value={session.id}>
+                  {session.name} — {formatDate(session.opensAt)} to{" "}
+                  {formatDate(session.closesAt)}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        )}
+      </Fieldset>
 
       <Fieldset
         legend="The production"
@@ -245,15 +312,6 @@ export function RoleForm({ role }: { role?: Role }) {
               </option>
             ))}
           </Select>
-        </Field>
-        <Field label="Submissions close" htmlFor="deadline" error={errors.deadline}>
-          <Input
-            id="deadline"
-            name="deadline"
-            type="date"
-            defaultValue={values.deadline ?? ""}
-            required
-          />
         </Field>
         <div className="sm:col-span-2">
           <Checkbox

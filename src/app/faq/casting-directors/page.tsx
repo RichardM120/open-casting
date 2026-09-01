@@ -58,8 +58,61 @@ export default function CastingDirectorFaqPage() {
         </FaqItem>
         <FaqItem q="Can I edit or take down a role after posting?">
           <p>
-            Not yet — that is on the list. A role stops accepting submissions at the end of its
-            closing date and stays visible for reference afterwards.
+            Yes. Edit a role from its page on your dashboard, and use{" "}
+            <strong className="text-text">Close early</strong> on its casting session to stop
+            submissions before the closing date. Nothing is deleted by closing — the listing
+            stays visible for reference and the submissions stay in your dashboard.
+          </p>
+        </FaqItem>
+      </FaqSection>
+
+      <FaqSection
+        title="Casting sessions"
+        intro="A casting session is one production's casting window. Roles belong to a session rather than carrying their own dates."
+      >
+        <FaqItem q="Why do I open a session before posting a role?">
+          <p>
+            Because a production casts as a unit. The session holds the production name, the
+            synopsis and the two dates submissions run between, and every role you post into it
+            follows them. That is one date to change when a schedule moves, not one per role, and
+            it makes it impossible for two roles on the same production to disagree about when
+            casting closes.
+          </p>
+          <p>
+            <Link href="/dashboard/sessions/new">Open a casting session</Link>, then post its
+            roles.
+          </p>
+        </FaqItem>
+        <FaqItem q="When is the submission form actually shown?">
+          <p>
+            Only while the session is open: from the start of the opening date to the end of the
+            closing date, in UTC, and only if the session has not been closed early. Before the
+            opening date the roles are listed and readable — so performers can prepare — but the
+            form is not there. After it closes, the same.
+          </p>
+        </FaqItem>
+        <FaqItem q="Can somebody submit for two roles on the same production?">
+          <p>
+            No. One submission per email address per casting session, whichever role they go for.
+            It is the same rule a production would apply in the room, and it stops one person
+            filling a shortlist.
+          </p>
+          <p>
+            The database enforces it, not the form, so it holds even if two submissions arrive at
+            the same moment.
+          </p>
+        </FaqItem>
+        <FaqItem q="Can I move a role to a different session?">
+          <p>
+            No. Moving one would change the dates a role was posted under and separate it from
+            the submissions already made into its session. Post the role again in the right
+            session, and close the old one if it should not be up.
+          </p>
+        </FaqItem>
+        <FaqItem q="What does changing a session's dates do?">
+          <p>
+            It moves every role in that session at once. Extending is safe. Shortening takes the
+            form away from anyone part-way through filling it in, so give notice where you can.
           </p>
         </FaqItem>
       </FaqSection>
@@ -123,8 +176,15 @@ export default function CastingDirectorFaqPage() {
             means: "Real dates, including any fitting or rehearsal day. People turn down other work on the strength of this.",
           },
           {
-            term: "Submissions close",
-            means: "The form stops accepting at the end of that day. Allow enough time for a tape to be made — a three-day window on a self-tape role gets you whoever happened to be free.",
+            term: "Casting session",
+            means: (
+              <>
+                The production this role is cast for. The session owns the dates, so a role has
+                no closing date of its own — it opens and closes with everything else on that
+                production. Allow enough time for a tape to be made: a three-day window on a
+                self-tape role gets you whoever happened to be free.
+              </>
+            ),
           },
           {
             term: "Terms for performers",

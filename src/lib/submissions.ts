@@ -18,10 +18,10 @@ function emptyCounts(): SubmissionCounts {
   return counts;
 }
 
-/** Thrown when someone submits twice for the same role. */
+/** Thrown when someone submits twice into the same casting session. */
 export class DuplicateSubmissionError extends Error {
   constructor() {
-    super("A submission from this email already exists for this role");
+    super("A submission from this email already exists for this casting session");
     this.name = "DuplicateSubmissionError";
   }
 }
@@ -31,6 +31,7 @@ export class DuplicateSubmissionError extends Error {
 type SubmissionRow = {
   id: string;
   role_id: string;
+  session_id: string;
   name: string;
   email: string;
   phone: string;
@@ -47,7 +48,7 @@ type SubmissionRow = {
 };
 
 const COLUMNS = `
-  id, role_id, name, email, phone, location, age, union_status,
+  id, role_id, session_id, name, email, phone, location, age, union_status,
   reel_url, profile_url, cover_note, status, accepted_terms, accepted_at, submitted_at
 `;
 
@@ -55,6 +56,7 @@ function toSubmission(row: SubmissionRow): Submission {
   return {
     id: row.id,
     roleId: row.role_id,
+    sessionId: row.session_id,
     name: row.name,
     email: row.email,
     phone: row.phone,
@@ -126,21 +128,23 @@ export function summarise(submissions: Submission[]): SubmissionCounts {
 export type NewSubmission = Omit<Submission, "id" | "status" | "submittedAt">;
 
 /**
- * Throws `DuplicateSubmissionError` if this email has already submitted for the
- * role. The unique index does the deciding, so two requests racing each other
- * cannot both get through.
+ * Throws `DuplicateSubmissionError` if this email has already submitted into
+ * the same casting session — a production considers a performer once, not once
+ * per role. The unique index does the deciding, so two requests racing each
+ * other cannot both get through.
  */
 export async function createSubmission(input: NewSubmission): Promise<Submission> {
   try {
     const rows = await query<SubmissionRow>(
       `INSERT INTO submissions (
-         id, role_id, name, email, phone, location, age, union_status,
+         id, role_id, session_id, name, email, phone, location, age, union_status,
          reel_url, profile_url, cover_note, accepted_terms, accepted_at
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
        RETURNING ${COLUMNS}`,
       [
         `sub_${crypto.randomUUID().slice(0, 12)}`,
         input.roleId,
+        input.sessionId,
         input.name,
         input.email,
         input.phone,

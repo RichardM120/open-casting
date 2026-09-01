@@ -31,7 +31,7 @@ jobs:
 
     env:
       DATABASE_URL: postgresql://postgres:postgres@localhost:5432/opencasting
-      ADMIN_EMAILS: ci-admin@example.com
+      ADMIN_EMAILS: boss@example.com
 
     steps:
       - uses: actions/checkout@v4

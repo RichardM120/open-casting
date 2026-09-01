@@ -6,7 +6,7 @@ import { DeadlineBadge } from "@/components/role-card";
 import { Badge, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
 import { listActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
-import { isOpen } from "@/lib/format";
+import { isOpen, roleWindow } from "@/lib/format";
 import { listVisibleRoles } from "@/lib/roles";
 import { countsByRole } from "@/lib/submissions";
 
@@ -31,7 +31,7 @@ export default async function DashboardPage() {
     (accumulator, role) => {
       const count = counts.get(role.id);
       return {
-        open: accumulator.open + (isOpen(role) ? 1 : 0),
+        open: accumulator.open + (isOpen(roleWindow(role)) ? 1 : 0),
         submissions: accumulator.submissions + (count?.total ?? 0),
         shortlisted: accumulator.shortlisted + (count?.Shortlisted ?? 0),
         toRead: accumulator.toRead + (count?.New ?? 0),
@@ -67,6 +67,9 @@ export default async function DashboardPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <ButtonLink href="/dashboard/sessions" variant="secondary">
+            Sessions
+          </ButtonLink>
           <ButtonLink href="/dashboard/activity" variant="secondary">
             Activity
           </ButtonLink>
@@ -113,7 +116,7 @@ export default async function DashboardPage() {
                     <Badge tone="outline">
                       {count?.total ?? 0} {count?.total === 1 ? "submission" : "submissions"}
                     </Badge>
-                    <DeadlineBadge role={role} />
+                    <DeadlineBadge session={roleWindow(role)} />
                   </div>
                 </Link>
               </li>
@@ -124,25 +127,14 @@ export default async function DashboardPage() {
         <div className="mt-10">
           <EmptyState
             title="No roles posted yet"
-            description="Put a casting call up and submissions will collect here."
-            action={<ButtonLink href="/roles/new">Post a role</ButtonLink>}
+            description="Roles live inside a production's casting session, which holds the dates they accept submissions between. Open a session, then post its roles."
+            action={<ButtonLink href="/dashboard/sessions/new">Open a session</ButtonLink>}
           />
         </div>
       )}
 
       <section className="mt-16">
-        {user.onboardedAt ? null : (
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-accent-soft p-5">
-          <p className="text-sm text-text">
-            Your account setup is not finished — it takes about a minute.
-          </p>
-          <ButtonLink href="/welcome" size="sm">
-            Finish setting up
-          </ButtonLink>
-        </div>
-      )}
-
-      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <Eyebrow>History</Eyebrow>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight">Recent activity</h2>

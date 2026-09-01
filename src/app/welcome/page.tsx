@@ -13,17 +13,19 @@ const WHAT_YOU_SEE: Record<UserRole, { heading: string; points: string[]; cta: {
   director: {
     heading: "You will see the roles you post, and nothing else",
     points: [
+      "Start by opening a casting session for the production — it holds the dates, and the roles you post into it open and close with it.",
       "Every submission made to your roles lands in one list, newest first.",
       "Move people through New, Shortlisted, Callback and Declined as you work.",
       "Colleagues with a casting director account cannot see your roles. A producer at your company can.",
       "Nothing is emailed to performers automatically — their address is on every submission.",
     ],
-    cta: { href: "/roles/new", label: "Post your first role" },
+    cta: { href: "/dashboard/sessions/new", label: "Open your first casting session" },
   },
   producer: {
     heading: "You will see every role posted under your company",
     points: [
       "Roles from all your casting directors, across productions, in one place.",
+      "Each production is a casting session that owns its dates; its roles open and close together.",
       "You can read and act on their submissions, and edit or close their roles.",
       "Matching is on the company name, so it has to be spelled the same way.",
       "You can post roles of your own too.",
@@ -33,9 +35,9 @@ const WHAT_YOU_SEE: Record<UserRole, { heading: string; points: string[]; cta: {
   admin: {
     heading: "You can see and moderate everything on the board",
     points: [
-      "Every role from every company, and every submission made to them.",
+      "Every casting session, every role in it, and every submission made to them.",
       "Suspend an account and they are signed out at once and cannot sign back in. Their roles stay up.",
-      "Removing a role permanently deletes the performers' contact details with it. Closing a role early is the reversible option.",
+      "Removing a role, or a whole casting session, permanently deletes the performers' contact details with it. Closing early is the reversible option.",
       "Every action is recorded in the activity trail, including yours.",
     ],
     cta: { href: "/dashboard/accounts", label: "Review the accounts" },

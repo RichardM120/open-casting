@@ -12,11 +12,19 @@ const PUBLIC_NAV = [
   { href: "/roles", label: "Browse roles" },
   { href: "/faq", label: "FAQ" },
 ] as const;
-const OWNER_NAV = [{ href: "/dashboard", label: "Casting dashboard" }] as const;
+const OWNER_NAV = [
+  { href: "/dashboard", label: "Casting dashboard" },
+  { href: "/dashboard/sessions", label: "Sessions" },
+] as const;
 
 export function SiteHeader({ user }: { user: SessionUser | null }) {
   const pathname = usePathname();
   const nav = user ? [...PUBLIC_NAV, ...OWNER_NAV] : PUBLIC_NAV;
+
+  /** The most specific match wins, so /dashboard/sessions does not light up /dashboard too. */
+  const current = nav
+    .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
+    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
   return (
     <header className="sticky top-0 z-20 border-b border-line bg-ink/85 backdrop-blur">
@@ -30,7 +38,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
 
         <nav aria-label="Main" className="hidden items-center gap-1 sm:flex">
           {nav.map((item) => {
-            const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+            const active = current === item.href;
             return (
               <Link
                 key={item.href}
@@ -86,7 +94,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
         className="flex gap-1 overflow-x-auto border-t border-line px-5 py-2 sm:hidden"
       >
         {nav.map((item) => {
-          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          const active = current === item.href;
           return (
             <Link
               key={item.href}

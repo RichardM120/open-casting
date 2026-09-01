@@ -2,7 +2,9 @@ import "server-only";
 
 import type { SessionUser } from "./auth";
 import { query } from "./db";
+import { LIVE, SESSION_COLUMNS, toSession } from "./sessions";
 import {
+  type CastingSession,
   PAY_TYPES,
   PRODUCTION_TYPES,
   UNION_STATUSES,
@@ -66,6 +68,7 @@ type RoleRow = {
   disclaimer: string;
   closed_at: Date | null;
   owner_id: string | null;
+  session_id: string;
   posted_at: Date;
 };
 
@@ -74,14 +77,8 @@ const COLUMNS = `
   id, slug, title, production, production_type, synopsis, character_brief,
   requirements, location, self_tape, age_min, age_max, pay_type, rate,
   union_status, shoot_dates, to_char(deadline, 'YYYY-MM-DD') AS deadline,
-  casting_director, company, disclaimer, closed_at, owner_id, posted_at
+  casting_director, company, disclaimer, closed_at, owner_id, session_id, posted_at
 `;
-
-/** Today in UTC, matching how `isOpen` decides the same thing in JS. */
-const TODAY = "(now() AT TIME ZONE 'utc')::date";
-
-/** Open on both counts: still within the deadline, and not closed by hand. */
-const OPEN = `deadline >= ${TODAY} AND closed_at IS NULL`;
 
 function toRole(row: RoleRow): Role {
   return {
@@ -107,11 +104,43 @@ function toRole(row: RoleRow): Role {
     disclaimer: row.disclaimer,
     closedAt: row.closed_at?.toISOString() ?? null,
     ownerId: row.owner_id,
+    sessionId: row.session_id,
     postedAt: row.posted_at.toISOString(),
   };
 }
 
-/* --------------------------------------------------------------- queries -- */
+export type ListedRole = Role & { session: CastingSession };
+
+/**
+ * A role is live exactly when its session is — the window belongs to the
+ * production, not the individual part. Expressed as a subquery rather than a
+ * join because `roles` and `sessions_casting` share column names (id, slug,
+ * synopsis, company, owner_id, closed_at) and aliasing every one of them to
+ * avoid the collision reads far worse than a second query.
+ */
+const OPEN = `
+  closed_at IS NULL
+  AND session_id IN (SELECT id FROM sessions_casting WHERE ${LIVE})
+`;
+
+/** Fetches the sessions these roles belong to and attaches them. */
+async function attachSessions(roles: Role[]): Promise<ListedRole[]> {
+  if (roles.length === 0) return [];
+
+  const ids = [...new Set(roles.map((role) => role.sessionId))];
+  const rows = await query<Parameters<typeof toSession>[0]>(
+    `SELECT ${SESSION_COLUMNS} FROM sessions_casting WHERE id = ANY($1)`,
+    [ids],
+  );
+
+  const sessions = new Map(rows.map((row) => [row.id, toSession(row)]));
+  return roles.flatMap((role) => {
+    const session = sessions.get(role.sessionId);
+    // A role without its session cannot be shown; the foreign key makes this
+    // unreachable, and dropping it beats rendering a listing with no dates.
+    return session ? [{ ...role, session }] : [];
+  });
+}
 
 function whereClause(filters: RoleFilters): { sql: string; params: unknown[] } {
   const conditions: string[] = [];
@@ -150,27 +179,26 @@ function whereClause(filters: RoleFilters): { sql: string; params: unknown[] } {
 /** Open roles first, then the ones closing soonest. */
 const ORDER = `ORDER BY (${OPEN}) DESC, deadline ASC, posted_at DESC`;
 
-export async function listRoles(filters: RoleFilters = EMPTY_FILTERS): Promise<Role[]> {
+export async function listRoles(
+  filters: RoleFilters = EMPTY_FILTERS,
+): Promise<ListedRole[]> {
   const { sql, params } = whereClause(filters);
-  const rows = await query<RoleRow>(
-    `SELECT ${COLUMNS} FROM roles ${sql} ${ORDER}`,
-    params,
-  );
-  return rows.map(toRole);
+  const rows = await query<RoleRow>(`SELECT ${COLUMNS} FROM roles ${sql} ${ORDER}`, params);
+  return attachSessions(rows.map(toRole));
 }
 
-export async function listRecentRoles(limit: number): Promise<Role[]> {
+export async function listRecentRoles(limit: number): Promise<ListedRole[]> {
   const rows = await query<RoleRow>(
     `SELECT ${COLUMNS} FROM roles WHERE ${OPEN} ${ORDER} LIMIT $1`,
     [limit],
   );
-  return rows.map(toRole);
+  return attachSessions(rows.map(toRole));
 }
 
-/** The public listing: any role, by id. */
-export async function getRole(id: string): Promise<Role | null> {
+/** The public listing: any role, by id, with the session that dates it. */
+export async function getRole(id: string): Promise<ListedRole | null> {
   const rows = await query<RoleRow>(`SELECT ${COLUMNS} FROM roles WHERE id = $1`, [id]);
-  return rows[0] ? toRole(rows[0]) : null;
+  return (await attachSessions(rows.map(toRole)))[0] ?? null;
 }
 
 /**
@@ -199,13 +227,22 @@ export function visibility(
 }
 
 /** Every role this account may see on its dashboard. */
-export async function listVisibleRoles(viewer: SessionUser): Promise<Role[]> {
+export async function listVisibleRoles(viewer: SessionUser): Promise<ListedRole[]> {
   const { where, params } = visibility(viewer);
   const rows = await query<RoleRow>(
     `SELECT ${COLUMNS} FROM roles ${where ? `WHERE ${where}` : ""} ${ORDER}`,
     params,
   );
-  return rows.map(toRole);
+  return attachSessions(rows.map(toRole));
+}
+
+/** The roles inside one session, for its dashboard page. */
+export async function listSessionRoles(sessionId: string): Promise<ListedRole[]> {
+  const rows = await query<RoleRow>(
+    `SELECT ${COLUMNS} FROM roles WHERE session_id = $1 ORDER BY posted_at DESC`,
+    [sessionId],
+  );
+  return attachSessions(rows.map(toRole));
 }
 
 /**
@@ -213,13 +250,16 @@ export async function listVisibleRoles(viewer: SessionUser): Promise<Role[]> {
  * lets the page render a 404, so someone guessing ids cannot tell an id that
  * exists from one that does not.
  */
-export async function getVisibleRole(id: string, viewer: SessionUser): Promise<Role | null> {
+export async function getVisibleRole(
+  id: string,
+  viewer: SessionUser,
+): Promise<ListedRole | null> {
   const { where, params } = visibility(viewer);
   const rows = await query<RoleRow>(
     `SELECT ${COLUMNS} FROM roles WHERE id = $${params.length + 1}${where ? ` AND ${where}` : ""}`,
     [...params, id],
   );
-  return rows[0] ? toRole(rows[0]) : null;
+  return (await attachSessions(rows.map(toRole)))[0] ?? null;
 }
 
 export async function countOpenRoles(): Promise<number> {
@@ -229,16 +269,23 @@ export async function countOpenRoles(): Promise<number> {
   return Number(rows[0]?.count ?? 0);
 }
 
-export type NewRole = Omit<Role, "id" | "slug" | "postedAt" | "closedAt" | "ownerId">;
+export type NewRole = Omit<
+  Role,
+  "id" | "slug" | "postedAt" | "closedAt" | "ownerId" | "sessionId" | "deadline"
+>;
 
-export async function createRole(input: NewRole, ownerId: string): Promise<Role> {
+export async function createRole(
+  input: NewRole,
+  session: CastingSession,
+  ownerId: string,
+): Promise<Role> {
   const rows = await query<RoleRow>(
     `INSERT INTO roles (
        id, slug, title, production, production_type, synopsis, character_brief,
        requirements, location, self_tape, age_min, age_max, pay_type, rate,
        union_status, shoot_dates, deadline, casting_director, company, owner_id,
-       disclaimer
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21)
+       disclaimer, session_id
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
      RETURNING ${COLUMNS}`,
     [
       `rol_${crypto.randomUUID().slice(0, 12)}`,
@@ -257,11 +304,13 @@ export async function createRole(input: NewRole, ownerId: string): Promise<Role>
       input.rate,
       input.unionStatus,
       input.shootDates,
-      input.deadline,
+      // Kept in step with the session rather than set independently.
+      session.closesAt,
       input.castingDirector,
       input.company,
       ownerId,
       input.disclaimer,
+      session.id,
     ],
   );
   return toRole(rows[0]);
@@ -319,6 +368,8 @@ export async function updateRole(
   input: NewRole,
   viewer: SessionUser,
 ): Promise<Role | null> {
+  // `deadline` is deliberately absent: it mirrors the session's closing date,
+  // which is changed on the session rather than here.
   const { where, params } = visibility(viewer);
   const rows = await query<RoleRow>(
     `UPDATE roles SET
@@ -336,10 +387,9 @@ export async function updateRole(
        rate = $${params.length + 13},
        union_status = $${params.length + 14},
        shoot_dates = $${params.length + 15},
-       deadline = $${params.length + 16},
-       casting_director = $${params.length + 17},
-       company = $${params.length + 18},
-       disclaimer = $${params.length + 19}
+       casting_director = $${params.length + 16},
+       company = $${params.length + 17},
+       disclaimer = $${params.length + 18}
      WHERE id = $${params.length + 1}${where ? ` AND ${where}` : ""}
      RETURNING ${COLUMNS}`,
     [
@@ -347,7 +397,7 @@ export async function updateRole(
       input.title, input.production, input.productionType, input.synopsis,
       input.characterBrief, input.requirements, input.location, input.selfTape,
       input.ageMin, input.ageMax, input.payType, input.rate, input.unionStatus,
-      input.shootDates, input.deadline, input.castingDirector, input.company,
+      input.shootDates, input.castingDirector, input.company,
       input.disclaimer,
     ],
   );

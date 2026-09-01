@@ -57,7 +57,7 @@ async function resetDatabase() {
   const { Pool } = await import("pg");
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   await pool.query(
-    "DROP TABLE IF EXISTS activity, rate_limits, submissions, sessions, login_attempts, roles, users CASCADE",
+    "DROP TABLE IF EXISTS activity, rate_limits, submissions, sessions, sessions_casting, login_attempts, roles, users CASCADE",
   );
   await pool.end();
 }

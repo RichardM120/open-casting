@@ -15,14 +15,14 @@ const GUIDES = [
     eyebrow: "For performers",
     title: "Submitting for a role",
     description:
-      "What the words on a listing mean — rate, buyout, usage, union status, playing age — what you are agreeing to when you submit, and what happens to your details.",
+      "What the words on a listing mean — rate, buyout, usage, union status, playing age — when the form is open, what you are agreeing to when you submit, and what happens to your details.",
   },
   {
     href: "/faq/casting-directors",
     eyebrow: "For casting directors",
     title: "Posting a role",
     description:
-      "What each field commits you to, who else at your company can see what comes in, how to write terms worth having, and your obligations for the data you collect.",
+      "How casting sessions hold a production's dates, what each field commits you to, who else at your company can see what comes in, how to write terms worth having, and your obligations for the data you collect.",
   },
 ] as const;
 
