@@ -150,24 +150,29 @@ connection encrypted but stops checking who is on the other end.
 
 ## Before launch
 
-One variable. With `SITE_PASSWORD` set:
+One variable. With `SITE_PASSCODE` set:
 
-- every page requires a sign-in, so a signed-out visitor sees the sign-in page
-  and nothing else;
-- any email address plus that one shared password gets through, and an account
-  is created on the spot for an address that has none;
+- every page shows an interstitial first, asking for that passcode. Nothing
+  behind it is served — not the sign-in page, not a casting share link. Only the
+  interstitial itself, `/api/health` and `robots.txt` answer through it;
+- the application's own sign-in stops checking anything. Any email and any
+  password gets a session, and an account is created on the spot for an address
+  that has none. Google sign-in is withdrawn while the wall is up, because it is
+  the one way in that really does authenticate;
 - a banner sits above every page saying so, and `/api/health` reports it.
 
-Casting share links stay open — a performer has no account by design, the token
-is unguessable, and those pages are `noindex`.
+The two go together on purpose. Sign-in that authenticates nobody is only
+defensible because the wall in front of it means nobody uncontrolled reaches it
+— so they are the same switch, and it is not possible to leave the second on
+while turning the first off.
 
 It is not the application's access control and does not pretend to be: it keeps
 the work in progress away from anyone who has not been shown it. Unset it to
 launch, and everything reverts to real sign-in with no code change.
 
-Sign-ins through it are throttled by address as well as by email, because a
-shared password with only a per-email throttle is no throttle at all — an
-attacker just varies the address.
+Both the passcode and the sign-in behind it are throttled by address, because a
+shared secret with only a per-email throttle is no throttle at all — an attacker
+just varies the address.
 
 ## Keeping it out of search
 
@@ -176,7 +181,7 @@ attacker just varies the address.
   from the proxy, not only pages that set it in their metadata — that covers API
   routes and anything added later that forgets.
 - **Page metadata** carries `noindex` as well.
-- With `SITE_PASSWORD` set there is nothing for a crawler to reach in the first
+- With `SITE_PASSCODE` set there is nothing for a crawler to reach in the first
   place, which is the only one of the four that is not merely advisory.
 
 ## URLs

@@ -34,7 +34,7 @@ const AUTH_SECRET = "test-auth-secret-at-least-32-characters-long";
  * arrangement that matters at launch.
  */
 const SUITE_ENV = {
-  "11-prelaunch.mjs": { SITE_PASSWORD: "test-site-password" },
+  "11-prelaunch.mjs": { SITE_PASSCODE: "test-site-passcode" },
 };
 const MAIL_PORT = PORT + 1;
 const MAILBOX = path.join(here, "mailbox.json");

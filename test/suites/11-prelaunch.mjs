@@ -1,9 +1,11 @@
 /**
- * The two pre-launch switches: one door for the whole site, and a sign-in
- * behind it that lets anything through.
+ * The pre-launch walled garden.
  *
- * Both are dangerous if forgotten, so what is checked here is as much that they
- * announce themselves as that they work.
+ * One variable, `SITE_PASSCODE`, does two things: it puts an interstitial in
+ * front of every page, and it stops the application's own sign-in checking
+ * anything. The second is only defensible because of the first, so this suite
+ * spends as much effort on the wall being total — casting links included — and
+ * on it announcing itself, as on either switch working.
  */
 import {
   BASE,
@@ -18,41 +20,48 @@ const browser = await launch();
 const ctx = (viewport) => session(browser, errors, viewport);
 const t = Date.now();
 
-section("1 every page sends a signed-out visitor to the one door");
+const PASSCODE = process.env.SITE_PASSCODE ?? "test-site-passcode";
+const SHARE = "/c/saltmarsh-4f21c9ba7e";
+
+section("1 every page is behind the interstitial");
 {
   const { c, p } = await ctx();
-  for (const path of ["/", "/faq", "/faq/performers", "/dashboard", "/dashboard/sessions"]) {
+  for (const path of ["/", "/faq", "/faq/performers", "/login", "/legal/submission-terms", "/dashboard", "/dashboard/sessions"]) {
     await p.goto(BASE + path, { waitUntil: "networkidle" });
-    check(`${path} -> /login`, p.url().includes("/login"), p.url());
+    check(`${path} -> /gate`, new URL(p.url()).pathname === "/gate", p.url());
   }
-  check("and it remembers where you were headed", p.url().includes("next="), p.url());
+  check("it asks for a passcode", (await p.locator("#passcode").count()) === 1);
+  check("and remembers where you were headed", p.url().includes("next=%2Fdashboard"), p.url());
+  await p.screenshot({ path: `${SHOTS}/gate.png`, fullPage: true });
   await c.close();
 }
 
-section("2 a casting link still opens without one");
+section("2 a casting link is behind it too");
 {
   const { c, p } = await ctx();
-  const response = await p.goto(`${BASE}/c/saltmarsh-4f21c9ba7e`, { waitUntil: "networkidle" });
-  check("the share link is not behind the door", response.status() === 200, String(response.status()));
-  check("performers see the production", (await p.getByRole("heading", { name: "Saltmarsh" }).count()) > 0);
+  await p.goto(BASE + SHARE, { waitUntil: "networkidle" });
+  check("the share link stops at the wall", new URL(p.url()).pathname === "/gate", p.url());
+  check("the production is not shown", (await p.getByRole("heading", { name: "Saltmarsh" }).count()) === 0);
+  check("and it says why", (await p.getByText(/not accepting\s+submissions yet/).count()) > 0);
   await c.close();
 }
 
-section("3 health answers regardless, and reports both switches");
+section("3 health answers through the wall, and reports it");
 {
   const response = await fetch(`${BASE}/api/health`);
   const body = await response.json();
   check("readable", typeof body.ok === "boolean", JSON.stringify(body));
-  check("says the site is closed", body.site.startsWith("closed until launch"), JSON.stringify(body.site));
-  check("names the shared password arrangement", body.site.includes("shared password"), JSON.stringify(body.site));
+  check("says the site is walled off", body.site.startsWith("walled off"), JSON.stringify(body.site));
+  check("and that sign-in checks nothing", body.site.includes("sign-in checks nothing"), JSON.stringify(body.site));
 }
 
 section("4 search engines are told off at every layer");
 {
   const { c, p } = await ctx();
   const robots = await p.goto(`${BASE}/robots.txt`, { waitUntil: "networkidle" });
-  check("robots.txt disallows everything", (await robots.text()).includes("Disallow: /"));
-  const page = await p.goto(`${BASE}/login`, { waitUntil: "networkidle" });
+  check("robots.txt is served through the wall", robots.status() === 200, String(robots.status()));
+  check("and disallows everything", (await robots.text()).includes("Disallow: /"));
+  const page = await p.goto(`${BASE}/`, { waitUntil: "networkidle" });
   check(
     "every response carries X-Robots-Tag",
     (page.headers()["x-robots-tag"] ?? "").includes("noindex"),
@@ -61,30 +70,82 @@ section("4 search engines are told off at every layer");
   await c.close();
 }
 
-section("5 the shared password gets you through, and nothing else does");
+section("5 the passcode is the only way through");
 const inside = await ctx();
-await inside.p.goto(`${BASE}/dashboard/sessions`, { waitUntil: "networkidle" });
-check("bounced to sign in", inside.p.url().includes("/login"), inside.p.url());
-await inside.p.fill("#email", `whoever${t}@example.com`);
-await inside.p.fill("#password", "not-the-shared-password");
-await inside.p.getByRole("button", { name: "Sign in" }).click();
-await inside.p.waitForTimeout(2000);
-check("a wrong password is refused", (await inside.p.getByText(/do not match an account/).count()) > 0);
+{
+  const { p } = inside;
+  await p.goto(`${BASE}/gate?next=%2Fdashboard%2Fsessions`, { waitUntil: "networkidle" });
+  await p.fill("#passcode", "not-the-passcode");
+  await p.getByRole("button", { name: "Enter" }).click();
+  await p.waitForTimeout(1500);
+  check("a wrong passcode is refused", (await p.getByText(/passcode is not right/).count()) > 0);
+  check("and does not let go of the door", new URL(p.url()).pathname === "/gate", p.url());
+  check("with no cookie to show for it", !(await p.context().cookies()).some((c) => c.name === "oc_gate"));
 
-await inside.p.fill("#email", `whoever${t}@example.com`);
-await inside.p.fill("#password", process.env.SITE_PASSWORD ?? "test-site-password");
-await inside.p.getByRole("button", { name: "Sign in" }).click();
-await inside.p.waitForURL("**/welcome**", { timeout: 20000 });
-check("the shared password lets any address in", inside.p.url().includes("/welcome"), inside.p.url());
-check("with a session", (await inside.p.context().cookies()).some((c) => c.name === "oc_session"));
-await inside.p.screenshot({ path: `${SHOTS}/open-access.png`, fullPage: true });
+  await p.fill("#passcode", PASSCODE);
+  await p.getByRole("button", { name: "Enter" }).click();
+  // Through the wall it hands over to the app's own guard, which for a
+  // signed-out visitor means the sign-in page — reached in one hop, with the
+  // destination still on it.
+  await p.waitForURL(/\/login\?/, { timeout: 20000 });
+  check("the right one goes through", (await p.locator("#passcode").count()) === 0, p.url());
+  check("and hands over to the app's own sign-in", new URL(p.url()).pathname === "/login", p.url());
+  check("in one hop, not two", (await p.locator("#email").count()) === 1, p.url());
+  check("still carrying the destination", p.url().includes("next=%2Fdashboard%2Fsessions"), p.url());
+  check("and it is remembered", (await p.context().cookies()).some((c) => c.name === "oc_gate"));
 
-section("6 being closed is impossible to miss");
-check("banner on the page", (await inside.p.getByText(/Not launched/).count()) > 0);
-await inside.p.goto(`${BASE}/c/saltmarsh-4f21c9ba7e`, { waitUntil: "networkidle" });
-check("including on a casting link", (await inside.p.getByText(/Not launched/).count()) > 0);
+  await p.goto(`${BASE}${SHARE}`, { waitUntil: "networkidle" });
+  check("the wall stays open for the rest of the site", (await p.getByRole("heading", { name: "Saltmarsh" }).count()) > 0);
+}
 
-section("7 and it does not hand out admin");
+section("6 sign-in is clickable and checks nothing");
+{
+  const { p } = inside;
+  const email = `whoever${t}@example.com`;
+  await p.goto(`${BASE}/login`, { waitUntil: "networkidle" });
+  check("no Google button behind the wall", (await p.getByRole("link", { name: /Continue with Google/ }).count()) === 0);
+
+  await p.fill("#email", email);
+  await p.fill("#password", "anything-at-all");
+  await p.getByRole("button", { name: "Sign in" }).click();
+  await p.waitForURL("**/welcome**", { timeout: 20000 });
+  check("any address and any password goes in", p.url().includes("/welcome"), p.url());
+  check("with a session", (await p.context().cookies()).some((c) => c.name === "oc_session"));
+
+  await p.getByRole("button", { name: "Sign out" }).click();
+  await p.waitForURL((url) => !url.pathname.startsWith("/welcome"), { timeout: 20000 });
+
+  await p.goto(`${BASE}/login`, { waitUntil: "networkidle" });
+  await p.fill("#email", email);
+  await p.fill("#password", "a-completely-different-password");
+  await p.getByRole("button", { name: "Sign in" }).click();
+  await p.waitForURL("**/welcome**", { timeout: 20000 });
+  check("the same address again on a different password", p.url().includes("/welcome"), p.url());
+  await p.screenshot({ path: `${SHOTS}/open-access.png`, fullPage: true });
+}
+
+section("7 OAuth is withdrawn while the wall is up");
+{
+  const { p } = inside;
+  await p.goto(`${BASE}/api/auth/google?next=%2Fdashboard`, { waitUntil: "networkidle" });
+  check("google sign-in refuses", p.url().includes("google-unavailable"), p.url());
+  // Also that the refusal stayed on the origin the browser is using. A redirect
+  // built from the server's own address moves the browser to another host and
+  // drops every cookie it holds — the gate cookie included.
+  check("and never leaves this origin", new URL(p.url()).origin === new URL(BASE).origin, p.url());
+}
+
+section("8 being closed is impossible to miss");
+{
+  const { p } = inside;
+  await p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
+  check("banner on the page", (await p.getByText(/Not launched/).count()) > 0);
+  check("it names the variable to unset", (await p.getByText(/SITE_PASSCODE/).count()) > 0);
+  await p.goto(`${BASE}${SHARE}`, { waitUntil: "networkidle" });
+  check("including on a casting link", (await p.getByText(/Not launched/).count()) > 0);
+}
+
+section("9 and it does not hand out admin");
 {
   const { Pool } = await import("pg");
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });

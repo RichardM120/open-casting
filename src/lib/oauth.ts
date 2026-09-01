@@ -4,6 +4,8 @@ import { createHash, randomBytes, timingSafeEqual } from "node:crypto";
 
 import { cookies } from "next/headers";
 
+import { gateEnabled } from "./gate";
+
 /** Endpoints taken from Google's OpenID discovery document. */
 const AUTHORIZATION_ENDPOINT = "https://accounts.google.com/o/oauth2/v2/auth";
 const TOKEN_ENDPOINT = "https://oauth2.googleapis.com/token";
@@ -22,8 +24,17 @@ export type GoogleProfile = {
 
 export class OAuthError extends Error {}
 
-/** Google sign-in is optional; without credentials the button is not shown. */
+/**
+ * Google sign-in is optional; without credentials the button is not shown.
+ *
+ * It is also withdrawn entirely while the site is walled off. Google is the one
+ * way in here that really does authenticate, and it refuses any address without
+ * an account — so behind the wall it is a button that contradicts the sign-in
+ * beside it and dead-ends whoever presses it. Both routes read this, so turning
+ * it off here takes the button, `/api/auth/google` and the callback with it.
+ */
 export function googleConfigured(): boolean {
+  if (gateEnabled()) return false;
   return Boolean(process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET);
 }
 

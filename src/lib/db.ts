@@ -700,7 +700,7 @@ export async function databaseStatus(): Promise<{
   authSecret: "set" | "missing";
   email: "configured" | "missing";
   /** Pre-launch switches. Both must read "off" before this is a live service. */
-  site: "closed until launch — one shared password" | "open to the public";
+  site: "walled off — passcode, and sign-in checks nothing" | "open to the public";
   schema: "ready" | "unavailable";
   roles?: number;
   sessions?: number;
@@ -714,9 +714,9 @@ export async function databaseStatus(): Promise<{
   const email: "configured" | "missing" = process.env.RESEND_API_KEY?.trim()
     ? "configured"
     : "missing";
-  const site: "closed until launch — one shared password" | "open to the public" =
-    process.env.SITE_PASSWORD?.trim()
-      ? "closed until launch — one shared password"
+  const site: "walled off — passcode, and sign-in checks nothing" | "open to the public" =
+    process.env.SITE_PASSCODE?.trim()
+      ? "walled off — passcode, and sign-in checks nothing"
       : "open to the public";
   if (!variable) {
     return {

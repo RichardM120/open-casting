@@ -1,41 +1,44 @@
 /**
- * The pre-launch door.
+ * The pre-launch walled garden.
  *
- * One variable does all of it. With `SITE_PASSWORD` set:
+ * One variable. With `SITE_PASSCODE` set:
  *
- *  - every page requires a sign-in, so a signed-out visitor sees the sign-in
- *    page and nothing else;
- *  - any email address plus that one shared password gets through, and an
- *    account is created on the spot for an address that has none.
+ *  - every page shows an interstitial first, asking for that passcode. Nothing
+ *    behind it is served — not the sign-in page, not a casting share link;
+ *  - the application's own sign-in stops checking anything. Any email and any
+ *    password gets a session, and an account is created on the spot for an
+ *    address that has none.
  *
- * It is one shared password rather than real accounts because its whole job is
- * to keep the work in progress away from anyone who has not been shown it. It
- * is not the application's access control and does not pretend to be — what a
- * signed-in account can then see is decided as it always was.
+ * The two go together on purpose. Sign-in that authenticates nobody is only
+ * defensible because the wall in front of it means nobody uncontrolled reaches
+ * it — so they are the same switch, and it is not possible to leave the second
+ * on while turning the first off.
  *
- * Unset it to launch. Everything reverts to real sign-in with no code change.
+ * Unset it to launch: the wall goes, and real sign-in comes back with no code
+ * change.
  */
-export function sitePassword(): string | null {
-  return process.env.SITE_PASSWORD?.trim() || null;
+export const GATE_COOKIE = "oc_gate";
+
+/** Thirty days: long enough not to nag, short enough to expire before launch. */
+export const GATE_DAYS = 30;
+
+export function gatePasscode(): string | null {
+  return process.env.SITE_PASSCODE?.trim() || null;
 }
 
-export function siteClosed(): boolean {
-  return sitePassword() !== null;
+/** Whether the deployment is walled off, and therefore not authenticating. */
+export function gateEnabled(): boolean {
+  return gatePasscode() !== null;
 }
 
 /**
- * Reachable without signing in, even while closed: the sign-in page itself, the
- * casting share links — which are the product's outward face, carry an
- * unguessable token and are the whole reason a performer needs no account — the
- * agreements those links reference, and health, which exists to be readable
- * when nothing else is.
+ * The only things served through the wall: the interstitial itself, and health,
+ * which exists to be readable when nothing else is. robots.txt goes through so
+ * a crawler is told to go away rather than being shown a password prompt.
  */
-export function alwaysOpen(pathname: string): boolean {
+export function gateExempt(pathname: string): boolean {
   return (
-    pathname === "/login" ||
-    pathname.startsWith("/login/") ||
-    pathname.startsWith("/c/") ||
-    pathname.startsWith("/legal/") ||
+    pathname === "/gate" ||
     pathname === "/api/health" ||
     pathname === "/robots.txt" ||
     pathname === "/favicon.ico"

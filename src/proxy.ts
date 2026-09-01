@@ -1,8 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { CONTEXT_COOKIE } from "@/lib/auth";
-import { alwaysOpen, siteClosed } from "@/lib/gate";
-import { verifyContext } from "@/lib/token";
+import { GATE_COOKIE, gateEnabled, gateExempt } from "@/lib/gate";
+import { verifyContext, verifyValue } from "@/lib/token";
 
 /**
  * What each area needs. The proxy can only turn requests away — it cannot let
@@ -47,17 +46,17 @@ export async function proxy(request: NextRequest) {
 
   const path = request.nextUrl.pathname;
 
-  // Closed until launch: one door, and it is the sign-in page. A casting share
-  // link still opens without one — that is what the link is for.
-  if (siteClosed() && !alwaysOpen(path)) {
+  // The walled garden comes before everything, casting links included: the
+  // point of it is that this deployment serves the public nothing at all.
+  if (gateEnabled() && !gateExempt(path)) {
     const secret = process.env.AUTH_SECRET?.trim();
-    const signedIn =
-      secret && (await verifyContext(request.cookies.get(CONTEXT_COOKIE)?.value, secret));
+    const through =
+      secret && (await verifyValue(request.cookies.get(GATE_COOKIE)?.value, secret)) === "open";
 
-    if (!signedIn) {
-      const login = new URL("/login", request.url);
-      login.searchParams.set("next", path + request.nextUrl.search);
-      return NextResponse.redirect(login);
+    if (!through) {
+      const gate = new URL("/gate", request.url);
+      gate.searchParams.set("next", path + request.nextUrl.search);
+      return NextResponse.redirect(gate);
     }
   }
 

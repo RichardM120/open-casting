@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { MSA } from "@/content/legal";
 
 import { recordAcceptance } from "./agreements";
-import { sitePassword } from "./gate";
+import { gateEnabled } from "./gate";
 import { endSession, pruneExpiredSessions, requireUser, startSession } from "./auth";
 import { sendEmail } from "./email";
 import {
@@ -75,11 +75,11 @@ export async function signIn(
 
   let user = await findUserByEmail(email);
 
-  // The pre-launch door: any email plus the one shared password, with an
-  // account made on the spot for an address that has none. Throttled by
-  // address as well as by email, because a shared password with a per-email
-  // throttle is no throttle at all — an attacker just varies the email.
-  if (sitePassword() && password === sitePassword()) {
+  // Behind the wall, sign-in is a formality: any email, any password, and an
+  // account made on the spot for an address that has none. The passcode on the
+  // interstitial is what actually kept anyone out, which is why this is the
+  // same switch and cannot be left on by itself.
+  if (gateEnabled()) {
     if (await overLimit("signup", await clientAddress())) {
       return invalid({}, "Too many sign-ins from here. Try again later.", formData);
     }
@@ -94,9 +94,12 @@ export async function signIn(
       user = await findUserByEmail(email);
     }
     if (user && !user.suspended_at) {
-      await syncAdminRole(user);
-      await startSession(user.id, user.role);
-      redirect(user.onboarded_at ? safeNext(formData.get("next")) : "/welcome");
+      // The synced user, not the one read a moment ago: an address in
+      // ADMIN_EMAILS is promoted here, and the session has to carry the role it
+      // ends up with or the proxy turns the admin away from their own console.
+      const signed = await syncAdminRole(user);
+      await startSession(signed.id, signed.role);
+      redirect(signed.onboarded_at ? safeNext(formData.get("next")) : "/welcome");
     }
   }
 

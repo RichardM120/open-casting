@@ -22,6 +22,8 @@ export const LIMITS = {
   submission: { max: 10, windowMinutes: 60 },
   /** New accounts from one address. */
   signup: { max: 5, windowMinutes: 60 },
+  /** Guesses at the wall's passcode. One shared secret needs a ceiling. */
+  gate: { max: 10, windowMinutes: 60 },
 } satisfies Record<string, Limit>;
 
 /**
