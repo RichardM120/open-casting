@@ -110,3 +110,8 @@ export const signInSchema = z.object({
 
 export type SignUpInput = z.infer<typeof signUpSchema>;
 export type SignInInput = z.infer<typeof signInSchema>;
+
+export const profileSchema = z.object({
+  name: trimmed.min(2, "Enter your name").max(80),
+  company: trimmed.min(2, "Name your company or agency").max(80),
+});

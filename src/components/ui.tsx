@@ -21,8 +21,9 @@ const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   danger: "border border-line-strong text-danger hover:bg-danger-soft",
 };
 
+// Both sizes clear a comfortable touch target; the app gets used on phones.
 const BUTTON_SIZES: Record<ButtonSize, string> = {
-  sm: "px-3.5 py-1.5 text-sm",
+  sm: "px-4 py-2 text-sm",
   md: "px-5 py-2.5 text-sm",
 };
 

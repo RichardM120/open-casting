@@ -124,6 +124,7 @@ const SCHEMA = `
 
   -- Suspended accounts cannot sign in and their sessions are revoked.
   ALTER TABLE users ADD COLUMN IF NOT EXISTS suspended_at timestamptz;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarded_at timestamptz;
 
   -- An account that only ever signs in with Google has no password.
   ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;

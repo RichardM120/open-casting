@@ -42,6 +42,17 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-12">
+      {user.onboardedAt ? null : (
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-accent-soft p-5">
+          <p className="text-sm text-text">
+            Your account setup is not finished — it takes about a minute.
+          </p>
+          <ButtonLink href="/welcome" size="sm">
+            Finish setting up
+          </ButtonLink>
+        </div>
+      )}
+
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <Eyebrow>Casting dashboard</Eyebrow>
@@ -120,7 +131,18 @@ export default async function DashboardPage() {
       )}
 
       <section className="mt-16">
-        <div className="flex flex-wrap items-end justify-between gap-4">
+        {user.onboardedAt ? null : (
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-accent-soft p-5">
+          <p className="text-sm text-text">
+            Your account setup is not finished — it takes about a minute.
+          </p>
+          <ButtonLink href="/welcome" size="sm">
+            Finish setting up
+          </ButtonLink>
+        </div>
+      )}
+
+      <div className="flex flex-wrap items-end justify-between gap-4">
           <div>
             <Eyebrow>History</Eyebrow>
             <h2 className="mt-2 text-2xl font-semibold tracking-tight">Recent activity</h2>

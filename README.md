@@ -43,6 +43,7 @@ npx tsc --noEmit                 # typecheck
 | `/dashboard` | The roles you may see, with submission counts — sign-in required |
 | `/dashboard/roles/[id]` | The submissions for one role, and their status |
 | `/login`, `/signup` | Password or Google sign-in for the casting side |
+| `/welcome` | Three-step setup, tailored to the account's role |
 | `/faq/performers` | What the listing fields mean and what submitting commits you to |
 | `/faq/casting-directors` | What each posting field commits you to, and writing terms |
 | `/dashboard/roles/[id]/edit` | Edit a role in place |
@@ -167,6 +168,31 @@ accounts are matched to existing ones by email.
 
 Register the callback URL — `https://your-domain/api/auth/google/callback` — on
 the Google client for every origin you use, production and preview alike.
+
+## Setup wizard
+
+A new account lands on `/welcome`, not an empty dashboard. Three steps: confirm
+name and company, read what this role can see and do, then a note on the data
+duty before being sent somewhere useful — the posting form for a director, the
+accounts page for an admin.
+
+Step one is not decoration. A Google sign-up has no company name until it is
+asked for, and company is what a producer's visibility matches on. `onboarded_at`
+records completion; until then the dashboard carries a nudge.
+
+## Navigation and accessibility
+
+- The main nav sits in a second header row below 640px. It was `hidden sm:flex`,
+  which left a phone with no route to the dashboard except the page footer.
+- A skip link is the first tab stop on every page.
+- Errors set `aria-invalid` and `aria-describedby` on the control itself, and an
+  error summary takes focus on a failed submit.
+- Buttons clear a comfortable touch target at both sizes.
+
+Every route was crawled signed-out, as a director and as an admin: all resolve,
+auth redirects carry `next=`, signed-in visitors are bounced off `/login` and
+`/signup`, non-admins get a 404 rather than a message on admin-only pages, each
+page has exactly one `h1`, and nothing overflows horizontally at 390px.
 
 ## Activity trail
 

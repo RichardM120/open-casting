@@ -55,6 +55,8 @@ export type SessionUser = {
   email: string;
   company: string;
   role: UserRole;
+  /** Null until the setup wizard has been finished. */
+  onboardedAt: string | null;
 };
 
 /**
@@ -67,8 +69,15 @@ export const currentUser = cache(async (): Promise<SessionUser | null> => {
 
   // Suspension is checked here too, not only at sign-in: a session created just
   // before an account was suspended must stop working immediately.
-  const rows = await query<SessionUser>(
-    `SELECT u.id, u.name, u.email, u.company, u.role
+  const rows = await query<{
+    id: string;
+    name: string;
+    email: string;
+    company: string;
+    role: UserRole;
+    onboarded_at: Date | null;
+  }>(
+    `SELECT u.id, u.name, u.email, u.company, u.role, u.onboarded_at
        FROM sessions s
        JOIN users u ON u.id = s.user_id
       WHERE s.token_hash = $1
@@ -77,7 +86,10 @@ export const currentUser = cache(async (): Promise<SessionUser | null> => {
     [tokenHash(token)],
   );
 
-  return rows[0] ?? null;
+  const row = rows[0];
+  return row
+    ? { ...row, onboardedAt: row.onboarded_at?.toISOString() ?? null }
+    : null;
 });
 
 /** Clears sessions that have already lapsed. Called after a successful sign-in. */

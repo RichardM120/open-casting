@@ -38,7 +38,9 @@ export async function GET(request: Request) {
     }
     await startSession(user.id);
 
-    return NextResponse.redirect(new URL(next, url.origin));
+    // A Google account has no company name until setup asks for one.
+    const destination = user.onboarded_at ? next : "/welcome";
+    return NextResponse.redirect(new URL(destination, url.origin));
   } catch (error) {
     if (error instanceof OAuthError) return backToLogin(url.origin, error.message);
     console.error("[oauth] google callback failed", error);

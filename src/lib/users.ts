@@ -11,11 +11,12 @@ export type User = {
   company: string;
   role: UserRole;
   suspended_at: Date | null;
+  onboarded_at: Date | null;
 };
 
 type UserRow = User & { password_hash: string | null };
 
-const COLUMNS = "id, email, name, company, role, suspended_at";
+const COLUMNS = "id, email, name, company, role, suspended_at, onboarded_at";
 
 /** Thrown when an email is already registered. */
 export class EmailTakenError extends Error {
@@ -213,4 +214,22 @@ export async function setAccountSuspended(id: string, suspended: boolean): Promi
 export async function findAccount(id: string): Promise<User | null> {
   const rows = await query<User>(`SELECT ${COLUMNS} FROM users WHERE id = $1`, [id]);
   return rows[0] ?? null;
+}
+
+/* ---------------------------------------------------------------- profile -- */
+
+/** What someone can change about themselves. Role and email are not on the list. */
+export async function updateProfile(
+  id: string,
+  input: { name: string; company: string },
+): Promise<void> {
+  await query("UPDATE users SET name = $2, company = $3 WHERE id = $1", [
+    id,
+    input.name,
+    input.company,
+  ]);
+}
+
+export async function markOnboarded(id: string): Promise<void> {
+  await query("UPDATE users SET onboarded_at = now() WHERE onboarded_at IS NULL AND id = $1", [id]);
 }

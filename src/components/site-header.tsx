@@ -28,7 +28,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
           </span>
         </Link>
 
-        <nav className="hidden items-center gap-1 sm:flex">
+        <nav aria-label="Main" className="hidden items-center gap-1 sm:flex">
           {nav.map((item) => {
             const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
             return (
@@ -80,6 +80,28 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
           )}
         </div>
       </div>
+
+      <nav
+        aria-label="Main"
+        className="flex gap-1 overflow-x-auto border-t border-line px-5 py-2 sm:hidden"
+      >
+        {nav.map((item) => {
+          const active = pathname === item.href || pathname.startsWith(`${item.href}/`);
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={active ? "page" : undefined}
+              className={cx(
+                "rounded-full px-3.5 py-2 text-sm whitespace-nowrap transition-colors",
+                active ? "bg-raised text-text" : "text-muted",
+              )}
+            >
+              {item.label}
+            </Link>
+          );
+        })}
+      </nav>
     </header>
   );
 }

@@ -1,13 +1,16 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
-import { endSession, pruneExpiredSessions, startSession } from "./auth";
+import { endSession, pruneExpiredSessions, requireUser, startSession } from "./auth";
 import { submittedValues, type FormState } from "./form-state";
 import { decoyPasswordHash, verifyPassword } from "./password";
 import {
   EmailTakenError,
+  markOnboarded,
   syncAdminRole,
+  updateProfile,
   THROTTLE_WINDOW_MINUTES,
   clearFailedLogins,
   createUser,
@@ -16,7 +19,13 @@ import {
   recentFailures,
   recordFailedLogin,
 } from "./users";
-import { fieldErrors, signInSchema, signUpSchema, type FieldErrors } from "./validation";
+import {
+  fieldErrors,
+  profileSchema,
+  signInSchema,
+  signUpSchema,
+  type FieldErrors,
+} from "./validation";
 
 function invalid(errors: FieldErrors, message: string, formData: FormData): FormState {
   return { status: "error", message, errors, values: submittedValues(formData) };
@@ -56,7 +65,7 @@ export async function signUp(
   }
 
   await startSession(user.id);
-  redirect(safeNext(formData.get("next")));
+  redirect("/welcome");
 }
 
 export async function signIn(
@@ -119,4 +128,34 @@ export async function signIn(
 export async function signOut(): Promise<void> {
   await endSession();
   redirect("/");
+}
+
+/* ------------------------------------------------------------ setup wizard -- */
+
+export async function saveProfile(
+  _previous: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await requireUser("/welcome");
+  const parsed = profileSchema.safeParse(Object.fromEntries(formData));
+
+  if (!parsed.success) {
+    return invalid(
+      fieldErrors(parsed.error),
+      "Check the highlighted fields and try again.",
+      formData,
+    );
+  }
+
+  await updateProfile(user.id, parsed.data);
+  revalidatePath("/", "layout");
+  redirect(`/welcome?step=${String(formData.get("nextStep") ?? "2")}`);
+}
+
+/** Marks setup done and drops the person where they can actually start. */
+export async function finishSetup(formData: FormData): Promise<void> {
+  const user = await requireUser("/welcome");
+  await markOnboarded(user.id);
+  revalidatePath("/", "layout");
+  redirect(String(formData.get("to") ?? "/dashboard"));
 }
