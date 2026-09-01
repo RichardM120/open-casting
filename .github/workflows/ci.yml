@@ -51,8 +51,12 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      # Runs `next typegen` first: PageProps<"/route"> and friends are
+      # generated, not hand-written, and a fresh checkout has no .next to find
+      # them in. Locally there is always a stale .next, which is how a CI-only
+      # failure hid here from the day this workflow was added.
       - name: Typecheck
-        run: npx tsc --noEmit
+        run: npm run typecheck
 
       # No DATABASE_URL on purpose. Every data page is force-dynamic, so a build
       # must not need a reachable database — if this fails, deploys are fragile.

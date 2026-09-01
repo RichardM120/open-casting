@@ -14,7 +14,7 @@ every pull request. It fails the build rather than warning.
 | --- | --- |
 | `npm ci` | Installs from the lockfile. A drifting dependency tree is a deploy that differs from what was tested. |
 | `npm run lint` | ESLint, including the React hooks rules. |
-| `npx tsc --noEmit` | Types. Most of this app's invariants are expressed in them. |
+| `npm run typecheck` | `next typegen` then `tsc --noEmit`. Typegen first, because the route types are generated and a fresh checkout has no `.next` — the same script locally and in CI, so the two cannot disagree. |
 | `npm run build` **with no `DATABASE_URL`** | Every data page is `force-dynamic`; a build that needs a live database is a deploy that breaks when the database is slow. |
 | `npm run test:e2e` | Browser checks against a production build and a real Postgres — six suites, including the casting-session window and the one-submission-per-production rule. |
 
