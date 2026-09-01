@@ -162,6 +162,17 @@ const SCHEMA = `
   CREATE INDEX IF NOT EXISTS login_attempts_idx
     ON login_attempts (lower(email), attempted_at);
 
+  -- General purpose throttle. The submission form is open to anyone, takes no
+  -- account, and writes to the database, so it needs a ceiling.
+  CREATE TABLE IF NOT EXISTS rate_limits (
+    id      bigserial PRIMARY KEY,
+    bucket  text        NOT NULL,
+    subject text        NOT NULL,
+    at      timestamptz NOT NULL DEFAULT now()
+  );
+
+  CREATE INDEX IF NOT EXISTS rate_limits_idx ON rate_limits (bucket, subject, at);
+
   CREATE TABLE IF NOT EXISTS roles (
     id               text PRIMARY KEY,
     slug             text        NOT NULL,

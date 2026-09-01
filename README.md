@@ -30,7 +30,12 @@ the database is empty, so there is no migration step to run.
 npm run build && npm run start   # production build
 npm run lint                     # eslint
 npx tsc --noEmit                 # typecheck
+npm run test:e2e                 # 101 browser checks, needs DATABASE_URL
 ```
+
+CI runs all four on every push. See [RELEASE.md](RELEASE.md) for what is enforced
+automatically, what is a Vercel dashboard setting, and what was considered and
+deliberately left alone.
 
 ## What is here
 

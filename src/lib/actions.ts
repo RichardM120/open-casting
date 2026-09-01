@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { record, describeChanges } from "./activity";
 import { requireUser } from "./auth";
 import { isOpen } from "./format";
+import { clientAddress, overLimit } from "./rate-limit";
 import { submittedValues, type FormState } from "./form-state";
 import {
   createRole,
@@ -54,6 +55,14 @@ export async function submitApplication(
   }
   if (!isOpen(role)) {
     return invalid({}, "Submissions for this role have closed.", formData);
+  }
+
+  if (await overLimit("submission", await clientAddress())) {
+    return invalid(
+      {},
+      "That is a lot of submissions from one place in a short time. Try again in an hour.",
+      formData,
+    );
   }
 
   const parsed = submissionSchema.safeParse(Object.fromEntries(formData));

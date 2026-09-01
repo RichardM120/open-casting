@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { endSession, pruneExpiredSessions, requireUser, startSession } from "./auth";
 import { submittedValues, type FormState } from "./form-state";
 import { decoyPasswordHash, verifyPassword } from "./password";
+import { clientAddress, overLimit } from "./rate-limit";
 import {
   EmailTakenError,
   markOnboarded,
@@ -41,6 +42,10 @@ export async function signUp(
   _previous: FormState,
   formData: FormData,
 ): Promise<FormState> {
+  if (await overLimit("signup", await clientAddress())) {
+    return invalid({}, "Too many accounts created from here. Try again later.", formData);
+  }
+
   const parsed = signUpSchema.safeParse(Object.fromEntries(formData));
   if (!parsed.success) {
     return invalid(

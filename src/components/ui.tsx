@@ -239,25 +239,9 @@ export function Textarea({ className, ...props }: ComponentProps<"textarea">) {
   return <textarea {...props} className={cx(CONTROL, "resize-y", className)} />;
 }
 
-/** Inline chevron, so a select does not read as a plain text box. */
-const CHEVRON =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' " +
-  "fill='none' stroke='%239a9aa8' stroke-width='1.5' stroke-linecap='round' " +
-  "stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E\")";
-
-export function Select({ className, style, ...props }: ComponentProps<"select">) {
+export function Select({ className, ...props }: ComponentProps<"select">) {
   return (
-    <select
-      {...props}
-      style={{
-        backgroundImage: CHEVRON,
-        backgroundRepeat: "no-repeat",
-        backgroundPosition: "right 0.75rem center",
-        backgroundSize: "1rem",
-        ...style,
-      }}
-      className={cx(CONTROL, "appearance-none pr-10", className)}
-    />
+    <select {...props} className={cx(CONTROL, "select-chevron appearance-none pr-10", className)} />
   );
 }
 
