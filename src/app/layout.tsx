@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 
 import { SiteFooter } from "@/components/site-footer";
-import { OpenAccessBanner } from "@/components/open-access-banner";
+import { PrelaunchBanner } from "@/components/prelaunch-banner";
 import { SiteHeader } from "@/components/site-header";
 import { currentUser } from "@/lib/auth";
 
@@ -44,7 +44,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         >
           Skip to content
         </a>
-        <OpenAccessBanner />
+        <PrelaunchBanner />
         <SiteHeader user={user} />
         <main id="main" className="flex-1">
           {children}

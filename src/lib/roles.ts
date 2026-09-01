@@ -236,6 +236,27 @@ export async function listVisibleRoles(viewer: SessionUser): Promise<ListedRole[
   return attachSessions(rows.map(toRole));
 }
 
+/**
+ * One role inside a production, by the readable handle in its URL.
+ *
+ * Matched on the slug first so the link says what the part is; falls back to
+ * the id, which is what older links carry. Scoped to the session either way, so
+ * one production's link cannot reach another's role.
+ */
+export async function getSessionRole(
+  sessionId: string,
+  handle: string,
+): Promise<ListedRole | null> {
+  const rows = await query<RoleRow>(
+    `SELECT ${COLUMNS} FROM roles
+      WHERE session_id = $1 AND (slug = lower($2) OR id = $2)
+      ORDER BY posted_at ASC
+      LIMIT 1`,
+    [sessionId, handle],
+  );
+  return (await attachSessions(rows.map(toRole)))[0] ?? null;
+}
+
 /** The roles inside one session, for its dashboard page. */
 export async function listSessionRoles(sessionId: string): Promise<ListedRole[]> {
   const rows = await query<RoleRow>(

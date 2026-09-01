@@ -110,17 +110,32 @@ export async function getSession(id: string): Promise<CastingSession | null> {
 }
 
 /**
- * The one public entry point: a production, by its share token. Holding the
- * token is the authorisation — there is nothing else to check, and nothing
- * else in the app will hand a performer one.
+ * The readable half of a share link: `saltmarsh-e9e3qmqde8`.
+ *
+ * The slug is decoration — it makes the link say what it is on a poster or in a
+ * caption — and only the suffix is looked up. So a link whose production has
+ * since been renamed still works, and a guessed slug gets nobody anywhere.
  */
-export async function getSessionByToken(token: string): Promise<CastingSession | null> {
-  // Length-checked before the query so an absurd URL is not a database round
-  // trip, and so a token cannot be a wildcard.
-  if (!/^[A-Za-z0-9_-]{16,64}$/.test(token)) return null;
+export function shareSlug(session: CastingSession): string {
+  return session.slug ? `${session.slug}-${session.publicToken}` : session.publicToken;
+}
+
+/**
+ * The one public entry point: a production, by its share link. Holding the
+ * token is the authorisation — there is nothing else to check, and nothing else
+ * in the app will hand a performer one.
+ */
+export async function getSessionByToken(handle: string): Promise<CastingSession | null> {
+  // Everything up to the last dash is the readable slug and is ignored.
+  const token = handle.slice(handle.lastIndexOf("-") + 1).toLowerCase();
+
+  // Shape-checked before the query, so an absurd URL is not a database round
+  // trip and a token cannot be made into a wildcard. Older links carry the
+  // longer base64url token, so both lengths are accepted.
+  if (!/^[a-z0-9_-]{10,64}$/.test(token)) return null;
 
   const rows = await query<Row>(
-    `SELECT ${SESSION_COLUMNS} FROM sessions_casting WHERE public_token = $1`,
+    `SELECT ${SESSION_COLUMNS} FROM sessions_casting WHERE lower(public_token) = $1`,
     [token],
   );
   return rows[0] ? toSession(rows[0]) : null;

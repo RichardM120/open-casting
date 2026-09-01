@@ -95,7 +95,7 @@ section("4b a performer submits through the link");
   const { c, p } = await ctx();
   await p.goto(`${BASE}/c/${token}`, { waitUntil: "networkidle" });
   await p.getByText(`ONE-${t}`).click();
-  await p.waitForURL(/\/c\/.+\/rol_/, { timeout: 20000 });
+  await p.waitForURL(/\/c\/[^/]+\/[^/]+$/, { timeout: 20000 });
   await p.fill("#name", "Perry Former"); await p.fill("#email", `pf${t}@example.com`);
   await p.fill("#phone", "07700 900777"); await p.fill("#location", "Leeds"); await p.fill("#age", "30");
   await p.fill("#coverNote", "A cover note comfortably longer than the twenty character minimum.");

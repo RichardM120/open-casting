@@ -12,6 +12,7 @@ import { listActivity } from "@/lib/activity";
 import { currentUser, requireUser } from "@/lib/auth";
 import { ageRange, formatDate, formatRelative, initials, isOpen, roleWindow } from "@/lib/format";
 import { getVisibleRole } from "@/lib/roles";
+import { shareSlug } from "@/lib/sessions";
 import { listSubmissions, summarise } from "@/lib/submissions";
 import type { Submission } from "@/lib/types";
 
@@ -69,7 +70,7 @@ export default async function RoleSubmissionsPage({
         <div className="flex flex-wrap items-center gap-2">
           <DeadlineBadge session={roleWindow(role)} />
           <ButtonLink
-            href={`/c/${role.session.publicToken}/${role.id}`}
+            href={`/c/${shareSlug(role.session)}/${role.slug}`}
             variant="secondary"
             size="sm"
           >
@@ -119,7 +120,7 @@ export default async function RoleSubmissionsPage({
             description="They will appear here as they come in, newest first."
             action={
               <ButtonLink
-                href={`/c/${role.session.publicToken}/${role.id}`}
+                href={`/c/${shareSlug(role.session)}/${role.slug}`}
                 variant="secondary"
                 size="sm"
               >

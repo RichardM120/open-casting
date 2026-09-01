@@ -118,22 +118,24 @@ connection encrypted but stops checking who is on the other end.
 
 ## Before launch
 
-Two switches, both off by default, both reported by `/api/health` so neither can
-be forgotten quietly.
+One variable. With `SITE_PASSWORD` set:
 
-| Variable | What it does |
-| --- | --- |
-| `SITE_PASSCODE` | Closes the deployment to the public. Every route — the sign-in page, the FAQ, casting share links — redirects to `/gate` until the passcode is entered. Checked in the proxy, so it runs before any page. Unset it to launch. |
-| `OPEN_ACCESS=1` | Any email and any password signs in, creating an account on the spot if there is none. Removes the entire sign-in check. |
+- every page requires a sign-in, so a signed-out visitor sees the sign-in page
+  and nothing else;
+- any email address plus that one shared password gets through, and an account
+  is created on the spot for an address that has none;
+- a banner sits above every page saying so, and `/api/health` reports it.
 
-`OPEN_ACCESS` is only defensible while `SITE_PASSCODE` is set, and it is not
-subtle about being on: a red banner sits above every page, including casting
-links, for as long as it is. **Turn it off before there is a real performer's
-name in the database, let alone a child's.** It never grants admin — that still
-comes only from `ADMIN_EMAILS`.
+Casting share links stay open — a performer has no account by design, the token
+is unguessable, and those pages are `noindex`.
 
-Neither replaces the other. The gate decides whether the public sees anything;
-the sign-in behind it still decides who sees what.
+It is not the application's access control and does not pretend to be: it keeps
+the work in progress away from anyone who has not been shown it. Unset it to
+launch, and everything reverts to real sign-in with no code change.
+
+Sign-ins through it are throttled by address as well as by email, because a
+shared password with only a per-email throttle is no throttle at all — an
+attacker just varies the address.
 
 ## Keeping it out of search
 
@@ -142,8 +144,35 @@ the sign-in behind it still decides who sees what.
   from the proxy, not only pages that set it in their metadata — that covers API
   routes and anything added later that forgets.
 - **Page metadata** carries `noindex` as well.
-- With `SITE_PASSCODE` set there is nothing for a crawler to reach in the first
+- With `SITE_PASSWORD` set there is nothing for a crawler to reach in the first
   place, which is the only one of the four that is not merely advisory.
+
+## URLs
+
+A casting link goes on an Instagram post, into a mailout, sometimes onto paper.
+So it is built to be read, typed and said out loud:
+
+```
+opencasting.app/c/saltmarsh-4f21c9ba7e
+opencasting.app/c/saltmarsh-4f21c9ba7e/nell-saltmarsh
+```
+
+The slug is decoration and the ten characters after the last dash are the whole
+of the authorisation. Only that suffix is looked up, so renaming a production
+does not break a link that is already circulating, and a guessed slug gets
+nobody anywhere. The alphabet excludes look-alikes — no `0`/`O`, no `1`/`l`/`I`
+— and lookup is case-insensitive, so a link retyped in capitals still works.
+Ten characters is about 49 bits: far too many to enumerate, short enough to fit
+in a caption.
+
+The role is matched by its slug **within** the production, so one production's
+link cannot reach another's role — it is not a check that can be forgotten,
+because there is no query that could find it.
+
+Set **`APP_URL`** to the canonical origin and share links are built from it
+rather than from whichever of the four domains the casting director happened to
+be on. Every redirect a performer does not make is one fewer round trip on a
+phone and one fewer chance for a truncated link.
 
 ## Signing in
 

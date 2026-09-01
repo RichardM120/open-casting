@@ -6,7 +6,7 @@ import { redirect } from "next/navigation";
 import { MSA } from "@/content/legal";
 
 import { recordAcceptance } from "./agreements";
-import { openAccess } from "./gate";
+import { sitePassword } from "./gate";
 import { endSession, pruneExpiredSessions, requireUser, startSession } from "./auth";
 import { sendEmail } from "./email";
 import {
@@ -16,6 +16,7 @@ import {
   pruneExpiredChallenges,
 } from "./mfa";
 import { requestOrigin } from "./origin";
+import { clientAddress, overLimit } from "./rate-limit";
 import { submittedValues, type FormState } from "./form-state";
 import { decoyPasswordHash, verifyPassword } from "./password";
 import { randomBytes } from "node:crypto";
@@ -74,11 +75,14 @@ export async function signIn(
 
   let user = await findUserByEmail(email);
 
-  // Pre-launch only: any email, any password, and an account made on the spot.
-  // Guarded by an env flag, announced on every page while it is on, and
-  // reported by /api/health — see openAccess() for why it is defensible only
-  // while the deployment is closed to the public.
-  if (openAccess()) {
+  // The pre-launch door: any email plus the one shared password, with an
+  // account made on the spot for an address that has none. Throttled by
+  // address as well as by email, because a shared password with a per-email
+  // throttle is no throttle at all — an attacker just varies the email.
+  if (sitePassword() && password === sitePassword()) {
+    if (await overLimit("signup", await clientAddress())) {
+      return invalid({}, "Too many sign-ins from here. Try again later.", formData);
+    }
     if (!user) {
       await createUser({
         name: email.split("@")[0],

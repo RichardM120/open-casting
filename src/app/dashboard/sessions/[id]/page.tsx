@@ -11,7 +11,7 @@ import { formatDate, isOpen, notYetOpen } from "@/lib/format";
 import { listSessionRoles } from "@/lib/roles";
 import { requestOrigin } from "@/lib/origin";
 import { RETENTION_DAYS, daysUntilPurge, purgeDate } from "@/lib/retention";
-import { getVisibleSession } from "@/lib/sessions";
+import { getVisibleSession, shareSlug } from "@/lib/sessions";
 import { countsByRole } from "@/lib/submissions";
 
 export async function generateMetadata({
@@ -40,7 +40,7 @@ export default async function SessionPage({
     searchParams,
     requestOrigin(),
   ]);
-  const shareUrl = `${origin}/c/${session.publicToken}`;
+  const shareUrl = `${origin}/c/${shareSlug(session)}`;
 
   const submissions = roles.reduce(
     (total, role) => total + (counts.get(role.id)?.total ?? 0),
@@ -144,7 +144,7 @@ export default async function SessionPage({
                 Publish this casting call
               </Button>
             </form>
-            <ButtonLink href={`/c/${session.publicToken}`} variant="secondary" size="sm">
+            <ButtonLink href={`/c/${shareSlug(session)}`} variant="secondary" size="sm">
               Preview as a performer
             </ButtonLink>
           </div>

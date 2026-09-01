@@ -16,9 +16,9 @@ const ctx = (viewport) => session(browser, errors, viewport);
 const t = Date.now();
 
 // The seeded demo productions have fixed tokens, so they can be written down.
-const SALTMARSH = "demo-saltmarsh-4f21c9ba7e";
-const HEARTH = "demo-hearth-2b96fd40ac";
-const NORTHBANK = "demo-northbank-7c03ae5d18";
+const SALTMARSH = "saltmarsh-4f21c9ba7e";
+const HEARTH = "hearth-winter-campaign-2b96fd40ac";
+const NORTHBANK = "northbank-7c03ae5d18";
 
 section("1 the home page is the way in, and nothing else");
 {
@@ -41,7 +41,7 @@ section("1 the home page is the way in, and nothing else");
 section("2 there is no public board left to find");
 {
   const { c, p } = await ctx();
-  for (const path of ["/roles", "/roles/rol_saltmarsh_nell", "/signup"]) {
+  for (const path of ["/roles", "/roles/nell-saltmarsh", "/signup"]) {
     check(`${path} -> 404`, (await p.goto(BASE + path, { waitUntil: "networkidle" })).status() === 404);
   }
   const robots = await p.goto(`${BASE}/robots.txt`, { waitUntil: "networkidle" });
@@ -111,7 +111,7 @@ section("4 a share link opens one production, and only that one");
     (await p.goto(`${BASE}/c/not-a-real-token-at-all`, { waitUntil: "networkidle" })).status() === 404);
 
   // The token authorises one production; another's role must not open under it.
-  const crossed = await p.goto(`${BASE}/c/${NORTHBANK}/rol_saltmarsh_nell`, { waitUntil: "networkidle" });
+  const crossed = await p.goto(`${BASE}/c/${NORTHBANK}/nell-saltmarsh`, { waitUntil: "networkidle" });
   check("one production's link cannot open another's role", crossed.status() === 404, String(crossed.status()));
   await c.close();
 }
@@ -119,7 +119,7 @@ section("4 a share link opens one production, and only that one");
 section("5 role with terms — acceptance is required");
 {
   const { c, p } = await ctx();
-  await p.goto(`${BASE}/c/${HEARTH}/rol_hearth_couple`, { waitUntil: "networkidle" });
+  await p.goto(`${BASE}/c/${HEARTH}/couple-hearth`, { waitUntil: "networkidle" });
   check("terms shown on the listing", (await p.getByText("Terms for this role").count()) > 0);
   check("acceptance checkbox present", (await p.locator("#acceptTerms").count()) === 1);
 
@@ -147,7 +147,7 @@ section("5 role with terms — acceptance is required");
 section("6 role without terms — no checkbox, submits cleanly");
 {
   const { c, p } = await ctx();
-  await p.goto(`${BASE}/c/${SALTMARSH}/rol_saltmarsh_nell`, { waitUntil: "networkidle" });
+  await p.goto(`${BASE}/c/${SALTMARSH}/nell-saltmarsh`, { waitUntil: "networkidle" });
   check("no terms block", (await p.getByText("Terms for this role").count()) === 0);
   check("no acceptance checkbox", (await p.locator("#acceptTerms").count()) === 0);
   await p.fill("#name", "No Terms"); await p.fill("#email", `not${t}@example.com`);
@@ -163,7 +163,7 @@ section("6 role without terms — no checkbox, submits cleanly");
 section("7 errors are in situ and accessible");
 {
   const { c, p } = await ctx();
-  await p.goto(`${BASE}/c/${SALTMARSH}/rol_saltmarsh_nell`, { waitUntil: "networkidle" });
+  await p.goto(`${BASE}/c/${SALTMARSH}/nell-saltmarsh`, { waitUntil: "networkidle" });
   await p.fill("#name", "A"); await p.fill("#email", `x${t}@example.com`);
   await p.fill("#phone", "07700 900333"); await p.fill("#location", "Leeds"); await p.fill("#age", "31");
   await p.fill("#coverNote", "too short");

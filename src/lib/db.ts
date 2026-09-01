@@ -532,9 +532,23 @@ async function purgeOnBoot(): Promise<void> {
   }
 }
 
-/** A share token: 24 bytes of CSPRNG, url-safe, and not worth guessing. */
+/**
+ * The unguessable half of a share link.
+ *
+ * Ten characters from an alphabet with no look-alikes — no 0/O, 1/l/I — because
+ * these get read off a phone screen, typed from a poster, and said out loud.
+ * That is ~49 bits: far too many to enumerate, and short enough that the whole
+ * link fits in a caption.
+ *
+ * Case-insensitive by construction, so a link retyped in capitals still works.
+ */
+const TOKEN_ALPHABET = "abcdefghjkmnpqrstuvwxyz23456789";
+
 export function shareToken(): string {
-  return randomBytes(24).toString("base64url");
+  return Array.from(
+    randomBytes(10),
+    (byte) => TOKEN_ALPHABET[byte % TOKEN_ALPHABET.length],
+  ).join("");
 }
 
 /**
@@ -686,8 +700,7 @@ export async function databaseStatus(): Promise<{
   authSecret: "set" | "missing";
   email: "configured" | "missing";
   /** Pre-launch switches. Both must read "off" before this is a live service. */
-  gate: "closed" | "open to the public";
-  openAccess: "off" | "ON — any password signs in";
+  site: "closed until launch — one shared password" | "open to the public";
   schema: "ready" | "unavailable";
   roles?: number;
   sessions?: number;
@@ -701,19 +714,17 @@ export async function databaseStatus(): Promise<{
   const email: "configured" | "missing" = process.env.RESEND_API_KEY?.trim()
     ? "configured"
     : "missing";
-  const gate: "closed" | "open to the public" = process.env.SITE_PASSCODE?.trim()
-    ? "closed"
-    : "open to the public";
-  const openAccess: "off" | "ON — any password signs in" =
-    process.env.OPEN_ACCESS?.trim() === "1" ? "ON — any password signs in" : "off";
+  const site: "closed until launch — one shared password" | "open to the public" =
+    process.env.SITE_PASSWORD?.trim()
+      ? "closed until launch — one shared password"
+      : "open to the public";
   if (!variable) {
     return {
       ok: false,
       connectionVariable: null,
       authSecret,
       email,
-      gate,
-      openAccess,
+      site,
       schema: "unavailable",
       error:
         "No connection string. Set DATABASE_URL (or POSTGRES_URL) in the deployment's environment and redeploy.",
@@ -730,8 +741,7 @@ export async function databaseStatus(): Promise<{
       connectionVariable: variable,
       authSecret,
       email,
-      gate,
-      openAccess,
+      site,
       schema: "ready",
       roles: Number(roles[0]?.count ?? 0),
       sessions: Number(sessions[0]?.count ?? 0),
@@ -744,8 +754,7 @@ export async function databaseStatus(): Promise<{
       connectionVariable: variable,
       authSecret,
       email,
-      gate,
-      openAccess,
+      site,
       schema: "unavailable",
       error: error instanceof Error ? error.message : String(error),
     };

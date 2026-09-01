@@ -7,7 +7,7 @@ import { SubmissionForm, SubmissionsClosed } from "@/components/submission-form"
 import { Badge, Eyebrow } from "@/components/ui";
 import { ageRange, formatDate, formatRelative, isOpen, notYetOpen, roleWindow } from "@/lib/format";
 import { canPreview } from "@/lib/preview";
-import { getRole } from "@/lib/roles";
+import { getSessionRole } from "@/lib/roles";
 import { getSessionByToken } from "@/lib/sessions";
 import { listSubmissions } from "@/lib/submissions";
 
@@ -16,7 +16,9 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({
   params,
 }: PageProps<"/c/[token]/[roleId]">): Promise<Metadata> {
-  const role = await getRole((await params).roleId);
+  const { token, roleId } = await params;
+  const session = await getSessionByToken(token);
+  const role = session ? await getSessionRole(session.id, roleId) : null;
   return {
     title: role ? `${role.title} — ${role.production}` : "Role not found",
     description: role?.characterBrief.slice(0, 160),
@@ -27,10 +29,11 @@ export async function generateMetadata({
 export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId]">) {
   const { token, roleId } = await params;
 
-  // The token authorises, and the role must belong to the production it names.
-  // Checking both stops one production's link being used to read another's.
-  const [session, role] = await Promise.all([getSessionByToken(token), getRole(roleId)]);
-  if (!session || !role || role.sessionId !== session.id) notFound();
+  // The token authorises, and the role is looked up inside the production it
+  // names — so one production's link cannot reach another's role at all.
+  const session = await getSessionByToken(token);
+  const role = session ? await getSessionRole(session.id, roleId) : null;
+  if (!session || !role) notFound();
 
   // An unpublished production is visible to its own side only, as a preview.
   if (session.publishedAt === null && !(await canPreview(session))) notFound();

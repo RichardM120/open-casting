@@ -81,7 +81,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
           {roles.map((role) => (
             <li key={role.id}>
               <Link
-                href={`/c/${token}/${role.id}`}
+                href={`/c/${token}/${role.slug}`}
                 className="group flex flex-col gap-3 rounded-2xl border border-line bg-surface p-6 transition-colors hover:border-line-strong"
               >
                 <div className="flex flex-wrap items-center gap-2">
