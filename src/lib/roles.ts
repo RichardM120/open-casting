@@ -65,6 +65,7 @@ type RoleRow = {
   company: string;
   disclaimer: string;
   closed_at: Date | null;
+  owner_id: string | null;
   posted_at: Date;
 };
 
@@ -73,7 +74,7 @@ const COLUMNS = `
   id, slug, title, production, production_type, synopsis, character_brief,
   requirements, location, self_tape, age_min, age_max, pay_type, rate,
   union_status, shoot_dates, to_char(deadline, 'YYYY-MM-DD') AS deadline,
-  casting_director, company, disclaimer, closed_at, posted_at
+  casting_director, company, disclaimer, closed_at, owner_id, posted_at
 `;
 
 /** Today in UTC, matching how `isOpen` decides the same thing in JS. */
@@ -105,6 +106,7 @@ function toRole(row: RoleRow): Role {
     company: row.company,
     disclaimer: row.disclaimer,
     closedAt: row.closed_at?.toISOString() ?? null,
+    ownerId: row.owner_id,
     postedAt: row.posted_at.toISOString(),
   };
 }
@@ -227,7 +229,7 @@ export async function countOpenRoles(): Promise<number> {
   return Number(rows[0]?.count ?? 0);
 }
 
-export type NewRole = Omit<Role, "id" | "slug" | "postedAt" | "closedAt">;
+export type NewRole = Omit<Role, "id" | "slug" | "postedAt" | "closedAt" | "ownerId">;
 
 export async function createRole(input: NewRole, ownerId: string): Promise<Role> {
   const rows = await query<RoleRow>(

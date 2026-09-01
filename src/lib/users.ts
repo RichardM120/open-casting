@@ -208,3 +208,9 @@ export async function setAccountSuspended(id: string, suspended: boolean): Promi
   }
   return rows.length > 0;
 }
+
+/** One account, for naming it in the activity trail. */
+export async function findAccount(id: string): Promise<User | null> {
+  const rows = await query<User>(`SELECT ${COLUMNS} FROM users WHERE id = $1`, [id]);
+  return rows[0] ?? null;
+}

@@ -1,10 +1,10 @@
-import type { Database, Role, Submission } from "./types";
+import type { Database, SeedRole, Submission } from "./types";
 
 /**
  * Demo content. The store falls back to this whenever the data file is
  * missing, so a fresh clone has something to browse straight away.
  */
-const roles: Role[] = [
+const roles: SeedRole[] = [
   {
     id: "rol_saltmarsh_nell",
     slug: "nell-saltmarsh",

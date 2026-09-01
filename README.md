@@ -47,6 +47,7 @@ npx tsc --noEmit                 # typecheck
 | `/faq/casting-directors` | What each posting field commits you to, and writing terms |
 | `/dashboard/roles/[id]/edit` | Edit a role in place |
 | `/dashboard/accounts` | Suspend and restore accounts — admin only |
+| `/dashboard/activity` | The audit trail, scoped like everything else |
 
 ## How it is put together
 
@@ -166,6 +167,21 @@ accounts are matched to existing ones by email.
 
 Register the callback URL — `https://your-domain/api/auth/google/callback` — on
 the Google client for every origin you use, production and preview alike.
+
+## Activity trail
+
+Every posting, edit, close, reopen, removal, submission, status change and
+account suspension is recorded. Entries are scoped by the same `visibility()`
+rule as the roles, applied to an owner and company **copied onto each entry** —
+so a trail outlives the role it describes, which is the moment it is worth
+most. `role_id` and `actor_id` are `ON DELETE SET NULL` and the readable fields
+sit alongside them; a removed role shows struck through and stops being a link.
+
+Account events carry no owner or company, which is what keeps them to admins
+without a second rule.
+
+Writing an entry never throws into the caller. A trail that can fail a
+performer's submission would be worse than a gap in the trail.
 
 ## Deploying
 

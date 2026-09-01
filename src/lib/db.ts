@@ -223,6 +223,29 @@ const SCHEMA = `
     WHEN duplicate_object THEN NULL;
   END $$;
 
+  -- An audit trail of who did what. Ids are nullable with ON DELETE SET NULL and
+  -- the human-readable fields are snapshotted alongside them, so removing a role
+  -- or an account does not erase the record of it — which is the moment the
+  -- trail is worth most.
+  CREATE TABLE IF NOT EXISTS activity (
+    id         bigserial PRIMARY KEY,
+    created_at timestamptz NOT NULL DEFAULT now(),
+    action     text        NOT NULL,
+    actor_id   text        REFERENCES users(id) ON DELETE SET NULL,
+    actor_name text        NOT NULL,
+    role_id    text        REFERENCES roles(id) ON DELETE SET NULL,
+    role_title text,
+    -- Copied from the role so the trail stays visible to the right people once
+    -- the role itself is gone. Null on account events, which only admins see.
+    owner_id   text,
+    company    text,
+    detail     text        NOT NULL DEFAULT ''
+  );
+
+  CREATE INDEX IF NOT EXISTS activity_role_idx ON activity (role_id, created_at DESC);
+  CREATE INDEX IF NOT EXISTS activity_recent_idx ON activity (created_at DESC);
+  CREATE INDEX IF NOT EXISTS activity_scope_idx ON activity (owner_id, company);
+
   CREATE INDEX IF NOT EXISTS submissions_role_idx ON submissions (role_id);
   CREATE INDEX IF NOT EXISTS roles_deadline_idx ON roles (deadline);
   CREATE INDEX IF NOT EXISTS roles_owner_idx ON roles (owner_id);

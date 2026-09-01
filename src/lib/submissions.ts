@@ -183,3 +183,35 @@ export async function setSubmissionStatus(
   );
   return rows.length > 0;
 }
+
+/** Enough about a submission to describe it in the activity trail. */
+export async function submissionContext(id: string): Promise<{
+  name: string;
+  roleId: string;
+  roleTitle: string;
+  ownerId: string | null;
+  company: string;
+} | null> {
+  const rows = await query<{
+    name: string;
+    role_id: string;
+    role_title: string;
+    owner_id: string | null;
+    company: string;
+  }>(
+    `SELECT s.name, s.role_id, r.title AS role_title, r.owner_id, r.company
+       FROM submissions s JOIN roles r ON r.id = s.role_id
+      WHERE s.id = $1`,
+    [id],
+  );
+  const row = rows[0];
+  return row
+    ? {
+        name: row.name,
+        roleId: row.role_id,
+        roleTitle: row.role_title,
+        ownerId: row.owner_id,
+        company: row.company,
+      }
+    : null;
+}

@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
+import { record, describeChanges } from "./activity";
 import { requireUser } from "./auth";
 import { isOpen } from "./format";
 import { submittedValues, type FormState } from "./form-state";
@@ -10,6 +11,7 @@ import {
   createRole,
   deleteRoleAsAdmin,
   getRole,
+  getVisibleRole,
   setRoleClosed,
   updateRole,
 } from "./roles";
@@ -17,9 +19,10 @@ import {
   DuplicateSubmissionError,
   createSubmission,
   setSubmissionStatus,
+  submissionContext,
 } from "./submissions";
 import { SUBMISSION_STATUSES, type SubmissionStatus } from "./types";
-import { setAccountSuspended } from "./users";
+import { findAccount, setAccountSuspended } from "./users";
 import { fieldErrors, roleSchema, submissionSchema, type FieldErrors } from "./validation";
 
 function invalid(
@@ -96,6 +99,15 @@ export async function submitApplication(
     throw error;
   }
 
+  await record({
+    action: "submission.received",
+    actorId: null,
+    actorName: submission.name,
+    role,
+    ownerId: role.ownerId,
+    company: role.company,
+  });
+
   revalidateEverything();
 
   return {
@@ -124,6 +136,14 @@ export async function postRole(
   }
 
   const role = await createRole(parsed.data, user.id);
+  await record({
+    action: "role.posted",
+    actorId: user.id,
+    actorName: user.name,
+    role,
+    ownerId: role.ownerId,
+    company: role.company,
+  });
   revalidateEverything();
   redirect(`/dashboard/roles/${role.id}?posted=1`);
 }
@@ -140,7 +160,19 @@ export async function updateSubmissionStatus(formData: FormData): Promise<void> 
   if (!id || !isSubmissionStatus(status)) return;
 
   // Silently a no-op when the submission hangs off a role this account cannot see.
-  await setSubmissionStatus(id, status, user);
+  const changed = await setSubmissionStatus(id, status, user);
+  if (changed) {
+    const context = await submissionContext(id);
+    await record({
+      action: "submission.status",
+      actorId: user.id,
+      actorName: user.name,
+      role: context ? { id: context.roleId, title: context.roleTitle } : undefined,
+      ownerId: context?.ownerId ?? null,
+      company: context?.company ?? null,
+      detail: `${context?.name ?? "a submission"} → ${status}`,
+    });
+  }
   revalidateEverything();
 }
 
@@ -162,11 +194,23 @@ export async function editRole(
     );
   }
 
+  const before = await getVisibleRole(id, user);
+
   // Returns null when the role is not one this account may touch.
   const role = await updateRole(id, parsed.data, user);
   if (!role) {
     return invalid({}, "That role is no longer yours to edit.", formData);
   }
+
+  await record({
+    action: "role.edited",
+    actorId: user.id,
+    actorName: user.name,
+    role,
+    ownerId: role.ownerId,
+    company: role.company,
+    detail: before ? describeChanges(before, role) : "",
+  });
 
   revalidateEverything();
   redirect(`/dashboard/roles/${role.id}?saved=1`);
@@ -179,7 +223,18 @@ export async function toggleRoleClosed(formData: FormData): Promise<void> {
   const user = await requireUser(`/dashboard/roles/${id}`);
 
   if (!id) return;
-  await setRoleClosed(id, closed, user);
+
+  const role = await getVisibleRole(id, user);
+  if (!role || !(await setRoleClosed(id, closed, user))) return;
+
+  await record({
+    action: closed ? "role.closed" : "role.reopened",
+    actorId: user.id,
+    actorName: user.name,
+    role,
+    ownerId: role.ownerId,
+    company: role.company,
+  });
   revalidateEverything();
 }
 
@@ -192,6 +247,22 @@ export async function removeRole(formData: FormData): Promise<void> {
   const user = await requireUser("/dashboard");
 
   if (user.role !== "admin" || formData.get("confirm") !== "on" || !id) return;
+
+  // Described before it goes: afterwards there is nothing left to describe. The
+  // entry survives the delete because role_id is ON DELETE SET NULL and the
+  // title, owner and company are copied onto it.
+  const role = await getRole(id);
+  if (!role) return;
+
+  await record({
+    action: "role.removed",
+    actorId: user.id,
+    actorName: user.name,
+    role,
+    ownerId: role.ownerId,
+    company: role.company,
+    detail: `${role.production} · ${role.company}`,
+  });
 
   await deleteRoleAsAdmin(id);
   revalidateEverything();
@@ -207,6 +278,15 @@ export async function toggleAccountSuspended(formData: FormData): Promise<void> 
   // An admin locking themselves out would leave nobody able to undo it.
   if (user.role !== "admin" || !id || id === user.id) return;
 
-  await setAccountSuspended(id, suspended);
+  const account = await findAccount(id);
+  if (!account || !(await setAccountSuspended(id, suspended))) return;
+
+  // No role, owner or company: account events stay visible to admins only.
+  await record({
+    action: suspended ? "account.suspended" : "account.restored",
+    actorId: user.id,
+    actorName: user.name,
+    detail: `${account.name} · ${account.company}`,
+  });
   revalidateEverything();
 }

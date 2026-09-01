@@ -50,6 +50,8 @@ export type Role = {
   disclaimer: string;
   /** Set when closed ahead of its deadline. ISO timestamp, or null. */
   closedAt: string | null;
+  /** The account that posted it. Null only for rows predating accounts. */
+  ownerId: string | null;
   /** ISO timestamp. */
   postedAt: string;
 };
@@ -76,6 +78,9 @@ export type Submission = {
   /** ISO timestamp. */
   submittedAt: string;
 };
+
+/** Seed content is written before any account exists, so it carries no owner. */
+export type SeedRole = Omit<Role, "ownerId">;
 
 /**
  * What an account may see on the dashboard.
@@ -104,6 +109,6 @@ export const ROLE_DESCRIPTIONS: Record<SignupRole, string> = {
 };
 
 export type Database = {
-  roles: Role[];
+  roles: SeedRole[];
   submissions: Submission[];
 };

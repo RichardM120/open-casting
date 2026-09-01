@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
+import { ActivityList } from "@/components/activity-list";
 import { DeadlineBadge } from "@/components/role-card";
 import { Badge, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
+import { listActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
 import { isOpen } from "@/lib/format";
 import { listVisibleRoles } from "@/lib/roles";
@@ -19,9 +21,10 @@ export const metadata: Metadata = {
 
 export default async function DashboardPage() {
   const user = await requireUser("/dashboard");
-  const [roles, counts] = await Promise.all([
+  const [roles, counts, activity] = await Promise.all([
     listVisibleRoles(user),
     countsByRole(user),
+    listActivity(user, { limit: 8 }),
   ]);
 
   const totals = roles.reduce(
@@ -53,6 +56,9 @@ export default async function DashboardPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
+          <ButtonLink href="/dashboard/activity" variant="secondary">
+            Activity
+          </ButtonLink>
           {user.role === "admin" ? (
             <ButtonLink href="/dashboard/accounts" variant="secondary">
               Accounts
@@ -113,6 +119,24 @@ export default async function DashboardPage() {
         </div>
       )}
 
+      <section className="mt-16">
+        <div className="flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <Eyebrow>History</Eyebrow>
+            <h2 className="mt-2 text-2xl font-semibold tracking-tight">Recent activity</h2>
+          </div>
+          <ButtonLink href="/dashboard/activity" variant="secondary" size="sm">
+            See all activity
+          </ButtonLink>
+        </div>
+
+        <div className="mt-8">
+          <ActivityList
+            entries={activity}
+            emptyDescription="Post a role, and everything that happens to it is recorded here."
+          />
+        </div>
+      </section>
     </div>
   );
 }

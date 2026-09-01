@@ -2,11 +2,13 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ActivityList } from "@/components/activity-list";
 import { DeadlineBadge } from "@/components/role-card";
 import { StatusBadge } from "@/components/status-badge";
 import { SubmissionStatusControl } from "@/components/submission-status-control";
 import { Badge, Button, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
 import { removeRole, toggleRoleClosed } from "@/lib/actions";
+import { listActivity } from "@/lib/activity";
 import { currentUser, requireUser } from "@/lib/auth";
 import { ageRange, formatDate, formatRelative, initials, isOpen } from "@/lib/format";
 import { getVisibleRole } from "@/lib/roles";
@@ -33,7 +35,11 @@ export default async function RoleSubmissionsPage({
   const role = await getVisibleRole(id, user);
   if (!role) notFound();
 
-  const [submissions, query] = await Promise.all([listSubmissions(id), searchParams]);
+  const [submissions, activity, query] = await Promise.all([
+    listSubmissions(id),
+    listActivity(user, { roleId: id, limit: 30 }),
+    searchParams,
+  ]);
   const counts = summarise(submissions);
   const justPosted = query.posted === "1";
   const justSaved = query.saved === "1";
@@ -113,6 +119,17 @@ export default async function RoleSubmissionsPage({
           />
         </div>
       )}
+
+      <section className="mt-14">
+        <Eyebrow>History</Eyebrow>
+        <h2 className="mt-2 mb-6 text-xl font-semibold tracking-tight">
+          Everything that happened to this role
+        </h2>
+        <ActivityList
+          entries={activity}
+          emptyDescription="Nothing has been recorded against this role yet."
+        />
+      </section>
 
       {user.role === "admin" ? (
         <details className="mt-10 rounded-2xl border border-danger/30 bg-surface p-6">
