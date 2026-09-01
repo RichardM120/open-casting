@@ -96,11 +96,29 @@ const password = z
  * password field: one is generated and shown once, so a weak shared password
  * is not something anyone can choose here.
  */
+/** An empty box means "no limit", which is different from zero. */
+const optionalCount = trimmed
+  .max(6)
+  .refine((value) => value === "" || /^\d+$/.test(value), "Enter a whole number, or leave blank")
+  .refine((value) => value === "" || Number(value) >= 1, "Enter 1 or more, or leave blank")
+  .transform((value) => (value === "" ? null : Number(value)));
+
+const optionalDate = trimmed
+  .refine((value) => value === "" || /^\d{4}-\d{2}-\d{2}$/.test(value), "Enter a date, or leave blank")
+  .transform((value) => (value === "" ? null : value));
+
+export const limitsSchema = z.object({
+  maxSessions: optionalCount,
+  maxRolesPerSession: optionalCount,
+  accessUntil: optionalDate,
+});
+
 export const newAccountSchema = z.object({
   name: trimmed.min(2, "Enter their name").max(80),
   company: trimmed.min(2, "Name their company or agency").max(80),
   email: trimmed.max(120).pipe(z.email("Enter a valid email address")),
   role: z.enum(SIGNUP_ROLES, { message: "Choose what they will be able to see" }),
+  ...limitsSchema.shape,
 });
 
 export type NewAccountInput = z.infer<typeof newAccountSchema>;

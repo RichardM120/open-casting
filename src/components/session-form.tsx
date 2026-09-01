@@ -51,7 +51,19 @@ export function SessionForm({
   return (
     <form ref={formRef} action={formAction} className="flex flex-col gap-8">
       {session ? <input type="hidden" name="sessionId" value={session.id} /> : null}
-      {state.status === "error" ? <ErrorSummary errors={errors} labels={LABELS} /> : null}
+      {state.status === "error" ? (
+        <>
+          {state.message ? (
+            <p
+              role="alert"
+              className="rounded-xl border border-danger/40 bg-danger-soft p-4 text-sm text-danger"
+            >
+              {state.message}
+            </p>
+          ) : null}
+          <ErrorSummary errors={errors} labels={LABELS} />
+        </>
+      ) : null}
 
       <fieldset className="rounded-2xl border border-line bg-surface p-6 md:p-7">
         <legend className="px-2 text-sm font-semibold tracking-tight">The production</legend>

@@ -12,11 +12,27 @@ export type User = {
   role: UserRole;
   suspended_at: Date | null;
   onboarded_at: Date | null;
+  /** What the administrator sold them. Null means no ceiling. */
+  max_sessions: number | null;
+  max_roles_per_session: number | null;
+  /** yyyy-mm-dd. Past this the account cannot sign in. Null means open-ended. */
+  access_until: string | null;
+};
+
+/** The commercial arrangement, as the administrator sets it. */
+export type AccountLimits = {
+  maxSessions: number | null;
+  maxRolesPerSession: number | null;
+  accessUntil: string | null;
 };
 
 type UserRow = User & { password_hash: string | null };
 
-const COLUMNS = "id, email, name, company, role, suspended_at, onboarded_at";
+const COLUMNS = `
+  id, email, name, company, role, suspended_at, onboarded_at,
+  max_sessions, max_roles_per_session,
+  to_char(access_until, 'YYYY-MM-DD') AS access_until
+`;
 
 /** Thrown when an email is already registered. */
 export class EmailTakenError extends Error {
@@ -72,13 +88,16 @@ export async function createUser(input: {
   company: string;
   password: string;
   role: SignupRole;
+  limits?: AccountLimits;
 }): Promise<User> {
   const passwordHash = await hashPassword(input.password);
 
   try {
     const rows = await query<User>(
-      `INSERT INTO users (id, email, name, company, password_hash, role)
-       VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO users
+         (id, email, name, company, password_hash, role,
+          max_sessions, max_roles_per_session, access_until)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
        RETURNING ${COLUMNS}`,
       [
         `usr_${crypto.randomUUID().slice(0, 12)}`,
@@ -87,6 +106,9 @@ export async function createUser(input: {
         input.company,
         passwordHash,
         roleForEmail(input.email, input.role),
+        input.limits?.maxSessions ?? null,
+        input.limits?.maxRolesPerSession ?? null,
+        input.limits?.accessUntil ?? null,
       ],
     );
     return rows[0];
@@ -169,17 +191,21 @@ export async function clearFailedLogins(email: string): Promise<void> {
 
 /* ------------------------------------------------------- account admin -- */
 
-export type Account = User & { roles: number; submissions: number };
+export type Account = User & { roles: number; submissions: number; sessions: number };
 
 /** Every account, with how much each has posted. Admin only — enforce upstream. */
 export async function listAccounts(): Promise<Account[]> {
   return query<Account>(
-    `SELECT u.id, u.email, u.name, u.company, u.role, u.suspended_at,
-            count(DISTINCT r.id)::int AS roles,
-            count(s.id)::int          AS submissions
+    `SELECT u.id, u.email, u.name, u.company, u.role, u.suspended_at, u.onboarded_at,
+            u.max_sessions, u.max_roles_per_session,
+            to_char(u.access_until, 'YYYY-MM-DD') AS access_until,
+            count(DISTINCT r.id)::int  AS roles,
+            count(DISTINCT sc.id)::int AS sessions,
+            count(s.id)::int           AS submissions
        FROM users u
-       LEFT JOIN roles r       ON r.owner_id = u.id
-       LEFT JOIN submissions s ON s.role_id = r.id
+       LEFT JOIN roles r            ON r.owner_id = u.id
+       LEFT JOIN sessions_casting sc ON sc.owner_id = u.id
+       LEFT JOIN submissions s      ON s.role_id = r.id
       GROUP BY u.id
       ORDER BY u.suspended_at IS NULL DESC, lower(u.company), lower(u.name)`,
   );
@@ -199,6 +225,28 @@ export async function setAccountSuspended(id: string, suspended: boolean): Promi
     await query("DELETE FROM sessions WHERE user_id = $1", [id]);
   }
   return rows.length > 0;
+}
+
+/** Changes what an account is allowed. Admin only — enforce upstream. */
+export async function setAccountLimits(id: string, limits: AccountLimits): Promise<boolean> {
+  const rows = await query<{ id: string }>(
+    `UPDATE users SET max_sessions = $2, max_roles_per_session = $3, access_until = $4
+      WHERE id = $1 RETURNING id`,
+    [id, limits.maxSessions, limits.maxRolesPerSession, limits.accessUntil],
+  );
+  return rows.length > 0;
+}
+
+/**
+ * How much of the allowance is spent. Counted against the account that created
+ * the productions, which is the account the arrangement was made with.
+ */
+export async function accountUsage(id: string): Promise<{ sessions: number }> {
+  const rows = await query<{ count: string }>(
+    "SELECT count(*)::text AS count FROM sessions_casting WHERE owner_id = $1",
+    [id],
+  );
+  return { sessions: Number(rows[0]?.count ?? 0) };
 }
 
 /** One account, for naming it in the activity trail. */

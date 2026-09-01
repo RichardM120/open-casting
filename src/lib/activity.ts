@@ -8,6 +8,7 @@ import type { CastingSession, Role } from "./types";
 /** Every kind of thing worth recording. */
 export const ACTIONS = [
   "session.created",
+  "session.published",
   "session.edited",
   "session.closed",
   "session.reopened",
@@ -20,8 +21,10 @@ export const ACTIONS = [
   "submission.received",
   "submission.status",
   "account.created",
+  "account.limits",
   "account.suspended",
   "account.restored",
+  "data.purged",
 ] as const;
 export type Action = (typeof ACTIONS)[number];
 

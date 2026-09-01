@@ -25,6 +25,8 @@ export default async function SessionsPage({
   ]);
 
   const open = sessions.filter((session) => isOpen(session)).length;
+  const drafts = sessions.filter((session) => session.publishedAt === null).length;
+  const atLimit = user.maxSessions !== null && sessions.length >= user.maxSessions;
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-12">
@@ -53,15 +55,32 @@ export default async function SessionsPage({
           <ButtonLink href="/dashboard" variant="secondary">
             Roles
           </ButtonLink>
-          <ButtonLink href="/dashboard/sessions/new">Open a session</ButtonLink>
+          {atLimit ? null : (
+            <ButtonLink href="/dashboard/sessions/new">Open a session</ButtonLink>
+          )}
         </div>
       </div>
+
+      {atLimit ? (
+        <p className="mt-8 rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">
+          Your account covers {user.maxSessions}{" "}
+          {user.maxSessions === 1 ? "production" : "productions"} and you have used{" "}
+          {user.maxSessions === 1 ? "it" : "them all"}. Ask the administrator to extend it if you
+          need another.
+        </p>
+      ) : null}
 
       {sessions.length > 0 ? (
         <>
           <p className="mt-8 text-sm text-muted">
             {open} of {sessions.length}{" "}
             {sessions.length === 1 ? "session is" : "sessions are"} accepting submissions now.
+            {drafts > 0
+              ? ` ${drafts} ${drafts === 1 ? "is a draft" : "are drafts"}, not yet published — nobody can open ${drafts === 1 ? "its" : "their"} link.`
+              : ""}
+            {user.maxSessions !== null
+              ? ` Your account covers ${user.maxSessions} ${user.maxSessions === 1 ? "production" : "productions"}.`
+              : ""}
           </p>
 
           <ul className="mt-6 flex flex-col gap-3">
@@ -84,6 +103,7 @@ export default async function SessionsPage({
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
+                      {session.publishedAt === null ? <Badge tone="accent">Draft</Badge> : null}
                       <Badge tone="outline">
                         {count?.roles ?? 0} {count?.roles === 1 ? "role" : "roles"}
                       </Badge>

@@ -102,6 +102,29 @@ export default function CastingDirectorFaqPage() {
             roles.
           </p>
         </FaqItem>
+        <FaqItem q="When does my link start working?">
+          <p>
+            When you publish. A new casting session is a draft: you post its roles, open the
+            link yourself to check it reads the way you want, and publish when you are happy.
+            Until then the link opens for you and for nobody else.
+          </p>
+          <p>
+            Publishing cannot be undone, because once a link is on a post or in a mailout it is
+            out of your hands. Use <strong className="text-text">Close early</strong> to stop a
+            call instead — the listing stays up and the submissions stay yours.
+          </p>
+        </FaqItem>
+        <FaqItem q="How long do you keep the submissions?">
+          <p>
+            Six months after the call closes, the performers&rsquo; details are deleted — names,
+            addresses, phone numbers, links, cover notes. The production, its roles and the
+            counts are kept, so you keep a record of what you ran.
+          </p>
+          <p>
+            It runs on a schedule rather than waiting for anyone to remember, and the date is on
+            the production&rsquo;s page. Act on what you need before it.
+          </p>
+        </FaqItem>
         <FaqItem q="When is the submission form actually shown?">
           <p>
             Only while the session is open: from the start of the opening date to the end of the

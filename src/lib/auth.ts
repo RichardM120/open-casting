@@ -57,6 +57,9 @@ export type SessionUser = {
   role: UserRole;
   /** Null until the setup wizard has been finished. */
   onboardedAt: string | null;
+  /** What the administrator sold this account. Null means no ceiling. */
+  maxSessions: number | null;
+  maxRolesPerSession: number | null;
 };
 
 /**
@@ -67,8 +70,8 @@ export const currentUser = cache(async (): Promise<SessionUser | null> => {
   const token = (await cookies()).get(SESSION_COOKIE)?.value;
   if (!token) return null;
 
-  // Suspension is checked here too, not only at sign-in: a session created just
-  // before an account was suspended must stop working immediately.
+  // Suspension and the end of the arrangement are checked here, not only at
+  // sign-in: a session created just before either must stop working at once.
   const rows = await query<{
     id: string;
     name: string;
@@ -76,19 +79,32 @@ export const currentUser = cache(async (): Promise<SessionUser | null> => {
     company: string;
     role: UserRole;
     onboarded_at: Date | null;
+    max_sessions: number | null;
+    max_roles_per_session: number | null;
   }>(
-    `SELECT u.id, u.name, u.email, u.company, u.role, u.onboarded_at
+    `SELECT u.id, u.name, u.email, u.company, u.role, u.onboarded_at,
+            u.max_sessions, u.max_roles_per_session
        FROM sessions s
        JOIN users u ON u.id = s.user_id
       WHERE s.token_hash = $1
         AND s.expires_at > now()
-        AND u.suspended_at IS NULL`,
+        AND u.suspended_at IS NULL
+        AND (u.access_until IS NULL OR u.access_until >= (now() AT TIME ZONE 'utc')::date)`,
     [tokenHash(token)],
   );
 
   const row = rows[0];
   return row
-    ? { ...row, onboardedAt: row.onboarded_at?.toISOString() ?? null }
+    ? {
+        id: row.id,
+        name: row.name,
+        email: row.email,
+        company: row.company,
+        role: row.role,
+        onboardedAt: row.onboarded_at?.toISOString() ?? null,
+        maxSessions: row.max_sessions,
+        maxRolesPerSession: row.max_roles_per_session,
+      }
     : null;
 });
 

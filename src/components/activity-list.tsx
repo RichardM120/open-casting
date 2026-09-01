@@ -8,6 +8,7 @@ import { EmptyState } from "./ui";
 /** Verb and tone per action, so the trail reads at a glance. */
 const SHAPE: Record<Action, { verb: string; tone: string }> = {
   "session.created": { verb: "opened a casting session", tone: "bg-positive" },
+  "session.published": { verb: "published", tone: "bg-positive" },
   "session.edited": { verb: "edited a casting session", tone: "bg-accent" },
   "session.closed": { verb: "closed a casting session", tone: "bg-muted" },
   "session.reopened": { verb: "reopened a casting session", tone: "bg-positive" },
@@ -19,9 +20,11 @@ const SHAPE: Record<Action, { verb: string; tone: string }> = {
   "role.removed": { verb: "removed", tone: "bg-danger" },
   "submission.received": { verb: "submitted for", tone: "bg-accent" },
   "submission.status": { verb: "updated a submission on", tone: "bg-muted" },
+  "account.limits": { verb: "changed what an account may run", tone: "bg-accent" },
   "account.created": { verb: "created an account for", tone: "bg-positive" },
   "account.suspended": { verb: "suspended", tone: "bg-danger" },
   "account.restored": { verb: "restored", tone: "bg-positive" },
+  "data.purged": { verb: "removed performer details from", tone: "bg-muted" },
 };
 
 function Subject({ entry }: { entry: ActivityEntry }) {

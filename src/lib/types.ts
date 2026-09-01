@@ -42,6 +42,13 @@ export type CastingSession = {
   /** Set when closed ahead of closesAt. ISO timestamp, or null. */
   closedAt: string | null;
   /**
+   * Null until the casting director publishes it. A draft is not live whatever
+   * its dates say, and its share link opens for nobody but its owner.
+   */
+  publishedAt: string | null;
+  /** Set when the performers' details were destroyed under the retention policy. */
+  purgedAt: string | null;
+  /**
    * The unguessable half of the share link. Performers reach a production only
    * by holding this — there is no public index — so it is never rendered
    * anywhere a performer could see another production's.
@@ -117,8 +124,15 @@ export type Submission = {
  */
 export type SeedRole = Omit<Role, "ownerId" | "sessionId" | "deadline">;
 
-/** A demo casting session. The owner is attached when it is seeded. */
-export type SeedSession = Omit<CastingSession, "ownerId" | "closedAt" | "createdAt">;
+/**
+ * A demo casting session. The owner is attached when it is seeded, and the
+ * sample productions are seeded already published — a draft nobody can open
+ * would make for a poor first look at the tool.
+ */
+export type SeedSession = Omit<
+  CastingSession,
+  "ownerId" | "closedAt" | "createdAt" | "publishedAt" | "purgedAt"
+>;
 
 /**
  * What an account may see on the dashboard.

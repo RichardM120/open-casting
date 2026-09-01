@@ -91,6 +91,13 @@ export async function createAccount(adminPage, user) {
   await adminPage.fill("#email", user.email);
   await adminPage.fill("#company", user.company);
   await adminPage.selectOption("#role", user.role ?? "director");
+  if (user.maxSessions !== undefined) {
+    await adminPage.fill("#maxSessions", String(user.maxSessions));
+  }
+  if (user.maxRolesPerSession !== undefined) {
+    await adminPage.fill("#maxRolesPerSession", String(user.maxRolesPerSession));
+  }
+  if (user.accessUntil !== undefined) await adminPage.fill("#accessUntil", user.accessUntil);
   await adminPage.getByRole("button", { name: "Create the account" }).click();
 
   const shown = adminPage.locator("dd.select-all");
@@ -141,6 +148,13 @@ export async function openSession(page, fields) {
   return page.url().match(/sessions\/(ses_[^?]+)/)[1];
 }
 
+/** Publishes a session, which is what makes its share link work. */
+export async function publish(page, sessionId) {
+  await page.goto(`${BASE}/dashboard/sessions/${sessionId}`, { waitUntil: "networkidle" });
+  await page.getByRole("button", { name: "Publish this casting call" }).click();
+  await page.waitForURL(/published=1/, { timeout: 20000 });
+}
+
 /**
  * Posts a role and returns its id. A role must belong to a casting session, so
  * one is opened first unless the caller passes `sessionId`.
@@ -172,7 +186,13 @@ export async function postRole(page, fields) {
   if (fields.disclaimer) await page.fill("#disclaimer", fields.disclaimer);
   await page.getByRole("button", { name: "Post the role" }).click();
   await page.waitForURL(/\/dashboard\/roles\/rol_/, { timeout: 20000 });
-  return page.url().match(/roles\/(rol_[^?]+)/)[1];
+  const roleId = page.url().match(/roles\/(rol_[^?]+)/)[1];
+
+  // A session this helper opened is a draft, and a draft's link opens for
+  // nobody — so publish it, unless the caller is testing that very thing.
+  if (!fields.sessionId && fields.publish !== false) await publish(page, sessionId);
+
+  return roleId;
 }
 
 /** The share link for a casting session, read off its dashboard page. */

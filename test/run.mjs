@@ -22,6 +22,7 @@ const PORT = Number(process.env.TEST_PORT ?? 3100);
  */
 const ADMIN_EMAIL = "boss@example.com";
 const ADMIN_PASSWORD = "bootstrap-admin-password";
+const CRON_SECRET = "test-cron-secret";
 const BASE = `http://127.0.0.1:${PORT}`;
 
 const SUITES = readdirSync(path.join(here, "suites"))
@@ -85,6 +86,7 @@ for (const suite of SUITES) {
       NODE_ENV: "production",
       ADMIN_EMAILS: ADMIN_EMAIL,
       ADMIN_BOOTSTRAP_PASSWORD: ADMIN_PASSWORD,
+      CRON_SECRET,
     },
   });
   server.on("exit", () => { signal.exited = true; });
@@ -99,6 +101,7 @@ for (const suite of SUITES) {
           SHOTS: path.join(here, "screenshots"),
           ADMIN_EMAIL,
           ADMIN_PASSWORD,
+          CRON_SECRET,
         },
       });
       child.on("exit", resolve);

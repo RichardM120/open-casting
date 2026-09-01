@@ -14,6 +14,9 @@ const LABELS: Record<string, string> = {
   company: "Company or agency",
   email: "Email",
   role: "What they can see",
+  maxSessions: "Productions",
+  maxRolesPerSession: "Roles per production",
+  accessUntil: "Access until",
 };
 
 const ROLE_HEADINGS: Record<(typeof SIGNUP_ROLES)[number], string> = {
@@ -110,6 +113,51 @@ export function NewAccountForm() {
             </Select>
           </Field>
         </div>
+
+        <fieldset className="rounded-xl border border-line bg-raised p-5">
+          <legend className="px-2 text-sm font-medium">What the arrangement covers</legend>
+          <p className="text-xs leading-relaxed text-muted">
+            Leave any of these blank for no limit. They are enforced when the account tries to
+            post, not merely displayed, and you can change them later.
+          </p>
+          <div className="mt-4 grid gap-4 sm:grid-cols-3">
+            <Field label="Productions" htmlFor="maxSessions" error={errors.maxSessions}>
+              <Input
+                id="maxSessions"
+                name="maxSessions"
+                inputMode="numeric"
+                placeholder="No limit"
+                defaultValue={values.maxSessions ?? ""}
+              />
+            </Field>
+            <Field
+              label="Roles per production"
+              htmlFor="maxRolesPerSession"
+              error={errors.maxRolesPerSession}
+            >
+              <Input
+                id="maxRolesPerSession"
+                name="maxRolesPerSession"
+                inputMode="numeric"
+                placeholder="No limit"
+                defaultValue={values.maxRolesPerSession ?? ""}
+              />
+            </Field>
+            <Field
+              label="Access until"
+              htmlFor="accessUntil"
+              hint="They cannot sign in after this."
+              error={errors.accessUntil}
+            >
+              <Input
+                id="accessUntil"
+                name="accessUntil"
+                type="date"
+                defaultValue={values.accessUntil ?? ""}
+              />
+            </Field>
+          </div>
+        </fieldset>
 
         <div className="mt-1">
           <Button type="submit" disabled={pending}>

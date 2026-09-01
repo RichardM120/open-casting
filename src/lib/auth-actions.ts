@@ -83,6 +83,16 @@ export async function signIn(
     );
   }
 
+  // The arrangement has an end date and it has passed. Said plainly, because
+  // "wrong password" would send someone hunting for a problem they do not have.
+  if (user.access_until && user.access_until < new Date().toISOString().slice(0, 10)) {
+    return invalid(
+      {},
+      `Access to this account ended on ${user.access_until}. Contact the administrator to extend it.`,
+      formData,
+    );
+  }
+
   await clearFailedLogins(email);
   await pruneExpiredSessions();
   // Picks up an ADMIN_EMAILS change since this account last signed in.

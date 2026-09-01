@@ -9,6 +9,7 @@ import {
   provision,
   shareTokenForRole,
   openSession,
+  publish,
 } from "./_helpers.mjs";
 
 const { check, section, finish, errors } = reporter();
@@ -31,8 +32,11 @@ await dir.p.fill("#rate", "£300/day");
 await dir.p.getByRole("button", { name: "Post the role" }).click();
 await dir.p.waitForURL(/\/dashboard\/roles\/rol_/, { timeout: 20000 });
 const id = dir.p.url().match(/roles\/(rol_[^?]+)/)[1];
+await publish(dir.p, sessionId);
 
 section("1 posting is recorded");
+// publish() leaves us on the session page; the trail being checked is the role's.
+await dir.p.goto(`${BASE}/dashboard/roles/${id}`, { waitUntil: "networkidle" });
 check("role page shows it", (await dir.p.getByText(/Ada Dir.*posted/).count()) > 0);
 await dir.p.goto(`${BASE}/dashboard/activity`, { waitUntil: "networkidle" });
 check(

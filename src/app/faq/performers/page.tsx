@@ -75,6 +75,17 @@ export default function PerformerFaqPage() {
             work. Every role shows the dates its production is open for on the listing.
           </p>
         </FaqItem>
+        <FaqItem q="How long do you keep my details?">
+          <p>
+            Six months after the casting call closes, your name, email, phone number, location,
+            age, links and cover note are deleted. Not hidden — deleted. What survives is the
+            production and its roles, so the casting director keeps a record of what they ran,
+            with nobody&rsquo;s personal data in it.
+          </p>
+          <p>
+            That happens whether or not anyone remembers to do it; it is on a schedule.
+          </p>
+        </FaqItem>
         <FaqItem q="What happens to my details?">
           <p>
             Your name, email, phone number, location, age, union status, links and cover note go

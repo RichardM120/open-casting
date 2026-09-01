@@ -9,6 +9,7 @@ import {
   day,
   launch,
   openSession,
+  publish,
   postRole,
   reporter,
   session,
@@ -42,6 +43,7 @@ check("says it is accepting submissions", (await dir.p.getByText(/Accepting subm
 
 const roleA = await postRole(dir.p, { title: `LEAD-${t}`, company: CO, sessionId: live });
 const roleB = await postRole(dir.p, { title: `SUPPORT-${t}`, company: CO, sessionId: live });
+await publish(dir.p, live);
 const token = await shareTokenForRole(dir.p, roleA);
 await dir.p.goto(`${BASE}/dashboard/sessions/${live}`, { waitUntil: "networkidle" });
 check("both roles listed under the session", (await dir.p.locator("main li").filter({ hasText: `-${t}` }).count()) === 2);
@@ -96,6 +98,7 @@ const upcoming = await openSession(dir.p, {
   closesAt: day(40),
 });
 const laterRole = await postRole(dir.p, { title: `LATER-${t}`, company: CO, sessionId: upcoming });
+await publish(dir.p, upcoming);
 const laterToken = await shareTokenForRole(dir.p, laterRole);
 {
   const { c, p } = await ctx();

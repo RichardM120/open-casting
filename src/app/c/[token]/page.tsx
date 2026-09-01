@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { DeadlineBadge } from "@/components/deadline-badge";
 import { Badge, Eyebrow } from "@/components/ui";
 import { ageRange, formatDate, isOpen, notYetOpen, roleWindow } from "@/lib/format";
+import { canPreview } from "@/lib/preview";
 import { listSessionRoles } from "@/lib/roles";
 import { getSessionByToken } from "@/lib/sessions";
 
@@ -31,11 +32,23 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
   const session = await getSessionByToken(token);
   if (!session) notFound();
 
+  // A draft is not a casting call yet. Its owner can open the link to check
+  // what performers will see; to anyone else it does not exist.
+  const preview = session.publishedAt === null;
+  if (preview && !(await canPreview(session))) notFound();
+
   const roles = await listSessionRoles(session.id);
   const open = isOpen(session);
 
   return (
     <div className="mx-auto max-w-4xl px-5 py-12">
+      {preview ? (
+        <p className="mb-8 rounded-xl border border-accent/40 bg-accent-soft px-4 py-3 text-sm leading-relaxed text-text">
+          <strong>Draft preview.</strong> This is exactly what a performer sees, except that the
+          form is not there. Nobody else can open this link until you publish it.
+        </p>
+      ) : null}
+
       <Eyebrow>Casting call</Eyebrow>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight text-balance md:text-4xl">
         {session.name}
@@ -52,7 +65,9 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
       <p className="mt-6 max-w-prose leading-relaxed text-muted">{session.synopsis}</p>
 
       <p className="mt-6 max-w-prose rounded-xl border border-line bg-raised px-4 py-3 text-sm leading-relaxed text-muted">
-        {session.closedAt
+        {preview
+          ? "Not published. Publish it from your dashboard and this link starts working."
+          : session.closedAt
           ? `Casting closed on ${formatDate(session.closedAt)}. The brief stays up for reference.`
           : notYetOpen(session)
             ? `Submissions open on ${formatDate(session.opensAt)}. Read the roles now and have a tape ready.`

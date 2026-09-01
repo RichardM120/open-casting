@@ -139,6 +139,48 @@ in the application rather than in SQL: `gen_random_bytes()` is pgcrypto, which i
 not guaranteed to be installed, and the alternatives available in plain SQL are
 not strong enough for a value that is doing this job.
 
+## The journey
+
+1. **You strike an arrangement** with a casting director or production company,
+   and create their account on `/dashboard/accounts`. That is where you set what
+   it covers: how many productions, how many roles in each, and an end date.
+   Blank means no limit. They are enforced when the account tries to post, not
+   merely displayed.
+2. **They open a casting session** for the production and post its roles, inside
+   those limits.
+3. **They check it and publish it.** A new session is a draft — its share link
+   opens for them and for nobody else, so they can read it exactly as a
+   performer will. Publishing is what makes the link work, and it needs at least
+   one role. It cannot be undone: once a link is on a post or in a mailout it is
+   out of anyone's hands, so *close early* is how a call is stopped.
+4. **They circulate the link** — Instagram, a mailout, an agent circular.
+   Whoever holds it can submit while the session is open.
+5. **They work the submissions** through New, Shortlisted, Callback and Declined.
+   The data is theirs.
+6. **The call closes**, on its date or early.
+7. **Six months later the performers' details are destroyed** — see below.
+
+## Retention
+
+Six months after a casting call closes, every submission made to it is deleted:
+names, emails, phone numbers, locations, ages, links, cover notes. The
+production, its roles and the fact that submissions were received survive, so
+the casting director keeps a record of what they ran without holding anybody's
+personal data. The session is marked `purged_at` so the dashboard says what
+happened rather than showing an empty list.
+
+It runs two ways, deliberately:
+
+- **On a schedule.** `vercel.json` calls `/api/retention` daily at 03:00. The
+  endpoint requires `CRON_SECRET` in an `Authorization: Bearer` header, and
+  refuses to run at all if that variable is unset — an unguarded delete endpoint
+  is worse than a sweep nobody configured.
+- **On boot.** The same sweep runs once per process during schema bootstrap, so
+  a deployment where nobody set the cron still honours the promise instead of
+  keeping the data for ever in silence.
+
+The date is shown on every production's page, and both FAQs state it.
+
 ## Casting sessions
 
 A **casting session** is one production's casting window. It owns the production

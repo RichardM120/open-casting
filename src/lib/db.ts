@@ -136,6 +136,12 @@ const SCHEMA = `
   ALTER TABLE users ADD COLUMN IF NOT EXISTS suspended_at timestamptz;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS onboarded_at timestamptz;
 
+  -- What the administrator sold this account. NULL means no limit; a number is
+  -- a ceiling the account cannot post past. access_until ends the arrangement.
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS max_sessions integer;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS max_roles_per_session integer;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS access_until date;
+
   -- An account that only ever signs in with Google has no password.
   ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
 
@@ -212,7 +218,17 @@ const SCHEMA = `
   CREATE UNIQUE INDEX IF NOT EXISTS casting_token_idx
     ON sessions_casting (public_token) WHERE public_token IS NOT NULL;
 
+  -- A casting session is a draft until it is published. Until then its share
+  -- link is not a way in for anybody, and it is not live whatever its dates say.
+  ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS published_at timestamptz;
+
+  -- Set when the performers' details have been destroyed under the retention
+  -- policy, so the dashboard can say so rather than showing an empty list.
+  ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS purged_at timestamptz;
+
   CREATE INDEX IF NOT EXISTS casting_owner_idx ON sessions_casting (owner_id);
+  CREATE INDEX IF NOT EXISTS casting_retention_idx ON sessions_casting (closes_at)
+    WHERE purged_at IS NULL;
   CREATE INDEX IF NOT EXISTS casting_company_idx ON sessions_casting (lower(company));
   CREATE INDEX IF NOT EXISTS casting_window_idx ON sessions_casting (opens_at, closes_at);
 
@@ -353,6 +369,7 @@ function ensureSchema(): Promise<void> {
     await backfillSessions();
   await backfillTokens();
   await bootstrapAdmin();
+  await purgeOnBoot();
   })().catch((error) => {
     // Let the next request retry rather than caching a failed bootstrap.
     globalThis.__openCastingSchema = undefined;
@@ -384,8 +401,9 @@ async function seed(): Promise<void> {
     for (const session of sessions) {
       await client.query(
         `INSERT INTO sessions_casting
-           (id, slug, name, synopsis, owner_id, company, opens_at, closes_at, public_token)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9) ON CONFLICT (id) DO NOTHING`,
+           (id, slug, name, synopsis, owner_id, company, opens_at, closes_at,
+            public_token, published_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9, now()) ON CONFLICT (id) DO NOTHING`,
         [
           session.id, session.slug, session.name, session.synopsis,
           DEMO_USER.id, session.company, session.opensAt, session.closesAt,
@@ -430,6 +448,33 @@ async function seed(): Promise<void> {
       );
     }
   });
+}
+
+/**
+ * Enforces the retention policy on the way up, as well as on the schedule.
+ *
+ * The scheduled job is the one that runs to time; this is here so that a
+ * deployment where nobody configured the cron still honours the promise made to
+ * performers, rather than keeping their details for ever in silence.
+ */
+async function purgeOnBoot(): Promise<void> {
+  try {
+    const { purgeExpiredSubmissions } = await import("./retention");
+    // Straight at the pool: going through `query()` would wait on the schema
+    // promise this is running inside, and deadlock the first request.
+    const purged = await purgeExpiredSubmissions(async (text, params) => {
+      const result = await pool().query(text, params as unknown[]);
+      return result.rows;
+    });
+    for (const entry of purged) {
+      console.log(
+        `[retention] removed ${entry.submissions} submissions from ${entry.name} (${entry.sessionId})`,
+      );
+    }
+  } catch (error) {
+    // A retention sweep that fails must not stop the app from starting.
+    console.error("[retention] sweep failed", error);
+  }
 }
 
 /** A share token: 24 bytes of CSPRNG, url-safe, and not worth guessing. */
@@ -499,7 +544,7 @@ async function backfillSessions(): Promise<void> {
   await rawTransaction(async (client) => {
     await client.query(`
       INSERT INTO sessions_casting
-        (id, slug, name, synopsis, owner_id, company, opens_at, closes_at)
+        (id, slug, name, synopsis, owner_id, company, opens_at, closes_at, published_at)
       SELECT
         'ses_' || substr(md5(coalesce(owner_id, '') || '|' || lower(production)), 1, 12),
         regexp_replace(lower(production), '[^a-z0-9]+', '-', 'g'),
@@ -508,7 +553,10 @@ async function backfillSessions(): Promise<void> {
         owner_id,
         min(company),
         min(posted_at)::date,
-        max(deadline)
+        max(deadline),
+        -- These roles were already public before sessions existed; leaving them
+        -- as drafts would take down live casting calls.
+        min(posted_at)
       FROM roles
       WHERE session_id IS NULL
       GROUP BY owner_id, lower(production)
@@ -569,6 +617,7 @@ export async function resetToSeed(): Promise<void> {
   await backfillSessions();
   await backfillTokens();
   await bootstrapAdmin();
+  await purgeOnBoot();
 }
 
 /**

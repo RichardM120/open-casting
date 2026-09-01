@@ -6,6 +6,7 @@ import { DeadlineBadge } from "@/components/deadline-badge";
 import { SubmissionForm, SubmissionsClosed } from "@/components/submission-form";
 import { Badge, Eyebrow } from "@/components/ui";
 import { ageRange, formatDate, formatRelative, isOpen, notYetOpen, roleWindow } from "@/lib/format";
+import { canPreview } from "@/lib/preview";
 import { getRole } from "@/lib/roles";
 import { getSessionByToken } from "@/lib/sessions";
 import { listSubmissions } from "@/lib/submissions";
@@ -30,6 +31,9 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
   // Checking both stops one production's link being used to read another's.
   const [session, role] = await Promise.all([getSessionByToken(token), getRole(roleId)]);
   if (!session || !role || role.sessionId !== session.id) notFound();
+
+  // An unpublished production is visible to its own side only, as a preview.
+  if (session.publishedAt === null && !(await canPreview(session))) notFound();
 
   const submissions = await listSubmissions(role.id);
   const window = roleWindow(role);

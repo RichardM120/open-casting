@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { AccountLimitsForm } from "@/components/account-limits-form";
 import { NewAccountForm } from "@/components/new-account-form";
 import { Badge, Button, Eyebrow } from "@/components/ui";
 import { toggleAccountSuspended } from "@/lib/actions";
@@ -54,8 +55,9 @@ export default async function AccountsPage() {
           return (
             <li
               key={account.id}
-              className="flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-line bg-surface p-5"
+              className="rounded-2xl border border-line bg-surface p-5"
             >
+              <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
                   <p className="truncate font-medium">{account.name}</p>
@@ -71,8 +73,12 @@ export default async function AccountsPage() {
               </div>
 
               <p className="text-sm text-muted">
+                {account.sessions}
+                {account.max_sessions === null ? "" : `/${account.max_sessions}`}{" "}
+                {account.sessions === 1 ? "production" : "productions"} ·{" "}
                 {account.roles} {account.roles === 1 ? "role" : "roles"} ·{" "}
                 {account.submissions} {account.submissions === 1 ? "submission" : "submissions"}
+                {account.access_until ? ` · until ${account.access_until}` : ""}
               </p>
 
               {account.id === user.id ? (
@@ -89,6 +95,16 @@ export default async function AccountsPage() {
                     {isSuspended ? "Restore" : "Suspend"}
                   </Button>
                 </form>
+              )}
+              </div>
+
+              {account.role === "admin" ? null : (
+                <AccountLimitsForm
+                  accountId={account.id}
+                  maxSessions={account.max_sessions}
+                  maxRolesPerSession={account.max_roles_per_session}
+                  accessUntil={account.access_until}
+                />
               )}
             </li>
           );

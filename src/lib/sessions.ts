@@ -14,6 +14,8 @@ type Row = {
   opens_at: string;
   closes_at: string;
   closed_at: Date | null;
+  published_at: Date | null;
+  purged_at: Date | null;
   public_token: string;
   created_at: Date;
 };
@@ -23,7 +25,7 @@ export const SESSION_COLUMNS = `
   id, slug, name, synopsis, owner_id, company,
   to_char(opens_at, 'YYYY-MM-DD')  AS opens_at,
   to_char(closes_at, 'YYYY-MM-DD') AS closes_at,
-  closed_at, public_token, created_at
+  closed_at, published_at, purged_at, public_token, created_at
 `;
 
 export function toSession(row: Row): CastingSession {
@@ -37,14 +39,17 @@ export function toSession(row: Row): CastingSession {
     opensAt: row.opens_at,
     closesAt: row.closes_at,
     closedAt: row.closed_at?.toISOString() ?? null,
+    publishedAt: row.published_at?.toISOString() ?? null,
+    purgedAt: row.purged_at?.toISOString() ?? null,
     publicToken: row.public_token,
     createdAt: row.created_at.toISOString(),
   };
 }
 
-/** Live now: within the window and not closed by hand. */
+/** Live now: published, within the window, and not closed by hand. */
 export const LIVE = `
-  closed_at IS NULL
+  published_at IS NOT NULL
+  AND closed_at IS NULL
   AND opens_at <= (now() AT TIME ZONE 'utc')::date
   AND closes_at >= (now() AT TIME ZONE 'utc')::date
 `;
@@ -73,7 +78,7 @@ export async function listVisibleSessions(viewer: SessionUser): Promise<CastingS
   const rows = await query<Row>(
     `SELECT ${SESSION_COLUMNS} FROM sessions_casting
       ${where ? `WHERE ${where}` : ""}
-      ORDER BY (${LIVE}) DESC, closes_at ASC, created_at DESC`,
+      ORDER BY (${LIVE}) DESC, published_at IS NULL DESC, closes_at ASC, created_at DESC`,
     params,
   );
   return rows.map(toSession);
@@ -208,6 +213,28 @@ export async function updateSession(
   ]);
 
   return toSession(rows[0]);
+}
+
+/**
+ * Publishes a casting session: the moment its share link starts working.
+ *
+ * One way on purpose. Once the link has gone onto a post or into a mailout it
+ * is out of anyone's hands, so un-publishing would only break it for people who
+ * already have it — "close early" is the honest way to stop a call.
+ */
+export async function publishSession(
+  id: string,
+  viewer: SessionUser,
+): Promise<CastingSession | null> {
+  const { where, params } = sessionVisibility(viewer);
+  const rows = await query<Row>(
+    `UPDATE sessions_casting SET published_at = now()
+      WHERE id = $${params.length + 1} AND published_at IS NULL
+        ${where ? `AND ${where}` : ""}
+      RETURNING ${SESSION_COLUMNS}`,
+    [...params, id],
+  );
+  return rows[0] ? toSession(rows[0]) : null;
 }
 
 /** Closes a session ahead of its closing date, or puts it back. */

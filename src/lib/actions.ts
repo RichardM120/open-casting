@@ -10,6 +10,7 @@ import {
   deleteSessionAsAdmin,
   getSession,
   getVisibleSession,
+  publishSession,
   setSessionClosed,
   updateSession,
 } from "./sessions";
@@ -21,6 +22,7 @@ import {
   deleteRoleAsAdmin,
   getRole,
   getVisibleRole,
+  listSessionRoles,
   setRoleClosed,
   updateRole,
 } from "./roles";
@@ -31,10 +33,18 @@ import {
   submissionContext,
 } from "./submissions";
 import { ROLE_LABELS, SUBMISSION_STATUSES, type SubmissionStatus } from "./types";
-import { EmailTakenError, createUser, findAccount, setAccountSuspended } from "./users";
+import {
+  EmailTakenError,
+  accountUsage,
+  createUser,
+  findAccount,
+  setAccountLimits,
+  setAccountSuspended,
+} from "./users";
 import { generatePassword } from "./password";
 import {
   fieldErrors,
+  limitsSchema,
   newAccountSchema,
   roleSchema,
   sessionSchema,
@@ -176,6 +186,17 @@ export async function postRole(
       "Choose a casting session you can post into.",
       formData,
     );
+  }
+
+  if (user.maxRolesPerSession !== null) {
+    const existing = await listSessionRoles(session.id);
+    if (existing.length >= user.maxRolesPerSession) {
+      return invalid(
+        {},
+        `Your account covers ${user.maxRolesPerSession} ${user.maxRolesPerSession === 1 ? "role" : "roles"} per production, and ${session.name} has that many. Ask the administrator to extend it.`,
+        formData,
+      );
+    }
   }
 
   const role = await createRole(fields, session, user.id);
@@ -342,10 +363,15 @@ export async function createAccount(
   }
 
   const password = generatePassword();
+  const { maxSessions, maxRolesPerSession, accessUntil, ...profile } = parsed.data;
 
   let created;
   try {
-    created = await createUser({ ...parsed.data, password });
+    created = await createUser({
+      ...profile,
+      password,
+      limits: { maxSessions, maxRolesPerSession, accessUntil },
+    });
   } catch (error) {
     if (error instanceof EmailTakenError) {
       return invalid(
@@ -372,6 +398,42 @@ export async function createAccount(
     values: {},
     data: { email: created.email, password },
   };
+}
+
+/** Changes what an account is allowed to run. Admin only. */
+export async function updateAccountLimits(
+  _previous: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await requireUser("/dashboard/accounts");
+  const id = String(formData.get("accountId") ?? "");
+  if (user.role !== "admin" || !id) {
+    return invalid({}, "Only the administrator can change what an account is allowed.", formData);
+  }
+
+  const parsed = limitsSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return invalid(fieldErrors(parsed.error), "Check the highlighted fields.", formData);
+  }
+
+  const account = await findAccount(id);
+  if (!account || !(await setAccountLimits(id, parsed.data))) {
+    return invalid({}, "That account no longer exists.", formData);
+  }
+
+  await record({
+    action: "account.limits",
+    actorId: user.id,
+    actorName: user.name,
+    detail:
+      `${account.name} — ` +
+      `${parsed.data.maxSessions ?? "unlimited"} productions, ` +
+      `${parsed.data.maxRolesPerSession ?? "unlimited"} roles each, ` +
+      `access ${parsed.data.accessUntil ? `to ${parsed.data.accessUntil}` : "open-ended"}`,
+  });
+
+  revalidateEverything();
+  return { status: "success", message: `Updated what ${account.name} is allowed.`, errors: {}, values: {} };
 }
 
 /** Suspends or restores an account. Admin only. */
@@ -415,6 +477,19 @@ export async function createCastingSession(
       "Check the highlighted fields and try again.",
       formData,
     );
+  }
+
+  // The ceiling the administrator sold them. Checked here rather than in the
+  // form, because the form is not what decides it.
+  if (user.maxSessions !== null) {
+    const { sessions } = await accountUsage(user.id);
+    if (sessions >= user.maxSessions) {
+      return invalid(
+        {},
+        `Your account covers ${user.maxSessions} ${user.maxSessions === 1 ? "production" : "productions"} and you have used all of them. Ask the administrator to extend it.`,
+        formData,
+      );
+    }
   }
 
   const session = await createSession(parsed.data, user.id);
@@ -466,6 +541,40 @@ export async function editCastingSession(
 
   revalidateEverything();
   redirect(`/dashboard/sessions/${session.id}?saved=1`);
+}
+
+/**
+ * Publishes a casting session, which is the moment its link starts working.
+ *
+ * Refuses an empty production: a link that opens on nothing is worse than no
+ * link, and this is the last point at which that is cheap to catch.
+ */
+export async function publishCastingSession(formData: FormData): Promise<void> {
+  const id = String(formData.get("sessionId") ?? "");
+  const user = await requireUser(`/dashboard/sessions/${id}`);
+  if (!id) return;
+
+  const session = await getVisibleSession(id, user);
+  if (!session || session.publishedAt) return;
+
+  const roles = await listSessionRoles(id);
+  if (roles.length === 0) {
+    redirect(`/dashboard/sessions/${id}?error=empty`);
+  }
+
+  const published = await publishSession(id, user);
+  if (!published) return;
+
+  await record({
+    action: "session.published",
+    actorId: user.id,
+    actorName: user.name,
+    ownerId: published.ownerId,
+    company: published.company,
+    detail: `${published.name} — ${roles.length} ${roles.length === 1 ? "role" : "roles"}`,
+  });
+  revalidateEverything();
+  redirect(`/dashboard/sessions/${id}?published=1`);
 }
 
 /**

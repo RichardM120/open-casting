@@ -5,11 +5,12 @@ import { notFound } from "next/navigation";
 import { DeadlineBadge } from "@/components/deadline-badge";
 import { ShareLink } from "@/components/share-link";
 import { Badge, Button, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
-import { removeSession, toggleSessionClosed } from "@/lib/actions";
+import { publishCastingSession, removeSession, toggleSessionClosed } from "@/lib/actions";
 import { currentUser, requireUser } from "@/lib/auth";
 import { formatDate, isOpen, notYetOpen } from "@/lib/format";
 import { listSessionRoles } from "@/lib/roles";
 import { requestOrigin } from "@/lib/origin";
+import { RETENTION_MONTHS, purgeDate } from "@/lib/retention";
 import { getVisibleSession } from "@/lib/sessions";
 import { countsByRole } from "@/lib/submissions";
 
@@ -46,6 +47,7 @@ export default async function SessionPage({
     0,
   );
   const open = isOpen(session);
+  const draft = session.publishedAt === null;
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-12">
@@ -56,11 +58,23 @@ export default async function SessionPage({
         ← All casting sessions
       </Link>
 
-      {query.created === "1" || query.saved === "1" ? (
+      {query.created === "1" || query.saved === "1" || query.published === "1" ? (
         <p className="mt-6 rounded-xl border border-line bg-positive-soft px-4 py-3 text-sm text-positive">
-          {query.created === "1"
-            ? "Casting session opened. Post the roles for it below."
-            : "Changes saved. Every role in this session follows the new dates."}
+          {query.published === "1"
+            ? "Published. The link below is live — send it wherever you want the call to go."
+            : query.created === "1"
+              ? "Casting session opened. Post the roles for it, then publish."
+              : "Changes saved. Every role in this session follows the new dates."}
+        </p>
+      ) : null}
+
+      {query.error === "empty" ? (
+        <p
+          role="alert"
+          className="mt-6 rounded-xl border border-danger/40 bg-danger-soft px-4 py-3 text-sm text-danger"
+        >
+          Post at least one role before publishing — a link that opens on an empty production is
+          worse than no link.
         </p>
       ) : null}
 
@@ -85,7 +99,11 @@ export default async function SessionPage({
               {session.closedAt ? "Reopen" : "Close early"}
             </Button>
           </form>
-          <ButtonLink href={`/dashboard/roles/new?session=${session.id}`} size="sm">
+          <ButtonLink
+            href={`/dashboard/roles/new?session=${session.id}`}
+            size="sm"
+            variant={draft ? "primary" : "secondary"}
+          >
             Post a role
           </ButtonLink>
         </div>
@@ -101,18 +119,55 @@ export default async function SessionPage({
               : `Past its closing date. The roles stay up for reference and take no new submissions.`}
       </p>
 
-      <section className="mt-8 rounded-2xl border border-accent/30 bg-accent-soft p-6">
-        <h2 className="text-lg font-semibold tracking-tight">The link for performers</h2>
-        <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
-          Send this to anyone you want to submit. It opens {session.name} and nothing else — there
-          is no listing on Open Casting to browse, so this link is the whole of the casting call.
-          Anyone holding it can submit while the session is open, so circulate it as widely, or as
-          narrowly, as you want the call to go.
-        </p>
-        <div className="mt-4">
-          <ShareLink url={shareUrl} />
-        </div>
-      </section>
+      {draft ? (
+        <section className="mt-8 rounded-2xl border border-accent/30 bg-accent-soft p-6">
+          <h2 className="text-lg font-semibold tracking-tight">Not published yet</h2>
+          <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
+            Nobody can open this but you. Check it over as a performer will see it, and publish
+            when you are happy — that is the moment the link starts working.
+          </p>
+          <ul className="mt-4 flex flex-col gap-2 text-sm text-muted">
+            <Ready done={roles.length > 0}>
+              {roles.length > 0
+                ? `${roles.length} ${roles.length === 1 ? "role" : "roles"} posted`
+                : "No roles posted yet — you need at least one"}
+            </Ready>
+            <Ready done>
+              Open {formatDate(session.opensAt)} to {formatDate(session.closesAt)}
+            </Ready>
+            <Ready done={session.synopsis.length > 0}>Synopsis written</Ready>
+          </ul>
+          <div className="mt-6 flex flex-wrap items-center gap-3">
+            <form action={publishCastingSession}>
+              <input type="hidden" name="sessionId" value={session.id} />
+              <Button type="submit" disabled={roles.length === 0}>
+                Publish this casting call
+              </Button>
+            </form>
+            <ButtonLink href={`/c/${session.publicToken}`} variant="secondary" size="sm">
+              Preview as a performer
+            </ButtonLink>
+          </div>
+          <p className="mt-4 text-xs leading-relaxed text-faint">
+            Publishing cannot be undone. Once the link is out on a post or in a mailout it is out
+            of your hands, so un-publishing would only break it for the people who already have
+            it — use <strong className="text-muted">Close early</strong> to stop a call instead.
+          </p>
+        </section>
+      ) : (
+        <section className="mt-8 rounded-2xl border border-accent/30 bg-accent-soft p-6">
+          <h2 className="text-lg font-semibold tracking-tight">The link for performers</h2>
+          <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
+            Send this to anyone you want to submit — an Instagram post, a mailout, an agent
+            circular. It opens {session.name} and nothing else, and there is no listing on Open
+            Casting to browse, so this link is the whole of the casting call. Anyone holding it
+            can submit while the session is open.
+          </p>
+          <div className="mt-4">
+            <ShareLink url={shareUrl} />
+          </div>
+        </section>
+      )}
 
       <div className="mt-8 flex flex-wrap gap-2">
         <Badge tone="outline">
@@ -124,6 +179,12 @@ export default async function SessionPage({
       </div>
 
       <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">{session.synopsis}</p>
+
+      <p className="mt-4 max-w-prose rounded-xl border border-line bg-raised px-4 py-3 text-xs leading-relaxed text-muted">
+        {session.purgedAt
+          ? `The performers' details were removed on ${formatDate(session.purgedAt)}, ${RETENTION_MONTHS} months after this call closed. The roles and the counts are kept; the names, addresses and notes are gone.`
+          : `Performers' details are kept for ${RETENTION_MONTHS} months after this call closes, then destroyed — on ${formatDate(purgeDate(session.closesAt))} for this production. Export or act on anything you need before then. The production and its roles are kept.`}
+      </p>
 
       {roles.length > 0 ? (
         <ul className="mt-8 flex flex-col gap-3">
@@ -202,5 +263,17 @@ export default async function SessionPage({
         </details>
       ) : null}
     </div>
+  );
+}
+
+/** A ready-to-publish line: what is done, and what is still missing. */
+function Ready({ done, children }: { done: boolean; children: React.ReactNode }) {
+  return (
+    <li className="flex items-start gap-2.5">
+      <span aria-hidden="true" className={done ? "text-positive" : "text-danger"}>
+        {done ? "✓" : "✗"}
+      </span>
+      <span className={done ? "" : "text-danger"}>{children}</span>
+    </li>
   );
 }

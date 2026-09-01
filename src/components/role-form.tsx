@@ -86,7 +86,19 @@ export function RoleForm({
   return (
     <form ref={formRef} action={formAction} className="flex flex-col gap-8">
       {role ? <input type="hidden" name="roleId" value={role.id} /> : null}
-      {state.status === "error" ? <ErrorSummary errors={errors} labels={LABELS} /> : null}
+      {state.status === "error" ? (
+        <>
+          {state.message ? (
+            <p
+              role="alert"
+              className="rounded-xl border border-danger/40 bg-danger-soft p-4 text-sm text-danger"
+            >
+              {state.message}
+            </p>
+          ) : null}
+          <ErrorSummary errors={errors} labels={LABELS} />
+        </>
+      ) : null}
 
       <Fieldset
         legend="Casting session"
