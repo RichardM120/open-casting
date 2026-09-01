@@ -55,7 +55,7 @@ export default async function SessionPage({
         href="/dashboard/sessions"
         className="text-sm text-muted transition-colors hover:text-text"
       >
-        ← All casting sessions
+        ← All productions
       </Link>
 
       {query.created === "1" || query.saved === "1" || query.published === "1" ? (

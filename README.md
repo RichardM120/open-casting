@@ -37,6 +37,38 @@ CI runs all four on every push. See [RELEASE.md](RELEASE.md) for what is enforce
 automatically, what is a Vercel dashboard setting, and what was considered and
 deliberately left alone.
 
+## Site map
+
+```
+/                       Sign in, or the dashboard if you already are
+/login                  The one door. Google, or email and password
+/faq  /faq/*            Reference, open to anyone
+/legal/*                The agreements, open so a casting link can cite them
+
+/dashboard/sessions     Productions          ─┐
+  /new                  Open one              │  the order the work happens in,
+  /[id]                 One production        │  and the order the nav is in
+  /[id]/edit            Its dates             │
+/dashboard              Roles                 │  a role lives inside a production
+  /roles/new            Post one into it      │
+  /roles/[id]           Its submissions       │
+  /roles/[id]/edit      Edit it              ─┘
+/dashboard/activity     The trail
+/dashboard/accounts     Accounts — admin only
+
+/c/<slug>-<token>              A production, as a performer sees it
+/c/<slug>-<token>/<role-slug>  One role, and the submission form
+```
+
+**Navigation follows the hierarchy, not the file layout.** A role cannot exist
+without a production, so Productions comes first and Roles second — even though
+`/dashboard` is the roles page and `/dashboard/sessions` sits under it in the
+URL. The nav names and the back-links use the same words for the same places.
+
+The only difference between the two roles is **Accounts**, which an admin sees
+and a director does not — and the page refuses a director independently of the
+nav, so hiding the link is presentation rather than protection.
+
 ## What is here
 
 | Route | What it does |

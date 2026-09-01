@@ -33,7 +33,7 @@ export default async function EditSessionPage({
         href={`/dashboard/sessions/${session.id}`}
         className="text-sm text-muted transition-colors hover:text-text"
       >
-        ← Back to the session
+        ← Back to the production
       </Link>
 
       <div className="mt-6">

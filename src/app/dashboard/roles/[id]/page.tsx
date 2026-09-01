@@ -49,7 +49,7 @@ export default async function RoleSubmissionsPage({
   return (
     <div className="mx-auto max-w-5xl px-5 py-12">
       <Link href="/dashboard" className="text-sm text-muted transition-colors hover:text-text">
-        ← Dashboard
+        ← Roles
       </Link>
 
       {justPosted || justSaved ? (

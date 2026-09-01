@@ -10,14 +10,26 @@ import { ButtonLink, cx } from "./ui";
 
 // Nothing to browse: signed out, there is only the way in and the help pages.
 const PUBLIC_NAV = [{ href: "/faq", label: "FAQ" }] as const;
+
+/**
+ * In the order the work happens. A production comes first because it has to —
+ * a role cannot be posted without one — and the old order put roles first and
+ * called them "Casting dashboard", which named the page rather than the thing.
+ */
 const OWNER_NAV = [
-  { href: "/dashboard", label: "Casting dashboard" },
-  { href: "/dashboard/sessions", label: "Sessions" },
+  { href: "/dashboard/sessions", label: "Productions" },
+  { href: "/dashboard", label: "Roles" },
+  { href: "/dashboard/activity", label: "Activity" },
 ] as const;
+
+/** The one area a director has no business in, so the only one that differs. */
+const ADMIN_NAV = [{ href: "/dashboard/accounts", label: "Accounts" }] as const;
 
 export function SiteHeader({ user }: { user: SessionUser | null }) {
   const pathname = usePathname();
-  const nav = user ? [...PUBLIC_NAV, ...OWNER_NAV] : PUBLIC_NAV;
+  const nav = user
+    ? [...OWNER_NAV, ...(user.role === "admin" ? ADMIN_NAV : []), ...PUBLIC_NAV]
+    : PUBLIC_NAV;
 
   /** The most specific match wins, so /dashboard/sessions does not light up /dashboard too. */
   const current = nav
@@ -59,8 +71,8 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
               <span className="hidden text-sm text-muted md:inline" title={user.email}>
                 {user.company}
               </span>
-              <ButtonLink href="/dashboard/roles/new" size="sm">
-                Post a role
+              <ButtonLink href="/dashboard/sessions/new" size="sm">
+                New production
               </ButtonLink>
               <form action={signOut}>
                 <button

@@ -63,21 +63,13 @@ export default async function DashboardPage() {
               : user.role === "producer"
                 ? `Every role posted under ${user.company}, across productions.`
                 : "The roles you have posted, with what has come in against them."}{" "}
-            Open a role to read the submissions.
+            Roles live inside a production. Open one to read its submissions.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           <ButtonLink href="/dashboard/sessions" variant="secondary">
-            Sessions
+            Productions
           </ButtonLink>
-          <ButtonLink href="/dashboard/activity" variant="secondary">
-            Activity
-          </ButtonLink>
-          {user.role === "admin" ? (
-            <ButtonLink href="/dashboard/accounts" variant="secondary">
-              Accounts
-            </ButtonLink>
-          ) : null}
           <ButtonLink href="/dashboard/roles/new">Post a role</ButtonLink>
         </div>
       </div>

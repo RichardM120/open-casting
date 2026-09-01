@@ -32,7 +32,7 @@ section("1 a role cannot be posted without a session");
 await dir.p.goto(`${BASE}/dashboard/roles/new`, { waitUntil: "networkidle" });
 check("the form is replaced by an explanation", (await dir.p.getByText("Open a casting session first").count()) > 0);
 check("no role fields to fill in", (await dir.p.locator("#title").count()) === 0);
-check("offers the way forward", (await dir.p.getByRole("link", { name: "Open a session" }).count()) > 0);
+check("offers the way forward", (await dir.p.locator("main").getByRole("link", { name: "New production" }).count()) > 0);
 await dir.p.screenshot({ path: `${SHOTS}/session-required.png`, fullPage: true });
 
 section("2 opening a session, then posting two roles into it");

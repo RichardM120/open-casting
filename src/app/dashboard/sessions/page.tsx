@@ -52,11 +52,8 @@ export default async function SessionsPage({
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <ButtonLink href="/dashboard" variant="secondary">
-            Roles
-          </ButtonLink>
           {atLimit ? null : (
-            <ButtonLink href="/dashboard/sessions/new">Open a session</ButtonLink>
+            <ButtonLink href="/dashboard/sessions/new">New production</ButtonLink>
           )}
         </div>
       </div>
@@ -123,8 +120,8 @@ export default async function SessionsPage({
         <div className="mt-10">
           <EmptyState
             title="No casting sessions yet"
-            description="Open a session for the production you are casting, then post its roles into it. The session holds the dates, so the roles do not have to."
-            action={<ButtonLink href="/dashboard/sessions/new">Open a session</ButtonLink>}
+            description="Open a production, then post its roles into it. The production holds the dates, so the roles do not have to."
+            action={<ButtonLink href="/dashboard/sessions/new">New production</ButtonLink>}
           />
         </div>
       )}

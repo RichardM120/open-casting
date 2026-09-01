@@ -107,9 +107,9 @@ export function Card({
   );
 }
 
-export function Eyebrow({ children }: { children: ReactNode }) {
+export function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <p className="text-xs font-semibold tracking-[0.18em] text-accent uppercase">
+    <p className={cx("text-xs font-semibold tracking-[0.18em] text-accent uppercase", className)}>
       {children}
     </p>
   );

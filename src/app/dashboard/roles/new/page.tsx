@@ -27,7 +27,7 @@ export default async function NewRolePage({ searchParams }: PageProps<"/dashboar
           <EmptyState
             title="Open a casting session first"
             description="Roles belong to a production's casting session, which holds the dates they accept submissions between. Open one for this production and you can post its roles straight afterwards."
-            action={<ButtonLink href="/dashboard/sessions/new">Open a session</ButtonLink>}
+            action={<ButtonLink href="/dashboard/sessions/new">New production</ButtonLink>}
           />
         </div>
       </div>

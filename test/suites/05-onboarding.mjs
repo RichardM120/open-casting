@@ -98,14 +98,34 @@ check("warns removal is permanent", (await admin.p.getByText(/permanently delete
 check("warns their own actions are logged", (await admin.p.getByText(/including yours/).count()) > 0);
 await admin.p.screenshot({ path: `${SHOTS}/wizard-admin.png`, fullPage: true });
 
+section("6b the navigation matches the role, and the hierarchy");
+{
+  // Productions first, because a role cannot exist without one.
+  const order = await admin.p.locator("header nav").first().locator("a").allTextContents();
+  check(`admin nav in order: ${JSON.stringify(order)}`,
+    JSON.stringify(order) === JSON.stringify(["Productions", "Roles", "Activity", "Accounts", "FAQ"]));
+
+  await half.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
+  const theirs = await half.p.locator("header nav").first().locator("a").allTextContents();
+  check(`a producer gets no Accounts: ${JSON.stringify(theirs)}`, !theirs.includes("Accounts"));
+  check("and the page itself still refuses",
+    (await half.p.goto(`${BASE}/dashboard/accounts`, { waitUntil: "networkidle" })).status() === 404);
+
+  // A back-link that names a destination differently from the nav is a bug.
+  await admin.p.goto(`${BASE}/dashboard/activity`, { waitUntil: "networkidle" });
+  check("back-links use the nav's names", (await admin.p.getByText("← Roles").count()) > 0);
+  await admin.p.goto(`${BASE}/dashboard/sessions/new`, { waitUntil: "networkidle" });
+  check("and so does the productions one", (await admin.p.getByText("← All productions").count()) > 0);
+}
+
 section("7 navigation fixes");
 const m = await ctx({ width: 390, height: 844 });
 await signInAsAdmin(m.p);
 await m.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 const visible = await m.p.locator("header nav a").evaluateAll((els) =>
   els.filter((el) => el.offsetParent !== null).map((el) => el.textContent.trim()));
-check(`nav visible on a phone: ${JSON.stringify(visible)}`, visible.includes("Casting dashboard"));
-check("sessions reachable on a phone", visible.includes("Sessions"));
+check(`nav visible on a phone: ${JSON.stringify(visible)}`, visible.includes("Roles"));
+check("productions reachable on a phone", visible.includes("Productions"));
 check("no horizontal overflow", (await m.p.evaluate(() =>
   document.documentElement.scrollWidth - document.documentElement.clientWidth)) === 0);
 await m.p.keyboard.press("Tab");

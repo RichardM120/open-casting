@@ -21,7 +21,7 @@ export default async function ActivityPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 py-12">
       <Link href="/dashboard" className="text-sm text-muted transition-colors hover:text-text">
-        ← Dashboard
+        ← Roles
       </Link>
 
       <div className="mt-6">

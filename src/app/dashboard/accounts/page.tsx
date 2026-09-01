@@ -24,7 +24,7 @@ export default async function AccountsPage() {
   return (
     <div className="mx-auto max-w-5xl px-5 py-12">
       <Link href="/dashboard" className="text-sm text-muted transition-colors hover:text-text">
-        ← Dashboard
+        ← Roles
       </Link>
 
       <div className="mt-6">

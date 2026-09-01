@@ -19,7 +19,7 @@ export default async function NewSessionPage() {
         href="/dashboard/sessions"
         className="text-sm text-muted transition-colors hover:text-text"
       >
-        ← All casting sessions
+        ← All productions
       </Link>
 
       <div className="mt-6">

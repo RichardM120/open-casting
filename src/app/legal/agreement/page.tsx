@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { LegalText } from "@/components/legal-document";
 import { Eyebrow } from "@/components/ui";
@@ -21,7 +22,13 @@ export default async function AgreementPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-12">
-      <Eyebrow>Your agreement</Eyebrow>
+      {user ? (
+        <Link href="/dashboard" className="text-sm text-muted transition-colors hover:text-text">
+          ← Roles
+        </Link>
+      ) : null}
+
+      <Eyebrow className={user ? "mt-6 block" : undefined}>Your agreement</Eyebrow>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
         Master Services Agreement
       </h1>

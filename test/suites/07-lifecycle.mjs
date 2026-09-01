@@ -113,7 +113,7 @@ const second = await openSession(dir.p, { name: `Second ${t}`, company: CO, open
 check("the second is allowed", second.startsWith("ses_"));
 await dir.p.goto(`${BASE}/dashboard/sessions`, { waitUntil: "networkidle" });
 check("the allowance is stated", (await dir.p.getByText(/covers 2 productions/).count()) > 0);
-check("and the way to open another is withdrawn", (await dir.p.getByRole("link", { name: "Open a session" }).count()) === 0);
+check("and the way to open another is withdrawn", (await dir.p.locator("main").getByRole("link", { name: "New production" }).count()) === 0);
 check("with a reason given", (await dir.p.getByText(/used them all/).count()) > 0);
 
 section("6 the retention promise is stated where it matters");
@@ -134,7 +134,7 @@ await row2.getByRole("button", { name: "Save limits" }).click();
 await admin.p.waitForTimeout(2500);
 check("the change is confirmed", (await admin.p.getByText(/Updated what Cass Dir is allowed/).count()) > 0);
 await dir.p.goto(`${BASE}/dashboard/sessions`, { waitUntil: "networkidle" });
-check("the director can open one again", (await dir.p.getByRole("link", { name: "Open a session" }).count()) > 0);
+check("the director can open one again", (await dir.p.locator("main").getByRole("link", { name: "New production" }).count()) > 0);
 
 section("8 an account can be given an end date");
 await row2.locator('input[name="accessUntil"]').fill(day(-1));

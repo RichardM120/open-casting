@@ -15,8 +15,11 @@ export function SiteFooter() {
           <Link href="/faq/casting-directors" className="transition-colors hover:text-text">
             Casting FAQ
           </Link>
-          <Link href="/login" className="transition-colors hover:text-text">
-            Sign in
+          <Link href="/legal/submission-terms" className="transition-colors hover:text-text">
+            Terms of Submission
+          </Link>
+          <Link href="/legal/agreement" className="transition-colors hover:text-text">
+            Agreement
           </Link>
         </div>
       </div>
