@@ -24,8 +24,14 @@ section("1 the home page is the way in, and nothing else");
 {
   const { c, p } = await ctx();
   check("/ -> 200", (await p.goto(BASE, { waitUntil: "networkidle" })).status() === 200);
-  check("offers an admin sign-in", (await p.getByRole("link", { name: "Sign in as admin" }).count()) > 0);
-  check("offers a production sign-in", (await p.getByRole("link", { name: /^Sign in$/ }).count()) > 0);
+  // One way in, not one per kind of account: there is a single credential
+  // check, and the role comes from the account rather than the door.
+  const signIns = p.locator("main").getByRole("link", { name: /sign in/i });
+  const count = await signIns.count();
+  check(`exactly one sign-in on the page (found ${count})`, count === 1);
+  check("and it goes to /login", (await signIns.getAttribute("href")) === "/login");
+  check("no separate admin door", (await p.getByRole("link", { name: /sign in as admin/i }).count()) === 0);
+  check("explains what you see follows from the account", (await p.getByText(/follows from your\s+account/).count()) > 0);
   check("explains performers use a link", (await p.getByText(/Sent a casting link/).count()) > 0);
   check("no browse anywhere on it", (await p.getByRole("link", { name: /browse/i }).count()) === 0);
   await p.screenshot({ path: `${SHOTS}/home.png`, fullPage: true });
@@ -45,6 +51,29 @@ section("2 there is no public board left to find");
     (await p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" })) && p.url().includes("/login"),
     p.url(),
   );
+  await c.close();
+}
+
+section("2b the sign-in page introduces the tool");
+{
+  const { c, p } = await ctx();
+  await p.goto(`${BASE}/login`, { waitUntil: "networkidle" });
+  check("says what it is", (await p.getByText(/One production.{0,3}s casting, run from one place/).count()) > 0);
+  check("says what it is not", (await p.getByText(/not a job board/).count()) > 0);
+  check("explains the one link", (await p.getByText(/One link to circulate/).count()) > 0);
+  check("and the retention promise", (await p.getByText(/thirty days after the production finishes/i).count()) > 0);
+  check("the form is still there", (await p.locator("#email").count()) === 1);
+  check("no separate admin variant", !p.url().includes("as="), p.url());
+  await p.screenshot({ path: `${SHOTS}/login.png`, fullPage: true });
+
+  // The form comes first on a phone; whoever is signing in came to sign in.
+  await p.setViewportSize({ width: 390, height: 844 });
+  await p.reload({ waitUntil: "networkidle" });
+  const formTop = await p.locator("#email").boundingBox();
+  const introTop = await p.getByText(/One production.{0,3}s casting, run from one place/).boundingBox();
+  check("form above the introduction on a phone", formTop.y < introTop.y, `${formTop.y} vs ${introTop.y}`);
+  check("no horizontal overflow", (await p.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)) === 0);
   await c.close();
 }
 

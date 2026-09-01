@@ -33,22 +33,15 @@ export default async function HomePage() {
         created by the administrator — there is nothing to register for.
       </p>
 
-      <div className="mt-12 grid gap-5 sm:grid-cols-2">
-        <WayIn
-          href="/login?as=admin"
-          eyebrow="Administrator"
-          title="Admin sign-in"
-          description="Create and suspend accounts, see every production on the system, and moderate anything posted."
-          cta="Sign in as admin"
-        />
-        <WayIn
-          href="/login?as=team"
-          eyebrow="Casting director or production team"
-          title="Production sign-in"
-          description="Open a casting session for your production, post its roles, and read the submissions that come in against them."
-          cta="Sign in"
-        />
+      <div className="mt-10">
+        <ButtonLink href="/login">Sign in</ButtonLink>
       </div>
+
+      <p className="mt-6 max-w-xl text-sm leading-relaxed text-muted">
+        One sign-in for everyone on the casting side. What you can see follows from your
+        account, not from which door you came through: an administrator lands on every
+        production on the system, a casting director on their own.
+      </p>
 
       <div className="mt-12 rounded-2xl border border-line bg-surface p-7">
         <h2 className="text-lg font-semibold tracking-tight">Sent a casting link?</h2>
@@ -62,31 +55,6 @@ export default async function HomePage() {
             What the fields on a casting call mean →
           </Link>
         </p>
-      </div>
-    </div>
-  );
-}
-
-function WayIn({
-  href,
-  eyebrow,
-  title,
-  description,
-  cta,
-}: {
-  href: string;
-  eyebrow: string;
-  title: string;
-  description: string;
-  cta: string;
-}) {
-  return (
-    <div className="flex flex-col rounded-2xl border border-line bg-surface p-7">
-      <Eyebrow>{eyebrow}</Eyebrow>
-      <h2 className="mt-3 text-xl font-semibold tracking-tight">{title}</h2>
-      <p className="mt-2 flex-1 text-sm leading-relaxed text-muted">{description}</p>
-      <div className="mt-6">
-        <ButtonLink href={href}>{cta}</ButtonLink>
       </div>
     </div>
   );
