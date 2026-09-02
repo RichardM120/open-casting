@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { mediaSrc } from "@/lib/media";
 
@@ -23,13 +23,23 @@ export function ProfilePhoto({
   size?: "sm" | "md";
 }) {
   const [failed, setFailed] = useState(false);
+  const image = useRef<HTMLImageElement>(null);
   const shape = size === "sm" ? "size-10 rounded-lg" : "size-16 rounded-xl";
+
+  // A photo that failed before React took over the page has already fired
+  // its error event, so the handler below never hears it. A complete image
+  // with no width is that case.
+  useEffect(() => {
+    const element = image.current;
+    if (element && element.complete && element.naturalWidth === 0) setFailed(true);
+  }, []);
 
   if (!url) return <Placeholder shape={shape} kind="none" label="No photo submitted" />;
   if (failed) return <Placeholder shape={shape} kind="unavailable" label="Photo not available" />;
   return (
     // eslint-disable-next-line @next/next/no-img-element -- our own authenticated route
     <img
+      ref={image}
       src={mediaSrc(url)}
       alt={`${name}'s photo`}
       onError={() => setFailed(true)}
