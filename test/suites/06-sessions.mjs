@@ -243,9 +243,14 @@ section("13 a draft can be left and picked up again");
   check("and the step numbered", (await dir.p.locator('[aria-current="step"]').innerText()).includes("2"));
   check("marked in progress", (await dir.p.locator("main").getByText("In progress").count()) > 0);
 
-  // The list: live first, in green; a call still being set up last, with no ground of its own.
+  // The list is a traffic light: a live call in green comes first, and a call
+  // still being set up comes last with no ground of its own. The live call
+  // from section 2 was removed in section 10, so a fresh one is opened here.
+  const green = await openSession(dir.p, { name: `Green ${t}`, company: CO, opensAt: at(-1), closesAt: at(20, "23:59") });
+  await postRole(dir.p, { title: `GREEN-${t}`, company: CO, sessionId: green });
+  await publish(dir.p, green);
   await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
-  const liveCard = dir.p.locator(`li[data-state]:has(a[href="/dashboard/sessions/${live}"])`).first();
+  const liveCard = dir.p.locator(`li[data-state]:has(a[href="/dashboard/sessions/${green}"])`).first();
   const draftCard = dir.p.locator(`li[data-state]:has(a[href="/dashboard/sessions/${draft}"])`).first();
   check("the live call is marked live", (await liveCard.getAttribute("data-state")) === "live" && (await liveCard.getByText("Live", { exact: true }).count()) > 0);
   check("the new call is in progress", (await draftCard.getAttribute("data-state")) === "draft" && (await draftCard.getByText("In progress", { exact: true }).count()) > 0);

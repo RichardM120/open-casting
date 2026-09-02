@@ -31,7 +31,7 @@ export function SetupProgress({
 }) {
   return (
     <nav aria-label="Setting up the casting call" className="-mt-4 mb-8 border-b border-line">
-      <ol className="flex items-start gap-3 overflow-x-auto py-4 sm:gap-6">
+      <ol className="flex flex-wrap items-start gap-x-3 gap-y-3 py-4 sm:gap-x-5">
         {SETUP_STEPS.map((step, index) => {
           const n = (index + 1) as SetupStage;
           const done = n < stage;
@@ -61,7 +61,7 @@ export function SetupProgress({
                   <span className="sr-only">Step {n}: </span>
                   {step.label}
                 </span>
-                <span className="hidden text-xs whitespace-nowrap text-muted md:block">{step.point}</span>
+                <span className="hidden text-xs whitespace-nowrap text-muted lg:block">{step.point}</span>
               </span>
             </>
           );
@@ -70,7 +70,7 @@ export function SetupProgress({
             <li
               key={step.key}
               aria-current={current ? "step" : undefined}
-              className="flex items-start gap-3 sm:gap-6"
+              className="flex items-start gap-3 sm:gap-5"
             >
               {href ? (
                 <Link href={href} className="flex items-center gap-3 transition-colors hover:text-text">
@@ -80,7 +80,7 @@ export function SetupProgress({
                 <span className="flex items-center gap-3">{body}</span>
               )}
               {index < SETUP_STEPS.length - 1 ? (
-                <span aria-hidden="true" className="mt-4 h-px w-4 shrink-0 bg-line sm:w-10" />
+                <span aria-hidden="true" className="mt-4 h-px w-4 shrink-0 bg-line sm:w-6" />
               ) : null}
             </li>
           );
