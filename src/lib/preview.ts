@@ -8,7 +8,7 @@ import type { CastingSession } from "./types";
  *
  * The same rule as the dashboard, applied to a page that is otherwise public:
  * the owner, anyone at the company for a producer, an admin. Deliberately not
- * "anyone with the link" — the link is what a draft is being kept from.
+ * "anyone with the link": the link is what a draft is being kept from.
  */
 export async function canPreview(session: CastingSession): Promise<boolean> {
   const viewer = await currentUser();

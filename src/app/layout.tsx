@@ -21,10 +21,10 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: {
     default: "Open Casting",
-    template: "%s — Open Casting",
+    template: "%s | Open Casting",
   },
   description:
-    "Open casting calls you can actually submit to. Casting directors post the role, performers send a tape, everything lands in one place.",
+    "The private tool a production uses to run its casting. Post the roles, send one link, and read every submission in one place.",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {

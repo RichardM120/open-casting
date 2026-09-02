@@ -7,7 +7,7 @@ import { ShareLink } from "@/components/share-link";
 import { Badge, Button, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
 import { publishCastingSession, removeSession, toggleSessionClosed } from "@/lib/actions";
 import { currentUser, requireUser } from "@/lib/auth";
-import { formatDate, isOpen, notYetOpen } from "@/lib/format";
+import { formatDate, formatDateTime, isOpen, notYetOpen } from "@/lib/format";
 import { listSessionRoles } from "@/lib/roles";
 import { requestOrigin } from "@/lib/origin";
 import { RETENTION_DAYS, daysUntilPurge, purgeDate } from "@/lib/retention";
@@ -19,7 +19,7 @@ export async function generateMetadata({
 }: PageProps<"/dashboard/sessions/[id]">): Promise<Metadata> {
   const user = await currentUser();
   const session = user ? await getVisibleSession((await params).id, user) : null;
-  return { title: session ? `Casting session — ${session.name}` : "Session not found" };
+  return { title: session ? session.name : "Production not found" };
 }
 
 export default async function SessionPage({
@@ -29,7 +29,7 @@ export default async function SessionPage({
   const { id } = await params;
   const user = await requireUser(`/dashboard/sessions/${id}`);
 
-  // A session this account may not see is a 404, not a 403 — the same rule as
+  // A production this account may not see is a 404, not a 403. The same rule as
   // roles, so guessing ids tells you nothing about which ones exist.
   const session = await getVisibleSession(id, user);
   if (!session) notFound();
@@ -49,22 +49,29 @@ export default async function SessionPage({
   const open = isOpen(session);
   const draft = session.publishedAt === null;
 
+  const flash =
+    query.published === "1"
+      ? "Published. The link below is live, so send it wherever you want the call to go."
+      : query.created === "1"
+        ? "Production opened. Post the roles for it, then publish."
+        : query.saved === "1"
+          ? "Changes saved. Every role in this production follows the new times."
+          : query.removed === "1"
+            ? "The role was removed, along with its submissions."
+            : null;
+
   return (
     <div className="mx-auto max-w-5xl px-5 py-12">
-      <Link
-        href="/dashboard/sessions"
-        className="text-sm text-muted transition-colors hover:text-text"
-      >
-        ← All productions
+      <Link href="/dashboard" className="text-sm text-muted transition-colors hover:text-text">
+        &larr; Productions
       </Link>
 
-      {query.created === "1" || query.saved === "1" || query.published === "1" ? (
-        <p className="mt-6 rounded-xl border border-line bg-positive-soft px-4 py-3 text-sm text-positive">
-          {query.published === "1"
-            ? "Published. The link below is live — send it wherever you want the call to go."
-            : query.created === "1"
-              ? "Casting session opened. Post the roles for it, then publish."
-              : "Changes saved. Every role in this session follows the new dates."}
+      {flash ? (
+        <p
+          role="status"
+          className="mt-6 rounded-xl border border-line bg-positive-soft px-4 py-3 text-sm text-positive"
+        >
+          {flash}
         </p>
       ) : null}
 
@@ -73,18 +80,18 @@ export default async function SessionPage({
           role="alert"
           className="mt-6 rounded-xl border border-danger/40 bg-danger-soft px-4 py-3 text-sm text-danger"
         >
-          Post at least one role before publishing — a link that opens on an empty production is
+          Post at least one role before publishing. A link that opens on an empty production is
           worse than no link.
         </p>
       ) : null}
 
       <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
         <div>
-          <Eyebrow>Casting session</Eyebrow>
+          <Eyebrow>{session.productionType}</Eyebrow>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight">{session.name}</h1>
           <p className="mt-2 text-muted">
-            {session.company} · open {formatDate(session.opensAt)} to{" "}
-            {formatDate(session.closesAt)}
+            {session.company} · open {formatDateTime(session.opensAt)} to{" "}
+            {formatDateTime(session.closesAt)}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -111,12 +118,12 @@ export default async function SessionPage({
 
       <p className="mt-6 rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">
         {session.closedAt
-          ? `Closed early on ${formatDate(session.closedAt)}. Every role in this session stopped taking submissions at that moment.`
+          ? `Closed early on ${formatDateTime(session.closedAt)}. Every role in this production stopped taking submissions at that moment.`
           : notYetOpen(session)
-            ? `Not open yet. The roles below are listed, but nobody can submit until ${formatDate(session.opensAt)}.`
+            ? `Not open yet. The roles below can be seen, but nobody can submit until ${formatDateTime(session.opensAt)}.`
             : open
-              ? `Accepting submissions until the end of ${formatDate(session.closesAt)}. A performer may submit to this session once, whichever role they go for.`
-              : `Past its closing date. The roles stay up for reference and take no new submissions.`}
+              ? `Accepting submissions until ${formatDateTime(session.closesAt)}. A performer may submit to this production once, whichever role they go for.`
+              : `Past its closing time. The roles stay up for reference and take no new submissions.`}
       </p>
 
       {draft ? (
@@ -124,16 +131,16 @@ export default async function SessionPage({
           <h2 className="text-lg font-semibold tracking-tight">Not published yet</h2>
           <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
             Nobody can open this but you. Check it over as a performer will see it, and publish
-            when you are happy — that is the moment the link starts working.
+            when you are happy. That is the moment the link starts working.
           </p>
           <ul className="mt-4 flex flex-col gap-2 text-sm text-muted">
             <Ready done={roles.length > 0}>
               {roles.length > 0
                 ? `${roles.length} ${roles.length === 1 ? "role" : "roles"} posted`
-                : "No roles posted yet — you need at least one"}
+                : "No roles posted yet. You need at least one."}
             </Ready>
             <Ready done>
-              Open {formatDate(session.opensAt)} to {formatDate(session.closesAt)}
+              Open {formatDateTime(session.opensAt)} to {formatDateTime(session.closesAt)}
             </Ready>
             <Ready done={session.synopsis.length > 0}>Synopsis written</Ready>
           </ul>
@@ -150,18 +157,18 @@ export default async function SessionPage({
           </div>
           <p className="mt-4 text-xs leading-relaxed text-faint">
             Publishing cannot be undone. Once the link is out on a post or in a mailout it is out
-            of your hands, so un-publishing would only break it for the people who already have
-            it — use <strong className="text-muted">Close early</strong> to stop a call instead.
+            of your hands, and unpublishing would only break it for the people who already have
+            it. To stop a call, use <strong className="text-muted">Close early</strong> instead.
           </p>
         </section>
       ) : (
         <section className="mt-8 rounded-2xl border border-accent/30 bg-accent-soft p-6">
           <h2 className="text-lg font-semibold tracking-tight">The link for performers</h2>
           <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
-            Send this to anyone you want to submit — an Instagram post, a mailout, an agent
-            circular. It opens {session.name} and nothing else, and there is no listing on Open
-            Casting to browse, so this link is the whole of the casting call. Anyone holding it
-            can submit while the session is open.
+            Send this to anyone you want to submit: an Instagram post, a mailout, an agent
+            circular. It opens {session.name} and nothing else. There is no listing on Open
+            Casting to browse, so this link is the whole of the casting call, and anyone holding
+            it can submit while the production is open.
           </p>
           <div className="mt-4">
             <ShareLink url={shareUrl} />
@@ -183,11 +190,11 @@ export default async function SessionPage({
       <p className="mt-4 max-w-prose rounded-xl border border-line bg-raised px-4 py-3 text-xs leading-relaxed text-muted">
         {session.purgedAt
           ? `The performers' details were removed on ${formatDate(session.purgedAt)}, ${RETENTION_DAYS} days after this production finished. The roles and the counts are kept; the names, addresses and notes are gone.`
-          : `This production finishes on ${formatDate(session.productionEndsAt)}. Performers' details are destroyed ${RETENTION_DAYS} days later — on ${formatDate(purgeDate(session.productionEndsAt))}${
+          : `This production finishes on ${formatDate(session.productionEndsAt)}. Performers' details are destroyed ${RETENTION_DAYS} days later, on ${formatDate(purgeDate(session.productionEndsAt))}${
               daysUntilPurge(session.productionEndsAt) <= 14
                 ? `, which is ${daysUntilPurge(session.productionEndsAt)} days away`
                 : ""
-            }. Export anything you need before then; the production and its roles are kept.`}
+            }. Export anything you need before then. The production and its roles are kept.`}
       </p>
 
       {roles.length > 0 ? (
@@ -205,7 +212,7 @@ export default async function SessionPage({
                       {role.title}
                     </p>
                     <p className="truncate text-sm text-muted">
-                      {role.location} · {role.payType}
+                      {role.location} · {role.rate}
                     </p>
                   </div>
                   <div className="flex flex-wrap items-center gap-2">
@@ -223,8 +230,8 @@ export default async function SessionPage({
       ) : (
         <div className="mt-8">
           <EmptyState
-            title="No roles in this session yet"
-            description="Post the roles you are casting for this production. They inherit the session's dates, so you do not set a closing date per role."
+            title="No roles in this production yet"
+            description="Post the roles you are casting. They open and close with the production, so there is no closing date to set per role."
             action={
               <ButtonLink href={`/dashboard/roles/new?session=${session.id}`} size="sm">
                 Post a role
@@ -237,12 +244,12 @@ export default async function SessionPage({
       {user.role === "admin" ? (
         <details className="mt-10 rounded-2xl border border-danger/30 bg-surface p-6">
           <summary className="cursor-pointer text-sm font-medium text-danger">
-            Remove this casting session
+            Remove this production
           </summary>
           <form action={removeSession} className="mt-4 flex flex-col gap-4">
             <input type="hidden" name="sessionId" value={session.id} />
             <p className="max-w-prose text-sm leading-relaxed text-muted">
-              This deletes the session,{" "}
+              This deletes the production,{" "}
               <strong className="text-text">
                 all {roles.length} {roles.length === 1 ? "role" : "roles"} in it
               </strong>{" "}
@@ -260,7 +267,7 @@ export default async function SessionPage({
             </label>
             <div>
               <Button type="submit" variant="danger" size="sm">
-                Remove session, roles and submissions
+                Remove production, roles and submissions
               </Button>
             </div>
           </form>

@@ -84,8 +84,8 @@ export async function syncAdminRole(user: User): Promise<User> {
 /* --------------------------------------------------------------- queries -- */
 
 /**
- * Creates an account. Only the administrator reaches this — there is no
- * self-registration — so the caller must have checked that first.
+ * Creates an account. Only the administrator reaches this (there is no
+ * self-registration), so the caller must have checked that first.
  */
 export async function createUser(input: {
   name: string;
@@ -143,7 +143,7 @@ export async function findUserByGoogleSub(sub: string): Promise<User | null> {
  * Links a Google identity to an account, and creates one only for an address on
  * the admin allowlist.
  *
- * Nobody registers themselves here — the administrator makes every account — so
+ * Nobody registers themselves here (the administrator makes every account), so
  * a Google button that created an account for any Google address would reopen
  * exactly that hole. The one exception is an address already named in
  * `ADMIN_EMAILS`: that env variable is the sole source of admin, so an address
@@ -222,7 +222,7 @@ export async function clearFailedLogins(email: string): Promise<void> {
 
 export type Account = User & { roles: number; submissions: number; sessions: number };
 
-/** Every account, with how much each has posted. Admin only — enforce upstream. */
+/** Every account, with how much each has posted. Admin only; enforce upstream. */
 export async function listAccounts(): Promise<Account[]> {
   return query<Account>(
     `SELECT u.id, u.email, u.name, u.company, u.role, u.suspended_at, u.onboarded_at,
@@ -256,7 +256,7 @@ export async function setAccountSuspended(id: string, suspended: boolean): Promi
   return rows.length > 0;
 }
 
-/** Changes what an account is allowed. Admin only — enforce upstream. */
+/** Changes what an account is allowed. Admin only; enforce upstream. */
 export async function setAccountLimits(id: string, limits: AccountLimits): Promise<boolean> {
   const rows = await query<{ id: string }>(
     `UPDATE users SET max_sessions = $2, max_roles_per_session = $3, access_until = $4,

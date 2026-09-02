@@ -97,7 +97,7 @@ export async function record(entry: {
 
 /**
  * The trail this account may see, scoped by the same rule as the roles
- * themselves — against the owner and company copied onto each entry, so history
+ * themselves, against the owner and company copied onto each entry, so history
  * survives the role being removed. Account events carry neither, which is what
  * keeps them to admins.
  */
@@ -125,24 +125,21 @@ export async function listActivity(
   return rows.map(toEntry);
 }
 
-/** Field-by-field diff, so "edited" says what actually changed. */
+/**
+ * Field-by-field diff, so "edited" says what actually changed. Only the role's
+ * own fields: the production's details are edited on the production, and that
+ * is recorded against it.
+ */
 const TRACKED: { key: keyof Role; label: string }[] = [
   { key: "title", label: "role name" },
-  { key: "production", label: "production" },
-  { key: "productionType", label: "production type" },
-  { key: "synopsis", label: "synopsis" },
   { key: "characterBrief", label: "character brief" },
   { key: "requirements", label: "requirements" },
   { key: "location", label: "location" },
   { key: "selfTape", label: "self-tape" },
   { key: "ageMin", label: "playing age" },
   { key: "ageMax", label: "playing age" },
-  { key: "payType", label: "pay type" },
   { key: "rate", label: "rate" },
-  { key: "unionStatus", label: "union status" },
   { key: "shootDates", label: "shoot dates" },
-  { key: "castingDirector", label: "casting director" },
-  { key: "company", label: "company" },
   { key: "disclaimer", label: "terms" },
 ];
 
@@ -150,13 +147,15 @@ export function describeChanges(before: Role, after: Role): string {
   return diff(before, after, TRACKED);
 }
 
-/** The session fields worth naming when one is edited. */
+/** The production's fields worth naming when one is edited. */
 const TRACKED_SESSION: { key: keyof CastingSession; label: string }[] = [
-  { key: "name", label: "production" },
+  { key: "name", label: "production name" },
+  { key: "productionType", label: "production type" },
   { key: "synopsis", label: "synopsis" },
   { key: "company", label: "company" },
-  { key: "opensAt", label: "opening date" },
-  { key: "closesAt", label: "closing date" },
+  { key: "opensAt", label: "opening time" },
+  { key: "closesAt", label: "closing time" },
+  { key: "productionEndsAt", label: "production end" },
 ];
 
 export function describeSessionChanges(

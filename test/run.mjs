@@ -33,12 +33,12 @@ const AUTH_SECRET = "test-auth-secret-at-least-32-characters-long";
 
 /**
  * Extra environment for one suite only. The pre-launch switches change the
- * whole site, so every other suite has to run with them off — which is also the
+ * whole site, so every other suite has to run with them off, which is also the
  * arrangement that matters at launch.
  */
 const SUITE_ENV = {
   "11-prelaunch.mjs": { SITE_PASSCODE: "test-site-passcode" },
-  // The wall with its signing key missing — the one misconfiguration that
+  // The wall with its signing key missing: the one misconfiguration that
   // leaves a right passcode unable to open it.
   "12-unconfigured.mjs": { SITE_PASSCODE: "test-site-passcode", AUTH_SECRET: "" },
 };
@@ -66,7 +66,7 @@ function run(command, args, options = {}) {
 /**
  * The server's own output, kept so a suite can read the sign-in link out of it.
  * With no mail provider configured the link is logged instead of sent, which is
- * exactly the hook a test needs — and is why it never happens in production.
+ * exactly the hook a test needs, and is why it never happens in production.
  */
 const MAIL_LOG = path.join(here, "server.log");
 

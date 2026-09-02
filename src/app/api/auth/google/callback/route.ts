@@ -32,7 +32,7 @@ export async function GET(request: Request) {
 
     // Google proves who someone is; it does not hand out accounts. This links to
     // an account that already exists, or creates one only for an address named
-    // in ADMIN_EMAILS — which the operator of the deployment has already
+    // in ADMIN_EMAILS, which the operator of the deployment has already
     // authorised. Any other Google address is refused.
     const linked = await linkGoogleUser(profile);
     if (!linked) {
@@ -53,7 +53,7 @@ export async function GET(request: Request) {
     // No emailed link on this path, and the reason is worth stating: the link
     // would go to the same mailbox that just authenticated. Whoever holds the
     // Google account holds the inbox, so sending one adds friction and no
-    // security — it is only a second factor when it reaches somewhere the first
+    // security. It is only a second factor when it reaches somewhere the first
     // factor does not. Password sign-in still requires it, because a password
     // and a mailbox are genuinely two different things.
     //

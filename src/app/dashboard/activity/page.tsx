@@ -9,9 +9,9 @@ import { requireUser } from "@/lib/auth";
 export const metadata: Metadata = { title: "Activity" };
 
 const SCOPE = {
-  director: "Everything that has happened on the roles you posted.",
-  producer: "Everything across every role posted under your company.",
-  admin: "Everything on the board, including account changes.",
+  director: "Everything that has happened on the productions and roles you posted.",
+  producer: "Everything across every production and role under your company.",
+  admin: "Everything on the site, including account changes.",
 } as const;
 
 export default async function ActivityPage() {
@@ -21,7 +21,7 @@ export default async function ActivityPage() {
   return (
     <div className="mx-auto max-w-3xl px-5 py-12">
       <Link href="/dashboard" className="text-sm text-muted transition-colors hover:text-text">
-        ← Roles
+        &larr; Productions
       </Link>
 
       <div className="mt-6">
@@ -33,7 +33,7 @@ export default async function ActivityPage() {
       <div className="mt-10">
         <ActivityList
           entries={entries}
-          emptyDescription="Post a role, and everything that happens to it is recorded here."
+          emptyDescription="Open a production, and everything that happens to it is recorded here."
         />
       </div>
     </div>

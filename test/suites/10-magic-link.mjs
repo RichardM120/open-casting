@@ -1,7 +1,7 @@
 /**
  * The magic link, treated as a credential rather than a convenience.
  *
- * Run against a real working address — richard@cwcasting.co.uk — because the
+ * Run against a real working address (richard@cwcasting.co.uk), because the
  * thing being checked is not only that a link arrives, but that it goes to that
  * address and nowhere else, works once, and cannot be forged, replayed,
  * stretched, or made to outlive the account it belongs to.

@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       text: [
         `The casting data for ${warning.name} is scheduled for permanent deletion on ${warning.purgeOn}.`,
         "",
-        `That is ${warning.submissions} ${warning.submissions === 1 ? "submission" : "submissions"} — names, contact details, notes and any links performers gave you.`,
+        `That is ${warning.submissions} ${warning.submissions === 1 ? "submission" : "submissions"}: names, contact details, notes and any links performers gave you.`,
         "",
         "Export anything you still need before then. After the deletion the production and its roles remain, but the personal data is gone and cannot be recovered.",
       ].join("\n"),

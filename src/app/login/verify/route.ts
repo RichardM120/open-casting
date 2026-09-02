@@ -13,8 +13,8 @@ const REASONS = {
 
 /**
  * The second half of a sign-in: opening the emailed link is what starts the
- * session. A GET, because that is what opening a link is — safe only because
- * the token is one-time and short-lived, and spent inside a single UPDATE.
+ * session. A GET, because that is what opening a link is. It is safe only
+ * because the token is one-time and short-lived, and spent inside a single UPDATE.
  */
 export async function GET(request: Request) {
   const url = new URL(request.url);

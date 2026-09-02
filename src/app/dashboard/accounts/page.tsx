@@ -24,7 +24,7 @@ export default async function AccountsPage() {
   return (
     <div className="mx-auto max-w-5xl px-5 py-12">
       <Link href="/dashboard" className="text-sm text-muted transition-colors hover:text-text">
-        ← Roles
+        &larr; Productions
       </Link>
 
       <div className="mt-6">
@@ -32,9 +32,9 @@ export default async function AccountsPage() {
         <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Accounts</h1>
         <p className="mt-3 max-w-2xl text-muted">
           {accounts.length} {accounts.length === 1 ? "account" : "accounts"}
-          {suspended > 0 ? `, ${suspended} suspended` : ""}. Nobody can register themselves —
+          {suspended > 0 ? `, ${suspended} suspended` : ""}. Nobody can register themselves, so
           every account here was made on this page. Suspending signs someone out immediately and
-          blocks them from signing back in; their roles stay up.
+          blocks them from signing back in. Their productions stay up.
         </p>
       </div>
 

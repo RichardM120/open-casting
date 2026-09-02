@@ -11,12 +11,6 @@ export const PRODUCTION_TYPES = [
 ] as const;
 export type ProductionType = (typeof PRODUCTION_TYPES)[number];
 
-export const UNION_STATUSES = ["Union", "Non-Union", "Either"] as const;
-export type UnionStatus = (typeof UNION_STATUSES)[number];
-
-export const PAY_TYPES = ["Paid", "Deferred", "Unpaid / Credit"] as const;
-export type PayType = (typeof PAY_TYPES)[number];
-
 export const SUBMISSION_STATUSES = [
   "New",
   "Shortlisted",
@@ -26,17 +20,22 @@ export const SUBMISSION_STATUSES = [
 export type SubmissionStatus = (typeof SUBMISSION_STATUSES)[number];
 
 /**
- * One production's casting window. Roles belong to a session and open and close
- * with it, because a production casts as a unit rather than role by role.
+ * One production and its casting window. A production casts as a unit rather
+ * than role by role, so the roles posted into it open and close with it and
+ * carry its name, type, synopsis and company.
  */
 export type CastingSession = {
   id: string;
   slug: string;
   name: string;
+  productionType: ProductionType;
   synopsis: string;
   ownerId: string | null;
   company: string;
-  /** yyyy-mm-dd. Live from the start of opensAt to the end of closesAt. */
+  /**
+   * ISO timestamps. Submissions are accepted from opensAt up to closesAt. The
+   * casting director enters both in UK time; they are stored as instants.
+   */
   opensAt: string;
   closesAt: string;
   /** Set when closed ahead of closesAt. ISO timestamp, or null. */
@@ -49,14 +48,15 @@ export type CastingSession = {
   /** Set when the performers' details were destroyed under the retention policy. */
   purgedAt: string | null;
   /**
-   * yyyy-mm-dd. When the production itself finishes — which is what the
-   * retention clock runs from, not the casting close date. A shoot can run for
-   * months after its casting call shut, and the material is needed until it wraps.
+   * yyyy-mm-dd. When the production itself finishes, which is what the
+   * retention clock runs from rather than the casting close. A shoot can run
+   * for months after its casting call shut, and the material is needed until
+   * it wraps.
    */
   productionEndsAt: string;
   /**
    * The unguessable half of the share link. Performers reach a production only
-   * by holding this — there is no public index — so it is never rendered
+   * by holding this, as there is no public index, so it is never rendered
    * anywhere a performer could see another production's.
    */
   publicToken: string;
@@ -67,33 +67,33 @@ export type Role = {
   id: string;
   slug: string;
   title: string;
+  /**
+   * Copied from the production when the role is posted and kept in step when
+   * the production is edited. The production is the authority; these are here
+   * so a role reads as a whole on its own.
+   */
   production: string;
   productionType: ProductionType;
   synopsis: string;
+  company: string;
   characterBrief: string;
   requirements: string[];
   location: string;
   selfTape: boolean;
   ageMin: number;
   ageMax: number;
-  payType: PayType;
+  /** Every role is paid. This says how much, and what comes with it. */
   rate: string;
-  unionStatus: UnionStatus;
   shootDates: string;
-  /**
-   * Mirrors the session's closing date. The session is the authority; this is
-   * kept in step on write so the column never contradicts it.
-   */
-  deadline: string;
+  /** The name of the account that posted it. */
   castingDirector: string;
-  company: string;
   /** Terms the performer must accept to submit. Empty when none are set. */
   disclaimer: string;
-  /** Set when closed ahead of its deadline. ISO timestamp, or null. */
+  /** Set when closed ahead of the production's closing time. ISO timestamp, or null. */
   closedAt: string | null;
   /** The account that posted it. Null only for rows predating accounts. */
   ownerId: string | null;
-  /** The casting session it belongs to, which owns its live dates. */
+  /** The production it belongs to, which owns its live dates. */
   sessionId: string;
   /** ISO timestamp. */
   postedAt: string;
@@ -105,14 +105,13 @@ export const ADULT_AGE = 18;
 export type Submission = {
   id: string;
   roleId: string;
-  /** The casting session the role belonged to. One submission per person per session. */
+  /** The production the role belongs to. One submission per person per production. */
   sessionId: string;
   name: string;
   email: string;
   phone: string;
   location: string;
   age: number;
-  unionStatus: Exclude<UnionStatus, "Either">;
   reelUrl: string;
   profileUrl: string;
   coverNote: string;
@@ -134,14 +133,18 @@ export type Submission = {
 };
 
 /**
- * Seed content is written before any account or session exists; the bootstrap
- * assigns the owner and the backfill derives the session from the production.
+ * A sample role as written in the seed file: it names its production and the
+ * production's details are filled in from that when the database is seeded.
+ * The owner is attached at bootstrap.
  */
-export type SeedRole = Omit<Role, "ownerId" | "sessionId" | "deadline">;
+export type SeedRole = Omit<
+  Role,
+  "ownerId" | "production" | "productionType" | "synopsis" | "company"
+>;
 
 /**
- * A demo casting session. The owner is attached when it is seeded, and the
- * sample productions are seeded already published — a draft nobody can open
+ * A sample production. The owner is attached when it is seeded, and the sample
+ * productions are seeded already published, since a draft nobody can open
  * would make for a poor first look at the tool.
  */
 export type SeedSession = Omit<
@@ -151,11 +154,11 @@ export type SeedSession = Omit<
 
 /**
  * What an account may see on the dashboard.
- *  - director: the roles they posted, and nothing else
- *  - producer: every role posted under their company
+ *  - director: the productions they run, and nothing else
+ *  - producer: every production under their company
  *  - admin:    everything
  *
- * `admin` is deliberately absent from SIGNUP_ROLES — it is granted only by the
+ * `admin` is deliberately absent from SIGNUP_ROLES. It is granted only by the
  * ADMIN_EMAILS environment variable, never chosen by whoever is registering.
  */
 export const USER_ROLES = ["director", "producer", "admin"] as const;
@@ -182,13 +185,13 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 };
 
 export const ROLE_DESCRIPTIONS: Record<SignupRole, string> = {
-  director: "Post roles and review the submissions made against them.",
-  producer: "See every role posted under your company, across productions.",
+  director: "Runs productions, posts roles into them and reviews what comes in.",
+  producer: "Sees every production under the company, and everything posted into them.",
 };
 
 export type Database = {
   sessions: SeedSession[];
-  /** Assembled with the session they belong to, and its closing date. */
-  roles: (SeedRole & { sessionId: string; deadline: string })[];
+  /** Roles with their production's details filled in, ready to insert. */
+  roles: Omit<Role, "ownerId">[];
   submissions: Submission[];
 };

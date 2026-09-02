@@ -141,7 +141,7 @@ export async function signIn(
   await pruneExpiredSessions();
   await pruneExpiredChallenges();
 
-  // Picks up an ADMIN_EMAILS change since this account last signed in — which
+  // Picks up an ADMIN_EMAILS change since this account last signed in, which
   // is also what can make this account need a second factor for the first time.
   const current = await syncAdminRole(user);
 
@@ -171,7 +171,7 @@ export async function signIn(
  *
  * Failing to send is reported as a failure rather than waved through. An
  * account that requires a second factor does not get to skip it because the
- * mail provider is down — that would make the requirement decorative.
+ * mail provider is down. That would make the requirement decorative.
  */
 async function sendSignInLink(
   userId: string,
@@ -192,14 +192,14 @@ async function sendSignInLink(
       "",
       link,
       "",
-      "If this was not you, your password is known to somebody else — change it, and tell the administrator.",
+      "If this was not you, your password is known to somebody else. Change it, and tell the administrator.",
     ].join("\n"),
   });
 
   if (!delivery.delivered) {
     return invalid(
       {},
-      `Your password was accepted, but the sign-in link could not be sent — ${delivery.reason}. Nobody can sign in to this account until email is working.`,
+      `Your password was accepted, but the sign-in link could not be sent: ${delivery.reason}. Nobody can sign in to this account until email is working.`,
       formData,
     );
   }

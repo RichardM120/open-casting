@@ -24,9 +24,9 @@ const t = Date.now();
 section("1 there is one entry point and it is /login");
 {
   const { c, p } = await ctx();
-  await p.goto(`${BASE}/dashboard/sessions`, { waitUntil: "networkidle" });
+  await p.goto(`${BASE}/dashboard/activity`, { waitUntil: "networkidle" });
   check("the dashboard sends you to it", p.url().includes("/login"), p.url());
-  check("carrying where you were headed", p.url().includes("next=%2Fdashboard%2Fsessions"), p.url());
+  check("carrying where you were headed", p.url().includes("next=%2Fdashboard%2Factivity"), p.url());
   check("no signup", (await p.goto(`${BASE}/signup`, { waitUntil: "networkidle" })).status() === 404);
   await c.close();
 }

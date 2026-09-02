@@ -7,6 +7,7 @@ import {
   BASE,
   SHOTS,
   adminSession,
+  at,
   day,
   launch,
   openSession,
@@ -41,7 +42,7 @@ check("the allowance is shown against the account", (await row.getByText(/0\/2 p
 await admin.p.screenshot({ path: `${SHOTS}/accounts.png`, fullPage: true });
 
 section("2 a new production is a draft, and its link opens for nobody");
-const first = await openSession(dir.p, { name: `Draft ${t}`, company: CO, opensAt: day(0), closesAt: day(30) });
+const first = await openSession(dir.p, { name: `Draft ${t}`, company: CO, opensAt: at(0), closesAt: at(30, "23:59") });
 check("marked not published", (await dir.p.getByText("Not published yet").count()) > 0);
 check("publishing is blocked with no roles", await dir.p.getByRole("button", { name: "Publish this casting call" }).isDisabled());
 check("no share link yet", (await dir.p.locator("code.select-all").count()) === 0);
@@ -65,9 +66,6 @@ await postRole(dir.p, { title: `ONE-${t}`, company: CO, sessionId: first });
 await postRole(dir.p, { title: `TWO-${t}`, company: CO, sessionId: first });
 await dir.p.goto(`${BASE}/dashboard/roles/new?session=${first}`, { waitUntil: "networkidle" });
 await dir.p.selectOption("#sessionId", first);
-await dir.p.fill("#production", `Draft ${t}`);
-await dir.p.fill("#synopsis", "A third role, which the arrangement does not cover.");
-await dir.p.fill("#castingDirector", "Cass Dir"); await dir.p.fill("#company", CO);
 await dir.p.fill("#title", `THREE-${t}`);
 await dir.p.fill("#characterBrief", "A character brief comfortably long enough to pass validation.");
 await dir.p.fill("#location", "Leeds"); await dir.p.fill("#shootDates", "Mar 2027");
@@ -109,9 +107,9 @@ await dir.p.goto(`${BASE}/dashboard/sessions/${first}`, { waitUntil: "networkidl
 check("the casting director sees it", (await dir.p.getByText("1 submission").count()) > 0);
 
 section("5 productions are capped too");
-const second = await openSession(dir.p, { name: `Second ${t}`, company: CO, opensAt: day(0), closesAt: day(20) });
+const second = await openSession(dir.p, { name: `Second ${t}`, company: CO, opensAt: at(0), closesAt: at(20, "23:59") });
 check("the second is allowed", second.startsWith("ses_"));
-await dir.p.goto(`${BASE}/dashboard/sessions`, { waitUntil: "networkidle" });
+await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 check("the allowance is stated", (await dir.p.getByText(/covers 2 productions/).count()) > 0);
 check("and the way to open another is withdrawn", (await dir.p.locator("main").getByRole("link", { name: "New production" }).count()) === 0);
 check("with a reason given", (await dir.p.getByText(/used them all/).count()) > 0);
@@ -133,7 +131,7 @@ await row2.locator('input[name="maxSessions"]').fill("5");
 await row2.getByRole("button", { name: "Save limits" }).click();
 await admin.p.waitForTimeout(2500);
 check("the change is confirmed", (await admin.p.getByText(/Updated what Cass Dir is allowed/).count()) > 0);
-await dir.p.goto(`${BASE}/dashboard/sessions`, { waitUntil: "networkidle" });
+await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 check("the director can open one again", (await dir.p.locator("main").getByRole("link", { name: "New production" }).count()) > 0);
 
 section("8 an account can be given an end date");
@@ -158,7 +156,7 @@ section("9 the roles it published stay up for the people holding the link");
 
 section("10 six months on, the performers' details are destroyed");
 {
-  // Back-date the closing date rather than waiting six months for it.
+  // Back-date the closing time rather than waiting six months for it.
   const { Pool } = await import("pg");
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   await pool.query(
@@ -190,7 +188,7 @@ section("10 six months on, the performers' details are destroyed");
   check("the production and its roles are kept", kept.rows[0].n === 2, JSON.stringify(kept.rows[0]));
 
   const marked = await pool.query("SELECT purged_at FROM sessions_casting WHERE id = $1", [first]);
-  check("the session records that it happened", marked.rows[0].purged_at !== null);
+  check("the production records that it happened", marked.rows[0].purged_at !== null);
   await pool.end();
 }
 

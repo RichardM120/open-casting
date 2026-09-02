@@ -13,7 +13,7 @@ export async function generateMetadata({
 }: PageProps<"/dashboard/roles/[id]/edit">): Promise<Metadata> {
   const user = await currentUser();
   const role = user ? await getVisibleRole((await params).id, user) : null;
-  return { title: role ? `Edit — ${role.title}` : "Role not found" };
+  return { title: role ? `Edit ${role.title}` : "Role not found" };
 }
 
 export default async function EditRolePage({
@@ -33,7 +33,7 @@ export default async function EditRolePage({
         href={`/dashboard/roles/${role.id}`}
         className="text-sm text-muted transition-colors hover:text-text"
       >
-        ← Back to submissions
+        &larr; {role.title}
       </Link>
 
       <div className="mt-6">
@@ -42,8 +42,8 @@ export default async function EditRolePage({
           Edit {role.title}
         </h1>
         <p className="mt-3 max-w-prose text-muted">
-          Changes go live immediately. Anyone who has already submitted keeps the terms they
-          accepted at the time. The dates belong to the casting session, so change those there.
+          Changes go live straight away. Anyone who has already submitted keeps the terms they
+          accepted at the time. The dates belong to the production, so change those there.
         </p>
       </div>
 

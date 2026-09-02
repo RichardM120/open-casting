@@ -5,7 +5,14 @@ import { notFound } from "next/navigation";
 import { DeadlineBadge } from "@/components/deadline-badge";
 import { SubmissionForm, SubmissionsClosed } from "@/components/submission-form";
 import { Badge, Eyebrow } from "@/components/ui";
-import { ageRange, formatDate, formatRelative, isOpen, notYetOpen, roleWindow } from "@/lib/format";
+import {
+  ageRange,
+  formatDateTime,
+  formatRelative,
+  isOpen,
+  notYetOpen,
+  roleWindow,
+} from "@/lib/format";
 import { canPreview } from "@/lib/preview";
 import { getSessionRole } from "@/lib/roles";
 import { getSessionByToken } from "@/lib/sessions";
@@ -20,7 +27,7 @@ export async function generateMetadata({
   const session = await getSessionByToken(token);
   const role = session ? await getSessionRole(session.id, roleId) : null;
   return {
-    title: role ? `${role.title} — ${role.production}` : "Role not found",
+    title: role ? `${role.title}, ${role.production}` : "Role not found",
     description: role?.characterBrief.slice(0, 160),
     robots: { index: false, follow: false },
   };
@@ -30,7 +37,7 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
   const { token, roleId } = await params;
 
   // The token authorises, and the role is looked up inside the production it
-  // names — so one production's link cannot reach another's role at all.
+  // names, so one production's link cannot reach another's role at all.
   const session = await getSessionByToken(token);
   const role = session ? await getSessionRole(session.id, roleId) : null;
   if (!session || !role) notFound();
@@ -49,7 +56,7 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
         href={`/c/${token}`}
         className="text-sm text-muted transition-colors hover:text-text"
       >
-        ← All roles for {role.session.name}
+        &larr; All roles for {role.session.name}
       </Link>
 
       <div className="mt-6 grid gap-10 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-12">
@@ -68,11 +75,11 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
           </p>
 
           <p className="mt-4 max-w-prose rounded-xl border border-line bg-raised px-4 py-3 text-sm leading-relaxed text-muted">
-            Part of the <strong className="text-text">{role.session.name}</strong> casting
-            session, which takes submissions from {formatDate(role.session.opensAt)} to{" "}
-            {formatDate(role.session.closesAt)}
+            Part of <strong className="text-text">{role.session.name}</strong>, which takes
+            submissions from {formatDateTime(role.session.opensAt)} to{" "}
+            {formatDateTime(role.session.closesAt)}
             {role.session.closedAt
-              ? `, and was closed early on ${formatDate(role.session.closedAt)}`
+              ? `, and was closed early on ${formatDateTime(role.session.closedAt)}`
               : ""}
             . One submission per person per production, whichever role you go for.
           </p>
@@ -80,17 +87,12 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
           <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 rounded-2xl border border-line bg-surface p-6 sm:grid-cols-3">
             <Detail label="Location" value={role.location} />
             <Detail label="Playing age" value={ageRange(role.ageMin, role.ageMax)} />
-            <Detail label="Union" value={role.unionStatus} />
-            <Detail label="Pay" value={role.payType} />
             <Detail label="Rate" value={role.rate} />
             <Detail label="Shoot dates" value={role.shootDates} />
-            <Detail label="Opens" value={formatDate(role.session.opensAt)} />
-            <Detail label="Closes" value={formatDate(role.session.closesAt)} />
+            <Detail label="Opens" value={formatDateTime(role.session.opensAt)} />
+            <Detail label="Closes" value={formatDateTime(role.session.closesAt)} />
             <Detail label="Posted" value={formatRelative(role.postedAt)} />
-            <Detail
-              label="Submissions"
-              value={`${submissions.length} so far`}
-            />
+            <Detail label="Submissions" value={`${submissions.length} so far`} />
           </dl>
 
           <Section title="The production">
@@ -121,14 +123,14 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
               roleId={role.id}
               roleTitle={role.title}
               session={role.session.name}
-              closesOn={formatDate(role.session.closesAt)}
+              closesOn={formatDateTime(role.session.closesAt)}
               disclaimer={role.disclaimer}
               backTo={`/c/${token}`}
             />
           ) : (
             <SubmissionsClosed
               session={role.session.name}
-              opensOn={upcoming ? formatDate(role.session.opensAt) : undefined}
+              opensOn={upcoming ? formatDateTime(role.session.opensAt) : undefined}
               backTo={`/c/${token}`}
             />
           )}

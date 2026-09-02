@@ -14,7 +14,7 @@ export type FormState = {
   errors: FieldErrors;
   values: Record<string, string>;
   /**
-   * Anything the form needs to show back that is not a field — today, the
+   * Anything the form needs to show back that is not a field. Today, the
    * one-time password for an account just created. It rides in the action's
    * return value rather than the URL so it stays out of browser history,
    * referrers and the access log.

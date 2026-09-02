@@ -7,7 +7,7 @@ import { query } from "./db";
 /**
  * Who a limit applies to. Behind a proxy the left-most `x-forwarded-for` entry
  * is the client; Vercel sets it. Falls back to a single shared bucket, which
- * throttles everyone together rather than nobody — the safe direction.
+ * throttles everyone together rather than nobody, which is the safe direction.
  */
 export async function clientAddress(): Promise<string> {
   const list = await headers();

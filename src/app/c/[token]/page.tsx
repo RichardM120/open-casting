@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 
 import { DeadlineBadge } from "@/components/deadline-badge";
 import { Badge, Eyebrow } from "@/components/ui";
-import { ageRange, formatDate, isOpen, notYetOpen, roleWindow } from "@/lib/format";
+import { ageRange, formatDateTime, isOpen, notYetOpen, roleWindow } from "@/lib/format";
 import { canPreview } from "@/lib/preview";
 import { listSessionRoles } from "@/lib/roles";
 import { getSessionByToken } from "@/lib/sessions";
@@ -13,7 +13,7 @@ export const dynamic = "force-dynamic";
 
 /**
  * A production's casting call. This is the only page a performer ever sees, and
- * the share token in the URL is the whole of the authorisation — so it is kept
+ * the share token in the URL is the whole of the authorisation, so it is kept
  * out of search results rather than relying on nobody linking to it.
  */
 export async function generateMetadata({
@@ -21,7 +21,7 @@ export async function generateMetadata({
 }: PageProps<"/c/[token]">): Promise<Metadata> {
   const session = await getSessionByToken((await params).token);
   return {
-    title: session ? `Casting — ${session.name}` : "Casting call not found",
+    title: session ? `${session.name} casting` : "Casting call not found",
     description: session?.synopsis.slice(0, 160),
     robots: { index: false, follow: false },
   };
@@ -68,12 +68,12 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
         {preview
           ? "Not published. Publish it from your dashboard and this link starts working."
           : session.closedAt
-          ? `Casting closed on ${formatDate(session.closedAt)}. The brief stays up for reference.`
-          : notYetOpen(session)
-            ? `Submissions open on ${formatDate(session.opensAt)}. Read the roles now and have a tape ready.`
-            : open
-              ? `Submissions are open until the end of ${formatDate(session.closesAt)}. Pick the one role that fits you best — one submission per person for this production, whichever role you go for.`
-              : `Submissions closed on ${formatDate(session.closesAt)}. The brief stays up for reference.`}
+            ? `Casting closed on ${formatDateTime(session.closedAt)}. The brief stays up for reference.`
+            : notYetOpen(session)
+              ? `Submissions open on ${formatDateTime(session.opensAt)}. Read the roles now and have a tape ready.`
+              : open
+                ? `Submissions are open until ${formatDateTime(session.closesAt)}. Pick the one role that fits you best. It is one submission per person for this production, whichever role you go for.`
+                : `Submissions closed on ${formatDateTime(session.closesAt)}. The brief stays up for reference.`}
       </p>
 
       {roles.length > 0 ? (
@@ -101,7 +101,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
                   <Meta label="Location" value={role.location} />
                   <Meta label="Playing age" value={ageRange(role.ageMin, role.ageMax)} />
                   <Meta label="Rate" value={role.rate} />
-                  <Meta label="Union" value={role.unionStatus} />
+                  <Meta label="Shoot dates" value={role.shootDates} />
                 </dl>
               </Link>
             </li>
@@ -109,14 +109,14 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
         </ul>
       ) : (
         <p className="mt-10 rounded-2xl border border-dashed border-line-strong p-7 text-sm text-muted">
-          The roles for this production have not been posted yet. Keep the link — they will
-          appear here.
+          The roles for this production have not been posted yet. Keep the link, because they
+          will appear here.
         </p>
       )}
 
       <p className="mt-12 border-t border-line pt-6 text-xs leading-relaxed text-faint">
         You were sent this link by the production casting it. It is not listed anywhere and there
-        is nothing else to browse — Open Casting is the tool they use to run this call, not a job
+        is nothing else to browse. Open Casting is the tool they use to run this call, not a job
         board.
       </p>
     </div>

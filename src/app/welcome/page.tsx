@@ -14,33 +14,33 @@ export const metadata: Metadata = { title: "Set up your account" };
 /** What each role can see and do, said plainly on the way in. */
 const WHAT_YOU_SEE: Record<UserRole, { heading: string; points: string[]; cta: { href: string; label: string } }> = {
   director: {
-    heading: "You will see the roles you post, and nothing else",
+    heading: "You will see the productions you open, and nothing else",
     points: [
-      "Start by opening a casting session for the production — it holds the dates, and the roles you post into it open and close with it.",
+      "Start by opening a production. It holds the opening and closing times, and the roles you post into it open and close with it.",
       "Every submission made to your roles lands in one list, newest first.",
       "Move people through New, Shortlisted, Callback and Declined as you work.",
-      "Colleagues with a casting director account cannot see your roles. A producer at your company can.",
-      "Nothing is emailed to performers automatically — their address is on every submission.",
+      "Colleagues with a casting director account cannot see your productions. A producer at your company can.",
+      "Nothing is emailed to performers automatically. Their address is on every submission.",
     ],
-    cta: { href: "/dashboard/sessions/new", label: "Open your first casting session" },
+    cta: { href: "/dashboard/sessions/new", label: "Open your first production" },
   },
   producer: {
-    heading: "You will see every role posted under your company",
+    heading: "You will see every production under your company",
     points: [
-      "Roles from all your casting directors, across productions, in one place.",
-      "Each production is a casting session that owns its dates; its roles open and close together.",
+      "Productions from all your casting directors, and the roles in them, in one place.",
+      "Each production owns its opening and closing times, and its roles open and close together.",
       "You can read and act on their submissions, and edit or close their roles.",
       "Matching is on the company name, so it has to be spelled the same way.",
-      "You can post roles of your own too.",
+      "You can open productions and post roles of your own too.",
     ],
     cta: { href: "/dashboard", label: "Go to the dashboard" },
   },
   admin: {
-    heading: "You can see and moderate everything on the board",
+    heading: "You can see and moderate everything on the site",
     points: [
-      "Every casting session, every role in it, and every submission made to them.",
-      "Suspend an account and they are signed out at once and cannot sign back in. Their roles stay up.",
-      "Removing a role, or a whole casting session, permanently deletes the performers' contact details with it. Closing early is the reversible option.",
+      "Every production, every role in it, and every submission made to them.",
+      "Suspend an account and they are signed out at once and cannot sign back in. Their productions stay up.",
+      "Removing a role, or a whole production, permanently deletes the performers' contact details with it. Closing early is the reversible option.",
       "Every action is recorded in the activity trail, including yours.",
     ],
     cta: { href: "/dashboard/accounts", label: "Review the accounts" },
@@ -144,8 +144,8 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
               >
                 casting director guide
               </Link>{" "}
-              covers what each field on a role commits you to — rate against buyout, usage,
-              union status — and how to write terms performers will actually read.
+              covers what each field on a role commits you to, including the rate, the buyout
+              and usage, and how to write terms performers will actually read.
             </p>
             <p className="mt-3 text-sm leading-relaxed text-muted">
               One thing to know now: submissions carry names, emails and phone numbers. Under UK

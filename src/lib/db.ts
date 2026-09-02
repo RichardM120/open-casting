@@ -19,7 +19,7 @@ declare global {
 
 /**
  * `DATABASE_URL` is what the README documents and what to set by hand. The rest
- * are the names hosted integrations provision automatically — Vercel's Postgres
+ * are the names hosted integrations provision automatically: Vercel's Postgres
  * and Neon integrations set `POSTGRES_URL` rather than `DATABASE_URL`, so
  * reading both means a one-click database works without renaming anything.
  * Pooled strings come first: every serverless instance opens its own pool.
@@ -46,8 +46,8 @@ function connectionString(): string {
   }
 
   throw new Error(
-    `No Postgres connection string. Set DATABASE_URL (or one of ${CONNECTION_VARIABLES.slice(1).join(", ")}) — ` +
-      "see the Database section of the README for a local one-liner and the hosted setup.",
+    `No Postgres connection string. Set DATABASE_URL (or one of ${CONNECTION_VARIABLES.slice(1).join(", ")}). ` +
+      "The Database section of the README has a local one-liner and the hosted setup.",
   );
 }
 
@@ -58,8 +58,8 @@ type SslOption = boolean | { rejectUnauthorized: false } | undefined;
  *
  * pg lets a URL's own `sslmode` override whatever `ssl` option it is handed,
  * so the mode is read off the string and taken out, and the option is the one
- * that counts. Any mode asking for TLS gets it with the certificate verified —
- * hosted providers use publicly trusted CAs — which is what pg 8 does for
+ * that counts. Any mode asking for TLS gets it with the certificate verified,
+ * since hosted providers use publicly trusted CAs, which is what pg 8 does for
  * every mode, warning on each cold start that pg 9 will stop doing so for
  * `require`, the mode providers hand out. A provider with its own CA can opt
  * out with `DATABASE_SSL_NO_VERIFY=1` (or pg's `sslmode=no-verify`), which
@@ -241,8 +241,8 @@ const SCHEMA = `
 
   CREATE INDEX IF NOT EXISTS rate_limits_idx ON rate_limits (bucket, subject, at);
 
-  -- A casting session is one production's casting window. Roles belong to it and
-  -- open and close together, because a production casts as a unit.
+  -- A production and its casting window. Roles belong to it and open and close
+  -- together, because a production casts as a unit.
   CREATE TABLE IF NOT EXISTS sessions_casting (
     id         text PRIMARY KEY,
     slug       text        NOT NULL,
@@ -250,8 +250,9 @@ const SCHEMA = `
     synopsis   text        NOT NULL DEFAULT '',
     owner_id   text        REFERENCES users(id) ON DELETE CASCADE,
     company    text        NOT NULL,
-    opens_at   date        NOT NULL,
-    closes_at  date        NOT NULL,
+    -- Submissions are taken from opens_at up to closes_at, to the minute.
+    opens_at   timestamptz NOT NULL,
+    closes_at  timestamptz NOT NULL,
     -- Set when closed ahead of closes_at.
     closed_at  timestamptz,
     created_at timestamptz NOT NULL DEFAULT now()
@@ -279,7 +280,7 @@ const SCHEMA = `
   ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS purged_at timestamptz;
 
   -- When the production itself finishes, which is what the retention clock runs
-  -- from — not the casting close date. A production may still be shooting long
+  -- from rather than the casting close. A production may still be shooting long
   -- after its casting call shut, and the material is needed until it wraps.
   ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS production_ends_at date;
 
@@ -290,7 +291,7 @@ const SCHEMA = `
 
   -- Existing projects predate the field; the casting close date is the only
   -- honest guess at when they wrapped.
-  UPDATE sessions_casting SET production_ends_at = closes_at WHERE production_ends_at IS NULL;
+  UPDATE sessions_casting SET production_ends_at = closes_at::date WHERE production_ends_at IS NULL;
 
   CREATE INDEX IF NOT EXISTS casting_owner_idx ON sessions_casting (owner_id);
   CREATE INDEX IF NOT EXISTS casting_retention_idx ON sessions_casting (production_ends_at)
@@ -311,11 +312,12 @@ const SCHEMA = `
     self_tape        boolean     NOT NULL,
     age_min          integer     NOT NULL,
     age_max          integer     NOT NULL,
-    pay_type         text        NOT NULL,
     rate             text        NOT NULL,
-    union_status     text        NOT NULL,
     shoot_dates      text        NOT NULL,
-    deadline         date        NOT NULL,
+    -- Legacy. Roles once carried their own closing date; the production owns
+    -- it now, and this is only read to derive productions for roles that
+    -- predate them.
+    deadline         date,
     casting_director text        NOT NULL,
     company          text        NOT NULL,
     posted_at        timestamptz NOT NULL DEFAULT now()
@@ -329,7 +331,6 @@ const SCHEMA = `
     phone        text        NOT NULL,
     location     text        NOT NULL,
     age          integer     NOT NULL,
-    union_status text        NOT NULL,
     reel_url     text        NOT NULL DEFAULT '',
     profile_url  text        NOT NULL DEFAULT '',
     cover_note   text        NOT NULL,
@@ -362,7 +363,7 @@ const SCHEMA = `
 
   -- An audit trail of who did what. Ids are nullable with ON DELETE SET NULL and
   -- the human-readable fields are snapshotted alongside them, so removing a role
-  -- or an account does not erase the record of it — which is the moment the
+  -- or an account does not erase the record of it, which is the moment the
   -- trail is worth most.
   CREATE TABLE IF NOT EXISTS activity (
     id         bigserial PRIMARY KEY,
@@ -403,10 +404,9 @@ const SCHEMA = `
   CREATE INDEX IF NOT EXISTS roles_session_idx ON roles (session_id);
   CREATE INDEX IF NOT EXISTS submissions_session_idx ON submissions (session_id);
   CREATE INDEX IF NOT EXISTS submissions_role_idx ON submissions (role_id);
-  CREATE INDEX IF NOT EXISTS roles_deadline_idx ON roles (deadline);
   CREATE INDEX IF NOT EXISTS roles_owner_idx ON roles (owner_id);
 
-  -- One submission per person per casting session — a production considers you
+  -- One submission per person per production: a production considers you
   -- once, not once per role. Enforced by the database rather than by a
   -- check-then-insert that two concurrent requests could both pass.
   DROP INDEX IF EXISTS submissions_role_email_idx;
@@ -419,6 +419,41 @@ const SCHEMA = `
   CREATE UNIQUE INDEX IF NOT EXISTS submissions_session_email_idx
     ON submissions (session_id, lower(email))
     WHERE session_id IS NOT NULL;
+
+  -- A production casts as a whole, so what used to be asked per role now lives
+  -- on the production: its type here, and the opening and closing moments to
+  -- the minute rather than the day. Every role is paid and union membership
+  -- is not asked about, so those columns go.
+  ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS production_type text;
+  UPDATE sessions_casting s SET production_type = coalesce(
+    (SELECT r.production_type FROM roles r WHERE r.session_id = s.id ORDER BY r.posted_at LIMIT 1),
+    'Feature Film'
+  ) WHERE s.production_type IS NULL;
+  ALTER TABLE sessions_casting ALTER COLUMN production_type SET DEFAULT 'Feature Film';
+  ALTER TABLE sessions_casting ALTER COLUMN production_type SET NOT NULL;
+
+  -- Dates become moments. A window that used to run from the start of one day
+  -- to the end of another, UK time, still does.
+  DO $$
+  BEGIN
+    IF (
+      SELECT data_type FROM information_schema.columns
+      WHERE table_schema = current_schema()
+        AND table_name = 'sessions_casting' AND column_name = 'opens_at'
+    ) = 'date' THEN
+      ALTER TABLE sessions_casting
+        ALTER COLUMN opens_at TYPE timestamptz
+          USING (opens_at::timestamp AT TIME ZONE 'Europe/London'),
+        ALTER COLUMN closes_at TYPE timestamptz
+          USING ((closes_at + 1)::timestamp AT TIME ZONE 'Europe/London' - interval '1 minute');
+    END IF;
+  END $$;
+
+  ALTER TABLE roles ALTER COLUMN deadline DROP NOT NULL;
+  DROP INDEX IF EXISTS roles_deadline_idx;
+  ALTER TABLE roles DROP COLUMN IF EXISTS pay_type;
+  ALTER TABLE roles DROP COLUMN IF EXISTS union_status;
+  ALTER TABLE submissions DROP COLUMN IF EXISTS union_status;
 `;
 
 /** Postgres error code for a unique constraint violation. */
@@ -426,7 +461,7 @@ export const UNIQUE_VIOLATION = "23505";
 
 /**
  * Creates the tables, then loads the demo content if the database is empty.
- * Runs at most once per process, and is safe to run from several at once —
+ * Runs at most once per process, and is safe to run from several at once:
  * every statement is idempotent, and seeding is keyed on fixed ids.
  */
 function ensureSchema(): Promise<void> {
@@ -439,9 +474,9 @@ function ensureSchema(): Promise<void> {
     );
     if (rows[0]?.count === "0") await seed();
     await backfillSessions();
-  await backfillTokens();
-  await bootstrapAdmin();
-  await purgeOnBoot();
+    await backfillTokens();
+    await bootstrapAdmin();
+    await purgeOnBoot();
   })().catch((error) => {
     // Let the next request retry rather than caching a failed bootstrap.
     globalThis.__openCastingSchema = undefined;
@@ -473,13 +508,13 @@ async function seed(): Promise<void> {
     for (const session of sessions) {
       await client.query(
         `INSERT INTO sessions_casting
-           (id, slug, name, synopsis, owner_id, company, opens_at, closes_at,
-            production_ends_at, public_token, published_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10, now()) ON CONFLICT (id) DO NOTHING`,
+           (id, slug, name, production_type, synopsis, owner_id, company, opens_at,
+            closes_at, production_ends_at, public_token, published_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11, now()) ON CONFLICT (id) DO NOTHING`,
         [
-          session.id, session.slug, session.name, session.synopsis,
-          DEMO_USER.id, session.company, session.opensAt, session.closesAt,
-          session.productionEndsAt, session.publicToken,
+          session.id, session.slug, session.name, session.productionType,
+          session.synopsis, DEMO_USER.id, session.company, session.opensAt,
+          session.closesAt, session.productionEndsAt, session.publicToken,
         ],
       );
     }
@@ -488,18 +523,17 @@ async function seed(): Promise<void> {
       await client.query(
         `INSERT INTO roles (
            id, slug, title, production, production_type, synopsis, character_brief,
-           requirements, location, self_tape, age_min, age_max, pay_type, rate,
-           union_status, shoot_dates, deadline, casting_director, company, posted_at,
-           owner_id, disclaimer, session_id
+           requirements, location, self_tape, age_min, age_max, rate, shoot_dates,
+           casting_director, company, posted_at, owner_id, disclaimer, session_id
          ) VALUES (
-           $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23
+           $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20
          ) ON CONFLICT (id) DO NOTHING`,
         [
           role.id, role.slug, role.title, role.production, role.productionType,
           role.synopsis, role.characterBrief, role.requirements, role.location,
-          role.selfTape, role.ageMin, role.ageMax, role.payType, role.rate,
-          role.unionStatus, role.shootDates, role.deadline, role.castingDirector,
-          role.company, role.postedAt, DEMO_USER.id, role.disclaimer, role.sessionId,
+          role.selfTape, role.ageMin, role.ageMax, role.rate, role.shootDates,
+          role.castingDirector, role.company, role.postedAt, DEMO_USER.id,
+          role.disclaimer, role.sessionId,
         ],
       );
     }
@@ -507,15 +541,15 @@ async function seed(): Promise<void> {
     for (const submission of submissions) {
       await client.query(
         `INSERT INTO submissions (
-           id, role_id, session_id, name, email, phone, location, age, union_status,
+           id, role_id, session_id, name, email, phone, location, age,
            reel_url, profile_url, cover_note, status, submitted_at
-         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14)
+         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13)
          ON CONFLICT (id) DO NOTHING`,
         [
           submission.id, submission.roleId, submission.sessionId, submission.name,
           submission.email, submission.phone, submission.location, submission.age,
-          submission.unionStatus, submission.reelUrl, submission.profileUrl,
-          submission.coverNote, submission.status, submission.submittedAt,
+          submission.reelUrl, submission.profileUrl, submission.coverNote,
+          submission.status, submission.submittedAt,
         ],
       );
     }
@@ -552,8 +586,9 @@ async function purgeOnBoot(): Promise<void> {
 /**
  * The unguessable half of a share link.
  *
- * Ten characters from an alphabet with no look-alikes — no 0/O, 1/l/I — because
- * these get read off a phone screen, typed from a poster, and said out loud.
+ * Ten characters from an alphabet with no look-alikes (no 0/O, no 1/l/I),
+ * because these get read off a phone screen, typed from a poster, and said out
+ * loud.
  * That is ~49 bits: far too many to enumerate, and short enough that the whole
  * link fits in a caption.
  *
@@ -590,7 +625,7 @@ async function backfillTokens(): Promise<void> {
  *
  * Nobody can register themselves, so without this there would be no way into a
  * fresh deployment. It only ever inserts: an existing account is left alone, so
- * changing the password here later does nothing — change it in the app.
+ * changing the password here later does nothing. Change it in the app.
  */
 async function bootstrapAdmin(): Promise<void> {
   const email = (process.env.ADMIN_EMAILS ?? "").split(",")[0]?.trim();
@@ -618,30 +653,33 @@ async function bootstrapAdmin(): Promise<void> {
 }
 
 /**
- * Gives every role a casting session. Roles predate sessions, so one is derived
- * per production per owner: it opens when the earliest of its roles was posted
- * and closes on the latest deadline any of them advertised, which preserves
- * what performers were already told.
+ * Gives every role a production. The earliest roles predate productions, so one
+ * is derived per production name per owner: it opens when the earliest of its
+ * roles was posted and closes at the end of the latest closing date any of them
+ * advertised, which preserves what performers were already told.
  *
  * The id is a hash of the grouping key rather than random, so running this
- * twice cannot produce two sessions for the same production.
+ * twice cannot produce two productions for the same name.
  */
 async function backfillSessions(): Promise<void> {
   await rawTransaction(async (client) => {
     await client.query(`
       INSERT INTO sessions_casting
-        (id, slug, name, synopsis, owner_id, company, opens_at, closes_at, published_at)
+        (id, slug, name, production_type, synopsis, owner_id, company, opens_at,
+         closes_at, published_at)
       SELECT
         'ses_' || substr(md5(coalesce(owner_id, '') || '|' || lower(production)), 1, 12),
         regexp_replace(lower(production), '[^a-z0-9]+', '-', 'g'),
         min(production),
+        min(production_type),
         min(synopsis),
         owner_id,
         min(company),
-        min(posted_at)::date,
-        max(deadline),
-        -- These roles were already public before sessions existed; leaving them
-        -- as drafts would take down live casting calls.
+        min(posted_at),
+        (coalesce(max(deadline), max(posted_at)::date) + 1)::timestamp
+          AT TIME ZONE 'Europe/London' - interval '1 minute',
+        -- These roles were already public before productions existed; leaving
+        -- them as drafts would take down live casting calls.
         min(posted_at)
       FROM roles
       WHERE session_id IS NULL
@@ -717,7 +755,7 @@ export async function databaseStatus(): Promise<{
   authSecret: "set" | "missing";
   email: "configured" | "missing";
   /** Pre-launch switches. Both must read "off" before this is a live service. */
-  site: "walled off — passcode, and sign-in checks nothing" | "open to the public";
+  site: "walled off: passcode, and sign-in checks nothing" | "open to the public";
   schema: "ready" | "unavailable";
   roles?: number;
   sessions?: number;
@@ -731,9 +769,9 @@ export async function databaseStatus(): Promise<{
   const email: "configured" | "missing" = process.env.RESEND_API_KEY?.trim()
     ? "configured"
     : "missing";
-  const site: "walled off — passcode, and sign-in checks nothing" | "open to the public" =
+  const site: "walled off: passcode, and sign-in checks nothing" | "open to the public" =
     process.env.SITE_PASSCODE?.trim()
-      ? "walled off — passcode, and sign-in checks nothing"
+      ? "walled off: passcode, and sign-in checks nothing"
       : "open to the public";
   if (!variable) {
     return {

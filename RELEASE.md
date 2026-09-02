@@ -14,12 +14,12 @@ every pull request. It fails the build rather than warning.
 | --- | --- |
 | `npm ci` | Installs from the lockfile. A drifting dependency tree is a deploy that differs from what was tested. |
 | `npm run lint` | ESLint, including the React hooks rules. |
-| `npm run typecheck` | `next typegen` then `tsc --noEmit`. Typegen first, because the route types are generated and a fresh checkout has no `.next` — the same script locally and in CI, so the two cannot disagree. |
+| `npm run typecheck` | `next typegen` then `tsc --noEmit`. Typegen first, because the route types are generated and a fresh checkout has no `.next`. The same script runs locally and in CI, so the two cannot disagree. |
 | `npm run build` **with no `DATABASE_URL`** | Every data page is `force-dynamic`; a build that needs a live database is a deploy that breaks when the database is slow. |
-| `npm run test:e2e` | Browser checks against a production build and a real Postgres — six suites, including the casting-session window and the one-submission-per-production rule. |
+| `npm run test:e2e` | Browser checks against a production build and a real Postgres: twelve suites, including the production's casting window, the one-submission-per-production rule, and the pre-launch wall. |
 
 The end-to-end suites live in `test/suites/` and run through `test/run.mjs`,
-which gives each suite a dropped-and-reseeded database and its own server —
+which gives each suite a dropped-and-reseeded database and its own server.
 `ensureSchema()` memoises per process, so a truncate alone would not reseed.
 Screenshots from a failed run are uploaded as a CI artifact.
 
@@ -29,13 +29,13 @@ assertion, which is what would catch a Content Security Policy regression.
 ## In the code
 
 - **Content Security Policy** with a per-request nonce, plus `X-Content-Type-Options`,
-  `Referrer-Policy`, `Permissions-Policy` and `Strict-Transport-Security` — `src/proxy.ts`.
+  `Referrer-Policy`, `Permissions-Policy` and `Strict-Transport-Security`, in `src/proxy.ts`.
   `script-src` carries no `'unsafe-inline'`; the one inline style attribute in the app was
   moved to a class so `style-src` did not need loosening either.
-- **Rate limiting** on the open write path — submissions, by client address — and failed
+- **Rate limiting** on the open write path (submissions, by client address) and failed
   sign-ins by email. The submission form takes no account and writes to the database, so
   it needed a ceiling. Sign-ups no longer exist to throttle.
-- **A second factor on privileged accounts** — a one-time emailed link, 15 minutes,
+- **A second factor on privileged accounts**: a one-time emailed link, 15 minutes,
   single use, spent in one `UPDATE`. Required for admins and for anyone flagged, and
   applied to Google sign-in too.
 - **Edge role checks that fail closed**, over a signed context cookie, with the
@@ -43,22 +43,22 @@ assertion, which is what would catch a Content Security Policy regression.
 - **No self-registration.** Accounts come from the administrator only, and the Google
   callback refuses an address that has no account rather than creating one.
 - **`robots.txt` disallows everything**, and the pages reachable by share token are
-  `noindex` — a token in a search result would defeat the point of having one.
+  `noindex`. A token in a search result would defeat the point of having one.
 - **Lockfile committed**, and the Node version pinned in `engines`.
 - **Fonts** are self-hosted through `next/font`, so no external font request and no
   `font-src` beyond `'self'`.
-- **No images or third-party scripts** to optimise yet. Revisit when headshots arrive —
+- **No images or third-party scripts** to optimise yet. Revisit when headshots arrive;
   they will need `next/image` and a widened `img-src`.
 - **`/api/health`** answers whether the running deployment can reach its database, which
   variable the connection string came from, and whether the schema is there. It is the
   first thing to check when a deployed page returns a server error, because a build
   succeeds with no database and only fails at request time. It returns no data and never
   the connection string.
-- **A visible error boundary** — `src/app/error.tsx`. Without one, a server error shows the
+- **A visible error boundary**, `src/app/error.tsx`. Without one, a server error shows the
   platform's own page, which says only that one happened. This one shows the digest, which
   is what matches a report to a log line.
 
-## Yours — Vercel dashboard
+## Yours: the Vercel dashboard
 
 Nothing in the repository can set these.
 
@@ -66,10 +66,10 @@ Nothing in the repository can set these.
 | --- | --- |
 | Deployment Protection | Stops preview URLs being publicly readable. Worth it before real submissions exist. |
 | Web Application Firewall | Managed rulesets and a bot rule. The app-level rate limit is a floor, not a substitute. |
-| Speed Insights / Observability | Needs the `@vercel/speed-insights` package as well as the dashboard toggle. Not added — it collects visitor data, so it is your call, not mine. |
+| Speed Insights / Observability | Needs the `@vercel/speed-insights` package as well as the dashboard toggle. Not added, because it collects visitor data, so it is your call, not mine. |
 | Spend Management | Every page is dynamic, so every view is a function invocation. Set an alert. |
 | Function region | **Put it in the same region as the Neon database.** A cross-region round trip on every query is the single largest avoidable latency here. |
-| Fluid compute | Reduces cold starts, which this app will feel — each cold start also re-runs the schema bootstrap. |
+| Fluid compute | Reduces cold starts, which this app will feel: each cold start also re-runs the schema bootstrap. |
 | Log Drains, SAML, SCIM, Audit Logs | Paid tiers. The app keeps its own activity trail regardless. |
 
 ## Considered, not done
@@ -86,8 +86,11 @@ Nothing in the repository can set these.
 
 1. CI green on `main`.
 2. If the change touches `src/lib/db.ts`, rehearse the migration against a copy of
-   production. Neon branching makes this cheap, and every schema change so far has been
-   additive `ALTER ... IF NOT EXISTS` precisely so it can run against live data.
-3. Deploy, then load `/` and `/roles/new` — the second is the only page that reads no
-   data, so the pair distinguishes a broken build from a broken database.
+   production. Neon branching makes this cheap. Every schema change so far is written to
+   run against live data: additive `ALTER ... IF NOT EXISTS` where it can be, and where a
+   column is dropped or retyped (pay type and union status went; the casting window became
+   `timestamptz`), guarded so it converts what is there and then no-ops.
+3. Deploy, then load `/faq` and `/api/health`. The first reads no data and the second
+   says whether the database answers, so the pair distinguishes a broken build from a
+   broken database.
 4. Check the function logs for the first request: that is when the schema bootstrap runs.

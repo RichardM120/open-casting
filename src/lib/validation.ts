@@ -1,6 +1,7 @@
 import { z } from "zod";
 
-import { PAY_TYPES, PRODUCTION_TYPES, SIGNUP_ROLES, TIER_KEYS, UNION_STATUSES } from "./types";
+import { fromLocalInput, londonDate } from "./format";
+import { PRODUCTION_TYPES, SIGNUP_ROLES, TIER_KEYS } from "./types";
 
 const trimmed = z.string().trim();
 const optionalUrl = trimmed
@@ -19,11 +20,10 @@ export const submissionSchema = z.object({
     .int("Enter your age in whole years")
     .min(5, "Enter an age of 5 or over")
     .max(100, "Enter an age of 100 or under"),
-  unionStatus: z.enum(["Union", "Non-Union"], { message: "Choose a union status" }),
   reelUrl: optionalUrl,
   profileUrl: optionalUrl,
   coverNote: trimmed
-    .min(20, "Tell the casting director a little more — 20 characters minimum")
+    .min(20, "Tell the casting director a little more. Twenty characters is the minimum")
     .max(1200, "Keep the cover note under 1200 characters"),
   // Only present, and only required, when the role carries terms. The action
   // checks it against the role rather than trusting the form.
@@ -42,12 +42,14 @@ export const submissionSchema = z.object({
 
 export type SubmissionInput = z.infer<typeof submissionSchema>;
 
+/**
+ * What a role needs to say for itself. Everything about the production it sits
+ * in (the name, the type, the synopsis, the company, the dates) comes from the
+ * production, so the form does not ask for it twice.
+ */
 export const roleSchema = z
   .object({
     title: trimmed.min(2, "Name the role").max(80),
-    production: trimmed.min(2, "Name the production").max(80),
-    productionType: z.enum(PRODUCTION_TYPES, { message: "Choose a production type" }),
-    synopsis: trimmed.min(20, "Describe the production in a sentence or two").max(600),
     characterBrief: trimmed.min(20, "Describe the character").max(1200),
     requirements: trimmed
       .max(800)
@@ -61,19 +63,14 @@ export const roleSchema = z
     selfTape: z.coerce.boolean(),
     ageMin: z.coerce.number({ message: "Enter a minimum age" }).int().min(5).max(100),
     ageMax: z.coerce.number({ message: "Enter a maximum age" }).int().min(5).max(100),
-    payType: z.enum(PAY_TYPES, { message: "Choose how the role is paid" }),
-    rate: trimmed.min(2, "State the rate, or say what is offered instead").max(120),
-    unionStatus: z.enum(UNION_STATUSES, { message: "Choose a union status" }),
+    rate: trimmed.min(2, "Say what the role pays").max(120),
     shootDates: trimmed.min(2, "When does it shoot?").max(120),
-    // The closing date belongs to the casting session, not the role.
-    sessionId: trimmed.min(1, "Choose the casting session this role belongs to"),
-    castingDirector: trimmed.min(2, "Who is casting?").max(80),
-    company: trimmed.min(2, "Name the company").max(80),
+    sessionId: trimmed.min(1, "Choose the production this role belongs to"),
     disclaimer: trimmed.max(2000, "Keep the terms under 2000 characters"),
   })
   .refine((value) => value.ageMax >= value.ageMin, {
     path: ["ageMax"],
-    message: "Maximum age must be the same as or above the minimum",
+    message: "The maximum age must be the same as or above the minimum",
   });
 
 export type RoleInput = z.infer<typeof roleSchema>;
@@ -101,11 +98,6 @@ const password = z
   .min(10, "Use at least 10 characters")
   .max(200, "Keep it under 200 characters");
 
-/**
- * What the administrator fills in to make somebody an account. There is no
- * password field: one is generated and shown once, so a weak shared password
- * is not something anyone can choose here.
- */
 /** An empty box means "no limit", which is different from zero. */
 const optionalCount = trimmed
   .max(6)
@@ -124,6 +116,11 @@ export const limitsSchema = z.object({
   accessUntil: optionalDate,
 });
 
+/**
+ * What the administrator fills in to make somebody an account. There is no
+ * password field: one is generated and shown once, so a weak shared password
+ * is not something anyone can choose here.
+ */
 export const newAccountSchema = z.object({
   name: trimmed.min(2, "Enter their name").max(80),
   company: trimmed.min(2, "Name their company or agency").max(80),
@@ -139,8 +136,8 @@ export const signUpSchema = z.object({
   company: trimmed.min(2, "Name your company or agency").max(80),
   email: trimmed.max(120).pipe(z.email("Enter a valid email address")),
   password,
-  // Admin is absent by design — it comes from ADMIN_EMAILS, never from the form.
-  role: z.enum(SIGNUP_ROLES, { message: "Choose how you will use the board" }),
+  // Admin is absent by design. It comes from ADMIN_EMAILS, never from the form.
+  role: z.enum(SIGNUP_ROLES, { message: "Choose how you will use Open Casting" }),
 });
 
 export const signInSchema = z.object({
@@ -156,27 +153,38 @@ export const profileSchema = z.object({
   company: trimmed.min(2, "Name your company or agency").max(80),
 });
 
+/**
+ * A date and time as a datetime-local field sends it. It is read as UK time and
+ * comes out the other side as a UTC timestamp, which is what gets stored.
+ */
+function localDateTime(message: string) {
+  return trimmed
+    .regex(/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}(:\d{2})?$/, message)
+    .transform(fromLocalInput);
+}
+
 export const sessionSchema = z
   .object({
     name: trimmed.min(2, "Name the production").max(80),
+    productionType: z.enum(PRODUCTION_TYPES, { message: "Choose a production type" }),
     synopsis: trimmed.min(20, "Describe the production in a sentence or two").max(600),
     company: trimmed.min(2, "Name the company").max(80),
-    opensAt: trimmed.regex(/^\d{4}-\d{2}-\d{2}$/, "Choose an opening date"),
-    closesAt: trimmed.regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a closing date"),
+    opensAt: localDateTime("Choose when submissions open"),
+    closesAt: localDateTime("Choose when submissions close"),
     productionEndsAt: trimmed.regex(
       /^\d{4}-\d{2}-\d{2}$/,
       "Enter when the production finishes",
     ),
   })
-  .refine((value) => value.closesAt >= value.opensAt, {
+  .refine((value) => Date.parse(value.closesAt) > Date.parse(value.opensAt), {
     path: ["closesAt"],
-    message: "The closing date cannot be before the opening date",
+    message: "Submissions have to close after they open",
   })
-  .refine((value) => Date.parse(`${value.closesAt}T23:59:59Z`) > Date.now(), {
+  .refine((value) => Date.parse(value.closesAt) > Date.now(), {
     path: ["closesAt"],
-    message: "Choose a closing date in the future",
+    message: "Choose a closing time in the future",
   })
-  .refine((value) => value.productionEndsAt >= value.closesAt, {
+  .refine((value) => value.productionEndsAt >= londonDate(value.closesAt), {
     path: ["productionEndsAt"],
     message: "The production cannot finish before casting closes",
   });

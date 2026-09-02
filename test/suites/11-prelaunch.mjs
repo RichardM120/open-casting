@@ -4,7 +4,7 @@
  * One variable, `SITE_PASSCODE`, does two things: it puts an interstitial in
  * front of every page, and it stops the application's own sign-in checking
  * anything. The second is only defensible because of the first, so this suite
- * spends as much effort on the wall being total — casting links included — and
+ * spends as much effort on the wall being total, casting links included, and
  * on it announcing itself, as on either switch working.
  */
 import {
@@ -26,7 +26,7 @@ const SHARE = "/c/saltmarsh-4f21c9ba7e";
 section("1 every page is behind the interstitial");
 {
   const { c, p } = await ctx();
-  for (const path of ["/", "/faq", "/faq/performers", "/login", "/legal/submission-terms", "/dashboard", "/dashboard/sessions"]) {
+  for (const path of ["/", "/faq", "/faq/performers", "/login", "/legal/submission-terms", "/dashboard", "/dashboard/activity"]) {
     await p.goto(BASE + path, { waitUntil: "networkidle" });
     check(`${path} -> /gate`, new URL(p.url()).pathname === "/gate", p.url());
   }
@@ -85,7 +85,7 @@ const inside = await ctx();
   await p.fill("#passcode", PASSCODE);
   await p.getByRole("button", { name: "Enter" }).click();
   // Through the wall it hands over to the app's own guard, which for a
-  // signed-out visitor means the sign-in page — reached in one hop, with the
+  // signed-out visitor means the sign-in page, reached in one hop, with the
   // destination still on it.
   await p.waitForURL(/\/login\?/, { timeout: 20000 });
   check("the right one goes through", (await p.locator("#passcode").count()) === 0, p.url());
@@ -106,7 +106,7 @@ section("6 OAuth is withdrawn while the wall is up");
 
   // The route itself, before any browser follows it: a refusal, and a relative
   // one. A redirect built from the server's own address moves the browser to
-  // another host and drops every cookie it holds — the gate cookie included.
+  // another host and drops every cookie it holds, the gate cookie included.
   const refusal = await fetch(`${BASE}/api/auth/google?next=%2Fdashboard`, { redirect: "manual" });
   check("google sign-in refuses", refusal.status === 303, String(refusal.status));
   check("and never leaves this origin", refusal.headers.get("location")?.startsWith("/login?error=google-unavailable") === true, refusal.headers.get("location"));

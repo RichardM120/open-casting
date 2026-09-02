@@ -27,8 +27,8 @@ const ROLE_HEADINGS: Record<(typeof SIGNUP_ROLES)[number], string> = {
 
 /**
  * The only way an account comes into being. The password is generated, not
- * chosen, and shown once — so it is worth something, and so there is no habit
- * of everyone sharing the same one.
+ * chosen, and shown once, so it is worth something and there is no habit of
+ * everyone sharing the same one.
  */
 export function NewAccountForm() {
   const [state, formAction, pending] = useActionState(createAccount, IDLE_FORM_STATE);
@@ -43,7 +43,7 @@ export function NewAccountForm() {
         <div role="status" className="rounded-xl border border-positive/40 bg-positive-soft p-5">
           <p className="text-sm font-medium text-positive">{state.message}</p>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            Send them these. The password is shown once and is not stored anywhere readable — if
+            Send them these. The password is shown once and is not stored anywhere readable. If
             it is lost, the account needs a new one.
           </p>
           <dl className="mt-4 flex flex-col gap-2 rounded-lg border border-line bg-ink p-4 font-mono text-sm">
@@ -129,8 +129,8 @@ export function NewAccountForm() {
                   <option key={key} value={key}>
                     {TIERS[key].label}
                     {TIERS[key].submissions
-                      ? ` — up to ${TIERS[key].submissions!.toLocaleString("en-GB")} submissions`
-                      : " — agreed separately"}
+                      ? `, up to ${TIERS[key].submissions!.toLocaleString("en-GB")} submissions`
+                      : ", agreed separately"}
                   </option>
                 ))}
               </Select>

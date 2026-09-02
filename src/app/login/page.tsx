@@ -57,8 +57,8 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
 
         <dl className="mt-8 flex flex-col gap-6">
           <Point term="A production at a time">
-            Open a casting session, post its roles, and set the dates once. Every role in it opens
-            and closes together, and a performer submits to the production once — not once per
+            Open a production, post its roles, and set the times once. Every role in it opens
+            and closes together, and a performer submits to the production once, not once per
             part.
           </Point>
           <Point term="One link to circulate">
@@ -70,8 +70,9 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             guardian, who confirms it on the form.
           </Point>
           <Point term="Deleted when it is done">
-            Submissions are destroyed thirty days after the production finishes — names, numbers,
-            notes. You keep the record of what you ran; nobody keeps the people&rsquo;s details.
+            Submissions are destroyed thirty days after the production finishes: names, numbers,
+            notes. You keep the record of what you ran, and nobody keeps the people&rsquo;s
+            details.
           </Point>
         </dl>
 

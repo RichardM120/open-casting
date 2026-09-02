@@ -1,5 +1,5 @@
 /**
- * Signed, self-contained tokens — the only thing the proxy can check.
+ * Signed, self-contained tokens, the only thing the proxy can check.
  *
  * The proxy runs on the Edge runtime, which has no database. So a request
  * carries two cookies: the opaque session token, which means nothing without a
@@ -7,7 +7,7 @@
  * signed so the edge can trust it without asking anybody.
  *
  * This is a cache, never the authority. It cannot know that an account was
- * suspended, that its access ended, or that its role changed a minute ago —
+ * suspended, that its access ended, or that its role changed a minute ago;
  * only the database knows that, and `currentUser()` asks it on every request.
  * What this buys is refusing an obviously-wrong request before rendering it.
  *
@@ -45,7 +45,7 @@ async function key(secret: string): Promise<CryptoKey> {
 }
 
 /**
- * A signed, expiring value with no meaning of its own — used for the pre-launch
+ * A signed, expiring value with no meaning of its own, used for the pre-launch
  * gate, where all that matters is "this browser has entered the passcode".
  */
 export async function signValue(

@@ -6,46 +6,64 @@ import { DeadlineBadge } from "@/components/deadline-badge";
 import { Badge, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
 import { listActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
-import { isOpen, roleWindow } from "@/lib/format";
-import { listVisibleRoles } from "@/lib/roles";
+import { formatDateTime, isOpen, roleWindow } from "@/lib/format";
+import { listVisibleRoles, type ListedRole } from "@/lib/roles";
+import { listVisibleSessions, sessionStats } from "@/lib/sessions";
 import { countsByRole } from "@/lib/submissions";
 
 // Counts and listings come from the database on every request, so this page is
-// never prerendered — a deploy build does not need a reachable database.
+// never prerendered, and a deploy build does not need a reachable database.
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Casting dashboard",
-  description: "Every role you have posted and every submission against it.",
+  title: "Productions",
+  description: "Every production you are casting, the roles in it, and what has come in.",
 };
 
-export default async function DashboardPage() {
+/**
+ * The one page to start from. A production holds the dates and the roles, and
+ * the roles hold the submissions, so the list goes production by production
+ * with the roles shown under each rather than as a separate list to keep in
+ * step with this one.
+ */
+export default async function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
   const user = await requireUser("/dashboard");
-  const [roles, counts, activity] = await Promise.all([
+  const [sessions, stats, roles, counts, activity, params] = await Promise.all([
+    listVisibleSessions(user),
+    sessionStats(user),
     listVisibleRoles(user),
     countsByRole(user),
     listActivity(user, { limit: 8 }),
+    searchParams,
   ]);
 
-  const totals = roles.reduce(
-    (accumulator, role) => {
-      const count = counts.get(role.id);
+  const rolesBySession = new Map<string, ListedRole[]>();
+  for (const role of roles) {
+    rolesBySession.set(role.sessionId, [...(rolesBySession.get(role.sessionId) ?? []), role]);
+  }
+
+  const totals = sessions.reduce(
+    (accumulator, session) => {
+      const count = stats.get(session.id);
       return {
-        open: accumulator.open + (isOpen(roleWindow(role)) ? 1 : 0),
-        submissions: accumulator.submissions + (count?.total ?? 0),
-        shortlisted: accumulator.shortlisted + (count?.Shortlisted ?? 0),
-        toRead: accumulator.toRead + (count?.New ?? 0),
+        open: accumulator.open + (isOpen(session) ? 1 : 0),
+        roles: accumulator.roles + (count?.roles ?? 0),
+        submissions: accumulator.submissions + (count?.submissions ?? 0),
+        toRead: accumulator.toRead + (count?.unread ?? 0),
       };
     },
-    { open: 0, submissions: 0, shortlisted: 0, toRead: 0 },
+    { open: 0, roles: 0, submissions: 0, toRead: 0 },
   );
+
+  const drafts = sessions.filter((session) => session.publishedAt === null).length;
+  const atLimit = user.maxSessions !== null && sessions.length >= user.maxSessions;
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-12">
       {user.onboardedAt ? null : (
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-accent-soft p-5">
           <p className="text-sm text-text">
-            Your account setup is not finished — it takes about a minute.
+            Your account setup is not finished. It takes about a minute.
           </p>
           <ButtonLink href="/welcome" size="sm">
             Finish setting up
@@ -53,74 +71,146 @@ export default async function DashboardPage() {
         </div>
       )}
 
+      {params.removed ? (
+        <p
+          role="status"
+          className="mb-8 rounded-2xl border border-line bg-surface p-4 text-sm text-muted"
+        >
+          The production was removed, along with its roles and their submissions.
+        </p>
+      ) : null}
+
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <Eyebrow>Casting dashboard</Eyebrow>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Your roles</h1>
+          <Eyebrow>Productions</Eyebrow>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
+            Your productions
+          </h1>
           <p className="mt-3 max-w-2xl text-muted">
             {user.role === "admin"
-              ? "Every role on the board, across all companies."
+              ? "Every production on the site, across all companies."
               : user.role === "producer"
-                ? `Every role posted under ${user.company}, across productions.`
-                : "The roles you have posted, with what has come in against them."}{" "}
-            Roles live inside a production. Open one to read its submissions.
+                ? `Every production under ${user.company}.`
+                : "The productions you are casting."}{" "}
+            Each one has its own casting window and share link. Post roles into it, and open a
+            role to read what has come in.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          <ButtonLink href="/dashboard/sessions" variant="secondary">
-            Productions
-          </ButtonLink>
-          <ButtonLink href="/dashboard/roles/new">Post a role</ButtonLink>
+          {atLimit ? null : (
+            <ButtonLink href="/dashboard/sessions/new">New production</ButtonLink>
+          )}
         </div>
       </div>
 
+      {atLimit ? (
+        <p className="mt-8 rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">
+          Your account covers {user.maxSessions}{" "}
+          {user.maxSessions === 1 ? "production" : "productions"} and you have used{" "}
+          {user.maxSessions === 1 ? "it" : "them all"}. Ask the administrator to extend it if you
+          need another.
+        </p>
+      ) : null}
+
       <dl className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Roles open" value={totals.open} />
+        <Stat label="Open now" value={totals.open} />
+        <Stat label="Roles" value={totals.roles} />
         <Stat label="Submissions" value={totals.submissions} />
         <Stat label="Still to read" value={totals.toRead} tone="accent" />
-        <Stat label="Shortlisted" value={totals.shortlisted} tone="positive" />
       </dl>
 
-      {roles.length > 0 ? (
-        <ul className="mt-10 flex flex-col gap-3">
-          {roles.map((role) => {
-            const count = counts.get(role.id);
-            return (
-              <li key={role.id}>
-                <Link
-                  href={`/dashboard/roles/${role.id}`}
-                  className="group flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-line bg-surface p-5 transition-colors hover:border-line-strong"
+      {sessions.length > 0 ? (
+        <>
+          <p className="mt-8 text-sm text-muted">
+            {totals.open} of {sessions.length}{" "}
+            {sessions.length === 1 ? "production is" : "productions are"} accepting submissions
+            now.
+            {drafts > 0
+              ? ` ${drafts} ${drafts === 1 ? "is a draft" : "are drafts"} and not yet published, so nobody can open ${drafts === 1 ? "its" : "their"} link.`
+              : ""}
+            {user.maxSessions !== null
+              ? ` Your account covers ${user.maxSessions} ${user.maxSessions === 1 ? "production" : "productions"}.`
+              : ""}
+          </p>
+
+          <ul className="mt-6 flex flex-col gap-3">
+            {sessions.map((session) => {
+              const count = stats.get(session.id);
+              const sessionRoles = rolesBySession.get(session.id) ?? [];
+              return (
+                <li
+                  key={session.id}
+                  className="rounded-2xl border border-line bg-surface p-5 transition-colors hover:border-line-strong"
                 >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium transition-colors group-hover:text-accent">
-                      {role.title}
-                    </p>
-                    <p className="truncate text-sm text-muted">
-                      {role.production} · {role.location}
-                    </p>
+                  <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                    <div className="min-w-0 flex-1">
+                      <Link
+                        href={`/dashboard/sessions/${session.id}`}
+                        className="block truncate font-medium transition-colors hover:text-accent"
+                      >
+                        {session.name}
+                      </Link>
+                      <p className="truncate text-sm text-muted">
+                        {session.productionType} · {session.company} ·{" "}
+                        {formatDateTime(session.opensAt)} to {formatDateTime(session.closesAt)}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2">
+                      {session.publishedAt === null ? <Badge tone="accent">Draft</Badge> : null}
+                      {count?.unread ? <Badge tone="accent">{count.unread} to read</Badge> : null}
+                      <Badge tone="outline">
+                        {count?.submissions ?? 0}{" "}
+                        {count?.submissions === 1 ? "submission" : "submissions"}
+                      </Badge>
+                      <DeadlineBadge session={session} />
+                    </div>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-2">
-                    {count?.New ? <Badge tone="accent">{count.New} to read</Badge> : null}
-                    {count?.Shortlisted ? (
-                      <Badge tone="positive">{count.Shortlisted} shortlisted</Badge>
-                    ) : null}
-                    <Badge tone="outline">
-                      {count?.total ?? 0} {count?.total === 1 ? "submission" : "submissions"}
-                    </Badge>
-                    <DeadlineBadge session={roleWindow(role)} />
-                  </div>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
+                  {sessionRoles.length > 0 ? (
+                    <ul className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
+                      {sessionRoles.map((role) => {
+                        const roleCount = counts.get(role.id);
+                        const open = isOpen(roleWindow(role));
+                        return (
+                          <li key={role.id}>
+                            <Link
+                              href={`/dashboard/roles/${role.id}`}
+                              className={`inline-flex items-center gap-2 rounded-full border border-line px-3 py-1.5 text-sm transition-colors hover:border-line-strong hover:text-accent ${open ? "text-text" : "text-muted"}`}
+                            >
+                              <span>{role.title}</span>
+                              <span className="text-xs text-faint">
+                                {roleCount?.New
+                                  ? `${roleCount.New} to read`
+                                  : `${roleCount?.total ?? 0} ${roleCount?.total === 1 ? "submission" : "submissions"}`}
+                              </span>
+                            </Link>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  ) : (
+                    <p className="mt-4 border-t border-line pt-4 text-sm text-muted">
+                      No roles yet.{" "}
+                      <Link
+                        href={`/dashboard/roles/new?session=${session.id}`}
+                        className="text-accent underline-offset-4 hover:underline"
+                      >
+                        Post the first role
+                      </Link>
+                    </p>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        </>
       ) : (
         <div className="mt-10">
           <EmptyState
-            title="No roles posted yet"
-            description="Roles live inside a production's casting session, which holds the dates they accept submissions between. Open a session, then post its roles."
-            action={<ButtonLink href="/dashboard/sessions/new">Open a session</ButtonLink>}
+            title="No productions yet"
+            description="Open a production, then post its roles into it. The production holds the dates, so the roles do not have to."
+            action={<ButtonLink href="/dashboard/sessions/new">New production</ButtonLink>}
           />
         </div>
       )}
@@ -139,7 +229,7 @@ export default async function DashboardPage() {
         <div className="mt-8">
           <ActivityList
             entries={activity}
-            emptyDescription="Post a role, and everything that happens to it is recorded here."
+            emptyDescription="Open a production, and everything that happens to it is recorded here."
           />
         </div>
       </section>

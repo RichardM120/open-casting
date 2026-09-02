@@ -13,7 +13,7 @@ export async function generateMetadata({
 }: PageProps<"/dashboard/sessions/[id]/edit">): Promise<Metadata> {
   const user = await currentUser();
   const session = user ? await getVisibleSession((await params).id, user) : null;
-  return { title: session ? `Edit — ${session.name}` : "Session not found" };
+  return { title: session ? `Edit ${session.name}` : "Production not found" };
 }
 
 export default async function EditSessionPage({
@@ -33,18 +33,18 @@ export default async function EditSessionPage({
         href={`/dashboard/sessions/${session.id}`}
         className="text-sm text-muted transition-colors hover:text-text"
       >
-        ← Back to the production
+        &larr; {session.name}
       </Link>
 
       <div className="mt-6">
-        <Eyebrow>Casting session</Eyebrow>
+        <Eyebrow>Production</Eyebrow>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
           Edit {session.name}
         </h1>
         <p className="mt-3 max-w-2xl text-muted">
-          Changes go live immediately. Moving the dates moves{" "}
-          {roles.length === 1 ? "the role" : `all ${roles.length} roles`} in this session with
-          them, so check before you shorten the window — anyone mid-submission loses the form.
+          Changes go live straight away. Moving the times moves{" "}
+          {roles.length === 1 ? "the role" : `all ${roles.length} roles`} in this production with
+          them, so check before you shorten the window: anyone mid-submission loses the form.
         </p>
       </div>
 

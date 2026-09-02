@@ -1,11 +1,13 @@
 # Open Casting
 
-A prototype casting-call board. Casting directors post a role with the brief spelled out;
-performers browse and submit against it; every submission lands in one dashboard where it can be
-moved through New → Shortlisted → Callback → Declined.
+The private tool a production uses to run its casting. The administrator creates
+an account for a casting director; they open a production, post its roles into
+it, and send one link. Performers submit through that link without an account,
+once per production, and every submission lands in one dashboard where it can be
+moved through New, Shortlisted, Callback and Declined.
 
-Performers need no account: browsing and submitting are open to anyone. The
-casting side signs in.
+There is no public listing and no search. A casting call goes exactly as far as
+its link is circulated. The casting side signs in; performers never do.
 
 ## Running it
 
@@ -45,75 +47,77 @@ deliberately left alone.
 /faq  /faq/*            Reference, open to anyone
 /legal/*                The agreements, open so a casting link can cite them
 
-/dashboard/sessions     Productions          ─┐
-  /new                  Open one              │  the order the work happens in,
-  /[id]                 One production        │  and the order the nav is in
-  /[id]/edit            Its dates             │
-/dashboard              Roles                 │  a role lives inside a production
-  /roles/new            Post one into it      │
-  /roles/[id]           Its submissions       │
-  /roles/[id]/edit      Edit it              ─┘
+/dashboard              Productions, with the roles in each   ─┐
+  /sessions/new         Open one                                │
+  /sessions/[id]        One production: its link and its roles │  the order the
+  /sessions/[id]/edit   Its times                               │  work happens in
+  /roles/new            Post a role into it                     │
+  /roles/[id]           Its submissions                         │
+  /roles/[id]/edit      Edit it                                ─┘
 /dashboard/activity     The trail
-/dashboard/accounts     Accounts — admin only
+/dashboard/accounts     Accounts, admin only
 
 /c/<slug>-<token>              A production, as a performer sees it
 /c/<slug>-<token>/<role-slug>  One role, and the submission form
 ```
 
-**Navigation follows the hierarchy, not the file layout.** A role cannot exist
-without a production, so Productions comes first and Roles second — even though
-`/dashboard` is the roles page and `/dashboard/sessions` sits under it in the
-URL. The nav names and the back-links use the same words for the same places.
+**Navigation follows the hierarchy.** A role cannot exist without a production,
+so the dashboard is the list of productions with the roles under each, and every
+page links back one level: a role to its production, a production to the list.
+The nav is Productions, Activity and FAQ, and the back-links use the same words
+for the same places. `/dashboard/sessions` still answers, with a permanent
+redirect to `/dashboard`, so an old bookmark lands in the right place.
 
-The only difference between the two roles is **Accounts**, which an admin sees
-and a director does not — and the page refuses a director independently of the
+The only difference in the nav between accounts is **Accounts**, which an admin
+sees and a director does not. The page refuses a director independently of the
 nav, so hiding the link is presentation rather than protection.
 
 ## What is here
 
 | Route | What it does |
 | --- | --- |
-| `/` | The way in: admin sign-in, production sign-in, and a note for performers |
-| `/c/[token]` | One production's casting call — the only page a performer sees |
+| `/` | The way in: sign-in for the casting side, and a note for performers |
+| `/c/[token]` | One production's casting call, the only page a performer sees |
 | `/c/[token]/[roleId]` | The full brief, plus the submission form |
-| `/roles/new` | Post a role into a casting session — sign-in required |
-| `/dashboard` | The roles you may see, with submission counts — sign-in required |
-| `/dashboard/sessions` | Your productions, and the window each is open for |
-| `/dashboard/sessions/new` | Open a casting session |
-| `/dashboard/sessions/[id]` | One production: its window, its roles, close early, remove |
-| `/dashboard/sessions/[id]/edit` | Move a production's dates, taking its roles with them |
+| `/dashboard` | Your productions, each with its roles and submission counts. Sign-in required |
+| `/dashboard/sessions/new` | Open a production |
+| `/dashboard/sessions/[id]` | One production: its link, its roles, publish, close early, remove |
+| `/dashboard/sessions/[id]/edit` | Move a production's times, taking its roles with them |
+| `/dashboard/roles/new` | Post a role into a production |
 | `/dashboard/roles/[id]` | The submissions for one role, and their status |
+| `/dashboard/roles/[id]/edit` | Edit a role in place |
+| `/dashboard/activity` | The audit trail, scoped like everything else |
+| `/dashboard/accounts` | Create, suspend and restore accounts. Admin only |
 | `/login` | Password or Google sign-in. There is no `/signup` |
 | `/welcome` | Three-step setup, tailored to the account's role |
-| `/faq/performers` | What the listing fields mean and what submitting commits you to |
-| `/faq/casting-directors` | What each posting field commits you to, and writing terms |
-| `/dashboard/roles/[id]/edit` | Edit a role in place |
-| `/dashboard/accounts` | Create, suspend and restore accounts — admin only |
-| `/dashboard/activity` | The audit trail, scoped like everything else |
+| `/faq/performers` | What the fields on a casting call mean and what submitting commits you to |
+| `/faq/casting-directors` | What each field commits you to, and writing terms |
 | `/api/health` | Whether the deployment can reach its database. No data, no secrets |
 
 ## How it is put together
 
-Next.js 16 App Router, TypeScript, Tailwind v4. Pages are server components; only the three
-pieces that need browser state are client components — the filter bar, and the two forms.
+Next.js 16 App Router, TypeScript, Tailwind v4. Pages are server components; the
+forms and a handful of small controls that need browser state are client components.
 
 ```
 src/
   app/                     routes
   components/              ui primitives, cards, forms
   lib/
-    types.ts               the domain: Role, Submission
+    types.ts               the domain: CastingSession (a production), Role, Submission
     seed-data.ts           demo content
-    db.ts                  pool, schema bootstrap, seeding
-    roles.ts               role queries and filtering
+    db.ts                  pool, schema bootstrap, backfills, seeding
+    sessions.ts            production queries, publishing, the share token
+    roles.ts               role queries and the visibility rule
     submissions.ts         submission queries and counts
-    validation.ts          zod schemas, shared by both forms
+    format.ts              UK-time formatting and the open/closed window
+    validation.ts          zod schemas, shared by the forms
     actions.ts             server actions
     form-state.ts          the shape useActionState forms pass around
 ```
 
-Mutations are Server Actions. Both forms validate with the same zod schema on the server and
-render errors per field; the browser's own required/type checks run first, so the server rules
+Mutations are Server Actions. Each form validates with a zod schema on the server and
+renders errors per field; the browser's own required/type checks run first, so the server rules
 are the backstop rather than the only line. A failed submit re-seeds the form from the values it
 sent, because React resets an uncontrolled form once its action resolves.
 
@@ -123,12 +127,11 @@ Postgres, through `pg`. `src/lib/db.ts` owns the pool, creates the schema with
 `CREATE TABLE IF NOT EXISTS` on the first query of each process, and seeds the
 demo content if the `roles` table is empty. Seeding is keyed on fixed ids with
 `ON CONFLICT DO NOTHING`, so several instances starting at once cannot double up.
-**Reset demo data** on the dashboard truncates and re-seeds.
 
 Two rules the database enforces rather than the application:
 
 - `submissions (session_id, lower(email))` is unique, so one person cannot submit
-  twice into the same casting session — whichever of its roles they go for. The
+  twice to the same production, whichever of its roles they go for. The
   insert decides it, not a check beforehand: two requests arriving together would
   both pass a check-then-insert.
 - `submissions.role_id` references `roles(id)`, and both `roles.session_id` and
@@ -137,8 +140,8 @@ Two rules the database enforces rather than the application:
   submissions with it, in one statement.
 
 Set `DATABASE_URL` in the environment. If a hosted integration provisions
-`POSTGRES_URL`, `POSTGRES_PRISMA_URL` or `POSTGRES_URL_NON_POOLING` instead —
-Vercel's Postgres and Neon integrations set `POSTGRES_URL` — the app reads those
+`POSTGRES_URL`, `POSTGRES_PRISMA_URL` or `POSTGRES_URL_NON_POOLING` instead
+(Vercel's Postgres and Neon integrations set `POSTGRES_URL`), the app reads those
 too, in that order, so a one-click database works without renaming anything.
 
 On a serverless host use the provider's **pooled** connection string; each
@@ -156,7 +159,7 @@ checking who is on the other end.
 One variable. With `SITE_PASSCODE` set:
 
 - every page shows an interstitial first, asking for that passcode. Nothing
-  behind it is served — not the sign-in page, not a casting share link. Only the
+  behind it is served: not the sign-in page, not a casting share link. Only the
   interstitial itself, `/api/health` and `robots.txt` answer through it;
 - the application's own sign-in stops checking anything. Any email and any
   password gets a session, and an account is created on the spot for an address
@@ -165,8 +168,8 @@ One variable. With `SITE_PASSCODE` set:
 - a banner sits above every page saying so, and `/api/health` reports it.
 
 The two go together on purpose. Sign-in that authenticates nobody is only
-defensible because the wall in front of it means nobody uncontrolled reaches it
-— so they are the same switch, and it is not possible to leave the second on
+defensible because the wall in front of it means nobody uncontrolled reaches it,
+so they are the same switch, and it is not possible to leave the second on
 while turning the first off.
 
 It is not the application's access control and does not pretend to be: it keeps
@@ -174,12 +177,12 @@ the work in progress away from anyone who has not been shown it. Unset it to
 launch, and everything reverts to real sign-in with no code change.
 
 Both the passcode and the sign-in behind it are throttled by address, because a
-shared secret with only a per-email throttle is no throttle at all — an attacker
+shared secret with only a per-email throttle is no throttle at all; an attacker
 just varies the address.
 
 The wall needs `AUTH_SECRET` as well: "this browser has entered the passcode" is
 a signed cookie, and the proxy turns away any it cannot verify. With the
-passcode set and the key missing, the wall is up and nothing can open it — the
+passcode set and the key missing, the wall is up and nothing can open it. The
 interstitial says so in place of the form, and `/api/health` reports
 `authSecret: "missing"`. Set it and redeploy.
 
@@ -187,7 +190,7 @@ interstitial says so in place of the form, and `/api/health` reports
 
 - **`robots.txt`** disallows everything.
 - **`X-Robots-Tag: noindex, nofollow, noarchive, nosnippet`** on every response
-  from the proxy, not only pages that set it in their metadata — that covers API
+  from the proxy, not only pages that set it in their metadata, which covers API
   routes and anything added later that forgets.
 - **Page metadata** carries `noindex` as well.
 - With `SITE_PASSCODE` set there is nothing for a crawler to reach in the first
@@ -206,13 +209,13 @@ opencasting.app/c/saltmarsh-4f21c9ba7e/nell-saltmarsh
 The slug is decoration and the ten characters after the last dash are the whole
 of the authorisation. Only that suffix is looked up, so renaming a production
 does not break a link that is already circulating, and a guessed slug gets
-nobody anywhere. The alphabet excludes look-alikes — no `0`/`O`, no `1`/`l`/`I`
-— and lookup is case-insensitive, so a link retyped in capitals still works.
+nobody anywhere. The alphabet excludes look-alikes (no `0`/`O`, no `1`/`l`/`I`)
+and lookup is case-insensitive, so a link retyped in capitals still works.
 Ten characters is about 49 bits: far too many to enumerate, short enough to fit
 in a caption.
 
 The role is matched by its slug **within** the production, so one production's
-link cannot reach another's role — it is not a check that can be forgotten,
+link cannot reach another's role. It is not a check that can be forgotten,
 because there is no query that could find it.
 
 Set **`APP_URL`** to the canonical origin and share links are built from it
@@ -228,14 +231,14 @@ One entry point, `/login`, and four layers behind it.
 time does not reveal which addresses have accounts, and a throttle on failures.
 
 **Google sign-in.** Links to an account that already exists, and creates one
-*only* for an address named in `ADMIN_EMAILS` — which whoever controls the
+*only* for an address named in `ADMIN_EMAILS`, which whoever controls the
 deployment has already authorised. Any other Google address is refused, so the
 button is not a way around "no self-registration". It never runs without Google
 having verified the address.
 
 It does not then ask for an emailed link, and the reason is worth stating: that
 link would go to the same mailbox that just authenticated. Whoever holds the
-Google account holds the inbox, so it would add friction and no security — a
+Google account holds the inbox, so it would add friction and no security. A
 second factor only counts when it reaches somewhere the first does not. Password
 sign-in still requires one, because a password and a mailbox are two different
 things.
@@ -244,17 +247,17 @@ things.
 anyone else if `mfa_required` is set on them. The password alone starts nothing:
 it issues a one-time link, emailed, good for 15 minutes and one use, spent inside
 a single `UPDATE` so two clicks cannot both win. Asking for another voids the
-first. Google sign-in goes through the same gate — it proves an address, not a
+first. Google sign-in goes through the same gate: it proves an address, not a
 second factor, and skipping it there would make the button the way around it.
 
 **3. The edge.** The proxy holds a signed cookie carrying the account id and role,
-verified with HMAC-SHA256 through Web Crypto — no dependency, one implementation
+verified with HMAC-SHA256 through Web Crypto: no dependency, one implementation
 for both runtimes. It gates `/dashboard/**`, and `/dashboard/accounts` for admins
 only. With no `AUTH_SECRET` it fails closed.
 
 **4. The server, which is the one that decides.** The proxy runs on the Edge
 runtime and **cannot reach Postgres**, so the signed cookie is a cache and can
-only be stale — it cannot know an account was suspended a minute ago, had its
+only be stale. It cannot know an account was suspended a minute ago, had its
 access ended, or changed role. Every page and every action calls `currentUser()`,
 which reads the session, the suspension and the end date from the database on
 each request. The edge check exists to turn away an obviously-wrong request
@@ -269,18 +272,18 @@ is down is decorative, so a failure to send is reported as a failure.
 `test/suites/10-magic-link.mjs` covers this against a stand-in mail provider on
 every push. To check a real deployment end to end:
 
-1. **`/api/health`** — `authSecret` must read `set` and `email` `configured`. If
+1. **`/api/health`.** `authSecret` must read `set` and `email` `configured`. If
    either is missing, an admin cannot sign in at all and there is no point going
    further. Nothing in the response leaks a connection string.
 2. **Sign in at `/login`** with the admin address and password. You should land
-   on “Check your email”, and **no session cookie should be set** — the password
+   on “Check your email”, and **no session cookie should be set**: the password
    alone starts nothing.
 3. **Open the emailed link.** It is good for 15 minutes and one use.
 4. **Open it a second time.** It must refuse, saying it has already been used.
 5. **Sign in again without opening the new link, then open the first one.** The
    superseded link must be dead.
 
-`ADMIN_EMAILS` is comma-separated, so more than one address can hold admin —
+`ADMIN_EMAILS` is comma-separated, so more than one address can hold admin:
 `richard@seaglassdigital.co.uk,richard@cwcasting.co.uk` grants both. An address
 added there is promoted on its next sign-in; removed, it drops back to director.
 
@@ -293,9 +296,9 @@ nothing to register for.
   nobody else. The password is generated there and shown once. Google sign-in
   links an address that already has an account and will not create one.
 - **The administrator's own account** is created from the environment on first
-  boot — see *Deploying* — because otherwise a fresh deployment would have no
+  boot (see *Deploying*), because otherwise a fresh deployment would have no
   way in at all.
-- **Performers never sign in.** A casting session has a share link carrying an
+- **Performers never sign in.** A production has a share link carrying an
   unguessable token, shown on its page in the dashboard. That link is the whole
   of the access control: whoever holds it can read that production and submit to
   it while it is open, and can reach nothing else. `robots.txt` disallows
@@ -314,30 +317,30 @@ not strong enough for a value that is doing this job.
    it covers: how many productions, how many roles in each, and an end date.
    Blank means no limit. They are enforced when the account tries to post, not
    merely displayed.
-2. **They open a casting session** for the production and post its roles, inside
-   those limits.
-3. **They check it and publish it.** A new session is a draft — its share link
+2. **They open a production** and post its roles into it, inside those limits.
+3. **They check it and publish it.** A new production is a draft: its share link
    opens for them and for nobody else, so they can read it exactly as a
    performer will. Publishing is what makes the link work, and it needs at least
    one role. It cannot be undone: once a link is on a post or in a mailout it is
    out of anyone's hands, so *close early* is how a call is stopped.
-4. **They circulate the link** — Instagram, a mailout, an agent circular.
-   Whoever holds it can submit while the session is open.
+4. **They circulate the link**: Instagram, a mailout, an agent circular.
+   Whoever holds it can submit while the production is open.
 5. **They work the submissions** through New, Shortlisted, Callback and Declined.
    The data is theirs.
-6. **The call closes**, on its date or early.
-7. **Six months later the performers' details are destroyed** — see below.
+6. **The call closes**, at its closing time or early.
+7. **Thirty days after the production ends, the performers' details are
+   destroyed.** See below.
 
 ## Agreements
 
 Two documents, in `src/content/legal.ts`, each with a version. An acceptance is
 only worth having if you can say afterwards exactly what was accepted, so the
-text for a version never changes — a wording change is a new version, which
+text for a version never changes. A wording change is a new version, which
 people are asked to accept again.
 
 - **Master Services Agreement and Data Processing Schedule.** The first thing
   setup asks a new customer, before anything else, and enforced by the dashboard
-  layout rather than only by the path through setup — an agreement that can be
+  layout rather than only by the path through setup, because an agreement that can be
   navigated past is not enforced. Accepted by the customer in their own account,
   never ticked on their behalf at account creation, and recorded with the
   version, the timestamp and the IP. Readable again at `/legal/agreement`. The
@@ -345,7 +348,7 @@ people are asked to accept again.
   for them to accept.
 - **Terms of Submission and Acceptable Use Policy.** On every submission form,
   summarised in four lines with the full text a click away at
-  `/legal/submission-terms`, and required — separately from any terms the casting
+  `/legal/submission-terms`, and required, separately from any terms the casting
   director sets on the role. The accepted version is stored on the submission.
 
 **Under-18s.** Typing an age below 18 opens a parental consent section: the
@@ -376,7 +379,7 @@ It runs two ways, deliberately:
 
 - **On a schedule.** `vercel.json` calls `/api/retention` daily at 03:00. The
   endpoint requires `CRON_SECRET` in an `Authorization: Bearer` header, and
-  refuses to run at all if that variable is unset — an unguarded delete endpoint
+  refuses to run at all if that variable is unset. An unguarded delete endpoint
   is worse than a sweep nobody configured.
 - **On boot.** The same sweep runs once per process during schema bootstrap, so
   a deployment where nobody set the cron still honours the promise instead of
@@ -384,35 +387,44 @@ It runs two ways, deliberately:
 
 The date is shown on every production's page, and both FAQs state it.
 
-## Casting sessions
+## Productions
 
-A **casting session** is one production's casting window. It owns the production
-name, the synopsis, the company and the two dates submissions run between. Roles
-belong to a session; they do not carry dates of their own.
+A **production** is one project with however many roles. In the code and the
+database it is a *casting session* (`sessions_casting`, `/dashboard/sessions/…`);
+the UI says production throughout. It owns the name, the production type, the
+synopsis, the company, and the opening and closing times submissions run
+between. Roles belong to a production and carry no dates of their own, and a
+role takes its production details from the production it is posted into, so the
+role form asks only for the brief, the rate and the shoot dates. Every role is
+paid; there is no pay type and no union status.
+
+The opening and closing times are entered as UK wall-clock time
+(`datetime-local` in the form, converted through `Europe/London` in
+`src/lib/format.ts`) and stored as `timestamptz`, so a call that closes at
+18:00 closes at 18:00 in London whichever side of a clock change it falls.
 
 That buys three things:
 
 - **One window per production.** Every role opens and closes together, so two
   roles on the same film cannot disagree about when casting closes. Moving the
-  dates moves all of them at once.
+  times moves all of them at once.
 - **One submission per performer per production.** A performer picks the role
   that fits and submits once, rather than once per role. The unique index
   `submissions (session_id, lower(email))` decides it, so two requests arriving
   together cannot both get through.
-- **A real off switch.** *Close early* on the session stops every role in it at
-  the same moment, and is reversible. Removing is the destructive one, is
+- **A real off switch.** *Close early* on the production stops every role in it
+  at the same moment, and is reversible. Removing is the destructive one, is
   admin-only, and takes the roles and their submissions with it.
 
-Outside the window the roles stay listed and readable — a performer can read the
-brief and prepare a tape — but the submission form is not rendered, and the
+Outside the window the roles stay listed and readable, so a performer can read
+the brief and prepare a tape, but the submission form is not rendered, and the
 action refuses the write even if the form is replayed.
 
-`roles.deadline` mirrors the session's closing date. The session is the
-authority; the column is kept in step on write so it can be used for ordering
-without a join, and it never contradicts the session.
+`roles.deadline` is legacy: roles once carried their own closing date. It is
+nullable now and only read to derive productions for roles that predate them.
 
-Roles do not move between sessions. Moving one would change the dates it was
-posted under and separate it from the submissions already made into its session.
+Roles do not move between productions. Moving one would change the times it was
+posted under and separate it from the submissions already made to its production.
 
 ## Accounts and roles
 
@@ -420,27 +432,27 @@ Three roles, and one rule that decides everything:
 
 | Role | Sees on the dashboard |
 | --- | --- |
-| `director` | Only the roles they posted |
-| `producer` | Every role posted under their company, across productions |
+| `director` | Only the productions and roles they posted |
+| `producer` | Every production and role under their company, whoever posted them |
 | `admin` | Everything |
 
 What each may **do**, on top of that:
 
 | Action | Who |
 | --- | --- |
-| Edit a role, close it early, reopen it | Anyone who can see it |
-| Remove a role and its submissions | Admin only |
+| Edit a production or a role, close it early, reopen it | Anyone who can see it |
+| Remove a production or a role, with its submissions | Admin only |
 | Suspend or restore an account | Admin only |
 
 Removal is admin-only on purpose: it destroys performers' contact details, and a
 shared company name should not be enough to authorise that. Closing early is the
-non-destructive option — it stops new submissions and keeps the listing readable.
-Closing is recorded in `closed_at` rather than by moving the deadline, so the
-listing still shows the date it advertised.
+non-destructive option: it stops new submissions and keeps the roles readable.
+Closing is recorded in `closed_at` rather than by moving the closing time, so the
+roles still show the time they advertised.
 
 Suspending an account deletes its sessions, so somebody signed in is out at
 once; `currentUser()` re-checks suspension on every request in case a session
-was created in between. Their roles stay up. An admin cannot suspend themselves.
+was created in between. Their productions stay up. An admin cannot suspend themselves.
 
 `src/lib/roles.ts` exports a single `visibility()` function returning a SQL
 fragment. The role listing, a single role, the submission counts and the status
@@ -454,14 +466,14 @@ it and the account drops back to director.
 
 Passwords are hashed with scrypt (`node:crypto`, no dependency). Sessions are
 opaque random tokens in an httpOnly, SameSite=Lax cookie, with only a SHA-256
-hash of the token stored — reading the database does not yield a usable cookie.
+hash of the token stored, so reading the database does not yield a usable cookie.
 A failed sign-in is hashed against a decoy so response time does not reveal
 which addresses have accounts, and repeated failures are throttled per address.
 
 ### Role terms
 
 A casting director can set optional terms on a role. Where they exist, the
-listing shows them and the performer must tick to accept before submitting —
+role page shows them and the performer must tick to accept before submitting,
 enforced against the role in the action, not by trusting the posted form.
 
 The wording is **copied onto the submission** as it read at that moment, with a
@@ -477,15 +489,15 @@ cookies that are consumed on the callback, so a forged or replayed callback
 fails. A Google account whose email is **not verified** is refused, because
 accounts are matched to existing ones by email.
 
-Register the callback URL — `https://your-domain/api/auth/google/callback` — on
+Register the callback URL, `https://your-domain/api/auth/google/callback`, on
 the Google client for every origin you use, production and preview alike.
 
 ## Setup wizard
 
 A new account lands on `/welcome`, not an empty dashboard. Three steps: confirm
 name and company, read what this role can see and do, then a note on the data
-duty before being sent somewhere useful — the posting form for a director, the
-accounts page for an admin.
+duty before being sent somewhere useful: the new-production form for a
+director, the accounts page for an admin.
 
 Step one is not decoration. A Google sign-up has no company name until it is
 asked for, and company is what a producer's visibility matches on. `onboarded_at`
@@ -509,7 +521,7 @@ page has exactly one `h1`, and nothing overflows horizontally at 390px.
 
 Every posting, edit, close, reopen, removal, submission, status change and
 account suspension is recorded. Entries are scoped by the same `visibility()`
-rule as the roles, applied to an owner and company **copied onto each entry** —
+rule as the roles, applied to an owner and company **copied onto each entry**,
 so a trail outlives the role it describes, which is the moment it is worth
 most. `role_id` and `actor_id` are `ON DELETE SET NULL` and the readable fields
 sit alongside them; a removed role shows struck through and stops being a link.
@@ -534,7 +546,7 @@ Two more variables decide who the administrator is:
 | Variable | What it does |
 | --- | --- |
 | `ADMIN_EMAILS` | Comma-separated. An account with one of these addresses is an admin, re-checked on every sign-in. Nothing else grants it. |
-| `ADMIN_BOOTSTRAP_PASSWORD` | Creates the first address in `ADMIN_EMAILS` as an account, once, if it does not already exist. Ignored afterwards — change the password in the app, not here. |
+| `ADMIN_BOOTSTRAP_PASSWORD` | Creates the first address in `ADMIN_EMAILS` as an account, once, if it does not already exist. Ignored afterwards; change the password in the app, not here. |
 
 Set both before the first request, sign in, and then every other account is made
 from `/dashboard/accounts`. Every page that reads data is `force-dynamic`,
@@ -544,15 +556,16 @@ That last point cuts both ways: a deployment with no reachable database builds
 and deploys cleanly, then returns a server error on every page that reads data.
 **`/api/health` is the first thing to check** when a deployed page errors. It
 answers in one line whether a connection string is set, which variable it came
-from, and whether the query went through — without the runtime logs, and without
+from, and whether the query went through, without the runtime logs and without
 printing the connection string.
 
 ## Known limits
 
 Anyone holding a share link can submit; there is no per-performer identity, so a
 link that is forwarded is a link that works. Regenerating a token is not exposed
-in the UI yet — closing the session is the way to stop a leaked link today.
-Headshots and tapes are links, not uploads. Nobody is emailed when a submission
-arrives or a status changes — the performer's address is on every submission, and
-replying is a manual step. A role cannot be moved between casting sessions.
+in the UI yet; closing the production early is the way to stop a leaked link
+today. Headshots and tapes are links, not uploads. Nobody is emailed when a
+submission arrives or a status changes: the performer's address is on every
+submission, and replying is a manual step. A role cannot be moved between
+productions.
 There is no export: submissions are read in the dashboard.

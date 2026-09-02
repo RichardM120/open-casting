@@ -10,7 +10,15 @@ import { Badge, Button, ButtonLink, EmptyState, Eyebrow } from "@/components/ui"
 import { removeRole, toggleRoleClosed } from "@/lib/actions";
 import { listActivity } from "@/lib/activity";
 import { currentUser, requireUser } from "@/lib/auth";
-import { ageRange, formatDate, formatRelative, initials, isOpen, roleWindow } from "@/lib/format";
+import {
+  ageRange,
+  formatDate,
+  formatDateTime,
+  formatRelative,
+  initials,
+  isOpen,
+  roleWindow,
+} from "@/lib/format";
 import { getVisibleRole } from "@/lib/roles";
 import { shareSlug } from "@/lib/sessions";
 import { listSubmissions, summarise } from "@/lib/submissions";
@@ -21,7 +29,7 @@ export async function generateMetadata({
 }: PageProps<"/dashboard/roles/[id]">): Promise<Metadata> {
   const user = await currentUser();
   const role = user ? await getVisibleRole((await params).id, user) : null;
-  return { title: role ? `Submissions — ${role.title}` : "Role not found" };
+  return { title: role ? role.title : "Role not found" };
 }
 
 export default async function RoleSubmissionsPage({
@@ -48,13 +56,23 @@ export default async function RoleSubmissionsPage({
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-12">
-      <Link href="/dashboard" className="text-sm text-muted transition-colors hover:text-text">
-        ← Roles
+      <Link
+        href={`/dashboard/sessions/${role.sessionId}`}
+        className="text-sm text-muted transition-colors hover:text-text"
+      >
+        &larr; {role.production}
       </Link>
 
       {justPosted || justSaved ? (
-        <p className="mt-6 rounded-xl border border-line bg-positive-soft px-4 py-3 text-sm text-positive">
-          {justPosted ? "Role posted. It is live on the browse page now." : "Changes saved."}
+        <p
+          role="status"
+          className="mt-6 rounded-xl border border-line bg-positive-soft px-4 py-3 text-sm text-positive"
+        >
+          {justPosted
+            ? role.session.publishedAt
+              ? "Role posted. It is on the production's link now."
+              : "Role posted. Publish the production when you are ready for performers to see it."
+            : "Changes saved."}
         </p>
       ) : null}
 
@@ -64,7 +82,7 @@ export default async function RoleSubmissionsPage({
           <h1 className="mt-3 text-3xl font-semibold tracking-tight">{role.title}</h1>
           <p className="mt-2 text-muted">
             {role.location} · playing age {ageRange(role.ageMin, role.ageMax)} · closes{" "}
-            {formatDate(role.deadline)}
+            {formatDateTime(role.session.closesAt)}
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -92,10 +110,10 @@ export default async function RoleSubmissionsPage({
       {!open ? (
         <p className="mt-6 rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">
           {role.closedAt
-            ? `Closed early on ${formatDate(role.closedAt)}. The listing stays up for reference and takes no new submissions.`
+            ? `Closed early on ${formatDateTime(role.closedAt)}. The role stays up for reference and takes no new submissions.`
             : role.session.closedAt
-              ? `${role.production} was closed early on ${formatDate(role.session.closedAt)}, which closed every role in it.`
-              : "Outside its casting session's window. The listing stays up for reference and takes no new submissions."}
+              ? `${role.production} was closed early on ${formatDateTime(role.session.closedAt)}, which closed every role in it.`
+              : "Outside the production's casting window. The role stays up for reference and takes no new submissions."}
         </p>
       ) : null}
 
@@ -150,7 +168,7 @@ export default async function RoleSubmissionsPage({
           <form action={removeRole} className="mt-4 flex flex-col gap-4">
             <input type="hidden" name="roleId" value={role.id} />
             <p className="max-w-prose text-sm leading-relaxed text-muted">
-              This deletes the listing and{" "}
+              This deletes the role and{" "}
               <strong className="text-text">
                 all {counts.total} {counts.total === 1 ? "submission" : "submissions"}
               </strong>{" "}
@@ -208,7 +226,7 @@ function SubmissionCard({ submission }: { submission: Submission }) {
             <StatusBadge status={submission.status} />
           </div>
           <p className="mt-1 text-sm text-muted">
-            {submission.location} · {submission.age} · {submission.unionStatus} · submitted{" "}
+            {submission.location} · {submission.age} · submitted{" "}
             {formatRelative(submission.submittedAt)}
           </p>
         </div>

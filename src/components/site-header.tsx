@@ -12,13 +12,13 @@ import { ButtonLink, cx } from "./ui";
 const PUBLIC_NAV = [{ href: "/faq", label: "FAQ" }] as const;
 
 /**
- * In the order the work happens. A production comes first because it has to —
- * a role cannot be posted without one — and the old order put roles first and
- * called them "Casting dashboard", which named the page rather than the thing.
+ * Two things to look at once signed in: the productions, which is where the
+ * roles and submissions live, and the record of what has been done. Roles are
+ * reached through their production rather than from a list of their own, so
+ * there is one place to look.
  */
 const OWNER_NAV = [
-  { href: "/dashboard/sessions", label: "Productions" },
-  { href: "/dashboard", label: "Roles" },
+  { href: "/dashboard", label: "Productions" },
   { href: "/dashboard/activity", label: "Activity" },
 ] as const;
 
@@ -31,7 +31,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
     ? [...OWNER_NAV, ...(user.role === "admin" ? ADMIN_NAV : []), ...PUBLIC_NAV]
     : PUBLIC_NAV;
 
-  /** The most specific match wins, so /dashboard/sessions does not light up /dashboard too. */
+  /** The most specific match wins, so /dashboard/activity does not light up /dashboard too. */
   const current = nav
     .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
     .sort((a, b) => b.href.length - a.href.length)[0]?.href;
@@ -71,9 +71,6 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
               <span className="hidden text-sm text-muted md:inline" title={user.email}>
                 {user.company}
               </span>
-              <ButtonLink href="/dashboard/sessions/new" size="sm">
-                New production
-              </ButtonLink>
               <form action={signOut}>
                 <button
                   type="submit"

@@ -85,7 +85,7 @@ section("3 FAQ pages stay open");
   }
   await p.goto(`${BASE}/faq/performers`, { waitUntil: "networkidle" });
   check("glossary explains buyout and usage", (await p.getByText("Buyout and usage").count()) > 0);
-  check("explains deferred pay honestly", (await p.getByText(/Treat it as unpaid/).count()) > 0);
+  check("says every role is paid", (await p.getByText(/Every role on Open Casting is paid/).count()) > 0);
   check("under-18 guidance present", (await p.getByText(/licence/i).count()) > 0);
   check("not-legal-advice notice", (await p.getByText(/not legal advice/i).count()) > 0);
   check("says why there is nothing to search", (await p.getByText(/not a job board/).count()) > 0);
@@ -102,7 +102,7 @@ section("4 a share link opens one production, and only that one");
   const response = await p.goto(`${BASE}/c/${SALTMARSH}`, { waitUntil: "networkidle" });
   check("the link works", response.status() === 200);
   check("names the production", (await p.getByRole("heading", { name: "Saltmarsh" }).count()) > 0);
-  check("lists its roles", (await p.getByText("NELL — Lead").count()) > 0);
+  check("lists its roles", (await p.getByText("Nell (Lead)").count()) > 0);
   check("does not leak another production", (await p.getByText("Northbank").count()) === 0);
   check("says it is not a job board", (await p.getByText(/not a job board/).count()) > 0);
   await p.screenshot({ path: `${SHOTS}/casting-call.png`, fullPage: true });
@@ -116,7 +116,7 @@ section("4 a share link opens one production, and only that one");
   await c.close();
 }
 
-section("5 role with terms — acceptance is required");
+section("5 role with terms: acceptance is required");
 {
   const { c, p } = await ctx();
   await p.goto(`${BASE}/c/${HEARTH}/couple-hearth`, { waitUntil: "networkidle" });
@@ -144,7 +144,7 @@ section("5 role with terms — acceptance is required");
   await c.close();
 }
 
-section("6 role without terms — no checkbox, submits cleanly");
+section("6 role without terms: no checkbox, submits cleanly");
 {
   const { c, p } = await ctx();
   await p.goto(`${BASE}/c/${SALTMARSH}/nell-saltmarsh`, { waitUntil: "networkidle" });

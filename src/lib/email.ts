@@ -7,7 +7,7 @@ import "server-only";
  * Resend over its HTTP API, so there is no dependency and nothing to keep open
  * on a serverless invocation. With no API key configured it falls back to the
  * server log, which is useful in development and is why `sendEmail` reports
- * which of the two happened — a caller must not tell someone to check their
+ * which of the two happened, so a caller must not tell someone to check their
  * inbox for a message that was only ever written to a log.
  */
 export type Delivery = { delivered: boolean; reason?: string };

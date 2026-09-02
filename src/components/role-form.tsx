@@ -3,25 +3,15 @@
 import { useActionState } from "react";
 
 import { editRole, postRole } from "@/lib/actions";
-import { formatDate } from "@/lib/format";
+import { formatDateTime } from "@/lib/format";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
-import {
-  PAY_TYPES,
-  PRODUCTION_TYPES,
-  UNION_STATUSES,
-  type CastingSession,
-  type Role,
-} from "@/lib/types";
+import type { CastingSession, Role } from "@/lib/types";
 
 import { useErrorFocus } from "./use-error-focus";
 import { Button, ButtonLink, Checkbox, ErrorSummary, Field, Input, Select, Textarea } from "./ui";
 
 const LABELS: Record<string, string> = {
-  production: "Production title",
-  productionType: "Production type",
-  synopsis: "Synopsis",
-  castingDirector: "Casting director",
-  company: "Company",
+  sessionId: "Production",
   title: "Role name",
   characterBrief: "Character brief",
   requirements: "Requirements",
@@ -29,16 +19,15 @@ const LABELS: Record<string, string> = {
   ageMax: "Playing age to",
   location: "Location",
   shootDates: "Shoot dates",
-  payType: "How it pays",
   rate: "Rate",
-  unionStatus: "Union status",
-  sessionId: "Casting session",
   disclaimer: "Terms for performers",
 };
 
 /**
  * One form for posting and editing. In edit mode the fields fall back to the
  * role's current values, and the action rewrites in place rather than creating.
+ * Nothing about the production is asked for here: a role takes its production's
+ * name, type, synopsis, company and dates from the production it is posted into.
  */
 export function RoleForm({
   role,
@@ -46,7 +35,7 @@ export function RoleForm({
   defaultSessionId,
 }: {
   role?: Role;
-  /** The sessions this account may post into. Empty is handled by the page. */
+  /** The productions this account may post into. Empty is handled by the page. */
   sessions: CastingSession[];
   defaultSessionId?: string;
 }) {
@@ -62,11 +51,6 @@ export function RoleForm({
   const values: Record<string, string> =
     state.status === "idle" && role
       ? {
-          production: role.production,
-          productionType: role.productionType,
-          synopsis: role.synopsis,
-          castingDirector: role.castingDirector,
-          company: role.company,
           title: role.title,
           characterBrief: role.characterBrief,
           requirements: role.requirements.join("\n"),
@@ -74,9 +58,7 @@ export function RoleForm({
           ageMax: String(role.ageMax),
           location: role.location,
           shootDates: role.shootDates,
-          payType: role.payType,
           rate: role.rate,
-          unionStatus: role.unionStatus,
           sessionId: role.sessionId,
           disclaimer: role.disclaimer,
           selfTape: role.selfTape ? "on" : "",
@@ -101,11 +83,11 @@ export function RoleForm({
       ) : null}
 
       <Fieldset
-        legend="Casting session"
+        legend="Production"
         description={
           role
-            ? "The session that dates this role. Roles do not move between sessions — submissions are recorded against the session they were made into."
-            : "The production this role is cast for. The session decides when the role accepts submissions, so there is no closing date to set here."
+            ? "A role stays with the production it was posted into, because submissions are recorded against it."
+            : "The role takes its production details and its opening and closing times from here."
         }
       >
         {role ? (
@@ -120,14 +102,14 @@ export function RoleForm({
                 {sessions.find((session) => session.id === role.sessionId)?.name ??
                   role.production}
               </a>
-              . Change the dates on the session, not here.
+              . Change its times on the production, not here.
             </p>
           </div>
         ) : (
           <Field
-            label="Casting session"
+            label="Production"
             htmlFor="sessionId"
-            hint="Every role in a session opens and closes with it."
+            hint="Every role in a production opens and closes with it."
             error={errors.sessionId}
             className="sm:col-span-2"
           >
@@ -138,12 +120,12 @@ export function RoleForm({
               required
             >
               <option value="" disabled>
-                Choose a casting session
+                Choose a production
               </option>
               {sessions.map((session) => (
                 <option key={session.id} value={session.id}>
-                  {session.name} — {formatDate(session.opensAt)} to{" "}
-                  {formatDate(session.closesAt)}
+                  {session.name}: {formatDateTime(session.opensAt)} to{" "}
+                  {formatDateTime(session.closesAt)}
                 </option>
               ))}
             </Select>
@@ -151,72 +133,18 @@ export function RoleForm({
         )}
       </Fieldset>
 
-      <Fieldset
-        legend="The production"
-        description="What is being made, and who is casting it."
-      >
-        <Field label="Production title" htmlFor="production" error={errors.production}>
-          <Input
-            id="production"
-            name="production"
-            placeholder="Saltmarsh"
-            defaultValue={values.production ?? ""}
-            required
-          />
-        </Field>
-        <Field label="Production type" htmlFor="productionType" error={errors.productionType}>
-          <Select
-            id="productionType"
-            name="productionType"
-            defaultValue={values.productionType ?? "Feature Film"}
-          >
-            {PRODUCTION_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </Select>
-        </Field>
-        <Field
-          label="Synopsis"
-          htmlFor="synopsis"
-          hint="A sentence or two. Performers use this to decide whether it is for them."
-          error={errors.synopsis}
-          className="sm:col-span-2"
-        >
-          <Textarea
-            id="synopsis"
-            name="synopsis"
-            rows={3}
-            defaultValue={values.synopsis ?? ""}
-            required
-          />
-        </Field>
-        <Field label="Casting director" htmlFor="castingDirector" error={errors.castingDirector}>
-          <Input
-            id="castingDirector"
-            name="castingDirector"
-            defaultValue={values.castingDirector ?? ""}
-            required
-          />
-        </Field>
-        <Field label="Company" htmlFor="company" error={errors.company}>
-          <Input id="company" name="company" defaultValue={values.company ?? ""} required />
-        </Field>
-      </Fieldset>
-
-      <Fieldset legend="The role" description="Who you are looking for, and what it asks of them.">
+      <Fieldset legend="The role" description="Who you are looking for, and what the part asks of them.">
         <Field
           label="Role name"
           htmlFor="title"
-          hint="As it appears in the script, plus the size of the part."
+          hint="As it appears in the script, with the size of the part."
           error={errors.title}
           className="sm:col-span-2"
         >
           <Input
             id="title"
             name="title"
-            placeholder="NELL — Lead"
+            placeholder="Nell (Lead)"
             defaultValue={values.title ?? ""}
             required
           />
@@ -238,7 +166,7 @@ export function RoleForm({
         <Field
           label="Requirements"
           htmlFor="requirements"
-          hint="One per line. Skills, availability, anything non-negotiable."
+          hint="One per line. Skills, availability, anything that is not negotiable."
           error={errors.requirements}
           className="sm:col-span-2"
         >
@@ -274,7 +202,7 @@ export function RoleForm({
         </Field>
       </Fieldset>
 
-      <Fieldset legend="Practicalities" description="The detail performers need before they tape.">
+      <Fieldset legend="Practicalities" description="What performers need to know before they tape.">
         <Field label="Location" htmlFor="location" error={errors.location}>
           <Input
             id="location"
@@ -288,42 +216,25 @@ export function RoleForm({
           <Input
             id="shootDates"
             name="shootDates"
-            placeholder="12 Oct – 6 Nov 2026"
+            placeholder="12 Oct to 6 Nov 2026"
             defaultValue={values.shootDates ?? ""}
             required
           />
         </Field>
-        <Field label="How it pays" htmlFor="payType" error={errors.payType}>
-          <Select id="payType" name="payType" defaultValue={values.payType ?? "Paid"}>
-            {PAY_TYPES.map((type) => (
-              <option key={type} value={type}>
-                {type}
-              </option>
-            ))}
-          </Select>
-        </Field>
         <Field
           label="Rate"
           htmlFor="rate"
-          hint="Be specific. Vague money puts good people off."
+          hint="Every role is paid. Say how much, and what comes with it."
           error={errors.rate}
+          className="sm:col-span-2"
         >
           <Input
             id="rate"
             name="rate"
-            placeholder="£950/week + travel"
+            placeholder="£950 a week plus travel"
             defaultValue={values.rate ?? ""}
             required
           />
-        </Field>
-        <Field label="Union status" htmlFor="unionStatus" error={errors.unionStatus}>
-          <Select id="unionStatus" name="unionStatus" defaultValue={values.unionStatus ?? "Either"}>
-            {UNION_STATUSES.map((status) => (
-              <option key={status} value={status}>
-                {status}
-              </option>
-            ))}
-          </Select>
         </Field>
         <div className="sm:col-span-2">
           <Checkbox
@@ -338,8 +249,8 @@ export function RoleForm({
         legend="Terms for performers"
         description={
           role
-            ? "Shown on the listing, and performers must tick to accept. Changing them does not alter what anyone has already accepted — that was recorded with their submission."
-            : "Optional. Shown on the listing, and performers must tick to accept them before they can submit."
+            ? "Shown on the listing, and performers tick to accept them. Changing them does not alter what anyone has already accepted, as that was recorded with their submission."
+            : "Optional. Shown on the listing, and performers tick to accept them before they can submit."
         }
       >
         <Field
@@ -354,17 +265,17 @@ export function RoleForm({
             name="disclaimer"
             rows={5}
             defaultValue={values.disclaimer ?? ""}
-            placeholder="Usage is UK, all media, 12 months. The day rate does not include the buyout…"
+            placeholder="Usage is UK, all media, 12 months. The day rate does not include the buyout."
           />
         </Field>
       </Fieldset>
 
       <div className="flex flex-wrap items-center gap-4 border-t border-line pt-6">
         <Button type="submit" disabled={pending}>
-          {pending ? (role ? "Saving…" : "Posting…") : role ? "Save changes" : "Post the role"}
+          {pending ? (role ? "Saving" : "Posting") : role ? "Save changes" : "Post the role"}
         </Button>
         <ButtonLink
-          href={role ? `/dashboard/roles/${role.id}` : "/dashboard"}
+          href={role ? `/dashboard/roles/${role.id}` : `/dashboard/sessions/${defaultSessionId ?? ""}`}
           variant="ghost"
           size="sm"
         >

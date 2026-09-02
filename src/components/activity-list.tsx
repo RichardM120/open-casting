@@ -7,12 +7,12 @@ import { EmptyState } from "./ui";
 
 /** Verb and tone per action, so the trail reads at a glance. */
 const SHAPE: Record<Action, { verb: string; tone: string }> = {
-  "session.created": { verb: "opened a casting session", tone: "bg-positive" },
+  "session.created": { verb: "opened a production", tone: "bg-positive" },
   "session.published": { verb: "published", tone: "bg-positive" },
-  "session.edited": { verb: "edited a casting session", tone: "bg-accent" },
-  "session.closed": { verb: "closed a casting session", tone: "bg-muted" },
-  "session.reopened": { verb: "reopened a casting session", tone: "bg-positive" },
-  "session.removed": { verb: "removed a casting session", tone: "bg-danger" },
+  "session.edited": { verb: "edited a production", tone: "bg-accent" },
+  "session.closed": { verb: "closed a production", tone: "bg-muted" },
+  "session.reopened": { verb: "reopened a production", tone: "bg-positive" },
+  "session.removed": { verb: "removed a production", tone: "bg-danger" },
   "role.posted": { verb: "posted", tone: "bg-positive" },
   "role.edited": { verb: "edited", tone: "bg-accent" },
   "role.closed": { verb: "closed", tone: "bg-muted" },
@@ -75,7 +75,7 @@ export function ActivityList({
                 <span className="font-medium">{entry.actorName}</span>{" "}
                 <span className="text-muted">{shape?.verb ?? entry.action}</span>{" "}
                 <Subject entry={entry} />
-                {entry.detail ? <span className="text-muted"> — {entry.detail}</span> : null}
+                {entry.detail ? <span className="text-muted">: {entry.detail}</span> : null}
               </p>
               <p className="mt-0.5 text-xs text-faint">
                 <time dateTime={entry.createdAt}>{formatRelative(entry.createdAt)}</time>

@@ -8,7 +8,7 @@ export default function NotFound() {
         That page is not here
       </h1>
       <p className="mt-3 max-w-prose text-muted">
-        The casting call may have been taken down, or the link may have been mistyped — they are
+        The casting call may have been taken down, or the link may have been mistyped. They are
         long, so a truncated one is the usual cause. Ask whoever sent it for the link again.
       </p>
       <div className="mt-8 flex gap-3">

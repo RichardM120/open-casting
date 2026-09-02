@@ -2,13 +2,14 @@
  * The paperwork, as part of the process rather than beside it: the customer
  * accepts the Master Services Agreement before the platform will let them do
  * anything, and a performer accepts the Terms of Submission before their
- * details are taken — with a parent doing it for a child.
+ * details are taken, with a parent doing it for a child.
  */
 import {
   BASE,
   SHOTS,
   adminSession,
   createAccount,
+  at,
   day,
   launch,
   openSession,
@@ -63,7 +64,7 @@ check("and the dashboard opens", !dir.p.url().includes("/welcome"), dir.p.url())
 
 await dir.p.goto(`${BASE}/legal/agreement`, { waitUntil: "networkidle" });
 check("the acceptance is on record", (await dir.p.getByText(/You have accepted the current version/).count()) > 0);
-check("with the version", (await dir.p.getByText(/Version 2026-09-01 — accepted/).count()) > 0);
+check("with the version", (await dir.p.getByText(/Version 2026-09-01, accepted/).count()) > 0);
 
 section("4 the administrator is the service provider, not a customer of it");
 await admin.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
@@ -71,7 +72,7 @@ check("no agreement gate for the admin", !admin.p.url().includes("/welcome"), ad
 
 section("5 a performer accepts the Terms of Submission");
 const live = await openSession(dir.p, {
-  name: `Legal ${t}`, company: CO, opensAt: day(0), closesAt: day(20), productionEndsAt: day(40),
+  name: `Legal ${t}`, company: CO, opensAt: at(0), closesAt: at(20, "23:59"), productionEndsAt: day(40),
 });
 const role = await postRole(dir.p, { title: `LEGAL-${t}`, company: CO, sessionId: live });
 await publish(dir.p, live);

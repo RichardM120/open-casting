@@ -5,7 +5,7 @@ import { query } from "./db";
 /**
  * How the sweep talks to the database. It is a parameter because the bootstrap
  * runs a sweep while the schema promise is still in flight, and `query()` waits
- * on that promise — a sweep going through it would be waiting on itself.
+ * on that promise: a sweep going through it would be waiting on itself.
  */
 export type Runner = <T extends Record<string, unknown>>(
   text: string,
@@ -58,7 +58,7 @@ export type Warning = {
  * happened rather than showing an empty list.
  *
  * The production, its roles and the fact that submissions were received all
- * survive — the casting director keeps a record of what they ran without
+ * survive, so the casting director keeps a record of what they ran without
  * holding anybody's personal data. This is a real delete, not a flag.
  */
 export async function purgeExpiredSubmissions(run: Runner = query): Promise<Purged[]> {

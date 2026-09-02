@@ -9,7 +9,7 @@ import { IDLE_FORM_STATE } from "@/lib/form-state";
 import { ADULT_AGE } from "@/lib/types";
 
 import { useErrorFocus } from "./use-error-focus";
-import { Button, ButtonLink, ErrorSummary, Field, Input, Select, Textarea, cx } from "./ui";
+import { Button, ButtonLink, ErrorSummary, Field, Input, Textarea, cx } from "./ui";
 
 const LABELS: Record<string, string> = {
   name: "Full name",
@@ -17,7 +17,6 @@ const LABELS: Record<string, string> = {
   phone: "Phone",
   location: "Based in",
   age: "Age",
-  unionStatus: "Union status",
   reelUrl: "Showreel link",
   profileUrl: "Profile link",
   coverNote: "Cover note",
@@ -38,7 +37,7 @@ export function SubmissionForm({
 }: {
   roleId: string;
   roleTitle: string;
-  /** The casting session's name, and when it closes, as a formatted date. */
+  /** The production's name, and when it closes, as a formatted date and time. */
   session: string;
   closesOn: string;
   disclaimer: string;
@@ -49,7 +48,7 @@ export function SubmissionForm({
   const formRef = useErrorFocus(state.status, state.errors);
 
   // Watched rather than read on submit, so the guardian section appears as soon
-  // as an age under 18 is typed — asking for it only after a refusal is a worse
+  // as an age under 18 is typed. Asking for it only after a refusal is a worse
   // way to find out, and this is the one part of the form a child cannot fill in.
   const [age, setAge] = useState(state.values.age ?? "");
   const minor = age !== "" && Number(age) > 0 && Number(age) < ADULT_AGE;
@@ -89,15 +88,15 @@ export function SubmissionForm({
       </p>
       <p className="mt-2 text-sm text-muted">
         This is one submission to <strong className="text-text">{session}</strong>, open until{" "}
-        <strong className="text-text">{closesOn}</strong>. One per person per production — pick
-        the role that fits you best rather than submitting for several.
+        <strong className="text-text">{closesOn}</strong>. It is one per person per production,
+        so pick the role that fits you best rather than submitting for several.
       </p>
       <p className="mt-2">
         <Link
           href="/faq/performers"
           className="text-sm text-accent underline-offset-4 hover:underline"
         >
-          What each field means →
+          What each field means
         </Link>
       </p>
 
@@ -158,12 +157,6 @@ export function SubmissionForm({
             onChange={(event) => setAge(event.target.value)}
             required
           />
-        </Field>
-        <Field label="Union status" htmlFor="unionStatus" error={errors.unionStatus}>
-          <Select id="unionStatus" name="unionStatus" defaultValue={values.unionStatus ?? "Non-Union"}>
-            <option value="Union">Union</option>
-            <option value="Non-Union">Non-Union</option>
-          </Select>
         </Field>
         <Field
           label="Showreel link"
@@ -357,18 +350,17 @@ export function SubmissionForm({
 
       <div className="mt-6 flex flex-wrap items-center gap-4">
         <Button type="submit" disabled={pending}>
-          {pending ? "Sending…" : "Send submission"}
+          {pending ? "Sending" : "Send submission"}
         </Button>
       </div>
     </form>
   );
 }
 
-/** Shown in place of the form once a role has closed. */
 /**
- * Shown in place of the form outside the casting session's window. Not-yet-open
- * and closed are different situations for a performer, so they read differently:
- * one is worth coming back for.
+ * Shown in place of the form outside the production's casting window. Not yet
+ * open and closed are different situations for a performer, so they read
+ * differently: one is worth coming back for.
  */
 export function SubmissionsClosed({
   session,
@@ -376,7 +368,7 @@ export function SubmissionsClosed({
   backTo,
 }: {
   session: string;
-  /** Set when the session has not opened yet, as a formatted date. */
+  /** Set when the production has not opened yet, as a formatted date and time. */
   opensOn?: string;
   backTo: string;
 }) {
@@ -389,7 +381,7 @@ export function SubmissionsClosed({
         {opensOn ? (
           <>
             {session} takes submissions from <strong className="text-text">{opensOn}</strong>. The
-            role is up now so you can prepare; come back on the day and the form will be here.
+            role is up now so you can prepare. Come back then and the form will be here.
           </>
         ) : (
           <>

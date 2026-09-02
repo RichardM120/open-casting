@@ -43,7 +43,7 @@ export default async function AgreementPage() {
           <ul className="mt-3 flex flex-col gap-1 text-sm text-faint">
             {mine.map((entry) => (
               <li key={`${entry.version}-${entry.acceptedAt}`}>
-                Version {entry.version} — accepted {formatDate(entry.acceptedAt)}
+                Version {entry.version}, accepted {formatDate(entry.acceptedAt)}
               </li>
             ))}
           </ul>

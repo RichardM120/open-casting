@@ -4,7 +4,7 @@ import {
   launch,
   reporter,
   session,
-  day,
+  at,
   adminSession,
   provision,
   shareTokenForRole,
@@ -20,11 +20,9 @@ const CO = `Act Co ${t}`;
 
 const admin = await adminSession(browser, errors);
 const dir = await provision(browser, errors, admin.p, { name: "Ada Dir", company: CO, email: `ad${t}@example.com`, role: "director" });
-const sessionId = await openSession(dir.p, { name: `Act Session ${t}`, company: CO });
+const sessionId = await openSession(dir.p, { name: `Act Production ${t}`, company: CO });
 await dir.p.goto(`${BASE}/dashboard/roles/new`, { waitUntil: "networkidle" });
 await dir.p.selectOption("#sessionId", sessionId);
-await dir.p.fill("#production", "Act Prod"); await dir.p.fill("#synopsis", "Verifying the activity trail records what happens.");
-await dir.p.fill("#castingDirector", "Ada Dir"); await dir.p.fill("#company", CO);
 await dir.p.fill("#title", `ACT-${t}`);
 await dir.p.fill("#characterBrief", "A character brief comfortably long enough to pass validation.");
 await dir.p.fill("#location", "Leeds"); await dir.p.fill("#shootDates", "Apr 2027");
@@ -35,13 +33,13 @@ const id = dir.p.url().match(/roles\/(rol_[^?]+)/)[1];
 await publish(dir.p, sessionId);
 
 section("1 posting is recorded");
-// publish() leaves us on the session page; the trail being checked is the role's.
+// publish() leaves us on the production page; the trail being checked is the role's.
 await dir.p.goto(`${BASE}/dashboard/roles/${id}`, { waitUntil: "networkidle" });
 check("role page shows it", (await dir.p.getByText(/Ada Dir.*posted/).count()) > 0);
 await dir.p.goto(`${BASE}/dashboard/activity`, { waitUntil: "networkidle" });
 check(
-  "opening the session is recorded too",
-  (await dir.p.getByText(/Ada Dir opened a casting session/).count()) > 0,
+  "opening the production is recorded too",
+  (await dir.p.getByText(/Ada Dir opened a production/).count()) > 0,
 );
 await dir.p.goto(`${BASE}/dashboard/roles/${id}`, { waitUntil: "networkidle" });
 
@@ -53,15 +51,15 @@ await dir.p.getByText("Changes saved").waitFor({ timeout: 20000 });
 const trail = await dir.p.locator("main ol").last().textContent();
 check("names the changed fields", trail.includes("rate") && trail.includes("shoot dates"), trail.slice(0, 160));
 
-section("2b moving the session's dates is recorded against the session");
+section("2b moving the production's times is recorded against the production");
 await dir.p.goto(`${BASE}/dashboard/sessions/${sessionId}/edit`, { waitUntil: "networkidle" });
-await dir.p.fill("#closesAt", day(45));
+await dir.p.fill("#closesAt", at(45, "23:59"));
 await dir.p.getByRole("button", { name: "Save changes" }).click();
 await dir.p.waitForURL(/\/dashboard\/sessions\/ses_[^/]+\?saved=1/, { timeout: 20000 });
 await dir.p.goto(`${BASE}/dashboard/activity`, { waitUntil: "networkidle" });
 check(
-  "names the closing date",
-  (await dir.p.getByText(/edited a casting session.*closing date/).count()) > 0,
+  "names the closing time",
+  (await dir.p.getByText(/edited a production.*closing time/).count()) > 0,
 );
 await dir.p.goto(`${BASE}/dashboard/roles/${id}`, { waitUntil: "networkidle" });
 

@@ -1,18 +1,103 @@
 import type { Database, SeedRole, SeedSession, Submission } from "./types";
 
 /**
- * Demo content. The store falls back to this whenever the data file is
- * missing, so a fresh clone has something to browse straight away.
+ * Demo content. The database seeds itself from this when it is empty, so a
+ * fresh clone has something to look at straight away.
  */
+
+/**
+ * One production per casting. The production owns the live window, so the
+ * roles inside it open and close together and a performer submits to it once.
+ * Times are UTC instants: 08:00Z is 09:00 in London in the summer.
+ */
+const sessions: SeedSession[] = [
+  {
+    id: "ses_saltmarsh",
+    publicToken: "4f21c9ba7e",
+    slug: "saltmarsh",
+    name: "Saltmarsh",
+    productionType: "Feature Film",
+    synopsis:
+      "A low-budget feature about a marine biologist who returns to the Essex coast to close her late father's boatyard and finds the tide has taken more than the land.",
+    company: "Raman Casting",
+    opensAt: "2026-08-24T08:00:00.000Z",
+    closesAt: "2026-09-18T17:00:00.000Z",
+    productionEndsAt: "2026-11-06",
+  },
+  {
+    id: "ses_northbank",
+    publicToken: "7c03ae5d18",
+    slug: "northbank",
+    name: "Northbank",
+    productionType: "TV Series",
+    synopsis:
+      "Series two of the returning crime drama set across the Manchester canal network. Eight episodes.",
+    company: "Whitcombe & Fry Casting",
+    opensAt: "2026-08-19T08:00:00.000Z",
+    closesAt: "2026-10-02T17:00:00.000Z",
+    productionEndsAt: "2027-04-30",
+  },
+  {
+    id: "ses_hearth",
+    publicToken: "2b96fd40ac",
+    slug: "hearth-winter-campaign",
+    name: "Hearth: Winter Campaign",
+    productionType: "Commercial",
+    synopsis:
+      "A national television and online campaign for a home energy brand. One 60 second hero film plus cutdowns.",
+    company: "Ortiz Casting",
+    opensAt: "2026-08-27T08:00:00.000Z",
+    closesAt: "2026-09-08T17:00:00.000Z",
+    productionEndsAt: "2026-10-02",
+  },
+  {
+    id: "ses_glasshouse",
+    publicToken: "e81a37f65d",
+    slug: "the-glasshouse",
+    name: "The Glasshouse",
+    productionType: "Voice Over",
+    synopsis:
+      "A six-part audio documentary series about the last commercial nursery in a Midlands town.",
+    company: "Sixth Floor Audio",
+    opensAt: "2026-08-29T08:00:00.000Z",
+    closesAt: "2026-09-25T17:00:00.000Z",
+    productionEndsAt: "2027-01-29",
+  },
+  {
+    id: "ses_lantern",
+    publicToken: "93cd6b02fa",
+    slug: "lantern",
+    name: "Lantern",
+    productionType: "Theatre",
+    synopsis:
+      "A new devised piece touring mid-scale venues across the north of England in spring 2027.",
+    company: "Lantern Theatre Company",
+    opensAt: "2026-08-12T08:00:00.000Z",
+    closesAt: "2026-10-16T17:00:00.000Z",
+    productionEndsAt: "2027-05-30",
+  },
+  {
+    id: "ses_kestrel",
+    publicToken: "6d40ba18ce",
+    slug: "kestrel",
+    name: "Kestrel",
+    productionType: "Short Film",
+    synopsis:
+      "A fifteen-minute graduation short about a kid who finds an injured bird and decides not to tell anyone.",
+    company: "Northern Film School",
+    opensAt: "2026-08-22T08:00:00.000Z",
+    closesAt: "2026-09-30T17:00:00.000Z",
+    productionEndsAt: "2026-11-15",
+  },
+];
+
+/** The roles, each naming the production it is posted into. */
 const roles: SeedRole[] = [
   {
     id: "rol_saltmarsh_nell",
     slug: "nell-saltmarsh",
-    title: "NELL — Lead",
-    production: "Saltmarsh",
-    productionType: "Feature Film",
-    synopsis:
-      "A low-budget feature about a marine biologist who returns to the Essex coast to close her late father's boatyard and finds the tide has taken more than the land.",
+    title: "Nell (Lead)",
+    sessionId: "ses_saltmarsh",
     characterBrief:
       "Nell is guarded, funny in a way that keeps people at arm's length, and quietly furious about a childhood nobody else remembers the same way. She carries most of the film. We are open on ethnicity and looking for someone who can hold long silences without filling them.",
     requirements: [
@@ -24,12 +109,9 @@ const roles: SeedRole[] = [
     selfTape: true,
     ageMin: 28,
     ageMax: 40,
-    payType: "Paid",
-    rate: "£950/week + accommodation and travel",
-    unionStatus: "Either",
-    shootDates: "12 Oct – 6 Nov 2026",
+    rate: "£950 a week plus accommodation and travel",
+    shootDates: "12 Oct to 6 Nov 2026",
     castingDirector: "Priya Raman",
-    company: "Raman Casting",
     disclaimer: "",
     closedAt: null,
     postedAt: "2026-08-24T09:15:00.000Z",
@@ -37,11 +119,8 @@ const roles: SeedRole[] = [
   {
     id: "rol_saltmarsh_gethin",
     slug: "gethin-saltmarsh",
-    title: "GETHIN — Supporting",
-    production: "Saltmarsh",
-    productionType: "Feature Film",
-    synopsis:
-      "A low-budget feature about a marine biologist who returns to the Essex coast to close her late father's boatyard and finds the tide has taken more than the land.",
+    title: "Gethin (Supporting)",
+    sessionId: "ses_saltmarsh",
     characterBrief:
       "Gethin ran the boatyard alongside Nell's father for twenty years and has decided, without telling anyone, that he is going to keep it running. Warm, stubborn, physically at ease. Welsh accent preferred but not essential.",
     requirements: [
@@ -52,12 +131,9 @@ const roles: SeedRole[] = [
     selfTape: true,
     ageMin: 55,
     ageMax: 70,
-    payType: "Paid",
-    rate: "£950/week + accommodation and travel",
-    unionStatus: "Either",
-    shootDates: "19 Oct – 1 Nov 2026",
+    rate: "£950 a week plus accommodation and travel",
+    shootDates: "19 Oct to 1 Nov 2026",
     castingDirector: "Priya Raman",
-    company: "Raman Casting",
     disclaimer: "",
     closedAt: null,
     postedAt: "2026-08-24T09:22:00.000Z",
@@ -65,15 +141,12 @@ const roles: SeedRole[] = [
   {
     id: "rol_northbank_dcelliot",
     slug: "dc-elliot-northbank",
-    title: "DC AMARA ELLIOT — Series Regular",
-    production: "Northbank",
-    productionType: "TV Series",
-    synopsis:
-      "Series two of the returning crime drama set across the Manchester canal network. Eight episodes.",
+    title: "DC Amara Elliot (Series Regular)",
+    sessionId: "ses_northbank",
     characterBrief:
       "Amara transferred in from Merseyside and is the only person in the room who thinks the case is already solved. Precise, dry, allergic to small talk. This is a full series arc across all eight episodes.",
     requirements: [
-      "Available for the full block, Jan – Apr 2027",
+      "Available for the full block, January to April 2027",
       "Northern English accent",
       "Previous broadcast credit preferred",
     ],
@@ -81,12 +154,9 @@ const roles: SeedRole[] = [
     selfTape: true,
     ageMin: 30,
     ageMax: 42,
-    payType: "Paid",
     rate: "Equity broadcast rates, negotiable on experience",
-    unionStatus: "Union",
-    shootDates: "Jan – Apr 2027",
+    shootDates: "January to April 2027",
     castingDirector: "Tom Whitcombe",
-    company: "Whitcombe & Fry Casting",
     disclaimer: "",
     closedAt: null,
     postedAt: "2026-08-19T14:40:00.000Z",
@@ -94,11 +164,8 @@ const roles: SeedRole[] = [
   {
     id: "rol_northbank_supporting",
     slug: "kez-northbank",
-    title: "KEZ — Recurring",
-    production: "Northbank",
-    productionType: "TV Series",
-    synopsis:
-      "Series two of the returning crime drama set across the Manchester canal network. Eight episodes.",
+    title: "Kez (Recurring)",
+    sessionId: "ses_northbank",
     characterBrief:
       "Kez works the lock gates and sees everything. Appears in four of eight episodes. Non-professionals with the right instincts are genuinely welcome to submit for this one.",
     requirements: ["Manchester-based or able to work as a local"],
@@ -106,12 +173,9 @@ const roles: SeedRole[] = [
     selfTape: true,
     ageMin: 18,
     ageMax: 25,
-    payType: "Paid",
-    rate: "£420/day",
-    unionStatus: "Either",
-    shootDates: "Feb – Mar 2027",
+    rate: "£420 a day",
+    shootDates: "February to March 2027",
     castingDirector: "Tom Whitcombe",
-    company: "Whitcombe & Fry Casting",
     disclaimer: "",
     closedAt: null,
     postedAt: "2026-08-19T14:52:00.000Z",
@@ -119,11 +183,8 @@ const roles: SeedRole[] = [
   {
     id: "rol_hearth_couple",
     slug: "couple-hearth",
-    title: "COUPLE (x2) — Principal",
-    production: "Hearth — Winter Campaign",
-    productionType: "Commercial",
-    synopsis:
-      "A national television and online campaign for a home energy brand. One 60s hero film plus cutdowns.",
+    title: "Couple, two roles (Principal)",
+    sessionId: "ses_hearth",
     characterBrief:
       "Two people who have clearly lived in the same house for a long time. We want real warmth and real ease rather than polish. Submitting as an established pair is welcome; note it in your cover message.",
     requirements: [
@@ -135,12 +196,9 @@ const roles: SeedRole[] = [
     selfTape: true,
     ageMin: 60,
     ageMax: 78,
-    payType: "Paid",
-    rate: "£1,200/day + buyout",
-    unionStatus: "Either",
+    rate: "£1,200 a day plus buyout",
     shootDates: "22 Sep 2026",
     castingDirector: "Lena Ortiz",
-    company: "Ortiz Casting",
     disclaimer:
       "Usage is UK, all media, 12 months from first air date. The day rate does not include the buyout, which is negotiated separately once you are cast. Submitting does not create any engagement, and we cannot pay for self-tapes. We keep your details for the duration of this casting and delete them within 6 months of it closing.",
     closedAt: null,
@@ -149,27 +207,21 @@ const roles: SeedRole[] = [
   {
     id: "rol_glasshouse_vo",
     slug: "narrator-glasshouse",
-    title: "NARRATOR — Voice",
-    production: "The Glasshouse",
-    productionType: "Voice Over",
-    synopsis:
-      "A six-part audio documentary series about the last commercial nursery in a Midlands town.",
+    title: "Narrator (Voice)",
+    sessionId: "ses_glasshouse",
     characterBrief:
       "The narrator is not a presenter. We want somebody who sounds like they are telling you something across a kitchen table, not reading it. All accents and backgrounds encouraged.",
     requirements: [
       "Broadcast-quality home booth, or able to record in Birmingham",
       "Roughly six half-day sessions across the run",
     ],
-    location: "Remote / Birmingham, UK",
+    location: "Remote or Birmingham, UK",
     selfTape: true,
     ageMin: 25,
     ageMax: 75,
-    payType: "Paid",
-    rate: "£300 per session",
-    unionStatus: "Either",
-    shootDates: "Nov 2026 – Jan 2027",
+    rate: "£300 a session",
+    shootDates: "November 2026 to January 2027",
     castingDirector: "Ruth Adeyemi",
-    company: "Sixth Floor Audio",
     disclaimer: "",
     closedAt: null,
     postedAt: "2026-08-29T08:30:00.000Z",
@@ -177,11 +229,8 @@ const roles: SeedRole[] = [
   {
     id: "rol_lantern_ensemble",
     slug: "ensemble-lantern",
-    title: "ENSEMBLE (x6) — Company",
-    production: "Lantern",
-    productionType: "Theatre",
-    synopsis:
-      "A new devised piece touring mid-scale venues across the north of England in spring 2027.",
+    title: "Ensemble, six roles (Company)",
+    sessionId: "ses_lantern",
     characterBrief:
       "A company of six who will build the piece together over a five-week rehearsal period. Movement-led. We are casting for range and generosity in the room rather than for fixed characters.",
     requirements: [
@@ -189,16 +238,13 @@ const roles: SeedRole[] = [
       "Available for the full rehearsal period and tour",
       "Deaf and disabled performers particularly encouraged; access costs are budgeted",
     ],
-    location: "Leeds, UK + UK tour",
+    location: "Leeds, UK, then a UK tour",
     selfTape: false,
     ageMin: 21,
     ageMax: 55,
-    payType: "Paid",
-    rate: "ITC/Equity minimum + touring allowance",
-    unionStatus: "Either",
+    rate: "ITC/Equity minimum plus touring allowance",
     shootDates: "Rehearsals from 8 Feb 2027, tour to 30 May 2027",
     castingDirector: "Marcus Bell",
-    company: "Lantern Theatre Company",
     disclaimer: "",
     closedAt: null,
     postedAt: "2026-08-12T16:20:00.000Z",
@@ -206,11 +252,8 @@ const roles: SeedRole[] = [
   {
     id: "rol_kestrel_youth",
     slug: "sam-kestrel",
-    title: "SAM — Lead",
-    production: "Kestrel",
-    productionType: "Short Film",
-    synopsis:
-      "A fifteen-minute graduation short about a kid who finds an injured bird and decides not to tell anyone.",
+    title: "Sam (Lead)",
+    sessionId: "ses_kestrel",
     characterBrief:
       "Sam is eleven or twelve and does almost all of the film without dialogue. No previous experience needed. A chaperone is required on set and their travel is covered.",
     requirements: [
@@ -222,12 +265,9 @@ const roles: SeedRole[] = [
     selfTape: true,
     ageMin: 11,
     ageMax: 13,
-    payType: "Paid",
-    rate: "£150/day + expenses",
-    unionStatus: "Non-Union",
-    shootDates: "7–8 and 14–15 Nov 2026",
+    rate: "£150 a day plus expenses",
+    shootDates: "7 to 8 and 14 to 15 Nov 2026",
     castingDirector: "Jo Fenwick",
-    company: "Northern Film School",
     disclaimer:
       "This role is for a performer under 16. A parent or guardian must submit on their behalf and must be present for every day of the shoot. A licence from the local authority is required before filming and we will apply for it once the role is cast.",
     closedAt: null,
@@ -235,96 +275,10 @@ const roles: SeedRole[] = [
   },
 ];
 
-/**
- * One casting session per production. The session owns the live window, so the
- * roles inside it open and close together and a performer submits to it once.
- */
-const sessions: SeedSession[] = [
-  {
-    id: "ses_saltmarsh",
-    publicToken: "4f21c9ba7e",
-    slug: "saltmarsh",
-    name: "Saltmarsh",
-    synopsis:
-      "A low-budget feature about a marine biologist who returns to the Essex coast to close her late father's boatyard and finds the tide has taken more than the land.",
-    company: "Raman Casting",
-    opensAt: "2026-08-24",
-    closesAt: "2026-09-18",
-    productionEndsAt: "2026-11-06",
-  },
-  {
-    id: "ses_northbank",
-    publicToken: "7c03ae5d18",
-    slug: "northbank",
-    name: "Northbank",
-    synopsis:
-      "Series two of a returning police procedural set on the Tyne, shooting in and around Newcastle.",
-    company: "Whitcombe & Fry Casting",
-    opensAt: "2026-08-19",
-    closesAt: "2026-10-02",
-    productionEndsAt: "2026-12-18",
-  },
-  {
-    id: "ses_hearth",
-    publicToken: "2b96fd40ac",
-    slug: "hearth-winter-campaign",
-    name: "Hearth — Winter Campaign",
-    synopsis:
-      "A national television and online campaign for a home heating brand, shot over two days in a studio build.",
-    company: "Ortiz Casting",
-    opensAt: "2026-08-27",
-    closesAt: "2026-09-08",
-    productionEndsAt: "2026-10-02",
-  },
-  {
-    id: "ses_glasshouse",
-    publicToken: "e81a37f65d",
-    slug: "the-glasshouse",
-    name: "The Glasshouse",
-    synopsis:
-      "An eight-part audio drama for a podcast network, recorded remotely and in studio in London.",
-    company: "Sixth Floor Audio",
-    opensAt: "2026-08-29",
-    closesAt: "2026-09-25",
-    productionEndsAt: "2026-11-20",
-  },
-  {
-    id: "ses_lantern",
-    publicToken: "93cd6b02fa",
-    slug: "lantern",
-    name: "Lantern",
-    synopsis:
-      "A new ensemble piece opening at the Lantern before a twelve-week regional tour.",
-    company: "Lantern Theatre Company",
-    opensAt: "2026-08-12",
-    closesAt: "2026-10-16",
-    productionEndsAt: "2027-01-29",
-  },
-  {
-    id: "ses_kestrel",
-    publicToken: "6d40ba18ce",
-    slug: "kestrel",
-    name: "Kestrel",
-    synopsis:
-      "A graduation short shot on 16mm over five days in the Yorkshire Dales.",
-    company: "Northern Film School",
-    opensAt: "2026-08-22",
-    closesAt: "2026-09-30",
-    productionEndsAt: "2026-10-30",
-  },
-];
-
-/** Which session each production's roles belong to. */
-const SESSION_BY_PRODUCTION: Record<string, string> = {
-  Saltmarsh: "ses_saltmarsh",
-  Northbank: "ses_northbank",
-  "Hearth — Winter Campaign": "ses_hearth",
-  "The Glasshouse": "ses_glasshouse",
-  Lantern: "ses_lantern",
-  Kestrel: "ses_kestrel",
-};
-
-const submissions: Omit<Submission, "sessionId" | "termsVersion" | "guardianName" | "guardianEmail" | "guardianConsentAt">[] = [
+const submissions: Omit<
+  Submission,
+  "sessionId" | "termsVersion" | "guardianName" | "guardianEmail" | "guardianConsentAt"
+>[] = [
   {
     id: "sub_0001",
     roleId: "rol_saltmarsh_nell",
@@ -333,7 +287,6 @@ const submissions: Omit<Submission, "sessionId" | "termsVersion" | "guardianName
     phone: "07700 900142",
     location: "London, UK",
     age: 33,
-    unionStatus: "Union",
     reelUrl: "https://vimeo.com/example/aoife-brennan-reel",
     profileUrl: "https://spotlight.com/example/aoife-brennan",
     coverNote:
@@ -351,7 +304,6 @@ const submissions: Omit<Submission, "sessionId" | "termsVersion" | "guardianName
     phone: "07700 900318",
     location: "Bristol, UK",
     age: 36,
-    unionStatus: "Union",
     reelUrl: "https://vimeo.com/example/d-okonkwo",
     profileUrl: "https://spotlight.com/example/d-okonkwo",
     coverNote:
@@ -369,7 +321,6 @@ const submissions: Omit<Submission, "sessionId" | "termsVersion" | "guardianName
     phone: "07700 900771",
     location: "Manchester, UK",
     age: 29,
-    unionStatus: "Non-Union",
     reelUrl: "https://vimeo.com/example/marta-kowalczyk",
     profileUrl: "",
     coverNote:
@@ -387,7 +338,6 @@ const submissions: Omit<Submission, "sessionId" | "termsVersion" | "guardianName
     phone: "07700 900255",
     location: "Cardiff, UK",
     age: 63,
-    unionStatus: "Union",
     reelUrl: "https://vimeo.com/example/dai-llewellyn",
     profileUrl: "https://spotlight.com/example/dai-llewellyn",
     coverNote:
@@ -405,7 +355,6 @@ const submissions: Omit<Submission, "sessionId" | "termsVersion" | "guardianName
     phone: "07700 900604",
     location: "Liverpool, UK",
     age: 38,
-    unionStatus: "Union",
     reelUrl: "https://vimeo.com/example/simone-achebe",
     profileUrl: "https://spotlight.com/example/simone-achebe",
     coverNote:
@@ -423,7 +372,6 @@ const submissions: Omit<Submission, "sessionId" | "termsVersion" | "guardianName
     phone: "07700 900019",
     location: "Sheffield, UK",
     age: 41,
-    unionStatus: "Union",
     reelUrl: "https://vimeo.com/example/hannah-pryce",
     profileUrl: "https://spotlight.com/example/hannah-pryce",
     coverNote: "Sheffield born. Tape attached, second take is the one.",
@@ -440,7 +388,6 @@ const submissions: Omit<Submission, "sessionId" | "termsVersion" | "guardianName
     phone: "07700 900488",
     location: "Croydon, UK",
     age: 71,
-    unionStatus: "Non-Union",
     reelUrl: "",
     profileUrl: "",
     coverNote:
@@ -459,7 +406,6 @@ const submissions: Omit<Submission, "sessionId" | "termsVersion" | "guardianName
     phone: "07700 900930",
     location: "Birmingham, UK",
     age: 58,
-    unionStatus: "Union",
     reelUrl: "https://soundcloud.com/example/errol-vance-reel",
     profileUrl: "",
     coverNote:
@@ -472,18 +418,23 @@ const submissions: Omit<Submission, "sessionId" | "termsVersion" | "guardianName
 ];
 
 /**
- * Assembles the demo data. Each role is attached to its production's session and
- * takes the session's closing date, so the seed cannot contradict itself the way
- * a hand-written deadline per role could.
+ * Assembles the demo data. Each role takes its production's name, type,
+ * synopsis and company from the production it names, so the seed cannot
+ * contradict itself the way a copy per role could.
  */
 export function seedDatabase(): Database {
   const byId = new Map(sessions.map((session) => [session.id, session]));
 
   const seedRoles = structuredClone(roles).map((role) => {
-    const sessionId = SESSION_BY_PRODUCTION[role.production];
-    const session = sessionId ? byId.get(sessionId) : undefined;
-    if (!session) throw new Error(`No casting session for ${role.production}`);
-    return { ...role, sessionId: session.id, deadline: session.closesAt };
+    const session = byId.get(role.sessionId);
+    if (!session) throw new Error(`No production for role ${role.id}`);
+    return {
+      ...role,
+      production: session.name,
+      productionType: session.productionType,
+      synopsis: session.synopsis,
+      company: session.company,
+    };
   });
 
   const sessionByRole = new Map(seedRoles.map((role) => [role.id, role.sessionId]));

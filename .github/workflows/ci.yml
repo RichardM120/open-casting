@@ -60,7 +60,7 @@ jobs:
         run: npm run typecheck
 
       # No DATABASE_URL on purpose. Every data page is force-dynamic, so a build
-      # must not need a reachable database — if this fails, deploys are fragile.
+      # must not need a reachable database. If this fails, deploys are fragile.
       - name: Build without a database
         run: npm run build
         env:

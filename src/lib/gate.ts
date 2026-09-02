@@ -4,14 +4,14 @@
  * One variable. With `SITE_PASSCODE` set:
  *
  *  - every page shows an interstitial first, asking for that passcode. Nothing
- *    behind it is served — not the sign-in page, not a casting share link;
+ *    behind it is served: not the sign-in page, not a casting share link;
  *  - the application's own sign-in stops checking anything. Any email and any
  *    password gets a session, and an account is created on the spot for an
  *    address that has none.
  *
  * The two go together on purpose. Sign-in that authenticates nobody is only
  * defensible because the wall in front of it means nobody uncontrolled reaches
- * it — so they are the same switch, and it is not possible to leave the second
+ * it, so they are the same switch, and it is not possible to leave the second
  * on while turning the first off.
  *
  * Unset it to launch: the wall goes, and real sign-in comes back with no code
@@ -48,7 +48,7 @@ export function gateExempt(pathname: string): boolean {
 /**
  * Whether the wall can be opened at all. "This browser has entered the
  * passcode" is a cookie signed with AUTH_SECRET, and the proxy turns away any
- * it cannot verify — so with no key there is no way through, right passcode or
+ * it cannot verify, so with no key there is no way through, right passcode or
  * not. The threshold is the one `authSecret()` enforces.
  */
 export function gateOperable(): boolean {

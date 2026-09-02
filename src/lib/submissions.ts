@@ -3,12 +3,7 @@ import "server-only";
 import type { SessionUser } from "./auth";
 import { UNIQUE_VIOLATION, query } from "./db";
 import { visibility } from "./roles";
-import {
-  SUBMISSION_STATUSES,
-  type Submission,
-  type SubmissionStatus,
-  type UnionStatus,
-} from "./types";
+import { SUBMISSION_STATUSES, type Submission, type SubmissionStatus } from "./types";
 
 export type SubmissionCounts = Record<SubmissionStatus, number> & { total: number };
 
@@ -18,10 +13,10 @@ function emptyCounts(): SubmissionCounts {
   return counts;
 }
 
-/** Thrown when someone submits twice into the same casting session. */
+/** Thrown when someone submits twice into the same production. */
 export class DuplicateSubmissionError extends Error {
   constructor() {
-    super("A submission from this email already exists for this casting session");
+    super("A submission from this email already exists for this production");
     this.name = "DuplicateSubmissionError";
   }
 }
@@ -37,7 +32,6 @@ type SubmissionRow = {
   phone: string;
   location: string;
   age: number;
-  union_status: string;
   reel_url: string;
   profile_url: string;
   cover_note: string;
@@ -52,9 +46,9 @@ type SubmissionRow = {
 };
 
 const COLUMNS = `
-  id, role_id, session_id, name, email, phone, location, age, union_status,
-  reel_url, profile_url, cover_note, status, accepted_terms, accepted_at,
-  terms_version, guardian_name, guardian_email, guardian_consent_at, submitted_at
+  id, role_id, session_id, name, email, phone, location, age, reel_url,
+  profile_url, cover_note, status, accepted_terms, accepted_at, terms_version,
+  guardian_name, guardian_email, guardian_consent_at, submitted_at
 `;
 
 function toSubmission(row: SubmissionRow): Submission {
@@ -67,7 +61,6 @@ function toSubmission(row: SubmissionRow): Submission {
     phone: row.phone,
     location: row.location,
     age: row.age,
-    unionStatus: row.union_status as Exclude<UnionStatus, "Either">,
     reelUrl: row.reel_url,
     profileUrl: row.profile_url,
     coverNote: row.cover_note,
@@ -138,18 +131,18 @@ export type NewSubmission = Omit<Submission, "id" | "status" | "submittedAt">;
 
 /**
  * Throws `DuplicateSubmissionError` if this email has already submitted into
- * the same casting session — a production considers a performer once, not once
- * per role. The unique index does the deciding, so two requests racing each
- * other cannot both get through.
+ * the same production: a production considers a performer once, not once per
+ * role. The unique index does the deciding, so two requests racing each other
+ * cannot both get through.
  */
 export async function createSubmission(input: NewSubmission): Promise<Submission> {
   try {
     const rows = await query<SubmissionRow>(
       `INSERT INTO submissions (
-         id, role_id, session_id, name, email, phone, location, age, union_status,
-         reel_url, profile_url, cover_note, accepted_terms, accepted_at,
-         terms_version, guardian_name, guardian_email, guardian_consent_at
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18)
+         id, role_id, session_id, name, email, phone, location, age, reel_url,
+         profile_url, cover_note, accepted_terms, accepted_at, terms_version,
+         guardian_name, guardian_email, guardian_consent_at
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
        RETURNING ${COLUMNS}`,
       [
         `sub_${crypto.randomUUID().slice(0, 12)}`,
@@ -160,7 +153,6 @@ export async function createSubmission(input: NewSubmission): Promise<Submission
         input.phone,
         input.location,
         input.age,
-        input.unionStatus,
         input.reelUrl,
         input.profileUrl,
         input.coverNote,

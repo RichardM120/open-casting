@@ -4,7 +4,7 @@ import { GATE_COOKIE, gateEnabled, gateExempt } from "@/lib/gate";
 import { verifyContext, verifyValue } from "@/lib/token";
 
 /**
- * What each area needs. The proxy can only turn requests away — it cannot let
+ * What each area needs. The proxy can only turn requests away. It cannot let
  * anyone in, because the page and the action behind it check the database
  * again regardless. See `src/lib/token.ts` for why that division exists.
  */
@@ -106,7 +106,7 @@ export const config = {
   matcher: [
     {
       // robots.txt is text/plain with nothing to execute, and the browser's own
-      // plain-text viewer styles it inline — so a policy there protects nothing
+      // plain-text viewer styles it inline, so a policy there protects nothing
       // and reports a violation the page did not cause.
       source: "/((?!api|_next/static|_next/image|favicon.ico|robots.txt).*)",
       missing: [{ type: "header", key: "next-router-prefetch" }],

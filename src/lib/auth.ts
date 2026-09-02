@@ -59,7 +59,7 @@ export type SessionCookie = {
  *
  * Returned rather than set, because where they are set differs: a Server Action
  * writes through `cookies()`, while a Route Handler must put them on the
- * `NextResponse` it returns — cookies set through `cookies()` there do not
+ * `NextResponse` it returns; cookies set through `cookies()` there do not
  * reach the browser, which is a silent failure rather than an error.
  */
 export async function sessionCookies(

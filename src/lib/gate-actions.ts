@@ -43,7 +43,7 @@ export async function unlockSite(
   }
 
   // The right passcode, and still no way through: the cookie cannot be signed.
-  // Said plainly, as sign-in does, rather than thrown — a generic error page
+  // Said plainly, as sign-in does, rather than thrown: a generic error page
   // sends whoever is setting this up looking for a fault that is not there.
   if (!gateOperable()) {
     return {
@@ -69,7 +69,7 @@ export async function unlockSite(
 
   // One hop rather than two. The proxy would bounce a signed-out visitor off a
   // guarded path the moment they arrived, and the router does not correct the
-  // address bar when a server action's redirect is itself redirected — so the
+  // address bar when a server action's redirect is itself redirected, so the
   // browser would sit on /dashboard showing the sign-in page. Sending them
   // where they are actually going avoids both.
   if (destination.startsWith("/dashboard") && !(await currentUser())) {

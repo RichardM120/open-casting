@@ -8,8 +8,8 @@ import { currentUser } from "@/lib/auth";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Open Casting",
-  description: "The private tool a production uses to run its casting call.",
+  title: { absolute: "Open Casting" },
+  description: "The private tool a production uses to run its casting.",
   robots: { index: false, follow: false },
 };
 
@@ -30,7 +30,7 @@ export default async function HomePage() {
       </h1>
       <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">
         Set up a production, post its roles, and read every submission in one place. Accounts are
-        created by the administrator — there is nothing to register for.
+        created by the administrator, so there is nothing to register for.
       </p>
 
       <div className="mt-10">
@@ -47,12 +47,12 @@ export default async function HomePage() {
         <h2 className="text-lg font-semibold tracking-tight">Sent a casting link?</h2>
         <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
           Performers do not sign in and do not need an account. Open the link the production sent
-          you — it goes straight to their roles and the submission form. There is no listing here
-          to search, by design: a casting call is circulated by the people casting it.
+          you and it goes straight to their roles and the submission form. There is no listing
+          here to search, by design: a casting call is circulated by the people casting it.
         </p>
         <p className="mt-4 text-sm">
           <Link href="/faq/performers" className="text-accent underline-offset-4 hover:underline">
-            What the fields on a casting call mean →
+            What the fields on a casting call mean
           </Link>
         </p>
       </div>

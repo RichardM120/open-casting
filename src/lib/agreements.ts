@@ -14,7 +14,7 @@ export type Acceptance = {
 
 /**
  * Records that an account accepted an agreement. Insert-only, and idempotent on
- * the same version — clicking twice is not two agreements.
+ * the same version: clicking twice is not two agreements.
  *
  * The IP is kept because an acceptance is evidence, and evidence with no
  * provenance is worth less. It is the same address the rate limiter already

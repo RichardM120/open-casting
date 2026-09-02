@@ -16,7 +16,7 @@ import {
   setSessionClosed,
   updateSession,
 } from "./sessions";
-import { isOpen, notYetOpen, roleWindow } from "./format";
+import { formatDateTime, isOpen, notYetOpen, roleWindow } from "./format";
 import { clientAddress, overLimit } from "./rate-limit";
 import { submittedValues, type FormState } from "./form-state";
 import {
@@ -63,9 +63,9 @@ function invalid(
 }
 
 /**
- * Roles and submissions surface on almost every page — counts on the home page,
- * cards on the listing, tables on the dashboard — so any write invalidates the
- * lot rather than trying to enumerate which pages moved.
+ * Roles and submissions surface on almost every page (counts on the dashboard,
+ * cards on the production pages, the activity trail), so any write invalidates
+ * the lot rather than trying to enumerate which pages moved.
  */
 function revalidateEverything(): void {
   revalidatePath("/", "layout");
@@ -86,7 +86,7 @@ export async function submitApplication(
     return invalid(
       {},
       notYetOpen(window)
-        ? `Submissions for ${role.session.name} do not open until ${role.session.opensAt}.`
+        ? `Submissions for ${role.session.name} do not open until ${formatDateTime(role.session.opensAt)}.`
         : "This role is no longer accepting submissions.",
       formData,
     );
@@ -153,7 +153,7 @@ export async function submitApplication(
   }
 
   // The role decides whether terms must be accepted, not the form that was
-  // posted — otherwise dropping the checkbox from the request would skip it.
+  // posted. Otherwise dropping the checkbox from the request would skip it.
   if (role.disclaimer && !acceptTerms) {
     return invalid(
       { acceptTerms: "Please confirm you have read the terms for this role" },
@@ -203,7 +203,7 @@ export async function submitApplication(
 
   return {
     status: "success",
-    message: `Thanks ${submission.name.split(" ")[0]} — your submission is with ${role.castingDirector}.`,
+    message: `Thanks, ${submission.name.split(" ")[0]}. Your submission is with ${role.castingDirector}.`,
     errors: {},
     values: {},
   };
@@ -230,8 +230,8 @@ export async function postRole(
   const session = await getVisibleSession(sessionId, user);
   if (!session) {
     return invalid(
-      { sessionId: "That casting session is not one of yours" },
-      "Choose a casting session you can post into.",
+      { sessionId: "That production is not one of yours" },
+      "Choose a production you can post into.",
       formData,
     );
   }
@@ -247,7 +247,7 @@ export async function postRole(
     }
   }
 
-  const role = await createRole(fields, session, user.id);
+  const role = await createRole(fields, session, user);
   await record({
     action: "role.posted",
     actorId: user.id,
@@ -308,9 +308,10 @@ export async function editRole(
 
   const before = await getVisibleRole(id, user);
 
-  // `sessionId` is part of the schema so posting can pick a session. A role does
-  // not move between sessions afterwards, so `updateRole` ignores it: moving one
-  // would change its dates and orphan the submissions already made under it.
+  // `sessionId` is part of the schema so posting can pick a production. A role
+  // does not move between productions afterwards, so `updateRole` ignores it:
+  // moving one would change its dates and orphan the submissions already made
+  // under it.
   const role = await updateRole(id, parsed.data, user);
   if (!role) {
     return invalid({}, "That role is no longer yours to edit.", formData);
@@ -354,7 +355,7 @@ export async function toggleRoleClosed(formData: FormData): Promise<void> {
 
 /**
  * Removes a role and every submission made to it. Admin only, and the
- * confirmation has to be ticked — this destroys other people's data.
+ * confirmation has to be ticked: this destroys other people's data.
  */
 export async function removeRole(formData: FormData): Promise<void> {
   const id = String(formData.get("roleId") ?? "");
@@ -380,11 +381,11 @@ export async function removeRole(formData: FormData): Promise<void> {
 
   await deleteRoleAsAdmin(id);
   revalidateEverything();
-  redirect("/dashboard?removed=1");
+  redirect(`/dashboard/sessions/${role.sessionId}?removed=1`);
 }
 
 /**
- * Creates an account for someone. Admin only — this is the only way anyone gets
+ * Creates an account for someone. Admin only. This is the only way anyone gets
  * one, so the check here is the whole of the registration policy.
  *
  * The password is generated rather than chosen, and returned in the action's
@@ -474,7 +475,7 @@ export async function updateAccountLimits(
     actorId: user.id,
     actorName: user.name,
     detail:
-      `${account.name} — ` +
+      `${account.name}: ` +
       `${parsed.data.maxSessions ?? "unlimited"} productions, ` +
       `${parsed.data.maxRolesPerSession ?? "unlimited"} roles each, ` +
       `access ${parsed.data.accessUntil ? `to ${parsed.data.accessUntil}` : "open-ended"}`,
@@ -506,11 +507,11 @@ export async function toggleAccountSuspended(formData: FormData): Promise<void> 
   revalidateEverything();
 }
 
-/* ----------------------------------------------------- casting sessions -- */
+/* ---------------------------------------------------------- productions -- */
 
 /**
- * Opens a casting session. The session owns the live dates, so this is the
- * first thing a casting director does — roles are posted into it afterwards.
+ * Opens a production. The production owns the live dates, so this is the first
+ * thing a casting director does; roles are posted into it afterwards.
  */
 export async function createCastingSession(
   _previous: FormState,
@@ -547,7 +548,7 @@ export async function createCastingSession(
     actorName: user.name,
     ownerId: session.ownerId,
     company: session.company,
-    detail: `${session.name} · ${session.opensAt} to ${session.closesAt}`,
+    detail: `${session.name} · ${formatDateTime(session.opensAt)} to ${formatDateTime(session.closesAt)}`,
   });
 
   revalidateEverything();
@@ -572,10 +573,10 @@ export async function editCastingSession(
 
   const before = await getVisibleSession(id, user);
 
-  // Returns null when the session is not one this account may touch.
+  // Returns null when the production is not one this account may touch.
   const session = await updateSession(id, parsed.data, user);
   if (!session) {
-    return invalid({}, "That casting session is no longer yours to edit.", formData);
+    return invalid({}, "That production is no longer yours to edit.", formData);
   }
 
   await record({
@@ -584,7 +585,7 @@ export async function editCastingSession(
     actorName: user.name,
     ownerId: session.ownerId,
     company: session.company,
-    detail: `${session.name} — ${before ? describeSessionChanges(before, session) : "edited"}`,
+    detail: `${session.name}: ${before ? describeSessionChanges(before, session) : "edited"}`,
   });
 
   revalidateEverything();
@@ -592,7 +593,7 @@ export async function editCastingSession(
 }
 
 /**
- * Publishes a casting session, which is the moment its link starts working.
+ * Publishes a production, which is the moment its link starts working.
  *
  * Refuses an empty production: a link that opens on nothing is worse than no
  * link, and this is the last point at which that is cheap to catch.
@@ -619,16 +620,16 @@ export async function publishCastingSession(formData: FormData): Promise<void> {
     actorName: user.name,
     ownerId: published.ownerId,
     company: published.company,
-    detail: `${published.name} — ${roles.length} ${roles.length === 1 ? "role" : "roles"}`,
+    detail: `${published.name}: ${roles.length} ${roles.length === 1 ? "role" : "roles"}`,
   });
   revalidateEverything();
   redirect(`/dashboard/sessions/${id}?published=1`);
 }
 
 /**
- * Closes a session ahead of its closing date, or puts it back. Every role in it
- * stops accepting submissions at the same moment, which is the point of the
- * session owning the window.
+ * Closes a production ahead of its closing time, or puts it back. Every role in
+ * it stops accepting submissions at the same moment, which is the point of the
+ * production owning the window.
  */
 export async function toggleSessionClosed(formData: FormData): Promise<void> {
   const id = String(formData.get("sessionId") ?? "");
@@ -652,13 +653,13 @@ export async function toggleSessionClosed(formData: FormData): Promise<void> {
 }
 
 /**
- * Removes a session, every role in it and every submission made to those roles.
- * Admin only, and the confirmation has to be ticked — this destroys other
+ * Removes a production, every role in it and every submission made to those
+ * roles. Admin only, and the confirmation has to be ticked: this destroys other
  * people's data on a scale a single role does not.
  */
 export async function removeSession(formData: FormData): Promise<void> {
   const id = String(formData.get("sessionId") ?? "");
-  const user = await requireUser("/dashboard/sessions");
+  const user = await requireUser("/dashboard");
 
   if (user.role !== "admin" || formData.get("confirm") !== "on" || !id) return;
 
@@ -677,5 +678,5 @@ export async function removeSession(formData: FormData): Promise<void> {
 
   await deleteSessionAsAdmin(id);
   revalidateEverything();
-  redirect("/dashboard/sessions?removed=1");
+  redirect("/dashboard?removed=1");
 }

@@ -40,7 +40,7 @@ export async function launch() {
 }
 
 /**
- * A fresh, isolated browser context — cookies included, so roles do not bleed
+ * A fresh, isolated browser context, cookies included, so roles do not bleed
  * between accounts. Returned as `{ c, p }`: context and page.
  */
 export async function session(browser, errors, viewport) {
@@ -50,7 +50,7 @@ export async function session(browser, errors, viewport) {
   p.on("console", (message) => {
     if (message.type() !== "error") return;
     const text = message.text();
-    // Several suites visit a 404 on purpose — checking that a stranger cannot
+    // Several suites visit a 404 on purpose, checking that a stranger cannot
     // tell a role exists. Those are assertions, not faults. A CSP violation or
     // a script error still comes through.
     if (/Failed to load resource.*\b40[034]\b/.test(text)) return;
@@ -69,6 +69,15 @@ export function day(offset) {
   const date = new Date();
   date.setUTCDate(date.getUTCDate() + offset);
   return date.toISOString().slice(0, 10);
+}
+
+/**
+ * A `datetime-local` value relative to today, for a production's opening and
+ * closing times. Midnight for the start of a day, 23:59 for the end of one, so
+ * a window "from day 0" is open now.
+ */
+export function at(offset, time = "00:00") {
+  return `${day(offset)}T${time}`;
 }
 
 export async function signIn(page, email, password) {
@@ -120,7 +129,7 @@ export async function signInAsAdmin(page) {
 
 /**
  * Creates an account the way the administrator does, and reads back the
- * generated password — there is no other way to get one, which is the point.
+ * generated password. There is no other way to get one, which is the point.
  */
 export async function createAccount(adminPage, user) {
   await adminPage.goto(`${BASE}/dashboard/accounts`, { waitUntil: "networkidle" });
@@ -183,7 +192,10 @@ export async function adminSession(browser, errors) {
   return ctx;
 }
 
-/** Opens a casting session and returns its id. */
+/**
+ * Opens a production (a casting session, in the code) and returns its id.
+ * `opensAt` and `closesAt` are `datetime-local` values; see `at()`.
+ */
 export async function openSession(page, fields) {
   await page.goto(`${BASE}/dashboard/sessions/new`, { waitUntil: "networkidle" });
   await page.fill("#name", fields.name);
@@ -192,15 +204,15 @@ export async function openSession(page, fields) {
     fields.synopsis ?? "A production used by the test suite, described at length.",
   );
   await page.fill("#company", fields.company);
-  await page.fill("#opensAt", fields.opensAt ?? day(0));
-  await page.fill("#closesAt", fields.closesAt ?? day(30));
+  await page.fill("#opensAt", fields.opensAt ?? at(0));
+  await page.fill("#closesAt", fields.closesAt ?? at(30, "23:59"));
   await page.fill("#productionEndsAt", fields.productionEndsAt ?? day(60));
-  await page.getByRole("button", { name: "Open the session" }).click();
+  await page.getByRole("button", { name: "Open the production" }).click();
   await page.waitForURL(/\/dashboard\/sessions\/ses_/, { timeout: 20000 });
   return page.url().match(/sessions\/(ses_[^?]+)/)[1];
 }
 
-/** Publishes a session, which is what makes its share link work. */
+/** Publishes a production, which is what makes its share link work. */
 export async function publish(page, sessionId) {
   await page.goto(`${BASE}/dashboard/sessions/${sessionId}`, { waitUntil: "networkidle" });
   await page.getByRole("button", { name: "Publish this casting call" }).click();
@@ -208,8 +220,9 @@ export async function publish(page, sessionId) {
 }
 
 /**
- * Posts a role and returns its id. A role must belong to a casting session, so
- * one is opened first unless the caller passes `sessionId`.
+ * Posts a role and returns its id. A role must belong to a production, so one
+ * is opened first unless the caller passes `sessionId`. The production details
+ * (name, synopsis, company) come from the production, not the role form.
  */
 export async function postRole(page, fields) {
   const sessionId =
@@ -223,10 +236,6 @@ export async function postRole(page, fields) {
 
   await page.goto(`${BASE}/dashboard/roles/new`, { waitUntil: "networkidle" });
   await page.selectOption("#sessionId", sessionId);
-  await page.fill("#production", fields.production ?? `${fields.title} Production`);
-  await page.fill("#synopsis", fields.synopsis ?? "A production used by the test suite.");
-  await page.fill("#castingDirector", fields.castingDirector ?? "Test Director");
-  await page.fill("#company", fields.company);
   await page.fill("#title", fields.title);
   await page.fill(
     "#characterBrief",
@@ -240,14 +249,14 @@ export async function postRole(page, fields) {
   await page.waitForURL(/\/dashboard\/roles\/rol_/, { timeout: 20000 });
   const roleId = page.url().match(/roles\/(rol_[^?]+)/)[1];
 
-  // A session this helper opened is a draft, and a draft's link opens for
-  // nobody — so publish it, unless the caller is testing that very thing.
+  // A production this helper opened is a draft, and a draft's link opens for
+  // nobody, so publish it, unless the caller is testing that very thing.
   if (!fields.sessionId && fields.publish !== false) await publish(page, sessionId);
 
   return roleId;
 }
 
-/** The share link for a casting session, read off its dashboard page. */
+/** The share link for a production, read off its dashboard page. */
 export async function shareToken(page, sessionId) {
   await page.goto(`${BASE}/dashboard/sessions/${sessionId}`, { waitUntil: "networkidle" });
   const url = (await page.locator("code.select-all").first().textContent()).trim();

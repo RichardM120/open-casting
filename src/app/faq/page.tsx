@@ -6,7 +6,7 @@ import { Eyebrow } from "@/components/ui";
 export const metadata: Metadata = {
   title: "FAQ",
   description:
-    "What the fields on a casting call mean, what submitting commits you to, and how the board works.",
+    "What the fields on a casting call mean, what submitting commits you to, and how the site works.",
 };
 
 const GUIDES = [
@@ -15,14 +15,14 @@ const GUIDES = [
     eyebrow: "For performers",
     title: "Submitting for a role",
     description:
-      "What the words on a listing mean — rate, buyout, usage, union status, playing age — when the form is open, what you are agreeing to when you submit, and what happens to your details.",
+      "What the words on a casting call mean (rate, buyout, usage, playing age), when the form is open, what you are agreeing to when you submit, and what happens to your details.",
   },
   {
     href: "/faq/casting-directors",
     eyebrow: "For casting directors",
-    title: "Posting a role",
+    title: "Running a casting call",
     description:
-      "How casting sessions hold a production's dates, what each field commits you to, who else at your company can see what comes in, how to write terms worth having, and your obligations for the data you collect.",
+      "How a production holds its roles and its times, what each field commits you to, who else at your company can see what comes in, how to write terms worth having, and your obligations for the data you collect.",
   },
 ] as const;
 

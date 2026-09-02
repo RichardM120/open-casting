@@ -15,7 +15,7 @@ function hash(token: string): string {
 }
 
 /**
- * Who needs a second factor. Admins always do — that account can create
+ * Who needs a second factor. Admins always do, because that account can create
  * accounts, read every production and delete other people's data, so a stolen
  * password should not be enough. Anyone else only if it has been turned on for
  * them.

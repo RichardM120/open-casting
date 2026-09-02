@@ -36,7 +36,7 @@ export default async function GatePage({ searchParams }: PageProps<"/gate">) {
           // is the only person who can reach this, and this is what they need.
           <p role="alert" className="text-sm leading-relaxed text-danger">
             The passcode cannot be checked yet. This deployment has no{" "}
-            <code className="text-text">AUTH_SECRET</code> — set it in the environment and
+            <code className="text-text">AUTH_SECRET</code>. Set it in the environment and
             redeploy, and the gate will open.
           </p>
         )}
@@ -44,7 +44,7 @@ export default async function GatePage({ searchParams }: PageProps<"/gate">) {
 
       <p className="mt-6 text-xs leading-relaxed text-faint">
         If you were sent a casting link and it brought you here, the production is not accepting
-        submissions yet. Keep the link — it will work when they open.
+        submissions yet. Keep the link. It will work when they open.
       </p>
     </div>
   );

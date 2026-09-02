@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
  * A redirect to a path on whatever origin the browser actually used.
  *
  * `NextResponse.redirect` wants an absolute URL, and the obvious source for one
- * — `request.url` — is the server's internal address, not the host the request
+ * (`request.url`) is the server's internal address, not the host the request
  * came in on. Behind a proxy, or simply when the browser said 127.0.0.1 and the
  * server thinks it is localhost, that sends the browser to a different origin
  * and every cookie just set is left behind. A relative Location header is legal

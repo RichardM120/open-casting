@@ -29,7 +29,7 @@ export class OAuthError extends Error {}
  *
  * It is also withdrawn entirely while the site is walled off. Google is the one
  * way in here that really does authenticate, and it refuses any address without
- * an account — so behind the wall it is a button that contradicts the sign-in
+ * an account, so behind the wall it is a button that contradicts the sign-in
  * beside it and dead-ends whoever presses it. Both routes read this, so turning
  * it off here takes the button, `/api/auth/google` and the callback with it.
  */
