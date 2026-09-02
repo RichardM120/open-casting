@@ -66,7 +66,7 @@ export default async function RoleSubmissionsPage({
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-12">
-      <SetupProgress stage={role.session.publishedAt ? 4 : 3} />
+      <SetupProgress stage={role.session.publishedAt ? 4 : 3} sessionId={role.sessionId} />
       <HelpNote title="What to do on this screen" faq="/faq/casting-directors">
         <p dangerouslySetInnerHTML={{ __html: 'Submissions to this role arrive here. Move people through <strong>New</strong>, <strong>Shortlisted</strong>, <strong>Callback</strong> and <strong>Declined</strong> as you work; nothing is emailed to them automatically.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'Their details are deleted thirty days after the production finishes. Export anything you need before then.' }} />

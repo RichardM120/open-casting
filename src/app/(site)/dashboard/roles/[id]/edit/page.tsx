@@ -31,7 +31,7 @@ export default async function EditRolePage({
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-12">
-      <SetupProgress stage={3} />
+      <SetupProgress stage={3} sessionId={role.sessionId} />
       <HelpNote title="What this screen is for" faq="/faq/casting-directors">
         <p dangerouslySetInnerHTML={{ __html: 'Edits show on the public page immediately. Changing the terms does not change what people who already submitted agreed to.' }} />
       </HelpNote>

@@ -51,7 +51,7 @@ export default async function NewRolePage({ searchParams }: PageProps<"/dashboar
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-12">
-      <SetupProgress stage={2} />
+      <SetupProgress stage={2} sessionId={requested} />
       <HelpNote title="What this screen is for" faq="/faq/casting-directors">
         <p dangerouslySetInnerHTML={{ __html: 'A role is the brief and the practicalities: who you are looking for, where it shoots and when. The dates it takes submissions between come from the casting call, not from here.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'Terms you set here must be accepted by everyone who submits to this role.' }} />

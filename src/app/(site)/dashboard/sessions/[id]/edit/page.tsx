@@ -32,7 +32,7 @@ export default async function EditSessionPage({
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-12">
-      <SetupProgress stage={1} />
+      <SetupProgress stage={1} sessionId={session.id} />
       <HelpNote title="What this screen is for" faq="/faq/casting-directors">
         <p dangerouslySetInnerHTML={{ __html: 'Changes go live straight away, and moving the times moves every role in the call with them. Shortening the window drops anyone mid-submission.' }} />
       </HelpNote>

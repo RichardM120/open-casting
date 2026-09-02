@@ -24,11 +24,24 @@ export type SetupStage = 1 | 2 | 3 | 4;
  */
 export function SetupProgress({
   stage,
-  hrefs = {},
+  sessionId,
+  hrefs: given = {},
 }: {
   stage: SetupStage;
+  /** The casting call being set up, once it exists: every step then links to its page. */
+  sessionId?: string;
   hrefs?: Partial<Record<(typeof SETUP_STEPS)[number]["key"], string>>;
 }) {
+  const hrefs: Partial<Record<(typeof SETUP_STEPS)[number]["key"], string>> = sessionId
+    ? {
+        open: `/dashboard/sessions/${sessionId}/edit`,
+        roles: `/dashboard/roles/new?session=${sessionId}`,
+        publish: `/dashboard/sessions/${sessionId}`,
+        share: `/dashboard/sessions/${sessionId}`,
+        ...given,
+      }
+    : given;
+
   return (
     <nav aria-label="Setting up the casting call" className="-mt-4 mb-8 border-b border-line">
       <ol className="flex flex-wrap items-start gap-x-3 gap-y-3 py-4 sm:gap-x-5">
@@ -51,14 +64,13 @@ export function SetupProgress({
               >
                 {n}
               </span>
-              <span className="flex min-w-0 flex-col">
+              <span className="hidden min-w-0 flex-col sm:flex">
                 <span
                   className={cx(
                     "text-sm whitespace-nowrap",
                     current ? "font-semibold text-text" : done ? "font-medium text-text" : "text-muted",
                   )}
                 >
-                  <span className="sr-only">Step {n}: </span>
                   {step.label}
                 </span>
                 <span className="hidden text-xs whitespace-nowrap text-muted lg:block">{step.point}</span>
@@ -73,11 +85,18 @@ export function SetupProgress({
               className="flex items-start gap-3 sm:gap-5"
             >
               {href ? (
-                <Link href={href} className="flex items-center gap-3 transition-colors hover:text-text">
+                <Link
+                  href={href}
+                  aria-label={`Step ${n}: ${step.label}`}
+                  title={`${step.label}: ${step.point}`}
+                  className="flex items-center gap-3 rounded-full transition-colors hover:text-text"
+                >
                   {body}
                 </Link>
               ) : (
-                <span className="flex items-center gap-3">{body}</span>
+                <span aria-label={`Step ${n}: ${step.label}`} className="flex items-center gap-3">
+                  {body}
+                </span>
               )}
               {index < SETUP_STEPS.length - 1 ? (
                 <span aria-hidden="true" className="mt-4 h-px w-4 shrink-0 bg-line sm:w-6" />
