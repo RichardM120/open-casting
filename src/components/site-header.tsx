@@ -74,10 +74,10 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
       <div className="mx-auto flex min-h-16 max-w-6xl items-center gap-6 px-5 py-2">
         <Link
           href="/"
-          className="flex items-center gap-3 text-lg font-semibold tracking-tight text-white sm:gap-2.5 sm:text-base"
+          className="flex items-center gap-3 font-semibold tracking-[0.08em] text-white uppercase"
         >
-          <Logo tone="onBrand" className="size-9 sm:size-7" />
-          <span>Open Cast</span>
+          <Logo tone="onBrand" className="size-10 sm:size-9" />
+          <span className="text-base sm:text-[15px]">Open Casting</span>
         </Link>
 
         <nav aria-label="Main" className="hidden items-center gap-1 sm:flex">
