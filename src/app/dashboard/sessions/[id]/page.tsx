@@ -7,7 +7,7 @@ import { notFound } from "next/navigation";
 import { DeadlineBadge } from "@/components/deadline-badge";
 import { ShareLink } from "@/components/share-link";
 import { SubmissionStatusControl } from "@/components/submission-status-control";
-import { Badge, Button, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
+import { Badge, Button, ButtonLink, EmptyState, Eyebrow, buttonStyles } from "@/components/ui";
 import {
   emailSubmissionsSheet,
   publishCastingSession,
@@ -99,13 +99,14 @@ export default async function SessionPage({
         </div>
         {everySubmission.length > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
-            <ButtonLink
+            {/* A plain link, not a client-side navigation: the response is a file. */}
+            <a
               href={`/dashboard/sessions/${session.id}/export`}
-              variant="secondary"
-              size="sm"
+              download
+              className={buttonStyles("secondary", "sm")}
             >
               Download spreadsheet
-            </ButtonLink>
+            </a>
             {emailConfigured() ? (
               <form action={emailSubmissionsSheet}>
                 <input type="hidden" name="sessionId" value={session.id} />

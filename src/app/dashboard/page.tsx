@@ -100,8 +100,8 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               : user.role === "producer"
                 ? `Every casting call under ${user.company}.`
                 : "The casting calls you are casting."}{" "}
-            Each one has its own casting window and share link. Post roles into it, and open a
-            role to read what has come in.
+            Each one has its own casting window and share link, and shows its numbers here. Open
+            one to post roles, publish it, and read what has come in.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">

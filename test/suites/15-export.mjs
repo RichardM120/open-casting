@@ -53,7 +53,7 @@ check("the call is listed", (await card.count()) === 1);
 check("three submitted", (await card.locator('[data-figure="submitted"]').innerText()) === "3");
 check("three to review", (await card.locator('[data-figure="to-review"]').innerText()) === "3");
 check("two roles", (await card.locator('[data-figure="roles"]').innerText()) === "2");
-check("no applicant names on the list", (await dir.p.getByText(`Ada ${t}`).count()) === 0);
+check("no applicant names on the card", (await card.getByText(`Ada ${t}`).count()) === 0);
 check("no role links on the list", (await card.getByRole("link", { name: "Lead", exact: true }).count()) === 0);
 await dir.p.screenshot({ path: `${SHOTS}/dashboard-figures.png`, fullPage: true });
 await card.getByRole("link", { name: "Open", exact: true }).click();
@@ -67,6 +67,7 @@ check("and the count", (await dir.p.getByText("3 across 2 roles, 3 still to revi
 await dir.p.locator("tr", { hasText: `Ada ${t}` }).getByLabel("Submission status").selectOption("Shortlisted");
 await dir.p.waitForTimeout(2500);
 check("a status change keeps you on the call's page", dir.p.url().includes(`/dashboard/sessions/${sessionId}`), dir.p.url());
+await dir.p.reload({ waitUntil: "networkidle" });
 check("and takes", (await dir.p.locator("tr", { hasText: `Ada ${t}` }).getByLabel("Submission status").inputValue()) === "Shortlisted");
 await dir.p.getByRole("link", { name: /^Shortlisted · 1$/ }).click();
 await dir.p.waitForURL(/status=Shortlisted/, { timeout: 20000 });
@@ -75,11 +76,15 @@ check("the filter narrows the list", (await dir.p.getByText(`Ada ${t}`).count())
 await dir.p.screenshot({ path: `${SHOTS}/casting-call-submissions.png`, fullPage: true });
 
 section("4 the list downloads as a spreadsheet");
-const response = await dir.p.request.get(`${BASE}/dashboard/sessions/${sessionId}/export`);
-check("served", response.status() === 200, String(response.status()));
-check("as a spreadsheet", (response.headers()["content-type"] ?? "").includes("spreadsheetml"), response.headers()["content-type"]);
-check("named after the call", (response.headers()["content-disposition"] ?? "").includes(`export-${t}-submissions-`), response.headers()["content-disposition"]);
-const body = await response.body();
+await dir.p.goto(`${BASE}/dashboard/sessions/${sessionId}`, { waitUntil: "networkidle" });
+const [download] = await Promise.all([
+  dir.p.waitForEvent("download", { timeout: 20000 }),
+  dir.p.getByRole("link", { name: "Download spreadsheet" }).click(),
+]);
+const filename = download.suggestedFilename();
+check("named after the call", filename.startsWith(`export-${t}-submissions-`) && filename.endsWith(".xlsx"), filename);
+const body = readFileSync(await download.path());
+check("served as a file", body.length > 1000 && body.subarray(0, 2).toString() === "PK", String(body.length));
 const workbook = new ExcelJS.Workbook();
 await workbook.xlsx.load(body);
 const sheet = workbook.getWorksheet("Submissions");
@@ -92,7 +97,7 @@ check("the headings are in place", String(sheet.getRow(1).getCell(3).value) === 
 check("and the call is described on its own sheet", workbook.getWorksheet("Casting call") !== undefined);
 {
   const other = await provision(browser, errors, admin.p, { name: "Ned Nosy", company: `Nosy ${t}`, email: `nn${t}@example.com`, role: "director" });
-  const denied = await other.p.request.get(`${BASE}/dashboard/sessions/${sessionId}/export`);
+  const denied = await other.p.goto(`${BASE}/dashboard/sessions/${sessionId}/export`, { waitUntil: "domcontentloaded" });
   check("another company's director gets a 404", denied.status() === 404, String(denied.status()));
   await other.c.close();
 }

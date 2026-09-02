@@ -17,7 +17,7 @@ export function SubmissionStatusControl({
   return (
     <form action={updateSubmissionStatus}>
       <input type="hidden" name="submissionId" value={submissionId} />
-      <StatusSelect status={status} />
+      <StatusSelect key={status} status={status} />
     </form>
   );
 }
