@@ -153,6 +153,7 @@ section("11 the deployment can report whether any of this will work");
   const response = await fetch(`${BASE}/api/health`);
   const body = await response.json();
   check("health reports the signing key", body.authSecret === "set", JSON.stringify(body));
+  check("and no file store", body.uploads === "off", JSON.stringify(body.uploads));
   check("and whether email is configured", body.email === "configured", JSON.stringify(body));
   check("without leaking a connection string", !JSON.stringify(body).includes("postgresql://"));
 }

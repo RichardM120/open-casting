@@ -965,6 +965,8 @@ export async function databaseStatus(): Promise<{
   connectionVariable: string | null;
   authSecret: "set" | "missing";
   email: "configured" | "missing";
+  /** Whether a file store is set, so applicants can attach a photo and a video. */
+  uploads: "ready" | "off";
   /** Pre-launch switches. Both must read "off" before this is a live service. */
   site: "walled off: passcode, and sign-in checks nothing" | "open to the public";
   schema: "ready" | "unavailable";
@@ -980,6 +982,9 @@ export async function databaseStatus(): Promise<{
   const email: "configured" | "missing" = process.env.RESEND_API_KEY?.trim()
     ? "configured"
     : "missing";
+  // Without a store the form simply offers no uploads; nothing breaks, but it
+  // is the difference between "it works" and "nobody could send a tape".
+  const uploads: "ready" | "off" = process.env.BLOB_READ_WRITE_TOKEN?.trim() ? "ready" : "off";
   const site: "walled off: passcode, and sign-in checks nothing" | "open to the public" =
     process.env.SITE_PASSCODE?.trim()
       ? "walled off: passcode, and sign-in checks nothing"
@@ -990,6 +995,7 @@ export async function databaseStatus(): Promise<{
       connectionVariable: null,
       authSecret,
       email,
+      uploads,
       site,
       schema: "unavailable",
       error:
@@ -1007,6 +1013,7 @@ export async function databaseStatus(): Promise<{
       connectionVariable: variable,
       authSecret,
       email,
+      uploads,
       site,
       schema: "ready",
       roles: Number(roles[0]?.count ?? 0),
@@ -1020,6 +1027,7 @@ export async function databaseStatus(): Promise<{
       connectionVariable: variable,
       authSecret,
       email,
+      uploads,
       site,
       schema: "unavailable",
       error: error instanceof Error ? error.message : String(error),

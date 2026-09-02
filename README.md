@@ -422,8 +422,10 @@ at all is an orphan, and the daily retention sweep (`/api/retention`) deletes
 any orphan older than a day.
 
 Without `BLOB_READ_WRITE_TOKEN` the form offers no uploads and everything else
-works as before; the end-to-end suite runs that way. The store itself is not
-exercised by the suite, so an upload is worth trying by hand after a deploy.
+works as before; the end-to-end suite runs that way. `/api/health` reports
+`uploads` as `ready` or `off`, so a deployment can be checked for the token
+without reading it. The store itself is not exercised by the suite, so an
+upload is worth trying by hand after a deploy.
 
 ## Two sections, and four words
 
