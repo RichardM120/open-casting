@@ -1,6 +1,6 @@
 # Release checklist
 
-Worked through against [Vercel's production checklist](https://vercel.com/docs/production-checklist).
+Worked through against [Vercel's casting call checklist](https://vercel.com/docs/casting call-checklist).
 Split into what the repository enforces on every push, what is a dashboard
 setting only an account owner can change, and what has been considered and
 deliberately not done.
@@ -16,7 +16,7 @@ every pull request. It fails the build rather than warning.
 | `npm run lint` | ESLint, including the React hooks rules. |
 | `npm run typecheck` | `next typegen` then `tsc --noEmit`. Typegen first, because the route types are generated and a fresh checkout has no `.next`. The same script runs locally and in CI, so the two cannot disagree. |
 | `npm run build` **with no `DATABASE_URL`** | Every data page is `force-dynamic`; a build that needs a live database is a deploy that breaks when the database is slow. |
-| `npm run test:e2e` | Browser checks against a production build and a real Postgres: fourteen suites, including the production's casting window, the one-submission-per-production rule, that suspending a client locks out every account under it, that the two sections carry their own navigation, and the pre-launch wall. |
+| `npm run test:e2e` | Browser checks against a casting call build and a real Postgres: fourteen suites, including the casting call's casting window, the one-submission-per-casting call rule, that suspending a client locks out every account under it, that the two sections carry their own navigation, and the pre-launch wall. |
 
 The end-to-end suites live in `test/suites/` and run through `test/run.mjs`,
 which gives each suite a dropped-and-reseeded database and its own server.
@@ -86,7 +86,7 @@ Nothing in the repository can set these.
 
 1. CI green on `main`.
 2. If the change touches `src/lib/db.ts`, rehearse the migration against a copy of
-   production. Neon branching makes this cheap. Every schema change so far is written to
+   casting call. Neon branching makes this cheap. Every schema change so far is written to
    run against live data: additive `ALTER ... IF NOT EXISTS` where it can be, and where a
    column is dropped or retyped (pay type and union status went; the casting window became
    `timestamptz`), guarded so it converts what is there and then no-ops.

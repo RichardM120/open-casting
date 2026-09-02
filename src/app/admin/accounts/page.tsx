@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HelpNote } from "@/components/help-note";
 import { notFound } from "next/navigation";
 
 import { NewAccountForm } from "@/components/new-account-form";
@@ -23,8 +24,12 @@ export default async function AccountsPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-12">
+      <HelpNote title="What this screen is for">
+        <p dangerouslySetInnerHTML={{ __html: 'Accounts belong to a client and inherit its plan. The password is generated and shown once, so hand it over straight away; it cannot be retrieved afterwards.' }} />
+        <p dangerouslySetInnerHTML={{ __html: 'A director sees only the casting calls they open. A producer sees every call under their client.' }} />
+      </HelpNote>
       <Link href="/dashboard" className="text-sm text-muted transition-colors hover:text-text">
-        &larr; Productions
+        &larr; Casting calls
       </Link>
 
       <div className="mt-6">
@@ -34,7 +39,7 @@ export default async function AccountsPage() {
           {accounts.length} {accounts.length === 1 ? "account" : "accounts"}
           {suspended > 0 ? `, ${suspended} suspended` : ""}. Nobody can register themselves, so
           every account here was made on this page. Suspending signs someone out immediately and
-          blocks them from signing back in. Their productions stay up.
+          blocks them from signing back in. Their casting calls stay up.
         </p>
       </div>
 
@@ -90,7 +95,7 @@ export default async function AccountsPage() {
 
               <p className="text-sm text-muted">
                 {account.sessions}{" "}
-                {account.sessions === 1 ? "production" : "productions"} ·{" "}
+                {account.sessions === 1 ? "casting call" : "casting calls"} ·{" "}
                 {account.roles} {account.roles === 1 ? "role" : "roles"} ·{" "}
                 {account.submissions} {account.submissions === 1 ? "submission" : "submissions"}
                 {account.access_until ? ` · until ${account.access_until}` : ""}

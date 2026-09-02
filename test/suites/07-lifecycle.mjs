@@ -38,13 +38,13 @@ const dir = await provision(browser, errors, admin.p, {
 });
 await admin.p.goto(`${BASE}/admin/clients`, { waitUntil: "networkidle" });
 check("the allowance is shown against the client",
-  (await admin.p.getByText(/0 of 2 productions/).count()) > 0);
+  (await admin.p.getByText(/0 of 2 casting calls/).count()) > 0);
 await admin.p.goto(`${BASE}/admin/accounts`, { waitUntil: "networkidle" });
 check("and the account points at its client",
   (await admin.p.getByText(/What they may run comes from their client/).count()) > 0);
 await admin.p.screenshot({ path: `${SHOTS}/accounts.png`, fullPage: true });
 
-section("2 a new production is a draft, and its link opens for nobody");
+section("2 a new casting call is a draft, and its link opens for nobody");
 const first = await openSession(dir.p, { name: `Draft ${t}`, company: CO, opensAt: at(0), closesAt: at(30, "23:59") });
 check("marked not published", (await dir.p.getByText("Not published yet").count()) > 0);
 check("publishing is blocked with no roles", await dir.p.getByRole("button", { name: "Publish this casting call" }).isDisabled());
@@ -74,7 +74,7 @@ await dir.p.fill("#characterBrief", "A character brief comfortably long enough t
 await dir.p.fill("#location", "Leeds"); await dir.p.fill("#shootStartsAt", day(150));
 await dir.p.getByRole("button", { name: "Post the role" }).click();
 await dir.p.waitForTimeout(2500);
-check("a third role is refused", (await dir.p.getByText(/2 roles per production/).count()) > 0);
+check("a third role is refused", (await dir.p.getByText(/2 roles per casting call/).count()) > 0);
 check("and it says who can lift it", (await dir.p.getByText(/Ask the administrator/).count()) > 0);
 
 section("4 publishing is what makes the link work");
@@ -108,12 +108,12 @@ section("4b an applicant submits through the link");
 await dir.p.goto(`${BASE}/dashboard/sessions/${first}`, { waitUntil: "networkidle" });
 check("the casting director sees it", (await dir.p.getByText("1 submission").count()) > 0);
 
-section("5 productions are capped too");
+section("5 casting calls are capped too");
 const second = await openSession(dir.p, { name: `Second ${t}`, company: CO, opensAt: at(0), closesAt: at(20, "23:59") });
 check("the second is allowed", second.startsWith("ses_"));
 await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
-check("the allowance is stated", (await dir.p.getByText(/covers 2 productions/).count()) > 0);
-check("and the way to open another is withdrawn", (await dir.p.locator("main").getByRole("link", { name: "New production" }).count()) === 0);
+check("the allowance is stated", (await dir.p.getByText(/covers 2 casting calls/).count()) > 0);
+check("and the way to open another is withdrawn", (await dir.p.locator("main").getByRole("link", { name: "New casting call" }).count()) === 0);
 check("with a reason given", (await dir.p.getByText(/used them all/).count()) > 0);
 
 section("6 the retention promise is stated where it matters");
@@ -136,7 +136,7 @@ await admin.p.getByRole("button", { name: "Save the client" }).click();
 await admin.p.waitForURL(/saved=1/, { timeout: 20000 });
 check("the change is confirmed", (await admin.p.getByText(/The client was saved/).count()) > 0);
 await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
-check("the director can open one again", (await dir.p.locator("main").getByRole("link", { name: "New production" }).count()) > 0);
+check("the director can open one again", (await dir.p.locator("main").getByRole("link", { name: "New casting call" }).count()) > 0);
 
 section("8 a client can be given an end date");
 await admin.p.goto(clientUrl, { waitUntil: "networkidle" });
@@ -190,10 +190,10 @@ section("10 six months on, the applicants' details are destroyed");
   check("the personal data is gone", after.rows[0].n === 0, JSON.stringify(after.rows[0]));
 
   const kept = await pool.query("SELECT count(*)::int AS n FROM roles WHERE session_id = $1", [first]);
-  check("the production and its roles are kept", kept.rows[0].n === 2, JSON.stringify(kept.rows[0]));
+  check("the casting call and its roles are kept", kept.rows[0].n === 2, JSON.stringify(kept.rows[0]));
 
   const marked = await pool.query("SELECT purged_at FROM sessions_casting WHERE id = $1", [first]);
-  check("the production records that it happened", marked.rows[0].purged_at !== null);
+  check("the casting call records that it happened", marked.rows[0].purged_at !== null);
   await pool.end();
 }
 

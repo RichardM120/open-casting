@@ -50,7 +50,7 @@ check("marked closed early", (await dir.p.getByText(/Closed early on/).count()) 
   check("listing still readable", (await p.getByText(`MOD-${t}`).count()) > 0);
   await p.goto(`${BASE}/roles`, { waitUntil: "networkidle" });
   await p.goto(`${BASE}/c/${token}`, { waitUntil: "networkidle" });
-  check("still listed on its production, for reference", (await p.getByText(`MOD-${t}`).count()) > 0);
+  check("still listed on its casting call, for reference", (await p.getByText(`MOD-${t}`).count()) > 0);
   await c.close();
 }
 await dir.p.getByRole("button", { name: "Reopen" }).click();

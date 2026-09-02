@@ -47,23 +47,23 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
       <aside className="order-2 lg:order-1">
         <Eyebrow>What this is</Eyebrow>
         <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance">
-          One production&rsquo;s casting, run from one place.
+          One casting call, run from one place.
         </h2>
         <p className="mt-4 max-w-prose leading-relaxed text-muted">
-          Open Casting is the tool a production uses to run its own open call. It is not a job
+          Open Casting is the tool a casting call uses to run its own open call. It is not a job
           board: there is no listing to browse and nothing for applicants to join. You post the
           roles, send out one link, and read everything that comes back in a single list.
         </p>
 
         <dl className="mt-8 flex flex-col gap-6">
-          <Point term="A production at a time">
-            Open a production, post its roles, and set the times once. Every role in it opens
-            and closes together, and an applicant submits to the production once, not once per
+          <Point term="A casting call at a time">
+            Open a casting call, post its roles, and set the times once. Every role in it opens
+            and closes together, and an applicant submits to the casting call once, not once per
             part.
           </Point>
           <Point term="One link to circulate">
             Publishing gives you a link with an unguessable token. Put it on a post, in a mailout,
-            wherever the call should reach. It opens your production and nothing else.
+            wherever the call should reach. It opens your casting call and nothing else.
           </Point>
           <Point term="Nothing to join">
             Applicants do not register and do not sign in. Under-18s go through a parent or
@@ -78,7 +78,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
 
         <p className="mt-8 text-sm leading-relaxed text-faint">
           Accounts are created by the administrator, so there is nothing to register for here. If
-          you need one, ask whoever runs the casting for your production.
+          you need one, ask whoever runs the casting for your casting call.
         </p>
       </aside>
     </div>

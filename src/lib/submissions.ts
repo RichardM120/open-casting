@@ -16,7 +16,7 @@ function emptyCounts(): SubmissionCounts {
 /** Thrown when someone submits twice into the same production. */
 export class DuplicateSubmissionError extends Error {
   constructor() {
-    super("A submission from this email already exists for this production");
+    super("A submission from this email already exists for this casting call");
     this.name = "DuplicateSubmissionError";
   }
 }

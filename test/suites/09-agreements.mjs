@@ -47,7 +47,7 @@ section("2 the dashboard is shut until it is accepted");
 await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 check("sent back to setup", dir.p.url().includes("/welcome"), dir.p.url());
 await dir.p.goto(`${BASE}/dashboard/sessions/new`, { waitUntil: "networkidle" });
-check("and so is opening a production", dir.p.url().includes("/welcome"), dir.p.url());
+check("and so is opening a casting call", dir.p.url().includes("/welcome"), dir.p.url());
 
 section("3 accepting is recorded, with the version");
 await dir.p.goto(`${BASE}/welcome`, { waitUntil: "networkidle" });
@@ -113,7 +113,13 @@ section("6 a child's submission needs a parent or guardian");
   check("typing an age under 18 asks for one", (await p.locator("#guardianName").count()) === 1);
   check("and says why", (await p.getByText(/legal parental responsibility/).count()) > 0);
 
-  await p.fill("#name", "Child Applicant"); await p.fill("#email", `ch${t}@example.com`);
+  check("no applicant email asked of a child", (await p.locator("#email").count()) === 0);
+  check("the consent block comes first", (await p.locator("form").evaluate((form) => {
+    const consent = form.querySelector("#guardianName");
+    const name = form.querySelector("#name");
+    return Boolean(consent && name) && (consent.compareDocumentPosition(name) & Node.DOCUMENT_POSITION_FOLLOWING) !== 0;
+  })));
+  await p.fill("#name", "Child Applicant");
   await p.fill("#phone", "07700 900901"); await p.fill("#location", "Leeds");
   await p.fill("#coverNote", "A cover note comfortably longer than the twenty character minimum.");
   await p.check("#acceptSubmissionTerms");

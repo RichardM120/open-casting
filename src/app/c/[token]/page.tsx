@@ -12,7 +12,7 @@ import { getSessionByToken } from "@/lib/sessions";
 export const dynamic = "force-dynamic";
 
 /**
- * A production's casting call. This is the only page an applicant ever sees, and
+ * A casting call's public page. This is the only page an applicant ever sees, and
  * the share token in the URL is the whole of the authorisation, so it is kept
  * out of search results rather than relying on nobody linking to it.
  */
@@ -72,7 +72,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
             : notYetOpen(session)
               ? `Submissions open on ${formatDateTime(session.opensAt)}. Read the roles now and have a tape ready.`
               : open
-                ? `Submissions are open until ${formatDateTime(session.closesAt)}. Pick the one role that fits you best. It is one submission per person for this production, whichever role you go for.`
+                ? `Submissions are open until ${formatDateTime(session.closesAt)}. Pick the one role that fits you best. It is one submission per person for this casting call, whichever role you go for.`
                 : `Submissions closed on ${formatDateTime(session.closesAt)}. The brief stays up for reference.`}
       </p>
 
@@ -108,13 +108,13 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
         </ul>
       ) : (
         <p className="mt-10 rounded-2xl border border-dashed border-line-strong p-7 text-sm text-muted">
-          The roles for this production have not been posted yet. Keep the link, because they
+          The roles for this casting call have not been posted yet. Keep the link, because they
           will appear here.
         </p>
       )}
 
       <p className="mt-12 border-t border-line pt-6 text-xs leading-relaxed text-faint">
-        You were sent this link by the production casting it. It is not listed anywhere and there
+        You were sent this link by the casting call casting it. It is not listed anywhere and there
         is nothing else to browse. Open Casting is the tool they use to run this call, not a job
         board.
       </p>

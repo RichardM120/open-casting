@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HelpNote } from "@/components/help-note";
+import { SetupProgress } from "@/components/setup-progress";
 import { notFound } from "next/navigation";
 
 import { DeadlineBadge } from "@/components/deadline-badge";
@@ -19,7 +21,7 @@ export async function generateMetadata({
 }: PageProps<"/dashboard/sessions/[id]">): Promise<Metadata> {
   const user = await currentUser();
   const session = user ? await getVisibleSession((await params).id, user) : null;
-  return { title: session ? session.name : "Production not found" };
+  return { title: session ? session.name : "Casting call not found" };
 }
 
 export default async function SessionPage({
@@ -29,7 +31,7 @@ export default async function SessionPage({
   const { id } = await params;
   const user = await requireUser(`/dashboard/sessions/${id}`);
 
-  // A production this account may not see is a 404, not a 403. The same rule as
+  // A casting call this account may not see is a 404, not a 403. The same rule as
   // roles, so guessing ids tells you nothing about which ones exist.
   const session = await getVisibleSession(id, user);
   if (!session) notFound();
@@ -53,9 +55,9 @@ export default async function SessionPage({
     query.published === "1"
       ? "Published. The link below is live, so send it wherever you want the call to go."
       : query.created === "1"
-        ? "Production opened. Post the roles for it, then publish."
+        ? "Casting call opened. Post the roles for it, then publish."
         : query.saved === "1"
-          ? "Changes saved. Every role in this production follows the new times."
+          ? "Changes saved. Every role in this casting call follows the new times."
           : query.removed === "1"
             ? "The role was removed, along with its submissions."
             : null;
@@ -95,8 +97,8 @@ export default async function SessionPage({
       ) : (
         <div className="mt-8">
           <EmptyState
-            title="No roles in this production yet"
-            description="Post the roles you are casting. They open and close with the production, so there is no closing date to set per role."
+            title="No roles in this casting call yet"
+            description="Post the roles you are casting. They open and close with the casting call, so there is no closing date to set per role."
             action={
               <ButtonLink href={`/dashboard/roles/new?session=${session.id}`} size="sm">
                 Post a role
@@ -110,8 +112,13 @@ export default async function SessionPage({
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-12">
+      <SetupProgress stage={draft ? (roles.length === 0 ? 2 : 3) : 4} />
+      <HelpNote title="What to do on this screen" faq="/faq/casting-directors">
+        <p dangerouslySetInnerHTML={{ __html: '<strong>Post the roles</strong> first. Then <strong>publish</strong>: that is the moment the share link starts working, and it cannot be undone.' }} />
+        <p dangerouslySetInnerHTML={{ __html: "Send the link wherever you want the call to go. To stop a call, close it early; removing it deletes the applicants' details." }} />
+      </HelpNote>
       <Link href="/dashboard" className="text-sm text-muted transition-colors hover:text-text">
-        &larr; Productions
+        &larr; Casting calls
       </Link>
 
       {flash ? (
@@ -128,7 +135,7 @@ export default async function SessionPage({
           role="alert"
           className="mt-6 rounded-xl border border-danger/40 bg-danger-soft px-4 py-3 text-sm text-danger"
         >
-          Post at least one role before publishing. A link that opens on an empty production is
+          Post at least one role before publishing. A link that opens on an empty casting call is
           worse than no link.
         </p>
       ) : null}
@@ -168,11 +175,11 @@ export default async function SessionPage({
 
       <p className="mt-6 rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">
         {session.closedAt
-          ? `Closed early on ${formatDateTime(session.closedAt)}. Every role in this production stopped taking submissions at that moment.`
+          ? `Closed early on ${formatDateTime(session.closedAt)}. Every role in this casting call stopped taking submissions at that moment.`
           : notYetOpen(session)
             ? `Not open yet. The roles below can be seen, but nobody can submit until ${formatDateTime(session.opensAt)}.`
             : open
-              ? `Accepting submissions until ${formatDateTime(session.closesAt)}. An applicant may submit to this production once, whichever role they go for.`
+              ? `Accepting submissions until ${formatDateTime(session.closesAt)}. An applicant may submit to this casting call once, whichever role they go for.`
               : `Past its closing time. The roles stay up for reference and take no new submissions.`}
       </p>
 
@@ -220,7 +227,7 @@ export default async function SessionPage({
             Send this to anyone you want to submit: an Instagram post, a mailout, an agent
             circular. It opens {session.name} and nothing else. There is no listing on Open
             Casting to browse, so this link is the whole of the casting call, and anyone holding
-            it can submit while the production is open.
+            it can submit while the casting call is open.
           </p>
           <div className="mt-4">
             <ShareLink url={shareUrl} />
@@ -241,12 +248,12 @@ export default async function SessionPage({
 
       <p className="mt-4 max-w-prose rounded-xl border border-line bg-raised px-4 py-3 text-xs leading-relaxed text-muted">
         {session.purgedAt
-          ? `The applicants' details were removed on ${formatDate(session.purgedAt)}, ${RETENTION_DAYS} days after this production finished. The roles and the counts are kept; the names, addresses and notes are gone.`
+          ? `The applicants' details were removed on ${formatDate(session.purgedAt)}, ${RETENTION_DAYS} days after this casting call finished. The roles and the counts are kept; the names, addresses and notes are gone.`
           : `This production finishes on ${formatDate(session.productionEndsAt)}. Applicants' details are destroyed ${RETENTION_DAYS} days later, on ${formatDate(purgeDate(session.productionEndsAt))}${
               daysUntilPurge(session.productionEndsAt) <= 14
                 ? `, which is ${daysUntilPurge(session.productionEndsAt)} days away`
                 : ""
-            }. Export anything you need before then. The production and its roles are kept.`}
+            }. Export anything you need before then. The casting call and its roles are kept.`}
       </p>
 
       {draft ? null : rolesSection}
@@ -254,12 +261,12 @@ export default async function SessionPage({
       {user.role === "admin" ? (
         <details className="mt-10 rounded-2xl border border-danger/30 bg-surface p-6">
           <summary className="cursor-pointer text-sm font-medium text-danger">
-            Remove this production
+            Remove this casting call
           </summary>
           <form action={removeSession} className="mt-4 flex flex-col gap-4">
             <input type="hidden" name="sessionId" value={session.id} />
             <p className="max-w-prose text-sm leading-relaxed text-muted">
-              This deletes the production,{" "}
+              This deletes the casting call,{" "}
               <strong className="text-text">
                 all {roles.length} {roles.length === 1 ? "role" : "roles"} in it
               </strong>{" "}
@@ -277,7 +284,7 @@ export default async function SessionPage({
             </label>
             <div>
               <Button type="submit" variant="danger" size="sm">
-                Remove production, roles and submissions
+                Remove casting call, roles and submissions
               </Button>
             </div>
           </form>

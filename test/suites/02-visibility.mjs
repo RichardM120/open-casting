@@ -70,7 +70,7 @@ section("7 the share link is the only public way to A's role");
   const { c, p } = await ctx();
   check("/ is public", (await p.goto(BASE, { waitUntil: "networkidle" })).status() === 200);
   check(
-    "the role opens on its production's link",
+    "the role opens on its casting call's link",
     (await p.goto(`${BASE}/c/${token}/${roleId}`, { waitUntil: "networkidle" })).status() === 200,
   );
   check("anonymous can still submit", (await p.locator("#coverNote").count()) === 1);

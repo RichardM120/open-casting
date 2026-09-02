@@ -41,7 +41,7 @@ section("2 a casting link is behind it too");
   const { c, p } = await ctx();
   await p.goto(BASE + SHARE, { waitUntil: "networkidle" });
   check("the share link stops at the wall", new URL(p.url()).pathname === "/gate", p.url());
-  check("the production is not shown", (await p.getByRole("heading", { name: "Saltmarsh" }).count()) === 0);
+  check("the casting call is not shown", (await p.getByRole("heading", { name: "Saltmarsh" }).count()) === 0);
   check("and it says why", (await p.getByText(/not accepting\s+submissions yet/).count()) > 0);
   await c.close();
 }

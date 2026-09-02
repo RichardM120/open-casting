@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HelpNote } from "@/components/help-note";
 import { notFound } from "next/navigation";
 
 import { ClientForm } from "@/components/client-form";
@@ -49,11 +50,15 @@ export default async function ClientPage({
         : query.restored
           ? "The client is active again."
           : query.inuse
-            ? "That client still has accounts or productions. Suspend it instead, or remove those first."
+            ? "That client still has accounts or casting calls. Suspend it instead, or remove those first."
             : null;
 
   return (
     <div className="mx-auto max-w-4xl px-5 py-12">
+      <HelpNote title="What to do on this screen">
+        <p dangerouslySetInnerHTML={{ __html: 'Change what this client is on here: the plan, the ceilings and the access date. Every account under them inherits it, so there is nothing to set per account.' }} />
+        <p dangerouslySetInnerHTML={{ __html: 'Suspending locks every account out at once and is reversible. Removing is only possible once nothing is left under the client.' }} />
+      </HelpNote>
       <Link
         href="/admin/clients"
         className="text-sm text-muted transition-colors hover:text-text"
@@ -86,7 +91,7 @@ export default async function ClientPage({
       <dl className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Accounts" value={used?.accounts ?? 0} />
         <Stat
-          label="Productions"
+          label="Casting calls"
           value={
             client.maxSessions === null
               ? String(used?.productions ?? 0)
@@ -170,7 +175,7 @@ export default async function ClientPage({
         <p className="mt-2 max-w-prose text-sm text-muted">
           Suspending locks every account under this client out at once, and is reversible.
           Nothing they have made is touched. Removing is only possible once a client has no
-          accounts and no productions left.
+          accounts and no casting calls left.
         </p>
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <form action={toggleClientSuspended}>

@@ -19,8 +19,8 @@ const LABELS: Record<string, string> = {
   address: "Address",
   notes: "Notes",
   tier: "Plan",
-  maxSessions: "Productions included",
-  maxRolesPerSession: "Roles per production",
+  maxSessions: "Casting calls included",
+  maxRolesPerSession: "Roles per casting call",
   accessUntil: "Access until",
 };
 
@@ -159,7 +159,7 @@ export function ClientForm({ client }: { client?: Client }) {
             />
           </Field>
           <Field
-            label="Productions included"
+            label="Casting calls included"
             htmlFor="maxSessions"
             hint="Blank for no limit."
             error={errors.maxSessions}
@@ -173,7 +173,7 @@ export function ClientForm({ client }: { client?: Client }) {
             />
           </Field>
           <Field
-            label="Roles per production"
+            label="Roles per casting call"
             htmlFor="maxRolesPerSession"
             hint="Blank for no limit."
             error={errors.maxRolesPerSession}

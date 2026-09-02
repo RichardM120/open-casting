@@ -43,7 +43,7 @@ export default async function GatePage({ searchParams }: PageProps<"/gate">) {
       </div>
 
       <p className="mt-6 text-xs leading-relaxed text-faint">
-        If you were sent a casting link and it brought you here, the production is not accepting
+        If you were sent a casting link and it brought you here, the casting call is not accepting
         submissions yet. Keep the link. It will work when they open.
       </p>
     </div>

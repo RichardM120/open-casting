@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HelpNote } from "@/components/help-note";
+import { SetupProgress } from "@/components/setup-progress";
 import { notFound } from "next/navigation";
 
 import { ActivityList } from "@/components/activity-list";
@@ -56,6 +58,11 @@ export default async function RoleSubmissionsPage({
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-12">
+      <SetupProgress stage={role.session.publishedAt ? 4 : 3} />
+      <HelpNote title="What to do on this screen" faq="/faq/casting-directors">
+        <p dangerouslySetInnerHTML={{ __html: 'Submissions to this role arrive here. Move people through <strong>New</strong>, <strong>Shortlisted</strong>, <strong>Callback</strong> and <strong>Declined</strong> as you work; nothing is emailed to them automatically.' }} />
+        <p dangerouslySetInnerHTML={{ __html: 'Their details are deleted thirty days after the production finishes. Export anything you need before then.' }} />
+      </HelpNote>
       <Link
         href={`/dashboard/sessions/${role.sessionId}`}
         className="text-sm text-muted transition-colors hover:text-text"
@@ -70,8 +77,8 @@ export default async function RoleSubmissionsPage({
         >
           {justPosted
             ? role.session.publishedAt
-              ? "Role posted. It is on the production's link now."
-              : "Role posted. Publish the production when you are ready for applicants to see it."
+              ? "Role posted. It is on the casting call's link now."
+              : "Role posted. Publish the casting call when you are ready for applicants to see it."
             : "Changes saved."}
         </p>
       ) : null}
@@ -113,7 +120,7 @@ export default async function RoleSubmissionsPage({
             ? `Closed early on ${formatDateTime(role.closedAt)}. The role stays up for reference and takes no new submissions.`
             : role.session.closedAt
               ? `${role.production} was closed early on ${formatDateTime(role.session.closedAt)}, which closed every role in it.`
-              : "Outside the production's casting window. The role stays up for reference and takes no new submissions."}
+              : "Outside the casting call's casting window. The role stays up for reference and takes no new submissions."}
         </p>
       ) : null}
 

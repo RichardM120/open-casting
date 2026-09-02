@@ -14,9 +14,11 @@ import {
   roleWindow,
   shootWindow,
 } from "@/lib/format";
+import { requestOrigin } from "@/lib/origin";
 import { canPreview } from "@/lib/preview";
+import { ShareLink } from "@/components/share-link";
 import { getSessionRole } from "@/lib/roles";
-import { getSessionByToken } from "@/lib/sessions";
+import { getSessionByToken, shareSlug } from "@/lib/sessions";
 import { listSubmissions } from "@/lib/submissions";
 
 export const dynamic = "force-dynamic";
@@ -37,14 +39,17 @@ export async function generateMetadata({
 export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId]">) {
   const { token, roleId } = await params;
 
-  // The token authorises, and the role is looked up inside the production it
-  // names, so one production's link cannot reach another's role at all.
+  // The token authorises, and the role is looked up inside the casting call it
+  // names, so one casting call's link cannot reach another's role at all.
   const session = await getSessionByToken(token);
   const role = session ? await getSessionRole(session.id, roleId) : null;
   if (!session || !role) notFound();
 
-  // An unpublished production is visible to its own side only, as a preview.
-  if (session.publishedAt === null && !(await canPreview(session))) notFound();
+  // The casting side sees this page too, before and after publishing, with a
+  // banner an applicant never gets: the state, and the link to send out.
+  const owner = await canPreview(session);
+  if (session.publishedAt === null && !owner) notFound();
+  const shareUrl = owner ? `${await requestOrigin()}/c/${shareSlug(session)}` : null;
 
   const submissions = await listSubmissions(role.id);
   const window = roleWindow(role);
@@ -59,6 +64,24 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
       >
         &larr; All roles for {role.session.name}
       </Link>
+
+      {owner && shareUrl ? (
+        <section className="mt-6 rounded-2xl border border-accent/30 bg-accent-soft p-5">
+          <div className="flex flex-wrap items-center gap-2">
+            <Badge tone={session.publishedAt ? "positive" : "accent"}>
+              {session.publishedAt ? "Published" : "Draft"}
+            </Badge>
+            <p className="text-sm text-muted">
+              {session.publishedAt
+                ? "This is what applicants see. Share the link below wherever you want the call to go: a post, a story, a mailout."
+                : "Only you can see this. Publish the casting call and this link starts working."}
+            </p>
+          </div>
+          <div className="mt-3">
+            <ShareLink url={shareUrl} />
+          </div>
+        </section>
+      ) : null}
 
       <div className="mt-6 grid gap-10 lg:grid-cols-[minmax(0,1fr)_400px] lg:gap-12">
         <div>
@@ -82,7 +105,7 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
             {role.session.closedAt
               ? `, and was closed early on ${formatDateTime(role.session.closedAt)}`
               : ""}
-            . One submission per person per production, whichever role you go for.
+            . One submission per person per casting call, whichever role you go for.
           </p>
 
           <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 rounded-2xl border border-line bg-surface p-6 sm:grid-cols-3">
@@ -95,7 +118,7 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
             <Detail label="Submissions" value={`${submissions.length} so far`} />
           </dl>
 
-          <Section title="The production">
+          <Section title="The casting call">
             <p>{role.synopsis}</p>
           </Section>
 

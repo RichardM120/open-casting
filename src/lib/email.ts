@@ -38,7 +38,7 @@ export async function sendEmail(message: {
   try {
     // Overridable so the test harness can point the real send path at a local
     // sink and exercise it, rather than asserting against a log fallback that
-    // production never takes.
+    // casting call never takes.
     const endpoint = process.env.RESEND_API_URL?.trim() || "https://api.resend.com/emails";
 
     const response = await fetch(endpoint, {

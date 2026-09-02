@@ -89,7 +89,7 @@ export default function CastingDirectorFaqPage() {
         title="Productions"
         intro="A production is one project with however many roles in it. It holds the times submissions run between, and its roles open and close with it."
       >
-        <FaqItem q="Why do I open a production before posting a role?">
+        <FaqItem q="Why do I open a casting call before posting a role?">
           <p>
             Because a production casts as a unit. It holds the name, the synopsis, the
             production company and the opening and closing times, and every role you post into
@@ -99,7 +99,7 @@ export default function CastingDirectorFaqPage() {
             closes.
           </p>
           <p>
-            <Link href="/dashboard/sessions/new">Open a production</Link>, then post its roles.
+            <Link href="/dashboard/sessions/new">Open a casting call</Link>, then post its roles.
           </p>
         </FaqItem>
         <FaqItem q="When does my link start working?">
@@ -300,7 +300,7 @@ export default function CastingDirectorFaqPage() {
       <NotLegalAdvice />
 
       <div className="mt-10 flex flex-wrap gap-3">
-        <ButtonLink href="/dashboard/sessions/new">Open a production</ButtonLink>
+        <ButtonLink href="/dashboard/sessions/new">Open a casting call</ButtonLink>
         <ButtonLink href="/faq/applicants" variant="secondary">
           FAQ for applicants
         </ButtonLink>

@@ -5,7 +5,7 @@ export function SiteFooter() {
     <footer className="mt-24 border-t border-line">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-8 text-sm text-faint sm:flex-row sm:items-center sm:justify-between">
         <p>
-          Open Casting is the tool a production runs its casting with. The sample productions
+          Open Casting is the tool a casting call runs its casting with. The sample casting calls
           on it are invented.
         </p>
         <div className="flex flex-wrap gap-x-5 gap-y-2">

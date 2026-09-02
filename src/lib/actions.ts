@@ -179,6 +179,9 @@ export async function submitApplication(
   try {
     await createSubmission({
       ...submission,
+      // A child's contact is the adult responsible for them. It is also what
+      // the one-submission-per-production rule keys on, so it has to be set.
+      email: minor && guardianEmail ? guardianEmail : submission.email,
       roleId,
       sessionId: role.sessionId,
       // The wording is copied as it stands now, so editing the role later
@@ -196,8 +199,8 @@ export async function submitApplication(
     // cannot both slip past a check-then-insert.
     if (error instanceof DuplicateSubmissionError) {
       return invalid(
-        { email: "You have already submitted for this production" },
-        `We already have a submission from that email address for ${role.session.name}. A production considers you once, not once per role.`,
+        { email: "You have already submitted for this casting call" },
+        `We already have a submission from that email address for ${role.session.name}. A casting call considers you once, not once per role.`,
         formData,
       );
     }
@@ -244,8 +247,8 @@ export async function postRole(
   const session = await getVisibleSession(sessionId, user);
   if (!session) {
     return invalid(
-      { sessionId: "That production is not one of yours" },
-      "Choose a production you can post into.",
+      { sessionId: "That casting call is not one of yours" },
+      "Choose a casting call you can post into.",
       formData,
     );
   }
@@ -255,7 +258,7 @@ export async function postRole(
     if (existing.length >= user.maxRolesPerSession) {
       return invalid(
         {},
-        `Your account covers ${user.maxRolesPerSession} ${user.maxRolesPerSession === 1 ? "role" : "roles"} per production, and ${session.name} has that many. Ask the administrator to extend it.`,
+        `Your account covers ${user.maxRolesPerSession} ${user.maxRolesPerSession === 1 ? "role" : "roles"} per casting call, and ${session.name} has that many. Ask the administrator to extend it.`,
         formData,
       );
     }
@@ -721,7 +724,7 @@ export async function editCastingSession(
   // Returns null when the production is not one this account may touch.
   const session = await updateSession(id, parsed.data, user);
   if (!session) {
-    return invalid({}, "That production is no longer yours to edit.", formData);
+    return invalid({}, "That casting call is no longer yours to edit.", formData);
   }
 
   await record({

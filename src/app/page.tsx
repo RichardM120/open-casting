@@ -9,14 +9,14 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: { absolute: "Open Casting" },
-  description: "The private tool a production uses to run its casting.",
+  description: "The private tool a casting call uses to run its casting.",
   robots: { index: false, follow: false },
 };
 
 /**
  * The way in, and nothing else. Open Casting is not a public board: there is no
  * listing to browse and no way to register. Someone either has an account, made
- * for them by the administrator, or they were sent a link to one production.
+ * for them by the administrator, or they were sent a link to one casting call.
  */
 export default async function HomePage() {
   // Already signed in, so the sign-in page is not what they wanted.
@@ -29,7 +29,7 @@ export default async function HomePage() {
         Sign in to run your casting.
       </h1>
       <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">
-        Set up a production, post its roles, and read every submission in one place. Accounts are
+        Set up a casting call, post its roles, and read every submission in one place. Accounts are
         created by the administrator, so there is nothing to register for.
       </p>
 
@@ -40,13 +40,13 @@ export default async function HomePage() {
       <p className="mt-6 max-w-xl text-sm leading-relaxed text-muted">
         One sign-in for everyone on the casting side. What you can see follows from your
         account, not from which door you came through: an administrator lands on every
-        production on the system, a casting director on their own.
+        casting call on the system, a casting director on their own.
       </p>
 
       <div className="mt-12 rounded-2xl border border-line bg-surface p-7">
         <h2 className="text-lg font-semibold tracking-tight">Sent a casting link?</h2>
         <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
-          Applicants do not sign in and do not need an account. Open the link the production sent
+          Applicants do not sign in and do not need an account. Open the link the casting call sent
           you and it goes straight to their roles and the submission form. There is no listing
           here to search, by design: a casting call is circulated by the people casting it.
         </p>

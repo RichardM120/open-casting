@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HelpNote } from "@/components/help-note";
 
 import { ActivityList } from "@/components/activity-list";
 import { DeadlineBadge } from "@/components/deadline-badge";
@@ -16,13 +17,13 @@ import { countsByRole } from "@/lib/submissions";
 export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
-  title: "Productions",
-  description: "Every production you are casting, the roles in it, and what has come in.",
+  title: "Casting calls",
+  description: "Every casting call you are casting, the roles in it, and what has come in.",
 };
 
 /**
- * The one page to start from. A production holds the dates and the roles, and
- * the roles hold the submissions, so the list goes production by production
+ * The one page to start from. A casting call holds the dates and the roles, and
+ * the roles hold the submissions, so the list goes casting call by casting call
  * with the roles shown under each rather than as a separate list to keep in
  * step with this one.
  */
@@ -60,6 +61,10 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-12">
+      <HelpNote title="What this screen is for" faq="/faq/casting-directors">
+        <p dangerouslySetInnerHTML={{ __html: 'Every casting call you can see, with its roles underneath. Open one to post roles, publish it, and read what has come in.' }} />
+        <p dangerouslySetInnerHTML={{ __html: 'Start a new one from <strong>New casting call</strong> in the navigation.' }} />
+      </HelpNote>
       {user.onboardedAt ? null : (
         <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-accent-soft p-5">
           <p className="text-sm text-text">
@@ -76,29 +81,29 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           role="status"
           className="mb-8 rounded-2xl border border-line bg-surface p-4 text-sm text-muted"
         >
-          The production was removed, along with its roles and their submissions.
+          The casting call was removed, along with its roles and their submissions.
         </p>
       ) : null}
 
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <Eyebrow>Productions</Eyebrow>
+          <Eyebrow>Casting calls</Eyebrow>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
-            Your productions
+            Your casting calls
           </h1>
           <p className="mt-3 max-w-2xl text-muted">
             {user.role === "admin"
-              ? "Every production on the site, across all companies."
+              ? "Every casting call on the site, across all companies."
               : user.role === "producer"
-                ? `Every production under ${user.company}.`
-                : "The productions you are casting."}{" "}
+                ? `Every casting call under ${user.company}.`
+                : "The casting calls you are casting."}{" "}
             Each one has its own casting window and share link. Post roles into it, and open a
             role to read what has come in.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
           {atLimit ? null : (
-            <ButtonLink href="/dashboard/sessions/new">New production</ButtonLink>
+            <ButtonLink href="/dashboard/sessions/new">New casting call</ButtonLink>
           )}
         </div>
       </div>
@@ -106,7 +111,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       {atLimit ? (
         <p className="mt-8 rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">
           Your account covers {user.maxSessions}{" "}
-          {user.maxSessions === 1 ? "production" : "productions"} and you have used{" "}
+          {user.maxSessions === 1 ? "casting call" : "casting calls"} and you have used{" "}
           {user.maxSessions === 1 ? "it" : "them all"}. Ask the administrator to extend it if you
           need another.
         </p>
@@ -123,13 +128,13 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         <>
           <p className="mt-8 text-sm text-muted">
             {totals.open} of {sessions.length}{" "}
-            {sessions.length === 1 ? "production is" : "productions are"} accepting submissions
+            {sessions.length === 1 ? "casting call is" : "casting calls are"} accepting submissions
             now.
             {drafts > 0
               ? ` ${drafts} ${drafts === 1 ? "is a draft" : "are drafts"} and not yet published, so nobody can open ${drafts === 1 ? "its" : "their"} link.`
               : ""}
             {user.maxSessions !== null
-              ? ` Your account covers ${user.maxSessions} ${user.maxSessions === 1 ? "production" : "productions"}.`
+              ? ` Your account covers ${user.maxSessions} ${user.maxSessions === 1 ? "casting call" : "casting calls"}.`
               : ""}
           </p>
 
@@ -209,9 +214,9 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       ) : (
         <div className="mt-10">
           <EmptyState
-            title="No productions yet"
-            description="Open a production, then post its roles into it. The production holds the dates, so the roles do not have to."
-            action={<ButtonLink href="/dashboard/sessions/new">New production</ButtonLink>}
+            title="No casting calls yet"
+            description="Open a casting call, then post its roles into it. The casting call holds the dates, so the roles do not have to."
+            action={<ButtonLink href="/dashboard/sessions/new">New casting call</ButtonLink>}
           />
         </div>
       )}
@@ -230,7 +235,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         <div className="mt-8">
           <ActivityList
             entries={activity}
-            emptyDescription="Open a production, and everything that happens to it is recorded here."
+            emptyDescription="Open a casting call, and everything that happens to it is recorded here."
           />
         </div>
       </section>

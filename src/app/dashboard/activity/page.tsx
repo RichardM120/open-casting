@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HelpNote } from "@/components/help-note";
 
 import { ActivityList } from "@/components/activity-list";
 import { Eyebrow } from "@/components/ui";
@@ -9,8 +10,8 @@ import { requireUser } from "@/lib/auth";
 export const metadata: Metadata = { title: "Activity" };
 
 const SCOPE = {
-  director: "Everything that has happened on the productions and roles you posted.",
-  producer: "Everything across every production and role under your company.",
+  director: "Everything that has happened on the casting calls and roles you posted.",
+  producer: "Everything across every casting call and role under your company.",
   admin: "Everything on the site, including account changes.",
 } as const;
 
@@ -20,8 +21,11 @@ export default async function ActivityPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-12">
+      <HelpNote title="What this screen is for" faq="/faq/casting-directors">
+        <p dangerouslySetInnerHTML={{ __html: 'Everything that has happened on your casting calls and roles, newest first. Nothing here is editable; it is the record.' }} />
+      </HelpNote>
       <Link href="/dashboard" className="text-sm text-muted transition-colors hover:text-text">
-        &larr; Productions
+        &larr; Casting calls
       </Link>
 
       <div className="mt-6">
@@ -33,7 +37,7 @@ export default async function ActivityPage() {
       <div className="mt-10">
         <ActivityList
           entries={entries}
-          emptyDescription="Open a production, and everything that happens to it is recorded here."
+          emptyDescription="Open a casting call, and everything that happens to it is recorded here."
         />
       </div>
     </div>

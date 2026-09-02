@@ -72,7 +72,7 @@ export function day(offset) {
 }
 
 /**
- * A `datetime-local` value relative to today, for a production's opening and
+ * A `datetime-local` value relative to today, for a casting call's opening and
  * closing times. Midnight for the start of a day, 23:59 for the end of one, so
  * a window "from day 0" is open now.
  */
@@ -218,7 +218,7 @@ export async function adminSession(browser, errors) {
 }
 
 /**
- * Opens a production (a casting session, in the code) and returns its id.
+ * Opens a casting call (a casting session, in the code) and returns its id.
  * `opensAt` and `closesAt` are `datetime-local` values; see `at()`.
  */
 export async function openSession(page, fields) {
@@ -230,18 +230,18 @@ export async function openSession(page, fields) {
   await page.fill("#name", fields.name);
   await page.fill(
     "#synopsis",
-    fields.synopsis ?? "A production used by the test suite, described at length.",
+    fields.synopsis ?? "A casting call used by the test suite, described at length.",
   );
   await page.fill("#productionCompany", companyName);
   await page.fill("#opensAt", fields.opensAt ?? at(0));
   await page.fill("#closesAt", fields.closesAt ?? at(30, "23:59"));
   await page.fill("#productionEndsAt", fields.productionEndsAt ?? day(60));
-  await page.getByRole("button", { name: "Open the production" }).click();
+  await page.getByRole("button", { name: "Open the casting call" }).click();
   await page.waitForURL(/\/dashboard\/sessions\/ses_/, { timeout: 20000 });
   return page.url().match(/sessions\/(ses_[^?]+)/)[1];
 }
 
-/** Publishes a production, which is what makes its share link work. */
+/** Publishes a casting call, which is what makes its share link work. */
 export async function publish(page, sessionId) {
   await page.goto(`${BASE}/dashboard/sessions/${sessionId}`, { waitUntil: "networkidle" });
   await page.getByRole("button", { name: "Publish this casting call" }).click();
@@ -249,15 +249,15 @@ export async function publish(page, sessionId) {
 }
 
 /**
- * Posts a role and returns its id. A role must belong to a production, so one
- * is opened first unless the caller passes `sessionId`. The production details
- * (name, synopsis, company) come from the production, not the role form.
+ * Posts a role and returns its id. A role must belong to a casting call, so one
+ * is opened first unless the caller passes `sessionId`. The casting call details
+ * (name, synopsis, company) come from the casting call, not the role form.
  */
 export async function postRole(page, fields) {
   const sessionId =
     fields.sessionId ??
     (await openSession(page, {
-      name: fields.production ?? `${fields.title} Production`,
+      name: fields.production ?? `${fields.title} Casting call`,
       company: fields.company,
       opensAt: fields.opensAt,
       closesAt: fields.closesAt,
@@ -277,14 +277,14 @@ export async function postRole(page, fields) {
   await page.waitForURL(/\/dashboard\/roles\/rol_/, { timeout: 20000 });
   const roleId = page.url().match(/roles\/(rol_[^?]+)/)[1];
 
-  // A production this helper opened is a draft, and a draft's link opens for
+  // A casting call this helper opened is a draft, and a draft's link opens for
   // nobody, so publish it, unless the caller is testing that very thing.
   if (!fields.sessionId && fields.publish !== false) await publish(page, sessionId);
 
   return roleId;
 }
 
-/** The share link for a production, read off its dashboard page. */
+/** The share link for a casting call, read off its dashboard page. */
 export async function shareToken(page, sessionId) {
   await page.goto(`${BASE}/dashboard/sessions/${sessionId}`, { waitUntil: "networkidle" });
   const url = (await page.locator("code.select-all").first().textContent()).trim();
@@ -292,7 +292,7 @@ export async function shareToken(page, sessionId) {
 }
 
 /**
- * The share token for whichever production a role belongs to, read off the
+ * The share token for whichever casting call a role belongs to, read off the
  * "View as an applicant" link on the role's own dashboard page.
  */
 export async function shareTokenForRole(page, roleId) {

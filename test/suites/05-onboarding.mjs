@@ -42,11 +42,11 @@ check("moves on", true);
 check("name saved into the header", (await dir.p.locator("header").textContent()).includes(`Wiz Co ${t}`));
 
 section("3 step 2 explains the director's own scope");
-check("director wording", (await dir.p.getByText(/productions you open, and nothing else/).count()) > 0);
-check("warns colleagues cannot see it", (await dir.p.getByText(/cannot see your productions/).count()) > 0);
+check("director wording", (await dir.p.getByText(/casting calls you open, and nothing else/).count()) > 0);
+check("warns colleagues cannot see it", (await dir.p.getByText(/cannot see your casting calls/).count()) > 0);
 check(
-  "explains productions come first",
-  (await dir.p.getByText(/Start by opening a production/).count()) > 0,
+  "explains casting calls come first",
+  (await dir.p.getByText(/Start by opening a casting call/).count()) > 0,
 );
 await dir.p.screenshot({ path: `${SHOTS}/wizard-2.png`, fullPage: true });
 await dir.p.getByRole("link", { name: "Continue" }).click();
@@ -64,10 +64,10 @@ section("3b accounts cannot be self-registered");
   await c.close();
 }
 
-section("4 finishing sends a director to open a production");
-await dir.p.getByRole("button", { name: "Open your first production" }).click();
+section("4 finishing sends a director to open a casting call");
+await dir.p.getByRole("button", { name: "Open your first casting call" }).click();
 await dir.p.waitForURL("**/dashboard/sessions/new", { timeout: 20000 });
-check("lands on the production form", true);
+check("lands on the casting call form", true);
 await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 check("the nudge banner is gone", (await dir.p.getByText(/setup is not finished/).count()) === 0);
 
@@ -88,7 +88,7 @@ await half.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 check("banner shown once past the agreement", (await half.p.getByText(/setup is not finished/).count()) > 0);
 
 await half.p.goto(`${BASE}/welcome?step=3`, { waitUntil: "networkidle" });
-check("producer gets company-wide wording", (await half.p.getByText(/every production under your company/i).count()) > 0);
+check("producer gets company-wide wording", (await half.p.getByText(/every casting call under your company/i).count()) > 0);
 
 section("6 an admin is told what admin actually means");
 await admin.p.goto(`${BASE}/welcome`, { waitUntil: "networkidle" });
@@ -104,7 +104,7 @@ section("6b the two sections each carry their own navigation");
   // casting: no admin links, because that is a different section.
   const order = await admin.p.locator("header nav").first().locator("a").allTextContents();
   check(`casting nav in order: ${JSON.stringify(order)}`,
-    JSON.stringify(order) === JSON.stringify(["Productions", "Activity", "FAQ"]));
+    JSON.stringify(order) === JSON.stringify(["Casting calls", "Activity", "FAQ", "New casting call"]));
 
   await admin.p.goto(`${BASE}/admin`, { waitUntil: "networkidle" });
   const adminOrder = await admin.p.locator("header nav").first().locator("a").allTextContents();
@@ -120,9 +120,9 @@ section("6b the two sections each carry their own navigation");
 
   // A back-link that names a destination differently from the nav is a bug.
   await admin.p.goto(`${BASE}/dashboard/activity`, { waitUntil: "networkidle" });
-  check("back-links use the nav's names", (await admin.p.getByText("← Productions").count()) > 0);
+  check("back-links use the nav's names", (await admin.p.getByText("← Casting calls").count()) > 0);
   await admin.p.goto(`${BASE}/dashboard/sessions/new`, { waitUntil: "networkidle" });
-  check("and so does the new-production page", (await admin.p.getByText("← Productions").count()) > 0);
+  check("and so does the new-casting call page", (await admin.p.getByText("← Casting calls").count()) > 0);
 }
 
 section("7 navigation fixes");
@@ -132,7 +132,7 @@ await m.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 const visible = await m.p.locator("header nav a").evaluateAll((els) =>
   els.filter((el) => el.offsetParent !== null).map((el) => el.textContent.trim()));
 check(`nav visible on a phone: ${JSON.stringify(visible)}`, visible.includes("Activity"));
-check("productions reachable on a phone", visible.includes("Productions"));
+check("casting calls reachable on a phone", visible.includes("Casting calls"));
 check("no horizontal overflow", (await m.p.evaluate(() =>
   document.documentElement.scrollWidth - document.documentElement.clientWidth)) === 0);
 await m.p.keyboard.press("Tab");

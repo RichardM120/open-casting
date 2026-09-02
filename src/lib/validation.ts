@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { fromLocalInput, londonDate } from "./format";
-import { PRODUCTION_TYPES, SIGNUP_ROLES, TIER_KEYS } from "./types";
+import { PRODUCTION_TYPES, SIGNUP_ROLES, TIER_KEYS, ADULT_AGE } from "./types";
 
 const trimmed = z.string().trim();
 const optionalUrl = trimmed
@@ -12,7 +12,15 @@ const optionalUrl = trimmed
 
 export const submissionSchema = z.object({
   name: trimmed.min(2, "Enter your name").max(80),
-  email: trimmed.max(120).pipe(z.email("Enter a valid email address")),
+  email: z
+    .string()
+    .trim()
+    .max(120)
+    .default("")
+    .refine(
+      (value) => value === "" || z.email().safeParse(value).success,
+      "Enter a valid email address",
+    ),
   phone: trimmed.min(6, "Enter a contact number").max(40),
   location: trimmed.min(2, "Where are you based?").max(80),
   age: z.coerce
@@ -38,7 +46,15 @@ export const submissionSchema = z.object({
   guardianName: trimmed.max(80).optional(),
   guardianEmail: trimmed.max(120).optional(),
   guardianConsent: z.coerce.boolean().optional(),
-});
+})
+  // An adult is their own contact. A child's contact is the parent or guardian,
+  // whose details the action checks for, with a fuller explanation than a
+  // field error can carry, so they are not repeated here.
+  .superRefine((value, ctx) => {
+    if (value.age >= ADULT_AGE && !value.email) {
+      ctx.addIssue({ code: "custom", path: ["email"], message: "Enter your email address" });
+    }
+  });
 
 export type SubmissionInput = z.infer<typeof submissionSchema>;
 

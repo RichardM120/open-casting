@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HelpNote } from "@/components/help-note";
 
 import { ActivityList } from "@/components/activity-list";
 import { Eyebrow } from "@/components/ui";
@@ -21,6 +22,9 @@ export default async function AdminActivityPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-12">
+      <HelpNote title="What this screen is for">
+        <p dangerouslySetInnerHTML={{ __html: 'Everything on the site, across every client, including account changes. It is the record, and it is not editable.' }} />
+      </HelpNote>
       <Link href="/admin" className="text-sm text-muted transition-colors hover:text-text">
         &larr; Admin
       </Link>

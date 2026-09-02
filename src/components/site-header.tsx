@@ -18,9 +18,15 @@ const PUBLIC_NAV = [{ href: "/faq", label: "FAQ" }] as const;
  * one place to look.
  */
 const CASTING_NAV = [
-  { href: "/dashboard", label: "Productions" },
+  { href: "/dashboard", label: "Casting calls" },
   { href: "/dashboard/activity", label: "Activity" },
 ] as const;
+
+/**
+ * The one action in the nav. It sits after FAQ, set apart, because it starts
+ * something rather than going somewhere.
+ */
+const NEW_CALL = { href: "/dashboard/sessions/new", label: "New casting call", action: true } as const;
 
 /** The owner's section: who is paying, who they are, and what the site did. */
 const ADMIN_NAV = [
@@ -40,7 +46,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
   const nav = user
     ? inAdmin && user.role === "admin"
       ? [...ADMIN_NAV, ...PUBLIC_NAV]
-      : [...CASTING_NAV, ...PUBLIC_NAV]
+      : [...CASTING_NAV, ...PUBLIC_NAV, NEW_CALL]
     : PUBLIC_NAV;
 
   /** The most specific match wins, so /dashboard/activity does not light up /dashboard too. */
@@ -68,7 +74,11 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
                 aria-current={active ? "page" : undefined}
                 className={cx(
                   "rounded-full px-3.5 py-1.5 text-sm transition-colors",
-                  active ? "bg-raised text-text" : "text-muted hover:text-text",
+                  "action" in item
+                    ? "ml-4 border border-accent/60 text-accent hover:bg-accent-soft"
+                    : active
+                      ? "bg-raised text-text"
+                      : "text-muted hover:text-text",
                 )}
               >
                 {item.label}

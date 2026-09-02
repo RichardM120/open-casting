@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HelpNote } from "@/components/help-note";
 
 import { ActivityList } from "@/components/activity-list";
 import { ButtonLink, Eyebrow } from "@/components/ui";
@@ -39,6 +40,9 @@ export default async function AdminPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-12">
+      <HelpNote title="What this screen is for">
+        <p dangerouslySetInnerHTML={{ __html: 'The service as a whole: who is paying, what they are using, and what has happened. Your own casting work lives in the casting director section.' }} />
+      </HelpNote>
       <Eyebrow>Admin</Eyebrow>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
         Open Casting, as a service
@@ -55,7 +59,7 @@ export default async function AdminPage() {
       <dl className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Stat label="Clients" value={`${totals.live} of ${clients.length} active`} />
         <Stat label="Accounts" value={accounts.length} />
-        <Stat label="Productions" value={totals.productions} />
+        <Stat label="Casting calls" value={totals.productions} />
         <Stat label="Submissions" value={totals.submissions} />
       </dl>
 

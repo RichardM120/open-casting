@@ -11,7 +11,7 @@ import { useErrorFocus } from "./use-error-focus";
 import { Button, ButtonLink, Checkbox, ErrorSummary, Field, Input, Select, Textarea } from "./ui";
 
 const LABELS: Record<string, string> = {
-  sessionId: "Production",
+  sessionId: "Casting call",
   title: "Role name",
   characterBrief: "Character brief",
   requirements: "Requirements",
@@ -26,8 +26,8 @@ const LABELS: Record<string, string> = {
 /**
  * One form for posting and editing. In edit mode the fields fall back to the
  * role's current values, and the action rewrites in place rather than creating.
- * Nothing about the production is asked for here: a role takes its production's
- * name, type, synopsis, company and dates from the production it is posted into.
+ * Nothing about the casting call is asked for here: a role takes its casting call's
+ * name, type, synopsis, company and dates from the casting call it is posted into.
  */
 export function RoleForm({
   role,
@@ -35,7 +35,7 @@ export function RoleForm({
   defaultSessionId,
 }: {
   role?: Role;
-  /** The productions this account may post into. Empty is handled by the page. */
+  /** The casting calls this account may post into. Empty is handled by the page. */
   sessions: CastingSession[];
   defaultSessionId?: string;
 }) {
@@ -83,11 +83,11 @@ export function RoleForm({
       ) : null}
 
       <Fieldset
-        legend="Production"
+        legend="Casting call"
         description={
           role
-            ? "A role stays with the production it was posted into, because submissions are recorded against it."
-            : "The role takes its production details and its opening and closing times from here."
+            ? "A role stays with the casting call it was posted into, because submissions are recorded against it."
+            : "The role takes its casting call details and its opening and closing times from here."
         }
       >
         {role ? (
@@ -102,14 +102,14 @@ export function RoleForm({
                 {sessions.find((session) => session.id === role.sessionId)?.name ??
                   role.production}
               </a>
-              . Change its times on the production, not here.
+              . Change its times on the casting call, not here.
             </p>
           </div>
         ) : (
           <Field
-            label="Production"
+            label="Casting call"
             htmlFor="sessionId"
-            hint="Every role in a production opens and closes with it."
+            hint="Every role in a casting call opens and closes with it."
             error={errors.sessionId}
             className="sm:col-span-2"
           >
@@ -120,7 +120,7 @@ export function RoleForm({
               required
             >
               <option value="" disabled>
-                Choose a production
+                Choose a casting call
               </option>
               {sessions.map((session) => (
                 <option key={session.id} value={session.id}>

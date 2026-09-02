@@ -1,5 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HelpNote } from "@/components/help-note";
+import { SetupProgress } from "@/components/setup-progress";
 import { notFound } from "next/navigation";
 
 import { RoleForm } from "@/components/role-form";
@@ -29,6 +31,10 @@ export default async function EditRolePage({
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-12">
+      <SetupProgress stage={3} />
+      <HelpNote title="What this screen is for" faq="/faq/casting-directors">
+        <p dangerouslySetInnerHTML={{ __html: 'Edits show on the public page immediately. Changing the terms does not change what people who already submitted agreed to.' }} />
+      </HelpNote>
       <Link
         href={`/dashboard/roles/${role.id}`}
         className="text-sm text-muted transition-colors hover:text-text"
@@ -43,7 +49,7 @@ export default async function EditRolePage({
         </h1>
         <p className="mt-3 max-w-prose text-muted">
           Changes go live straight away. Anyone who has already submitted keeps the terms they
-          accepted at the time. The dates belong to the production, so change those there.
+          accepted at the time. The dates belong to the casting call, so change those there.
         </p>
       </div>
 

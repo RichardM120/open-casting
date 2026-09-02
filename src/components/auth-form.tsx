@@ -110,7 +110,7 @@ export function SignInForm({
 
       <p className="mt-2 text-sm leading-relaxed text-muted">
         Accounts are created by the administrator, so there is nothing to register for. If you
-        do not have one, ask whoever runs the casting for this production.
+        do not have one, ask whoever runs the casting for this casting call.
       </p>
     </form>
   );

@@ -13,11 +13,11 @@ export type Runner = <T extends Record<string, unknown>>(
 ) => Promise<T[]>;
 
 /**
- * How long an applicant's details survive after the production they applied to
+ * How long an applicant's details survive after the casting call they applied to
  * finishes. Thirty days, as the Master Services Agreement and the public Terms
  * of Submission both promise.
  *
- * The clock runs from the production end date, not the casting close date: a
+ * The clock runs from the casting call end date, not the casting close date: a
  * shoot can run for months after its casting call shut, and the casting
  * director needs the shortlist until it wraps.
  */
@@ -28,7 +28,7 @@ export const WARN_DAYS = [14, 2] as const;
 
 const MS_PER_DAY = 86_400_000;
 
-/** The day a production's submissions are destroyed, as `yyyy-mm-dd`. */
+/** The day a casting call's submissions are destroyed, as `yyyy-mm-dd`. */
 export function purgeDate(productionEndsAt: string): string {
   return new Date(Date.parse(`${productionEndsAt}T00:00:00Z`) + RETENTION_DAYS * MS_PER_DAY)
     .toISOString()
@@ -53,11 +53,11 @@ export type Warning = {
 };
 
 /**
- * Destroys the applicants' details for every production that finished more than
+ * Destroys the applicants' details for every casting call that finished more than
  * the retention period ago, and marks the session so the dashboard can say what
  * happened rather than showing an empty list.
  *
- * The production, its roles and the fact that submissions were received all
+ * The casting call, its roles and the fact that submissions were received all
  * survive, so the casting director keeps a record of what they ran without
  * holding anybody's personal data. This is a real delete, not a flag.
  */
@@ -88,7 +88,7 @@ export async function purgeExpiredSubmissions(run: Runner = query): Promise<Purg
 }
 
 /**
- * Productions whose purge is close enough to warn about, and which have not
+ * Casting calls whose purge is close enough to warn about, and which have not
  * been warned at that threshold yet. Claiming the threshold is part of the same
  * `UPDATE`, so two sweeps overlapping cannot both send the same warning.
  */

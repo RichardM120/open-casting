@@ -5,7 +5,7 @@ import { useState } from "react";
 import { Button } from "./ui";
 
 /**
- * The link a production hands to applicants. It is the only way in to a casting
+ * The link a casting call hands to applicants. It is the only way in to a casting
  * call, so it is shown in full, selectable, and copyable in one action. A
  * half-copied token is the most likely way for someone to be locked out.
  */

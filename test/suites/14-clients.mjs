@@ -67,9 +67,9 @@ check("with their email", (await admin.p.getByText(`dr${t}@example.com`).count()
 await openSession(dir.p, { name: `First ${t}`, productionCompany: `Wildseed ${t}` });
 await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 check("the client's ceiling is enforced on its account",
-  (await dir.p.getByText(/covers 1 production and you have used/).count()) > 0);
+  (await dir.p.getByText(/covers 1 casting call and you have used/).count()) > 0);
 check("and the way to open another is withdrawn",
-  (await dir.p.locator("main").getByRole("link", { name: "New production" }).count()) === 0);
+  (await dir.p.locator("main").getByRole("link", { name: "New casting call" }).count()) === 0);
 
 section("5 a director cannot reach the admin side");
 {
@@ -102,12 +102,12 @@ section("5c the admin section carries its own navigation");
   check("the overview opens", (await admin.p.getByText("Open Casting, as a service").count()) > 0);
   const nav = await admin.p.locator("header nav").first().locator("a").allTextContents();
   check(`admin nav: ${JSON.stringify(nav)}`, nav.includes("Clients") && nav.includes("Accounts"));
-  check("and no Productions link, that being the other section", !nav.includes("Productions"));
+  check("and no Casting calls link, that being the other section", !nav.includes("Casting calls"));
 
   await admin.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
   const casting = await admin.p.locator("header nav").first().locator("a").allTextContents();
   check(`casting nav for the same admin: ${JSON.stringify(casting)}`,
-    casting.includes("Productions") && !casting.includes("Clients"));
+    casting.includes("Casting calls") && !casting.includes("Clients"));
 }
 
 section("6 suspending the client stops everyone under it");

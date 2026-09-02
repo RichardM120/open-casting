@@ -1,6 +1,6 @@
 /**
  * The only surface an applicant ever sees: the way in, the help pages, and one
- * production reached by its share link. Everything else must be shut.
+ * casting call reached by its share link. Everything else must be shut.
  */
 import {
   BASE,
@@ -15,7 +15,7 @@ const browser = await launch();
 const ctx = (viewport) => session(browser, errors, viewport);
 const t = Date.now();
 
-// The seeded demo productions have fixed tokens, so they can be written down.
+// The seeded demo casting calls have fixed tokens, so they can be written down.
 const SALTMARSH = "saltmarsh-4f21c9ba7e";
 const HEARTH = "hearth-winter-campaign-2b96fd40ac";
 const NORTHBANK = "northbank-7c03ae5d18";
@@ -58,7 +58,7 @@ section("2b the sign-in page introduces the tool");
 {
   const { c, p } = await ctx();
   await p.goto(`${BASE}/login`, { waitUntil: "networkidle" });
-  check("says what it is", (await p.getByText(/One production.{0,3}s casting, run from one place/).count()) > 0);
+  check("says what it is", (await p.getByText(/One casting call, run from one place/).count()) > 0);
   check("says what it is not", (await p.getByText(/not a job board/).count()) > 0);
   check("explains the one link", (await p.getByText(/One link to circulate/).count()) > 0);
   check("and the retention promise", (await p.getByText(/thirty days after the production finishes/i).count()) > 0);
@@ -70,7 +70,7 @@ section("2b the sign-in page introduces the tool");
   await p.setViewportSize({ width: 390, height: 844 });
   await p.reload({ waitUntil: "networkidle" });
   const formTop = await p.locator("#email").boundingBox();
-  const introTop = await p.getByText(/One production.{0,3}s casting, run from one place/).boundingBox();
+  const introTop = await p.getByText(/One casting call, run from one place/).boundingBox();
   check("form above the introduction on a phone", formTop.y < introTop.y, `${formTop.y} vs ${introTop.y}`);
   check("no horizontal overflow", (await p.evaluate(() =>
     document.documentElement.scrollWidth - document.documentElement.clientWidth)) === 0);
@@ -96,23 +96,23 @@ section("3 FAQ pages stay open");
   await c.close();
 }
 
-section("4 a share link opens one production, and only that one");
+section("4 a share link opens one casting call, and only that one");
 {
   const { c, p } = await ctx();
   const response = await p.goto(`${BASE}/c/${SALTMARSH}`, { waitUntil: "networkidle" });
   check("the link works", response.status() === 200);
-  check("names the production", (await p.getByRole("heading", { name: "Saltmarsh" }).count()) > 0);
+  check("names the casting call", (await p.getByRole("heading", { name: "Saltmarsh" }).count()) > 0);
   check("lists its roles", (await p.getByText("Nell (Lead)").count()) > 0);
-  check("does not leak another production", (await p.getByText("Northbank").count()) === 0);
+  check("does not leak another casting call", (await p.getByText("Northbank").count()) === 0);
   check("says it is not a job board", (await p.getByText(/not a job board/).count()) > 0);
   await p.screenshot({ path: `${SHOTS}/casting-call.png`, fullPage: true });
 
   check("a made-up token is a 404",
     (await p.goto(`${BASE}/c/not-a-real-token-at-all`, { waitUntil: "networkidle" })).status() === 404);
 
-  // The token authorises one production; another's role must not open under it.
+  // The token authorises one casting call; another's role must not open under it.
   const crossed = await p.goto(`${BASE}/c/${NORTHBANK}/nell-saltmarsh`, { waitUntil: "networkidle" });
-  check("one production's link cannot open another's role", crossed.status() === 404, String(crossed.status()));
+  check("one casting call's link cannot open another's role", crossed.status() === 404, String(crossed.status()));
   await c.close();
 }
 
@@ -145,7 +145,7 @@ section("5 role with terms: acceptance is required");
   await p.getByRole("button", { name: "Send submission" }).click();
   await p.getByText("Submission sent").waitFor({ timeout: 20000 });
   check("accepting lets it through", true);
-  check("offers the way back to the production", (await p.getByRole("link", { name: /Hearth/ }).count()) > 0);
+  check("offers the way back to the casting call", (await p.getByRole("link", { name: /Hearth/ }).count()) > 0);
   await c.close();
 }
 

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { HelpNote } from "@/components/help-note";
 import { notFound } from "next/navigation";
 
 import { Badge, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
@@ -16,7 +17,7 @@ export const metadata: Metadata = {
 };
 
 /**
- * The owner's list of customers. Everything above a production starts here: a
+ * The owner's list of customers. Everything above a casting call starts here: a
  * client is taken on, its accounts are made under it, and what it bought is
  * what those accounts are allowed to do.
  */
@@ -34,8 +35,12 @@ export default async function ClientsPage({ searchParams }: PageProps<"/admin/cl
 
   return (
     <div className="mx-auto max-w-5xl px-5 py-12">
+      <HelpNote title="What this screen is for">
+        <p dangerouslySetInnerHTML={{ __html: 'One row per company paying for Open Casting. Open a client to see its accounts, what it is using against what it bought, and to suspend or restore it.' }} />
+        <p dangerouslySetInnerHTML={{ __html: 'Take on a new client before making its accounts; an account cannot exist without one.' }} />
+      </HelpNote>
       <Link href="/dashboard" className="text-sm text-muted transition-colors hover:text-text">
-        &larr; Productions
+        &larr; Casting calls
       </Link>
 
       {params.removed ? (
@@ -105,7 +110,7 @@ export default async function ClientsPage({ searchParams }: PageProps<"/admin/cl
                       <Badge tone="outline">
                         {used?.productions ?? 0}
                         {client.maxSessions === null ? "" : ` of ${client.maxSessions}`}{" "}
-                        {used?.productions === 1 ? "production" : "productions"}
+                        {used?.productions === 1 ? "casting call" : "casting calls"}
                       </Badge>
                       <Badge tone="outline">
                         {used?.submissions ?? 0}{" "}

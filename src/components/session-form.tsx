@@ -1,9 +1,9 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { createCastingSession, editCastingSession } from "@/lib/actions";
-import { toLocalInput } from "@/lib/format";
+import { formatDateTime, fromLocalInput, toLocalInput } from "@/lib/format";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
 import { PRODUCTION_TYPES, type CastingSession } from "@/lib/types";
 
@@ -11,7 +11,7 @@ import { useErrorFocus } from "./use-error-focus";
 import { Button, ButtonLink, ErrorSummary, Field, Input, Select, Textarea } from "./ui";
 
 const LABELS: Record<string, string> = {
-  name: "Production",
+  name: "Casting call",
   productionCompany: "Production company",
   productionType: "Production type",
   synopsis: "Synopsis",
@@ -21,10 +21,22 @@ const LABELS: Record<string, string> = {
 };
 
 /**
- * One form for opening a production and for editing one. The dates and times
- * here govern every role in the production, which is the whole point of
+ * One form for opening a casting call and for editing one. The dates and times
+ * here govern every role in the casting call, which is the whole point of
  * putting them here rather than on each role, so the form says so.
  */
+/** The picked moment, read back in words, or nothing until one is picked. */
+function Picked({ value }: { value: string }) {
+  if (!value) return null;
+  const instant = fromLocalInput(value);
+  if (Number.isNaN(Date.parse(instant))) return null;
+  return (
+    <p className="mt-1.5 text-xs text-muted" aria-live="polite">
+      Set to <strong className="font-medium text-text">{formatDateTime(instant)}</strong>, UK time.
+    </p>
+  );
+}
+
 export function SessionForm({ session }: { session?: CastingSession }) {
   const [state, formAction, pending] = useActionState(
     session ? editCastingSession : createCastingSession,
@@ -32,6 +44,12 @@ export function SessionForm({ session }: { session?: CastingSession }) {
   );
   const { errors, values: submitted } = state;
   const formRef = useErrorFocus(state.status, errors);
+
+  // The browser draws the date and time picker and closes it on its own, with
+  // no confirmation of its own. Echoing the chosen moment under the field, in
+  // words, is the confirmation: what was picked, read back as a date and time.
+  const [opens, setOpens] = useState<string | null>(null);
+  const [closes, setCloses] = useState<string | null>(null);
 
   // What was just submitted wins, so a failed save does not discard the edit.
   // Stored instants are shown as UK time, which is how they were typed in.
@@ -66,12 +84,12 @@ export function SessionForm({ session }: { session?: CastingSession }) {
       ) : null}
 
       <fieldset className="rounded-2xl border border-line bg-surface p-6 md:p-7">
-        <legend className="px-2 text-sm font-semibold tracking-tight">The production</legend>
+        <legend className="px-2 text-sm font-semibold tracking-tight">The casting call</legend>
         <p className="text-sm text-muted">
           What applicants see above every role you post into it.
         </p>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <Field label="Production" htmlFor="name" error={errors.name}>
+          <Field label="Casting call" htmlFor="name" error={errors.name}>
             <Input
               id="name"
               name="name"
@@ -110,7 +128,7 @@ export function SessionForm({ session }: { session?: CastingSession }) {
           <Field
             label="Synopsis"
             htmlFor="synopsis"
-            hint="A sentence or two about the production. It appears on every role."
+            hint="A sentence or two about the casting call. It appears on every role."
             error={errors.synopsis}
             className="sm:col-span-2"
           >
@@ -128,7 +146,7 @@ export function SessionForm({ session }: { session?: CastingSession }) {
       <fieldset className="rounded-2xl border border-line bg-surface p-6 md:p-7">
         <legend className="px-2 text-sm font-semibold tracking-tight">The casting window</legend>
         <p className="text-sm text-muted">
-          Every role in this production takes submissions from the opening time until the
+          Every role in this casting call takes submissions from the opening time until the
           closing time, and at no other time. Times are UK time.
         </p>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
@@ -143,8 +161,10 @@ export function SessionForm({ session }: { session?: CastingSession }) {
               name="opensAt"
               type="datetime-local"
               defaultValue={values.opensAt ?? ""}
+              onChange={(event) => setOpens(event.target.value)}
               required
             />
+            <Picked value={opens ?? values.opensAt ?? ""} />
           </Field>
           <Field
             label="Submissions close"
@@ -157,8 +177,10 @@ export function SessionForm({ session }: { session?: CastingSession }) {
               name="closesAt"
               type="datetime-local"
               defaultValue={values.closesAt ?? ""}
+              onChange={(event) => setCloses(event.target.value)}
               required
             />
+            <Picked value={closes ?? values.closesAt ?? ""} />
           </Field>
         </div>
       </fieldset>
@@ -198,7 +220,7 @@ export function SessionForm({ session }: { session?: CastingSession }) {
               : "Opening"
             : session
               ? "Save changes"
-              : "Open the production"}
+              : "Open the casting call"}
         </Button>
         <ButtonLink
           href={session ? `/dashboard/sessions/${session.id}` : "/dashboard"}

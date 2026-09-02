@@ -40,11 +40,11 @@ export function SubmissionForm({
 }: {
   roleId: string;
   roleTitle: string;
-  /** The production's name, and when it closes, as a formatted date and time. */
+  /** The casting call's name, and when it closes, as a formatted date and time. */
   session: string;
   closesOn: string;
   disclaimer: string;
-  /** The production's own page. There is nowhere else for an applicant to go. */
+  /** The casting call's own page. There is nowhere else for an applicant to go. */
   backTo: string;
 }) {
   const [state, formAction, pending] = useActionState(submitApplication, IDLE_FORM_STATE);
@@ -105,7 +105,7 @@ export function SubmissionForm({
       </p>
       <p className="mt-2 text-sm text-muted">
         This is one submission to <strong className="text-text">{session}</strong>, open until{" "}
-        <strong className="text-text">{closesOn}</strong>. It is one per person per production,
+        <strong className="text-text">{closesOn}</strong>. It is one per person per casting call,
         so pick the role that fits you best rather than submitting for several.
       </p>
       <p className="mt-2">
@@ -131,19 +131,107 @@ export function SubmissionForm({
       ) : null}
 
       <div className="mt-6 grid gap-4 sm:grid-cols-2">
-        <Field label="Full name" htmlFor="name" error={errors.name}>
+        <Field label="Age" htmlFor="age" error={errors.age}>
+          <Select
+            key={attempt}
+            id="age"
+            name="age"
+            defaultValue={age}
+            onChange={(event) => setAge(event.target.value)}
+            required
+          >
+            <option value="">Choose your age</option>
+            {AGES.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </Select>
+        </Field>
+      </div>
+
+      {minor ? (
+        <div className="mt-4 rounded-xl border border-accent/40 bg-accent-soft p-5">
+          <h3 className="text-sm font-semibold tracking-tight">
+            This applicant is under {ADULT_AGE}
+          </h3>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            A submission for a child has to be made by a parent or someone with legal parental
+            responsibility. Please fill this in yourself rather than passing it to them.
+          </p>
+
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <Field
+              label="Parent or guardian's name"
+              htmlFor="guardianName"
+              error={errors.guardianName}
+            >
+              <Input
+                id="guardianName"
+                name="guardianName"
+                autoComplete="name"
+                defaultValue={values.guardianName ?? ""}
+              />
+            </Field>
+            <Field
+              label="Parent or guardian's email"
+              htmlFor="guardianEmail"
+              hint="Where the casting director will reply."
+              error={errors.guardianEmail}
+            >
+              <Input
+                id="guardianEmail"
+                name="guardianEmail"
+                type="email"
+                autoComplete="email"
+                defaultValue={values.guardianEmail ?? ""}
+              />
+            </Field>
+          </div>
+
+          <label
+            className={cx(
+              "mt-4 flex cursor-pointer items-start gap-2.5 text-sm leading-relaxed",
+              errors.guardianConsent ? "text-danger" : "text-text",
+            )}
+          >
+            <input
+              id="guardianConsent"
+              type="checkbox"
+              name="guardianConsent"
+              defaultChecked={values.guardianConsent === "on"}
+              aria-invalid={errors.guardianConsent ? true : undefined}
+              aria-describedby={errors.guardianConsent ? "guardianConsent-error" : undefined}
+              className="mt-0.5 size-4 shrink-0 accent-accent"
+            />
+            I am the parent or legal guardian of this applicant, and I consent to their name, age,
+            contact details and any material submitted being processed solely for casting
+            consideration on this project.
+          </label>
+          {errors.guardianConsent ? (
+            <p id="guardianConsent-error" className="mt-1.5 text-xs text-danger">
+              {errors.guardianConsent}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+        <Field label={minor ? "Applicant's full name" : "Full name"} htmlFor="name" error={errors.name}>
           <Input id="name" name="name" autoComplete="name" defaultValue={values.name ?? ""} required />
         </Field>
-        <Field label="Email" htmlFor="email" error={errors.email}>
-          <Input
-            id="email"
-            name="email"
-            type="email"
-            autoComplete="email"
-            defaultValue={values.email ?? ""}
-            required
-          />
-        </Field>
+        {minor ? null : (
+          <Field label="Email" htmlFor="email" error={errors.email}>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              defaultValue={values.email ?? ""}
+              required
+            />
+          </Field>
+        )}
         <Field label="Phone" htmlFor="phone" error={errors.phone}>
           <Input
             id="phone"
@@ -162,23 +250,6 @@ export function SubmissionForm({
             defaultValue={values.location ?? ""}
             required
           />
-        </Field>
-        <Field label="Age" htmlFor="age" error={errors.age}>
-          <Select
-            key={attempt}
-            id="age"
-            name="age"
-            defaultValue={age}
-            onChange={(event) => setAge(event.target.value)}
-            required
-          >
-            <option value="">Choose your age</option>
-            {AGES.map((year) => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </Select>
         </Field>
         <Field
           label="Showreel link"
@@ -258,72 +329,6 @@ export function SubmissionForm({
         </div>
       ) : null}
 
-      {minor ? (
-        <div className="mt-6 rounded-xl border border-accent/40 bg-accent-soft p-5">
-          <h3 className="text-sm font-semibold tracking-tight">
-            This applicant is under {ADULT_AGE}
-          </h3>
-          <p className="mt-2 text-sm leading-relaxed text-muted">
-            A submission for a child has to be made by a parent or someone with legal parental
-            responsibility. Please fill this in yourself rather than passing it to them.
-          </p>
-
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
-            <Field
-              label="Parent or guardian's name"
-              htmlFor="guardianName"
-              error={errors.guardianName}
-            >
-              <Input
-                id="guardianName"
-                name="guardianName"
-                autoComplete="name"
-                defaultValue={values.guardianName ?? ""}
-              />
-            </Field>
-            <Field
-              label="Parent or guardian's email"
-              htmlFor="guardianEmail"
-              hint="Where the casting director will reply."
-              error={errors.guardianEmail}
-            >
-              <Input
-                id="guardianEmail"
-                name="guardianEmail"
-                type="email"
-                autoComplete="email"
-                defaultValue={values.guardianEmail ?? ""}
-              />
-            </Field>
-          </div>
-
-          <label
-            className={cx(
-              "mt-4 flex cursor-pointer items-start gap-2.5 text-sm leading-relaxed",
-              errors.guardianConsent ? "text-danger" : "text-text",
-            )}
-          >
-            <input
-              id="guardianConsent"
-              type="checkbox"
-              name="guardianConsent"
-              defaultChecked={values.guardianConsent === "on"}
-              aria-invalid={errors.guardianConsent ? true : undefined}
-              aria-describedby={errors.guardianConsent ? "guardianConsent-error" : undefined}
-              className="mt-0.5 size-4 shrink-0 accent-accent"
-            />
-            I am the parent or legal guardian of this applicant, and I consent to their name, age,
-            contact details and any material submitted being processed solely for casting
-            consideration on this project.
-          </label>
-          {errors.guardianConsent ? (
-            <p id="guardianConsent-error" className="mt-1.5 text-xs text-danger">
-              {errors.guardianConsent}
-            </p>
-          ) : null}
-        </div>
-      ) : null}
-
       <div className="mt-6 rounded-xl border border-line bg-raised p-5">
         <h3 className="text-sm font-semibold tracking-tight">Terms of Submission</h3>
         <p className="mt-2 text-sm leading-relaxed text-muted">
@@ -380,7 +385,7 @@ export function SubmissionForm({
 }
 
 /**
- * Shown in place of the form outside the production's casting window. Not yet
+ * Shown in place of the form outside the casting call's casting window. Not yet
  * open and closed are different situations for an applicant, so they read
  * differently: one is worth coming back for.
  */
@@ -390,7 +395,7 @@ export function SubmissionsClosed({
   backTo,
 }: {
   session: string;
-  /** Set when the production has not opened yet, as a formatted date and time. */
+  /** Set when the casting call has not opened yet, as a formatted date and time. */
   opensOn?: string;
   backTo: string;
 }) {

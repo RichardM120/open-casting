@@ -24,7 +24,7 @@ export const metadata: Metadata = {
     template: "%s | Open Casting",
   },
   description:
-    "The private tool a production uses to run its casting. Post the roles, send one link, and read every submission in one place.",
+    "The private tool a casting call uses to run its casting. Post the roles, send one link, and read every submission in one place.",
 };
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
