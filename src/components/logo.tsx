@@ -21,10 +21,10 @@ export function Logo({
   return (
     <svg viewBox="0 0 64 64" aria-hidden="true" className={`${box} shrink-0`}>
       {tile ? <rect width="64" height="64" rx="14" fill="var(--color-brand)" /> : null}
-      <path d="M13 13h10v5.5h-4.5v27h4.5V51H13z" fill={glyph} />
-      <path d="M51 13H41v5.5h4.5v27H41V51h10z" fill={glyph} />
-      <path d="M27 20.5 L38 17.5 V46.5 L27 43.5 Z" fill={glyph} />
-      <circle cx="35.4" cy="32" r="1.7" fill={knob} />
+      <path d="M7 7h12v6.5h-5.5v37H19V57H7z" fill={glyph} />
+      <path d="M57 7H45v6.5h5.5v37H45V57h12z" fill={glyph} />
+      <path d="M23.5 15.5 L39.5 11.5 V52.5 L23.5 48.5 Z" fill={glyph} />
+      <circle cx="36.8" cy="32" r="2" fill={knob} />
     </svg>
   );
 }
