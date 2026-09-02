@@ -183,12 +183,12 @@ export default async function SessionPage({
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line text-left text-xs text-muted">
+                <th scope="col" className="px-4 py-3 font-medium">Status</th>
                 <th scope="col" className="px-4 py-3 font-medium">Applicant</th>
                 <th scope="col" className="px-4 py-3 font-medium">Role</th>
                 <th scope="col" className="px-4 py-3 font-medium">Age</th>
                 <th scope="col" className="px-4 py-3 font-medium">Location</th>
                 <th scope="col" className="px-4 py-3 font-medium">Submitted</th>
-                <th scope="col" className="px-4 py-3 font-medium">Status</th>
                 <th scope="col" className="px-4 py-3 font-medium">
                   <span className="sr-only">Open</span>
                 </th>
@@ -197,6 +197,9 @@ export default async function SessionPage({
             <tbody>
               {listed.map((submission) => (
                 <tr key={submission.id} className="border-b border-line align-top last:border-0">
+                  <td className="px-4 py-3">
+                    <SubmissionStatusControl submissionId={submission.id} status={submission.status} />
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-3">
                       <ProfilePhoto url={submission.photoUrl} name={submission.name} size="sm" />
@@ -223,9 +226,6 @@ export default async function SessionPage({
                   <td className="px-4 py-3 tabular-nums">{submission.age}</td>
                   <td className="px-4 py-3">{submission.location}</td>
                   <td className="px-4 py-3 text-muted">{formatRelative(submission.submittedAt)}</td>
-                  <td className="px-4 py-3">
-                    <SubmissionStatusControl submissionId={submission.id} status={submission.status} />
-                  </td>
                   <td className="px-4 py-3 text-right">
                     <Link
                       href={`/dashboard/roles/${submission.roleId}`}

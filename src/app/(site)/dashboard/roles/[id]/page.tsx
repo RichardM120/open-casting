@@ -236,6 +236,8 @@ function SubmissionCard({ submission }: { submission: Submission }) {
   return (
     <li className="rounded-2xl border border-line bg-surface p-6">
       <div className="flex flex-wrap items-start gap-4">
+        {/* The status first, where a thumb lands, so a decision is one tap away. */}
+        <SubmissionStatusControl submissionId={submission.id} status={submission.status} />
         <ProfilePhoto url={submission.photoUrl} name={submission.name} />
 
         <div className="min-w-0 flex-1">
@@ -248,8 +250,6 @@ function SubmissionCard({ submission }: { submission: Submission }) {
             {formatRelative(submission.submittedAt)}
           </p>
         </div>
-
-        <SubmissionStatusControl submissionId={submission.id} status={submission.status} />
       </div>
 
       <p className="mt-4 max-w-prose text-sm leading-relaxed text-muted">

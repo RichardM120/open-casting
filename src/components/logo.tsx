@@ -6,11 +6,14 @@
 export function Logo({
   tone = "onLight",
   size = "md",
+  className,
 }: {
   tone?: "onLight" | "onBrand";
   size?: "sm" | "md";
+  /** Overrides the box, for the one place the mark is larger on a phone. */
+  className?: string;
 }) {
-  const box = size === "sm" ? "size-5" : "size-7";
+  const box = className ?? (size === "sm" ? "size-5" : "size-7");
   const tile = tone === "onLight";
   return (
     <svg viewBox="0 0 32 32" aria-hidden="true" className={`${box} shrink-0`}>

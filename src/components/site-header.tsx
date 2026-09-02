@@ -71,9 +71,12 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
 
   return (
     <header className="sticky top-0 z-20 bg-brand text-brand-ink shadow-md shadow-black/10">
-      <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-5">
-        <Link href="/" className="flex items-center gap-2.5 font-semibold tracking-tight text-white">
-          <Logo tone="onBrand" />
+      <div className="mx-auto flex min-h-16 max-w-6xl items-center gap-6 px-5 py-2">
+        <Link
+          href="/"
+          className="flex items-center gap-3 text-lg font-semibold tracking-tight text-white sm:gap-2.5 sm:text-base"
+        >
+          <Logo tone="onBrand" className="size-9 sm:size-7" />
           <span>Open Casting</span>
         </Link>
 

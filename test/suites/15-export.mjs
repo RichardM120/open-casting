@@ -74,6 +74,14 @@ await dir.p.waitForURL(/status=Shortlisted/, { timeout: 20000 });
 await dir.p.waitForLoadState("networkidle");
 check("the filter narrows the list", (await dir.p.getByText(`Ada ${t}`).count()) > 0 && (await dir.p.getByText(`Ben ${t}`).count()) === 0);
 await dir.p.screenshot({ path: `${SHOTS}/casting-call-submissions.png`, fullPage: true });
+// The same page on a phone: the status control is the first thing in a row,
+// and the mark and copy are a size up.
+await dir.p.setViewportSize({ width: 390, height: 844 });
+await dir.p.goto(`${BASE}/dashboard/sessions/${sessionId}`, { waitUntil: "networkidle" });
+check("on a phone the status is the first cell of a row", (await dir.p.locator("table tbody tr").first().locator("td").first().getByLabel("Submission status").count()) === 1);
+check("and the root type is larger", (await dir.p.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize))) >= 17);
+await dir.p.screenshot({ path: `${SHOTS}/mobile-submissions.png`, fullPage: true });
+await dir.p.setViewportSize({ width: 1280, height: 800 });
 
 section("4 the list downloads as a spreadsheet");
 await dir.p.goto(`${BASE}/dashboard/sessions/${sessionId}`, { waitUntil: "networkidle" });

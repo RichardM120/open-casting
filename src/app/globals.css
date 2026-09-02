@@ -29,6 +29,16 @@
   /* The applicant's page: parchment, so it reads as a different place. */
   --color-canvas: #E4D8C4;
 
+  /* A size up from Tailwind's defaults: the small sizes carry most of the copy. */
+  --text-xs: 0.8125rem;
+  --text-xs--line-height: 1.25rem;
+  --text-sm: 0.9375rem;
+  --text-sm--line-height: 1.5rem;
+  --text-base: 1.0625rem;
+  --text-base--line-height: 1.7rem;
+  --text-lg: 1.1875rem;
+  --text-lg--line-height: 1.75rem;
+
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
@@ -79,5 +89,15 @@
    */
   .date-field::-webkit-calendar-picker-indicator {
     display: none;
+  }
+}
+
+/*
+ * On a phone the root grows, and with it every rem-based size: copy, spacing
+ * and the controls, which then clear 48px. Read on a train, not at a desk.
+ */
+@media (max-width: 40rem) {
+  html {
+    font-size: 17px;
   }
 }
