@@ -126,7 +126,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         </p>
       ) : null}
 
-      <dl className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <dl className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4 md:grid-cols-[repeat(4,10rem)]">
         <Stat label="Open now" value={totals.open} />
         <Stat label="Roles" value={totals.roles} />
         <Stat label="Submissions" value={totals.submissions} />
@@ -150,21 +150,27 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           <ul className="mt-6 flex flex-col gap-3">
             {ordered.map(({ session, state }) => {
               const count = stats.get(session.id);
+              // The whole card is the way into the casting call: the name's
+              // link stretches over the card with a pseudo-element, and the
+              // few links that go elsewhere sit above it.
               return (
                 <li
                   key={session.id}
                   data-state={state.key}
-                  className={`rounded-2xl border border-line p-5 transition-colors hover:border-line-strong ${cardTone(state)}`}
+                  className={`relative rounded-2xl border border-line p-5 transition-colors hover:border-line-strong sm:p-6 ${cardTone(state)}`}
                 >
-                  <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+                  <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
                     <div className="min-w-0 flex-1">
-                      <Link
-                        href={`/dashboard/sessions/${session.id}`}
-                        className="block truncate font-medium transition-colors hover:text-brand"
-                      >
-                        {session.name}
-                      </Link>
-                      <p className="truncate text-sm text-muted">
+                      <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+                        <Link
+                          href={`/dashboard/sessions/${session.id}`}
+                          className="text-xl font-semibold tracking-tight transition-colors after:absolute after:inset-0 after:rounded-2xl hover:text-brand sm:text-2xl"
+                        >
+                          {session.name}
+                        </Link>
+                        <Badge tone={state.tone}>{state.label}</Badge>
+                      </div>
+                      <p className="mt-1.5 text-sm text-muted">
                         {session.productionType}
                         {session.productionCompany ? ` · ${session.productionCompany}` : ""} ·{" "}
                         {formatDateTime(session.opensAt)} to {formatDateTime(session.closesAt)}
@@ -172,24 +178,14 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                       <p className="mt-1 text-xs text-muted">{state.line}</p>
                     </div>
 
-                    <div className="flex flex-wrap items-center gap-2">
-                      <Badge tone={state.tone}>{state.label}</Badge>
-                      {state.key === "draft" ? (
-                        <Link
-                          href={`/dashboard/sessions/${session.id}`}
-                          className="text-sm text-brand underline-offset-4 hover:underline"
-                        >
-                          Continue setting up
-                        </Link>
-                      ) : null}
-                      <ButtonLink
+                    {state.key === "draft" ? (
+                      <Link
                         href={`/dashboard/sessions/${session.id}`}
-                        variant="secondary"
-                        size="sm"
+                        className="relative z-10 text-sm text-brand underline-offset-4 hover:underline"
                       >
-                        Open
-                      </ButtonLink>
-                    </div>
+                        Continue setting up
+                      </Link>
+                    ) : null}
                   </div>
 
                   <Figures
@@ -253,7 +249,7 @@ function Figures({
         No roles yet.{" "}
         <Link
           href={`/dashboard/roles/new?session=${sessionId}`}
-          className="text-brand underline-offset-4 hover:underline"
+          className="relative z-10 text-brand underline-offset-4 hover:underline"
         >
           Post the first role
         </Link>
@@ -289,6 +285,11 @@ function Figures({
   );
 }
 
+/**
+ * One of the four squares of totals: two by two on a phone, a row of four
+ * from a tablet up, and a row of four fixed squares on a desktop. As stacked
+ * cards they took most of a phone's first screen.
+ */
 function Stat({
   label,
   value,
@@ -302,9 +303,9 @@ function Stat({
     value === 0 ? "text-text" : tone === "accent" ? "text-brand" : tone === "positive" ? "text-positive" : "text-text";
 
   return (
-    <div className="rounded-2xl border border-line bg-surface p-5">
+    <div className="flex aspect-square flex-col justify-between rounded-2xl border border-line bg-surface p-4 sm:p-5">
       <dt className="text-sm text-muted">{label}</dt>
-      <dd className={`mt-1 text-3xl font-semibold tracking-tight ${colour}`}>{value}</dd>
+      <dd className={`text-3xl font-semibold tracking-tight ${colour}`}>{value}</dd>
     </div>
   );
 }

@@ -56,7 +56,18 @@ check("two roles", (await card.locator('[data-figure="roles"]').innerText()) ===
 check("no applicant names on the card", (await card.getByText(`Ada ${t}`).count()) === 0);
 check("no role links on the list", (await card.getByRole("link", { name: "Lead", exact: true }).count()) === 0);
 await dir.p.screenshot({ path: `${SHOTS}/dashboard-figures.png`, fullPage: true });
-await card.getByRole("link", { name: "Open", exact: true }).click();
+// The status sits beside the name, and the whole card is the way in: a click on
+// its figures, nowhere near the name, opens the call.
+const nameBox = await card.getByRole("link", { name: `Export ${t}` }).boundingBox();
+const badgeBox = await card.getByText(/^Live$/).boundingBox();
+check("the status sits beside the name", nameBox !== null && badgeBox !== null && Math.abs(nameBox.y + nameBox.height / 2 - (badgeBox.y + badgeBox.height / 2)) < 8 && badgeBox.x > nameBox.x + nameBox.width, JSON.stringify({ nameBox, badgeBox }));
+check("no Open button; the card itself opens", (await card.getByRole("link", { name: "Open", exact: true }).count()) === 0);
+// A pointer click where the figures are, as a person would: the name's link
+// stretches over the card, so the browser hands the click to it.
+const figure = card.locator('[data-figure="roles"]');
+await figure.scrollIntoViewIfNeeded();
+const figureBox = await figure.boundingBox();
+await dir.p.mouse.click(figureBox.x + figureBox.width / 2, figureBox.y + figureBox.height / 2);
 await dir.p.waitForURL(new RegExp(`/dashboard/sessions/${sessionId}`), { timeout: 20000 });
 
 section("3 the call's page lists every submission across its roles");
@@ -81,6 +92,14 @@ await dir.p.goto(`${BASE}/dashboard/sessions/${sessionId}`, { waitUntil: "networ
 check("on a phone the status is the first cell of a row", (await dir.p.locator("table tbody tr").first().locator("td").first().getByLabel("Submission status").count()) === 1);
 check("and the root type is larger", (await dir.p.evaluate(() => parseFloat(getComputedStyle(document.documentElement).fontSize))) >= 17);
 await dir.p.screenshot({ path: `${SHOTS}/mobile-submissions.png`, fullPage: true });
+// The dashboard on a phone: the four totals are two rows of two squares.
+await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
+const tiles = dir.p.locator("dl").first().locator(":scope > div");
+const boxes = await Promise.all([0, 1, 2, 3].map((i) => tiles.nth(i).boundingBox()));
+check("four totals", (await tiles.count()) === 4);
+check("in two rows of two", boxes[0].y === boxes[1].y && boxes[2].y === boxes[3].y && boxes[2].y > boxes[0].y + boxes[0].height - 1, JSON.stringify(boxes));
+check("and they are squares", boxes.every((b) => Math.abs(b.width - b.height) < 1.5), JSON.stringify(boxes));
+await dir.p.screenshot({ path: `${SHOTS}/mobile-dashboard.png`, fullPage: true });
 await dir.p.setViewportSize({ width: 1280, height: 800 });
 
 section("4 the list downloads as a spreadsheet");
