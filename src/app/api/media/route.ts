@@ -2,7 +2,7 @@ import { get } from "@vercel/blob";
 import { NextResponse } from "next/server";
 
 import { currentUser } from "@/lib/auth";
-import { uploadsEnabled } from "@/lib/blob";
+import { blobToken, uploadsEnabled } from "@/lib/blob";
 import { getVisibleRole } from "@/lib/roles";
 import { findSubmissionByMediaUrl } from "@/lib/submissions";
 
@@ -38,7 +38,11 @@ export async function GET(request: Request) {
   }
 
   const range = request.headers.get("range");
-  const file = await get(url, { access: "private", headers: range ? { range } : undefined });
+  const file = await get(url, {
+    access: "private",
+    token: blobToken(),
+    headers: range ? { range } : undefined,
+  });
   if (!file || !file.stream) return new NextResponse(null, { status: 404 });
 
   const headers = new Headers();

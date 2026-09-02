@@ -27,9 +27,27 @@ export const MEDIA_KINDS = {
 
 export type MediaKind = keyof typeof MEDIA_KINDS;
 
+/**
+ * The store's token. Vercel calls it BLOB_READ_WRITE_TOKEN unless a prefix was
+ * chosen when the store was connected to the project, in which case it is
+ * SOMETHING_READ_WRITE_TOKEN with the same shape of value. Either will do;
+ * the SDK is told which explicitly rather than left to look for the default.
+ */
+export function blobToken(): string | undefined {
+  const direct = process.env.BLOB_READ_WRITE_TOKEN?.trim();
+  if (direct) return direct;
+  for (const [key, value] of Object.entries(process.env)) {
+    const candidate = value?.trim();
+    if (key.endsWith("_READ_WRITE_TOKEN") && candidate?.startsWith("vercel_blob_rw_")) {
+      return candidate;
+    }
+  }
+  return undefined;
+}
+
 /** Whether a store is configured. Without one the form simply does not offer uploads. */
 export function uploadsEnabled(): boolean {
-  return Boolean(process.env.BLOB_READ_WRITE_TOKEN?.trim());
+  return Boolean(blobToken());
 }
 
 /** Everything applicants upload lives under here. */
@@ -71,7 +89,7 @@ export async function deleteMedia(urls: Array<string | null | undefined>): Promi
   if (real.length === 0 || !uploadsEnabled()) return;
   try {
     for (let start = 0; start < real.length; start += DELETE_BATCH) {
-      await del(real.slice(start, start + DELETE_BATCH));
+      await del(real.slice(start, start + DELETE_BATCH), { token: blobToken() });
     }
   } catch (error) {
     // The rows are gone either way; a file left behind is a cost, not a leak,
@@ -110,7 +128,7 @@ export async function sweepOrphanedMedia(referencedUrls: Iterable<string>): Prom
   try {
     let cursor: string | undefined;
     do {
-      const page = await list({ prefix: MEDIA_ROOT, cursor, limit: 1000 });
+      const page = await list({ prefix: MEDIA_ROOT, cursor, limit: 1000, token: blobToken() });
       for (const blob of page.blobs) {
         if (referenced.has(blob.pathname)) continue;
         if (blob.uploadedAt.getTime() > cutoff) continue;

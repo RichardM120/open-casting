@@ -4,6 +4,7 @@ import { randomBytes } from "node:crypto";
 
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
 
+import { uploadsEnabled } from "./blob";
 import { hashPassword, unusablePassword } from "./password";
 import { seedDatabase } from "./seed-data";
 
@@ -984,7 +985,7 @@ export async function databaseStatus(): Promise<{
     : "missing";
   // Without a store the form simply offers no uploads; nothing breaks, but it
   // is the difference between "it works" and "nobody could send a tape".
-  const uploads: "ready" | "off" = process.env.BLOB_READ_WRITE_TOKEN?.trim() ? "ready" : "off";
+  const uploads: "ready" | "off" = uploadsEnabled() ? "ready" : "off";
   const site: "walled off: passcode, and sign-in checks nothing" | "open to the public" =
     process.env.SITE_PASSCODE?.trim()
       ? "walled off: passcode, and sign-in checks nothing"

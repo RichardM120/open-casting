@@ -1,7 +1,7 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 
-import { MEDIA_KINDS, mediaPrefix, uploadsEnabled, type MediaKind } from "@/lib/blob";
+import { MEDIA_KINDS, blobToken, mediaPrefix, uploadsEnabled, type MediaKind } from "@/lib/blob";
 import { isOpen, roleWindow } from "@/lib/format";
 import { getSessionRole } from "@/lib/roles";
 import { getSessionByToken } from "@/lib/sessions";
@@ -30,6 +30,7 @@ export async function POST(request: Request) {
     const json = await handleUpload({
       body,
       request,
+      token: blobToken(),
       onBeforeGenerateToken: async (pathname, clientPayload) => {
         const payload = parsePayload(clientPayload);
         if (!payload) throw new Error("Missing upload details");
