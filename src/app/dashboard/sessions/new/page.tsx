@@ -55,6 +55,17 @@ export default async function NewSessionPage() {
         </p>
       </div>
 
+      <p className="mt-3 text-sm text-muted">
+        Casting for someone new?{" "}
+        <Link
+          href="/dashboard/production-companies/new"
+          className="text-accent underline-offset-4 hover:underline"
+        >
+          Add a production company
+        </Link>{" "}
+        first, and it will be in the list.
+      </p>
+
       <div className="mt-10">
         <SessionForm productionCompanies={productionCompanies} />
       </div>

@@ -69,6 +69,29 @@ await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 }
 await dir.p.screenshot({ path: `${SHOTS}/production-companies-grouped.png`, fullPage: true });
 
+section("4b they stay reachable without a nav item");
+{
+  await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
+  check("not offered in the nav",
+    (await dir.p.locator("header nav").first()
+      .getByText("Production companies", { exact: true }).count()) === 0);
+
+  // The group heading is the way in now, so it has to be a real link.
+  const heading = dir.p.locator("#main").getByRole("link", { name: COMPANY_A, exact: true });
+  check("the group heading links to it", (await heading.count()) > 0);
+  await heading.first().click();
+  await dir.p.waitForURL(/\/dashboard\/production-companies\/.*\/edit/, { timeout: 20000 });
+  check("and lands on the company", (await dir.p.getByText(`Edit ${COMPANY_A}`).count()) > 0);
+
+  // And a director casting for someone new can still add one.
+  await dir.p.goto(`${BASE}/dashboard/sessions/new`, { waitUntil: "networkidle" });
+  const add = dir.p.getByRole("link", { name: "Add a production company" });
+  check("the production form offers adding one", (await add.count()) > 0);
+  await add.first().click();
+  await dir.p.waitForURL(/\/dashboard\/production-companies\/new/, { timeout: 20000 });
+  check("which opens the form", (await dir.p.locator("#name").count()) === 1);
+}
+
 section("5 the production page names its company");
 await dir.p.goto(`${BASE}/dashboard/sessions/${first}`, { waitUntil: "networkidle" });
 check("production company shown on the production", (await dir.p.getByText(COMPANY_A).count()) > 0);

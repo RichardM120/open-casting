@@ -157,7 +157,20 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
             {groups.map((group) => (
               <section key={group.id}>
                 <div className="flex items-baseline justify-between gap-4 border-b border-line pb-2">
-                  <h2 className="text-sm font-semibold tracking-tight">{group.name}</h2>
+                  <h2 className="text-sm font-semibold tracking-tight">
+                    {group.id === "none" ? (
+                      group.name
+                    ) : (
+                      // The only way to a production company now that they are
+                      // out of the nav: from the productions grouped under it.
+                      <Link
+                        href={`/dashboard/production-companies/${group.id}/edit`}
+                        className="transition-colors hover:text-accent"
+                      >
+                        {group.name}
+                      </Link>
+                    )}
+                  </h2>
                   <span className="text-xs text-faint">
                     {group.sessions.length}{" "}
                     {group.sessions.length === 1 ? "production" : "productions"}

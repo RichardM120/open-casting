@@ -72,9 +72,11 @@ deliberately left alone.
 client and a role cannot exist without a production, so the dashboard is the
 list of productions grouped by client with the roles under each, and every page
 links back one level: a role to its production, a production to the list. The
-nav is Productions, Production companies, Activity and FAQ, with Clients and
-Accounts added for the owner, and the back-links use the same words for the
-same places. `/dashboard/sessions` still answers, with a permanent
+nav is Productions, Activity and FAQ, with Clients and Accounts added for the
+owner, and the back-links use the same words for the same places. Production
+companies are not in it: they are reached from the productions grouped under
+them on the dashboard, and from the production form when there is a new one to
+add. `/dashboard/sessions` still answers, with a permanent
 redirect to `/dashboard`, and `/faq/performers` redirects to `/faq/applicants`,
 so an old bookmark lands in the right place.
 

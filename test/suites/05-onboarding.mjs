@@ -107,7 +107,7 @@ section("6b the navigation matches the role, and the hierarchy");
   // Productions first, because a role cannot exist without one.
   const order = await admin.p.locator("header nav").first().locator("a").allTextContents();
   check(`admin nav in order: ${JSON.stringify(order)}`,
-    JSON.stringify(order) === JSON.stringify(["Productions", "Production companies", "Activity", "Clients", "Accounts", "FAQ"]));
+    JSON.stringify(order) === JSON.stringify(["Productions", "Activity", "Clients", "Accounts", "FAQ"]));
 
   await half.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
   const theirs = await half.p.locator("header nav").first().locator("a").allTextContents();
