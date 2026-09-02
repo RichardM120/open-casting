@@ -6,6 +6,8 @@ import { notFound } from "next/navigation";
 
 import { DeadlineBadge } from "@/components/deadline-badge";
 import { ShareLink } from "@/components/share-link";
+import { PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
+import { ProfilePhoto } from "@/components/profile-photo";
 import { SubmissionStatusControl } from "@/components/submission-status-control";
 import { Badge, Button, ButtonLink, EmptyState, Eyebrow, buttonStyles } from "@/components/ui";
 import {
@@ -21,7 +23,7 @@ import { listSessionRoles } from "@/lib/roles";
 import { requestOrigin } from "@/lib/origin";
 import { RETENTION_DAYS, daysUntilPurge, purgeDate } from "@/lib/retention";
 import { getVisibleSession, shareSlug } from "@/lib/sessions";
-import { countsByRole, listSessionSubmissions } from "@/lib/submissions";
+import { countsByRole, countsForSession, listSessionSubmissions } from "@/lib/submissions";
 import { SUBMISSION_STATUSES, type SubmissionStatus } from "@/lib/types";
 
 export async function generateMetadata({
@@ -44,12 +46,12 @@ export default async function SessionPage({
   const session = await getVisibleSession(id, user);
   if (!session) notFound();
 
-  const [roles, counts, query, origin, everySubmission] = await Promise.all([
+  const [roles, counts, query, origin, sessionCounts] = await Promise.all([
     listSessionRoles(id),
     countsByRole(user),
     searchParams,
     requestOrigin(),
-    listSessionSubmissions(id),
+    countsForSession(id),
   ]);
   const shareUrl = `${origin}/c/${shareSlug(session)}`;
 
@@ -67,11 +69,25 @@ export default async function SessionPage({
     (SUBMISSION_STATUSES as readonly string[]).includes(query.status)
       ? (query.status as SubmissionStatus)
       : null;
-  const listed = status
-    ? everySubmission.filter((submission) => submission.status === status)
-    : everySubmission;
-  const byStatus = (which: SubmissionStatus) =>
-    everySubmission.filter((submission) => submission.status === which).length;
+  const byStatus = (which: SubmissionStatus) => sessionCounts[which];
+
+  // Pages of twenty-five, newest first. A page past the end shows the last
+  // one rather than nothing.
+  const matching = status ? byStatus(status) : sessionCounts.total;
+  const pages = Math.max(1, Math.ceil(matching / PAGE_SIZE));
+  const page = Math.min(pageNumber(query.page), pages);
+  const listed = await listSessionSubmissions(id, {
+    status,
+    limit: PAGE_SIZE,
+    offset: (page - 1) * PAGE_SIZE,
+  });
+  const listHref = (n: number) => {
+    const search = new URLSearchParams();
+    if (status) search.set("status", status);
+    if (n > 1) search.set("page", String(n));
+    const tail = search.toString();
+    return `/dashboard/sessions/${session.id}${tail ? `?${tail}` : ""}`;
+  };
 
   const flash =
     query.published === "1"
@@ -92,12 +108,12 @@ export default async function SessionPage({
             Submissions
           </h2>
           <p className="mt-1 text-sm text-muted">
-            {everySubmission.length === 0
+            {sessionCounts.total === 0
               ? "Nothing has come in yet."
-              : `${everySubmission.length} across ${roles.length} ${roles.length === 1 ? "role" : "roles"}, ${byStatus("New")} still to review.`}
+              : `${sessionCounts.total} across ${roles.length} ${roles.length === 1 ? "role" : "roles"}, ${byStatus("New")} still to review.`}
           </p>
         </div>
-        {everySubmission.length > 0 ? (
+        {sessionCounts.total > 0 ? (
           <div className="flex flex-wrap items-center gap-2">
             {/* A plain link, not a client-side navigation: the response is a file. */}
             <a
@@ -137,11 +153,11 @@ export default async function SessionPage({
         </p>
       ) : null}
 
-      {everySubmission.length > 0 ? (
+      {sessionCounts.total > 0 ? (
         <nav aria-label="Narrow the list" className="mt-4 flex flex-wrap gap-1.5 text-sm">
           {[null, ...SUBMISSION_STATUSES].map((which) => {
             const current = which === status;
-            const n = which ? byStatus(which) : everySubmission.length;
+            const n = which ? byStatus(which) : sessionCounts.total;
             return (
               <Link
                 key={which ?? "all"}
@@ -161,6 +177,7 @@ export default async function SessionPage({
       ) : null}
 
       {listed.length > 0 ? (
+        <>
         <div className="mt-4 overflow-x-auto rounded-2xl border border-line bg-surface">
           <table className="w-full text-sm">
             <thead>
@@ -180,14 +197,19 @@ export default async function SessionPage({
               {listed.map((submission) => (
                 <tr key={submission.id} className="border-b border-line align-top last:border-0">
                   <td className="px-4 py-3">
-                    <span className="font-medium">{submission.name}</span>
-                    <br />
-                    <a
-                      href={`mailto:${submission.email}`}
-                      className="text-xs text-muted underline-offset-4 hover:underline"
-                    >
-                      {submission.email}
-                    </a>
+                    <div className="flex items-center gap-3">
+                      <ProfilePhoto url={submission.photoUrl} name={submission.name} size="sm" />
+                      <div className="min-w-0">
+                        <span className="font-medium">{submission.name}</span>
+                        <br />
+                        <a
+                          href={`mailto:${submission.email}`}
+                          className="text-xs text-muted underline-offset-4 hover:underline"
+                        >
+                          {submission.email}
+                        </a>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-4 py-3">
                     <Link
@@ -216,7 +238,9 @@ export default async function SessionPage({
             </tbody>
           </table>
         </div>
-      ) : everySubmission.length > 0 ? (
+        <Pagination page={page} total={matching} pageSize={PAGE_SIZE} href={listHref} />
+        </>
+      ) : sessionCounts.total > 0 ? (
         <p className="mt-4 rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">
           Nothing is marked {status} at the moment.
         </p>

@@ -81,12 +81,69 @@ function toSubmission(row: SubmissionRow): Submission {
 
 /* --------------------------------------------------------------- queries -- */
 
-export async function listSubmissions(roleId: string): Promise<Submission[]> {
+/** How a list is narrowed and paged. Without a limit it is everything. */
+export type SubmissionListOptions = {
+  status?: SubmissionStatus | null;
+  limit?: number;
+  offset?: number;
+};
+
+/** The LIMIT and OFFSET a list asked for, placed after its own parameters. */
+function pageClause(options: SubmissionListOptions, params: unknown[]): string {
+  let clause = "";
+  if (options.limit !== undefined) {
+    params.push(options.limit);
+    clause += ` LIMIT $${params.length}`;
+  }
+  if (options.offset) {
+    params.push(options.offset);
+    clause += ` OFFSET $${params.length}`;
+  }
+  return clause;
+}
+
+/** Sums a GROUP BY status result into one set of counts. */
+function tally(rows: Array<{ status: string; count: string }>): SubmissionCounts {
+  const counts = emptyCounts();
+  for (const row of rows) {
+    const n = Number(row.count);
+    counts[row.status as SubmissionStatus] += n;
+    counts.total += n;
+  }
+  return counts;
+}
+
+export async function listSubmissions(
+  roleId: string,
+  options: Pick<SubmissionListOptions, "limit" | "offset"> = {},
+): Promise<Submission[]> {
+  const params: unknown[] = [roleId];
   const rows = await query<SubmissionRow>(
-    `SELECT ${COLUMNS} FROM submissions WHERE role_id = $1 ORDER BY submitted_at DESC`,
-    [roleId],
+    `SELECT ${COLUMNS} FROM submissions WHERE role_id = $1
+      ORDER BY submitted_at DESC, id${pageClause(options, params)}`,
+    params,
   );
   return rows.map(toSubmission);
+}
+
+/** The counts for one role, without loading its submissions. */
+export async function countsForRole(roleId: string): Promise<SubmissionCounts> {
+  return tally(
+    await query<{ status: string; count: string }>(
+      "SELECT status, count(*)::text AS count FROM submissions WHERE role_id = $1 GROUP BY status",
+      [roleId],
+    ),
+  );
+}
+
+/** The counts for one casting call, across its roles, without loading them. */
+export async function countsForSession(sessionId: string): Promise<SubmissionCounts> {
+  return tally(
+    await query<{ status: string; count: string }>(
+      "SELECT status, count(*)::text AS count FROM submissions WHERE session_id = $1 GROUP BY status",
+      [sessionId],
+    ),
+  );
 }
 
 /** A submission with the role it was made for: one row of a casting call's list. */
@@ -97,14 +154,23 @@ export type SessionSubmission = Submission & { roleTitle: string };
  * caller has already established it may see the casting call; that is the
  * same rule as seeing the submissions.
  */
-export async function listSessionSubmissions(sessionId: string): Promise<SessionSubmission[]> {
+export async function listSessionSubmissions(
+  sessionId: string,
+  options: SubmissionListOptions = {},
+): Promise<SessionSubmission[]> {
+  const params: unknown[] = [sessionId];
+  let where = "s.session_id = $1";
+  if (options.status) {
+    params.push(options.status);
+    where += ` AND s.status = $${params.length}`;
+  }
   const rows = await query<SubmissionRow & { role_title: string }>(
     `SELECT s.*, r.title AS role_title
        FROM submissions s
        JOIN roles r ON r.id = s.role_id
-      WHERE s.session_id = $1
-      ORDER BY s.submitted_at DESC`,
-    [sessionId],
+      WHERE ${where}
+      ORDER BY s.submitted_at DESC, s.id${pageClause(options, params)}`,
+    params,
   );
   return rows.map((row) => ({ ...toSubmission(row), roleTitle: row.role_title }));
 }

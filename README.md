@@ -406,7 +406,12 @@ The dashboard list shows each casting call and its numbers only: roles,
 submitted, to review, shortlisted, callback, declined. Who submitted is on the
 casting call's own page, which lists every submission across its roles with
 its status, a filter by status, and a status control on each row; a role's
-page still has the full card for each applicant.
+page still has the full card for each applicant. Both lists come in pages of
+25 (`?page=`), newest first, counted and fetched in the database rather than
+loaded whole, so a casting call with hundreds of submissions stays quick.
+Every row and card shows the applicant's photo, or a placeholder that says
+"No photo submitted" when none came in. Suite 16 loads a casting call with
+200 submissions, 50 of them with photos, and walks the pages.
 
 The list leaves the site as a spreadsheet. **Download spreadsheet** serves
 `/dashboard/sessions/[id]/export`, an `.xlsx` built with exceljs (one row per

@@ -17,13 +17,14 @@ import {
   formatDate,
   formatDateTime,
   formatRelative,
-  initials,
   isOpen,
   roleWindow,
 } from "@/lib/format";
 import { getVisibleRole } from "@/lib/roles";
 import { shareSlug } from "@/lib/sessions";
-import { listSubmissions, summarise } from "@/lib/submissions";
+import { PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
+import { ProfilePhoto, mediaSrc } from "@/components/profile-photo";
+import { countsForRole, listSubmissions } from "@/lib/submissions";
 import type { Submission } from "@/lib/types";
 
 export async function generateMetadata({
@@ -46,12 +47,18 @@ export default async function RoleSubmissionsPage({
   const role = await getVisibleRole(id, user);
   if (!role) notFound();
 
-  const [submissions, activity, query] = await Promise.all([
-    listSubmissions(id),
+  const [counts, activity, query] = await Promise.all([
+    countsForRole(id),
     listActivity(user, { roleId: id, limit: 30 }),
     searchParams,
   ]);
-  const counts = summarise(submissions);
+  // Pages of twenty-five, newest first; a page past the end shows the last.
+  const pages = Math.max(1, Math.ceil(counts.total / PAGE_SIZE));
+  const page = Math.min(pageNumber(query.page), pages);
+  const submissions = await listSubmissions(id, {
+    limit: PAGE_SIZE,
+    offset: (page - 1) * PAGE_SIZE,
+  });
   const justPosted = query.posted === "1";
   const justSaved = query.saved === "1";
   const open = isOpen(roleWindow(role));
@@ -133,11 +140,19 @@ export default async function RoleSubmissionsPage({
       </div>
 
       {submissions.length > 0 ? (
-        <ul className="mt-8 flex flex-col gap-4">
-          {submissions.map((submission) => (
-            <SubmissionCard key={submission.id} submission={submission} />
-          ))}
-        </ul>
+        <>
+          <ul className="mt-8 flex flex-col gap-4">
+            {submissions.map((submission) => (
+              <SubmissionCard key={submission.id} submission={submission} />
+            ))}
+          </ul>
+          <Pagination
+            page={page}
+            total={counts.total}
+            pageSize={PAGE_SIZE}
+            href={(n) => (n > 1 ? `/dashboard/roles/${id}?page=${n}` : `/dashboard/roles/${id}`)}
+          />
+        </>
       ) : (
         <div className="mt-8">
           <EmptyState
@@ -220,21 +235,7 @@ function SubmissionCard({ submission }: { submission: Submission }) {
   return (
     <li className="rounded-2xl border border-line bg-surface p-6">
       <div className="flex flex-wrap items-start gap-4">
-        {submission.photoUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- our own authenticated route
-          <img
-            src={mediaSrc(submission.photoUrl)}
-            alt={`${submission.name}'s photo`}
-            className="size-16 shrink-0 rounded-xl border border-line object-cover"
-          />
-        ) : (
-          <span
-            aria-hidden="true"
-            className="flex size-11 shrink-0 items-center justify-center rounded-full bg-raised text-sm font-medium text-muted"
-          >
-            {initials(submission.name)}
-          </span>
-        )}
+        <ProfilePhoto url={submission.photoUrl} name={submission.name} />
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -298,11 +299,6 @@ function SubmissionCard({ submission }: { submission: Submission }) {
       </div>
     </li>
   );
-}
-
-/** The authenticated route that serves an applicant's file. Blobs are private. */
-function mediaSrc(url: string): string {
-  return `/api/media?u=${encodeURIComponent(url)}`;
 }
 
 function ExternalLink({ href, children }: { href: string; children: React.ReactNode }) {
