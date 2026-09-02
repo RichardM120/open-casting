@@ -1,6 +1,6 @@
 import "server-only";
 
-import { del, list } from "@vercel/blob";
+import { del, get, list, put } from "@vercel/blob";
 
 /**
  * Applicant media: a profile photo and a video, uploaded straight from the
@@ -78,6 +78,51 @@ export function isSubmissionMediaUrl(
   if (parsed.protocol !== "https:") return false;
   if (!parsed.hostname.endsWith(".blob.vercel-storage.com")) return false;
   return parsed.pathname.slice(1).startsWith(mediaPrefix(sessionId, roleId, kind));
+}
+
+/** What a store check found. */
+export type StoreCheck = { ok: true; pathname: string; ms: number } | { ok: false; error: string };
+
+/**
+ * Proves the store works from this deployment, end to end: writes a small
+ * private file, reads it back, and deletes it. The write is the snippet the
+ * Vercel dashboard offers when a store is connected; the read and the delete
+ * are what the app itself does with a submission. The file goes under checks/,
+ * never under submissions/, so the media route and the orphan sweep never see
+ * it, and it is deleted whether or not the read-back succeeds.
+ */
+export async function checkStore(): Promise<StoreCheck> {
+  if (!uploadsEnabled()) {
+    return { ok: false, error: "No store is connected: BLOB_READ_WRITE_TOKEN is not set." };
+  }
+  const started = Date.now();
+  const token = blobToken();
+  try {
+    const blob = await put(`checks/${started}.txt`, "Hello World!", {
+      access: "private",
+      addRandomSuffix: true,
+      contentType: "text/plain",
+      token,
+    });
+    try {
+      const read = await get(blob.url, { access: "private", token, useCache: false });
+      const text = read?.stream ? await new Response(read.stream).text() : null;
+      if (text !== "Hello World!") {
+        return {
+          ok: false,
+          error: `Wrote the file but read back ${text === null ? "nothing" : "something else"}.`,
+        };
+      }
+    } finally {
+      await del(blob.url, { token });
+    }
+    return { ok: true, pathname: blob.pathname, ms: Date.now() - started };
+  } catch (error) {
+    return {
+      ok: false,
+      error: error instanceof Error ? error.message : "The store refused the request.",
+    };
+  }
 }
 
 /** How many URLs go to the store in one delete call. */

@@ -3,9 +3,11 @@ import Link from "next/link";
 import { HelpNote } from "@/components/help-note";
 
 import { ActivityList } from "@/components/activity-list";
-import { ButtonLink, Eyebrow } from "@/components/ui";
+import { Button, ButtonLink, Eyebrow } from "@/components/ui";
+import { testFileStore } from "@/lib/actions";
 import { listActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
+import { uploadsEnabled } from "@/lib/blob";
 import { clientUsage, listClients } from "@/lib/clients";
 import { listAccounts } from "@/lib/users";
 
@@ -17,14 +19,17 @@ export const metadata: Metadata = {
 };
 
 /** Where the owner starts: the state of the service, rather than one casting. */
-export default async function AdminPage() {
+export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
   const user = await requireUser("/admin");
-  const [clients, usage, accounts, activity] = await Promise.all([
+  const [clients, usage, accounts, activity, query] = await Promise.all([
     listClients(),
     clientUsage(),
     listAccounts(),
     listActivity(user, { limit: 8 }),
+    searchParams,
   ]);
+  const store = uploadsEnabled();
+  const why = typeof query.why === "string" ? query.why : "";
 
   const totals = clients.reduce(
     (running, client) => {
@@ -42,6 +47,7 @@ export default async function AdminPage() {
     <div className="mx-auto max-w-5xl px-5 py-12">
       <HelpNote title="What this screen is for">
         <p dangerouslySetInnerHTML={{ __html: 'The service as a whole: who is paying, what they are using, and what has happened. Your own casting work lives in the casting director section.' }} />
+        <p dangerouslySetInnerHTML={{ __html: 'The file store card says whether applicants can attach photos and videos, and can prove the store works from this deployment.' }} />
       </HelpNote>
       <Eyebrow>Admin</Eyebrow>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
@@ -72,6 +78,44 @@ export default async function AdminPage() {
           Activity
         </ButtonLink>
       </div>
+
+      <section className="mt-10 rounded-2xl border border-line bg-surface p-6">
+        <div className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <h2 className="text-lg font-semibold tracking-tight">File store</h2>
+            <p className="mt-1 max-w-prose text-sm leading-relaxed text-muted">
+              {store
+                ? "Connected. Applicants can attach a photo and a video to a submission. Files are private, read back only through the dashboard, and go with the submission."
+                : "Not connected. The form offers no uploads until a Vercel Blob store is connected to this project's Production environment and the site is redeployed."}
+            </p>
+          </div>
+          {store ? (
+            <form action={testFileStore}>
+              <Button type="submit" variant="secondary" size="sm">
+                Test the store
+              </Button>
+            </form>
+          ) : null}
+        </div>
+        {query.store === "ok" ? (
+          <p
+            role="status"
+            className="mt-4 rounded-xl border border-line bg-positive-soft px-4 py-3 text-sm text-positive"
+          >
+            Wrote a private test file, read it back and deleted it
+            {typeof query.ms === "string" ? ` in ${query.ms} ms` : ""}. The store works from this
+            deployment.
+          </p>
+        ) : null}
+        {query.store === "failed" ? (
+          <p
+            role="alert"
+            className="mt-4 rounded-xl border border-danger/40 bg-danger-soft px-4 py-3 text-sm text-danger"
+          >
+            The store did not work: {why || "no reason was given."}
+          </p>
+        ) : null}
+      </section>
 
       <section className="mt-12">
         <div className="flex items-baseline justify-between gap-4">

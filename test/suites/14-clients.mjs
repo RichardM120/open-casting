@@ -99,6 +99,8 @@ section("5b the footer offers both sections while sign-in cannot route");
 section("5c the admin section carries its own navigation");
 {
   await admin.p.goto(`${BASE}/admin`, { waitUntil: "networkidle" });
+  check("the file store card says there is none", (await admin.p.getByText("Not connected.").count()) > 0);
+  check("and offers no test without one", (await admin.p.getByRole("button", { name: "Test the store" }).count()) === 0);
   check("the overview opens", (await admin.p.getByText("Open Casting, as a service").count()) > 0);
   const nav = await admin.p.locator("header nav").first().locator("a").allTextContents();
   check(`admin nav: ${JSON.stringify(nav)}`, nav.includes("Clients") && nav.includes("Accounts"));

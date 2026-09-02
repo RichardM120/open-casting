@@ -7,7 +7,7 @@ import { SUBMISSION_TERMS } from "@/content/legal";
 
 import { record, describeChanges, describeSessionChanges } from "./activity";
 import { requireUser, type SessionUser } from "./auth";
-import { deleteMedia, isSubmissionMediaUrl } from "./blob";
+import { checkStore, deleteMedia, isSubmissionMediaUrl } from "./blob";
 import { UNIQUE_VIOLATION } from "./db";
 import {
   createClient,
@@ -535,6 +535,18 @@ async function requireOwner(back: string): Promise<SessionUser | FormState> {
     return { status: "error", message: "Only the administrator manages clients.", errors: {}, values: {} };
   }
   return user;
+}
+
+/** The owner proving the file store works from this deployment. */
+export async function testFileStore(): Promise<void> {
+  const user = await requireOwner("/admin");
+  if ("status" in user) redirect("/admin");
+  const result = await checkStore();
+  redirect(
+    result.ok
+      ? `/admin?store=ok&ms=${result.ms}`
+      : `/admin?store=failed&why=${encodeURIComponent(result.error.slice(0, 200))}`,
+  );
 }
 
 export async function createClientRecord(

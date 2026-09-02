@@ -436,8 +436,11 @@ any orphan older than a day.
 Without `BLOB_READ_WRITE_TOKEN` the form offers no uploads and everything else
 works as before; the end-to-end suite runs that way. `/api/health` reports
 `uploads` as `ready` or `off`, so a deployment can be checked for the token
-without reading it. The store itself is not exercised by the suite, so an
-upload is worth trying by hand after a deploy.
+without reading it, and the Admin overview has a **File store** card that says
+the same in words. When a store is connected the card offers **Test the
+store**, which writes a small private file, reads it back and deletes it, and
+says whether that worked from this deployment. The suite never touches the
+store, so that test is the check to run after connecting one.
 
 ## Two sections, and four words
 
