@@ -71,7 +71,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
 
   return (
     <header className="sticky top-0 z-20 bg-brand text-brand-ink shadow-md shadow-black/10">
-      <div className="mx-auto flex min-h-16 max-w-6xl items-center gap-6 px-5 py-2">
+      <div className="mx-auto flex min-h-16 max-w-6xl items-center gap-3 px-5 py-2 sm:gap-6">
         <Link href="/" className="flex items-center rounded-xl">
           <Lockup />
         </Link>
@@ -98,7 +98,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
               <form action={signOut}>
                 <button
                   type="submit"
-                  className="rounded-full px-3 py-2 text-sm text-white/85 transition-colors hover:bg-white/10 hover:text-white"
+                  className="rounded-full px-2.5 py-2 text-sm whitespace-nowrap text-white/85 transition-colors hover:bg-white/10 hover:text-white sm:px-3"
                 >
                   Sign out
                 </button>

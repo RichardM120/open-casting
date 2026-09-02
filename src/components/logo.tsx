@@ -1,7 +1,8 @@
 /**
  * The mark: two brackets holding a door that stands a little open, hinged on
- * the left bracket, with one gold knob. On the terracotta header it is drawn
- * in white with no tile; on a light ground it sits in a terracotta tile.
+ * the left bracket, with one gold knob. Wherever the ground is light, the
+ * header's cream plate included, it sits in a terracotta tile; on terracotta
+ * itself it is drawn in white with no tile.
  */
 export function Logo({
   tone = "onLight",
@@ -30,17 +31,19 @@ export function Logo({
 }
 
 /**
- * The lockup: the mark beside the name, both terracotta, on a cream plate
- * with a two-pixel terracotta outline. The same on the terracotta header and
- * on a light ground.
+ * The master lockup: the mark in its terracotta tile beside the name in
+ * charcoal, set in capitals with open tracking. The gap is three tenths of
+ * the tile and the type just under half of it, the spacing the logo book
+ * fixes. The header carries it on a cream plate, because charcoal type would
+ * not read on terracotta.
  */
 export function Lockup({ className }: { className?: string }) {
   return (
     <span
-      className={`inline-flex items-center gap-3 rounded-xl border-2 border-brand bg-ink px-3 py-1.5 font-semibold tracking-[0.08em] text-brand uppercase ${className ?? ""}`}
+      className={`inline-flex shrink-0 items-center gap-2.5 rounded-xl bg-ink px-2 py-1.5 font-semibold tracking-[0.08em] text-text uppercase sm:px-3 ${className ?? ""}`}
     >
-      <Logo tone="mono" className="size-9 sm:size-8" />
-      <span className="text-base sm:text-[15px]">Open Casting</span>
+      <Logo tone="onLight" className="size-10 sm:size-9" />
+      <span className="text-[1rem] whitespace-nowrap sm:text-base">Open Casting</span>
     </span>
   );
 }
