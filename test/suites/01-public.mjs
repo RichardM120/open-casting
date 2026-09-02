@@ -157,6 +157,10 @@ section("6 role without terms: no checkbox, submits cleanly");
   // The harness has no file store, so the form offers no uploads. Everything
   // else on it is unchanged: the store is an addition, not a dependency.
   check("no upload fields without a store", (await p.locator("#photo").count()) === 0 && (await p.locator("#video").count()) === 0);
+  // The applicant's page stands alone: no site navigation, no footer of links.
+  check("no site navigation on the applicant page", (await p.locator("header nav").count()) === 0);
+  check("and no footer links", (await p.getByRole("link", { name: "Admin", exact: true }).count()) === 0 && (await p.getByRole("link", { name: "Casting director" }).count()) === 0);
+  check("but the mark and the form", (await p.getByText("Run with Open Casting").count()) > 0 && (await p.locator("#name").count()) === 1);
   check("no acceptance checkbox", (await p.locator("#acceptTerms").count()) === 0);
   await p.fill("#name", "No Terms"); await p.fill("#email", `not${t}@example.com`);
   await p.fill("#phone", "07700 900222"); await p.fill("#location", "Essex"); await p.selectOption("#age", "33");

@@ -65,6 +65,8 @@ export type CastingSession = {
   company: string;
   /** Who is making it. A line on the form, never shown to an applicant. */
   productionCompany: string;
+  /** An optional image across the top of the applicant's page, or null. */
+  heroUrl: string | null;
   /**
    * ISO timestamps. Submissions are accepted from opensAt up to closesAt. The
    * casting director enters both in UK time; they are stored as instants.

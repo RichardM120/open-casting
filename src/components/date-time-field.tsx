@@ -224,7 +224,7 @@ export function DateTimeField({
           aria-expanded={open}
           aria-controls={open ? dialogId : undefined}
           aria-label={`Pick ${what} for ${label}`}
-          className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-line bg-raised text-muted transition-colors hover:border-accent hover:text-accent"
+          className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-line bg-raised text-muted transition-colors hover:border-accent hover:text-brand"
         >
           <CalendarGlyph />
         </button>
@@ -236,7 +236,7 @@ export function DateTimeField({
           role="dialog"
           aria-label={`Pick ${what} for ${label}`}
           className={cx(
-            "absolute top-full z-30 mt-2 w-[min(22rem,calc(100vw-2.5rem))] rounded-2xl border border-line-strong bg-surface p-4 shadow-2xl shadow-black/50",
+            "absolute top-full z-30 mt-2 w-[min(22rem,calc(100vw-2.5rem))] rounded-2xl border border-line-strong bg-surface p-4 shadow-2xl shadow-black/15",
             align === "end" ? "right-0" : "left-0",
           )}
         >
@@ -285,7 +285,7 @@ export function DateTimeField({
                   aria-label={DAY_LABEL.format(new Date(day.year, day.month, day.day))}
                   onClick={() => choose(day)}
                   className={cx(
-                    "h-9 rounded-lg text-sm tabular-nums transition-colors",
+                    "h-10 rounded-lg text-sm tabular-nums transition-colors",
                     selected
                       ? "bg-accent font-medium text-accent-ink"
                       : inMonth

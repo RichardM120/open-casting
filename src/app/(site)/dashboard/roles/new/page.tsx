@@ -69,7 +69,7 @@ export default async function NewRolePage({ searchParams }: PageProps<"/dashboar
         {user.company} when its casting call opens.
       </p>
       <p className="mt-3 text-sm text-muted">
-        <Link href="/faq/casting-directors" className="text-accent underline-offset-4 hover:underline">
+        <Link href="/faq/casting-directors" className="text-brand underline-offset-4 hover:underline">
           What each field commits you to
         </Link>
         , including the buyout, and how to write terms worth having.

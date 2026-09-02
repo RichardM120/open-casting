@@ -45,7 +45,7 @@ export default function FaqPage() {
             className="group rounded-2xl border border-line bg-surface p-7 transition-colors hover:border-line-strong"
           >
             <Eyebrow>{guide.eyebrow}</Eyebrow>
-            <h2 className="mt-3 text-xl font-semibold tracking-tight transition-colors group-hover:text-accent">
+            <h2 className="mt-3 text-xl font-semibold tracking-tight transition-colors group-hover:text-brand">
               {guide.title}
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-muted">{guide.description}</p>

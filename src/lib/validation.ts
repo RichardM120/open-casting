@@ -228,6 +228,9 @@ export const sessionSchema = z
     productionType: z.enum(PRODUCTION_TYPES, { message: "Choose a production type" }),
     synopsis: trimmed.min(20, "Describe the production in a sentence or two").max(600),
     productionCompany: trimmed.max(80, "Keep the production company under 80 characters"),
+    // Checked against the store in the action, not here: which store, and
+    // whose folder, is not the form's to say.
+    heroUrl: z.string().trim().max(600).optional().default(""),
     opensAt: localDateTime("Choose when submissions open"),
     closesAt: localDateTime("Choose when submissions close"),
     productionEndsAt: trimmed.regex(

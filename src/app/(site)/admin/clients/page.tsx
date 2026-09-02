@@ -92,7 +92,7 @@ export default async function ClientsPage({ searchParams }: PageProps<"/admin/cl
                     <div className="min-w-0 flex-1">
                       <Link
                         href={`/admin/clients/${client.id}`}
-                        className="block truncate font-medium transition-colors hover:text-accent"
+                        className="block truncate font-medium transition-colors hover:text-brand"
                       >
                         {client.name}
                       </Link>

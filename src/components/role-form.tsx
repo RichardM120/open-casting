@@ -98,7 +98,7 @@ export function RoleForm({
               Part of{" "}
               <a
                 href={`/dashboard/sessions/${role.sessionId}`}
-                className="text-accent underline-offset-4 hover:underline"
+                className="text-brand underline-offset-4 hover:underline"
               >
                 {sessions.find((session) => session.id === role.sessionId)?.name ??
                   role.production}

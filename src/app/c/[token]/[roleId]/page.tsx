@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ApplicantMasthead } from "@/components/applicant-masthead";
 import { DeadlineBadge } from "@/components/deadline-badge";
 import { SubmissionForm, SubmissionsClosed } from "@/components/submission-form";
 import { Badge, Eyebrow } from "@/components/ui";
@@ -59,6 +60,7 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
 
   return (
     <div className="mx-auto max-w-6xl px-5 py-12">
+      <ApplicantMasthead heroUrl={session.heroUrl} name={session.name} />
       <Link
         href={`/c/${token}`}
         className="text-sm text-muted transition-colors hover:text-text"

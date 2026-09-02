@@ -7,7 +7,7 @@ import { SUBMISSION_TERMS } from "@/content/legal";
 
 import { record, describeChanges, describeSessionChanges } from "./activity";
 import { requireUser, type SessionUser } from "./auth";
-import { checkStore, deleteMedia, isSubmissionMediaUrl } from "./blob";
+import { checkStore, deleteMedia, isHeroUrl, isSubmissionMediaUrl } from "./blob";
 import { UNIQUE_VIOLATION } from "./db";
 import { emailConfigured, sendEmail } from "./email";
 import { exportFilename, submissionsWorkbook } from "./export";
@@ -748,6 +748,17 @@ export async function removeClient(formData: FormData): Promise<void> {
  * Opens a production. The production owns the live dates, so this is the first
  * thing a casting director does; roles are posted into it afterwards.
  */
+/**
+ * The header image the form posted, as the URL to store, null for none, or
+ * false when it is not a file this account put in the store. An image that
+ * was there before and is kept is posted back unchanged, so it passes too.
+ */
+function heroFrom(posted: string, userId: string): string | null | false {
+  const url = posted.trim();
+  if (!url) return null;
+  return isHeroUrl(url, userId) ? url : false;
+}
+
 export async function createCastingSession(
   _previous: FormState,
   formData: FormData,
@@ -763,6 +774,11 @@ export async function createCastingSession(
     );
   }
 
+  const hero = heroFrom(parsed.data.heroUrl, user.id);
+  if (hero === false) {
+    return invalid({ heroUrl: "That image did not upload properly. Please try again." }, "The header image did not upload properly.", formData);
+  }
+
   // The ceiling the administrator sold them. Checked here rather than in the
   // form, because the form is not what decides it.
   if (user.maxSessions !== null) {
@@ -776,7 +792,7 @@ export async function createCastingSession(
     }
   }
 
-  const session = await createSession(parsed.data, user.id, user.company, user.clientId);
+  const session = await createSession({ ...parsed.data, heroUrl: hero }, user.id, user.company, user.clientId);
   await record({
     action: "session.created",
     actorId: user.id,
@@ -806,10 +822,15 @@ export async function editCastingSession(
     );
   }
 
+  const hero = heroFrom(parsed.data.heroUrl, user.id);
+  if (hero === false) {
+    return invalid({ heroUrl: "That image did not upload properly. Please try again." }, "The header image did not upload properly.", formData);
+  }
+
   const before = await getVisibleSession(id, user);
 
   // Returns null when the production is not one this account may touch.
-  const session = await updateSession(id, parsed.data, user);
+  const session = await updateSession(id, { ...parsed.data, heroUrl: hero }, user);
   if (!session) {
     return invalid({}, "That casting call is no longer yours to edit.", formData);
   }
@@ -912,6 +933,7 @@ export async function removeSession(formData: FormData): Promise<void> {
   });
 
   const sessionMedia = await mediaUrlsForSession(id);
+  if (session.heroUrl) sessionMedia.push(session.heroUrl);
 
   await deleteSessionAsAdmin(id);
 

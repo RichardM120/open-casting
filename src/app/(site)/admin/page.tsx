@@ -56,7 +56,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
       <p className="mt-3 max-w-2xl text-muted">
         Who is paying, what they are on, and what the site is doing. Your own casting work is in
         the{" "}
-        <Link href="/dashboard" className="text-accent underline-offset-4 hover:underline">
+        <Link href="/dashboard" className="text-brand underline-offset-4 hover:underline">
           casting director section
         </Link>
         .

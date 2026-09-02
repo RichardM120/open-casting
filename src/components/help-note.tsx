@@ -22,7 +22,7 @@ export function HelpNote({
       <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-muted transition-colors hover:text-text [&::-webkit-details-marker]:hidden">
         <span
           aria-hidden
-          className="inline-flex size-5 shrink-0 items-center justify-center rounded-full border border-line-strong text-xs font-semibold text-accent"
+          className="inline-flex size-5 shrink-0 items-center justify-center rounded-full border border-line-strong text-xs font-semibold text-brand"
         >
           ?
         </span>
@@ -34,7 +34,7 @@ export function HelpNote({
         {children}
         {faq ? (
           <p>
-            <Link href={faq} className="text-accent underline-offset-4 hover:underline">
+            <Link href={faq} className="text-brand underline-offset-4 hover:underline">
               {faqLabel}
             </Link>
           </p>

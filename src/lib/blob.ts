@@ -28,6 +28,34 @@ export const MEDIA_KINDS = {
 export type MediaKind = keyof typeof MEDIA_KINDS;
 
 /**
+ * The image across the top of a casting call's applicant page. Public, since
+ * the page it sits on is open to anyone holding the link; sized for a banner.
+ */
+export const HERO = {
+  label: "Header image",
+  maxBytes: 8 * 1024 * 1024,
+  contentTypes: ["image/jpeg", "image/png", "image/webp"],
+} as const;
+
+/** Where an account's header images live. The upload route checks the prefix. */
+export function heroPrefix(userId: string): string {
+  return `calls/${userId}/hero/`;
+}
+
+/** Whether a header image URL is one this store issued for this account. */
+export function isHeroUrl(url: string, userId: string): boolean {
+  let parsed: URL;
+  try {
+    parsed = new URL(url);
+  } catch {
+    return false;
+  }
+  if (parsed.protocol !== "https:") return false;
+  if (!parsed.hostname.endsWith(".blob.vercel-storage.com")) return false;
+  return parsed.pathname.slice(1).startsWith(heroPrefix(userId));
+}
+
+/**
  * The store's token. Vercel calls it BLOB_READ_WRITE_TOKEN unless a prefix was
  * chosen when the store was connected to the project, in which case it is
  * SOMETHING_READ_WRITE_TOKEN with the same shape of value. Either will do;

@@ -112,7 +112,7 @@ export default async function ClientPage({
             No accounts yet.{" "}
             <Link
               href="/admin/accounts"
-              className="text-accent underline-offset-4 hover:underline"
+              className="text-brand underline-offset-4 hover:underline"
             >
               Make the first one
             </Link>

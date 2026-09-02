@@ -6,16 +6,17 @@ import { usePathname } from "next/navigation";
 import { signOut } from "@/lib/auth-actions";
 import type { SessionUser } from "@/lib/auth";
 
+import { Logo } from "./logo";
 import { ButtonLink, cx } from "./ui";
 
 // Nothing to browse: signed out, there is only the way in and the help pages.
 const PUBLIC_NAV = [{ href: "/faq", label: "FAQ" }] as const;
 
 /**
- * The casting director's section: the productions, which is where the roles and
- * submissions live, and the record of what has been done. Roles are reached
- * through their production rather than from a list of their own, so there is
- * one place to look.
+ * The casting director's section: the casting calls, which is where the roles
+ * and submissions live, and the record of what has been done. Roles are
+ * reached through their casting call rather than from a list of their own, so
+ * there is one place to look.
  */
 const CASTING_NAV = [
   { href: "/dashboard", label: "Casting calls" },
@@ -23,8 +24,8 @@ const CASTING_NAV = [
 ] as const;
 
 /**
- * The one action in the nav. It sits after FAQ, set apart, because it starts
- * something rather than going somewhere.
+ * The one action in the nav. It sits after FAQ, set apart and in gold, because
+ * it starts something rather than going somewhere.
  */
 const NEW_CALL = { href: "/dashboard/sessions/new", label: "New casting call", action: true } as const;
 
@@ -36,6 +37,10 @@ const ADMIN_NAV = [
   { href: "/admin/activity", label: "Activity" },
 ] as const;
 
+/**
+ * The terracotta bar. White on terracotta reads at better than 6:1; the one
+ * gold element is the action, which is the thing the eye should find first.
+ */
 export function SiteHeader({ user }: { user: SessionUser | null }) {
   const pathname = usePathname();
 
@@ -54,100 +59,75 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
     .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
     .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
+  const linkClass = (item: { href: string; action?: boolean }) =>
+    cx(
+      "rounded-full px-3.5 py-2 text-sm whitespace-nowrap transition-colors",
+      item.action
+        ? "ml-2 bg-accent font-medium text-accent-ink hover:bg-accent-hover"
+        : current === item.href
+          ? "bg-white/15 text-white"
+          : "text-white/80 hover:bg-white/10 hover:text-white",
+    );
+
   return (
-    <header className="sticky top-0 z-20 border-b border-line bg-ink/85 backdrop-blur">
+    <header className="sticky top-0 z-20 bg-brand text-brand-ink shadow-md shadow-black/10">
       <div className="mx-auto flex h-16 max-w-6xl items-center gap-6 px-5">
-        <Link href="/" className="flex items-center gap-2.5 font-semibold tracking-tight">
-          <Aperture />
-          <span>
-            Open<span className="text-accent">Casting</span>
-          </span>
+        <Link href="/" className="flex items-center gap-2.5 font-semibold tracking-tight text-white">
+          <Logo tone="onBrand" />
+          <span>Open Casting</span>
         </Link>
 
         <nav aria-label="Main" className="hidden items-center gap-1 sm:flex">
-          {nav.map((item) => {
-            const active = current === item.href;
-            return (
-              <Link
-                key={item.href}
-                href={item.href}
-                aria-current={active ? "page" : undefined}
-                className={cx(
-                  "rounded-full px-3.5 py-1.5 text-sm transition-colors",
-                  "action" in item
-                    ? "ml-4 border border-accent/60 text-accent hover:bg-accent-soft"
-                    : active
-                      ? "bg-raised text-text"
-                      : "text-muted hover:text-text",
-                )}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
+          {nav.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={current === item.href ? "page" : undefined}
+              className={linkClass(item)}
+            >
+              {item.label}
+            </Link>
+          ))}
         </nav>
 
         <div className="ml-auto flex items-center gap-3">
           {user ? (
             <>
-              <span className="hidden text-sm text-muted md:inline" title={user.email}>
+              <span className="hidden text-sm text-white/75 md:inline" title={user.email}>
                 {user.company}
               </span>
               <form action={signOut}>
                 <button
                   type="submit"
-                  className="rounded-full px-3 py-1.5 text-sm text-muted transition-colors hover:text-text"
+                  className="rounded-full px-3 py-2 text-sm text-white/85 transition-colors hover:bg-white/10 hover:text-white"
                 >
                   Sign out
                 </button>
               </form>
             </>
           ) : (
-            <>
-              <ButtonLink href="/login" size="sm">
-                Sign in
-              </ButtonLink>
-            </>
+            <ButtonLink href="/login" size="sm">
+              Sign in
+            </ButtonLink>
           )}
         </div>
       </div>
 
       <nav
         aria-label="Main"
-        className="flex gap-1 overflow-x-auto border-t border-line px-5 py-2 sm:hidden"
+        className="flex gap-1 overflow-x-auto border-t border-white/15 px-5 py-2 sm:hidden"
       >
-        {nav.map((item) => {
-          const active = current === item.href;
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              aria-current={active ? "page" : undefined}
-              className={cx(
-                "rounded-full px-3.5 py-2 text-sm whitespace-nowrap transition-colors",
-                active ? "bg-raised text-text" : "text-muted",
-              )}
-            >
-              {item.label}
-            </Link>
-          );
-        })}
+        {nav.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            aria-current={current === item.href ? "page" : undefined}
+            className={linkClass(item)}
+          >
+            {item.label}
+          </Link>
+        ))}
       </nav>
     </header>
-  );
-}
-
-function Aperture() {
-  return (
-    <svg viewBox="0 0 24 24" aria-hidden="true" className="size-6 text-accent">
-      <circle cx="12" cy="12" r="9.25" fill="none" stroke="currentColor" strokeWidth="1.5" />
-      <path
-        d="M12 2.75 6.5 12l5.5 9.25M21.25 12H10.25M2.75 12l5.5-9.25"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.5"
-        strokeLinecap="round"
-      />
-    </svg>
   );
 }

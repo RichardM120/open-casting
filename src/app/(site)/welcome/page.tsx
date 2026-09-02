@@ -140,7 +140,7 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
               The{" "}
               <Link
                 href="/faq/casting-directors"
-                className="text-accent underline-offset-4 hover:underline"
+                className="text-brand underline-offset-4 hover:underline"
               >
                 casting director guide
               </Link>{" "}

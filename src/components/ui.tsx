@@ -16,15 +16,15 @@ const BUTTON_BASE =
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   primary: "bg-accent text-accent-ink hover:bg-accent-hover",
-  secondary: "border border-line-strong bg-raised text-text hover:border-accent hover:text-accent",
+  secondary: "border border-line-strong bg-raised text-text hover:border-accent hover:text-brand",
   ghost: "text-muted hover:text-text",
   danger: "border border-line-strong text-danger hover:bg-danger-soft",
 };
 
 // Both sizes clear a comfortable touch target; the app gets used on phones.
 const BUTTON_SIZES: Record<ButtonSize, string> = {
-  sm: "px-4 py-2 text-sm",
-  md: "px-5 py-2.5 text-sm",
+  sm: "min-h-10 px-4 py-2 text-sm",
+  md: "min-h-11 px-5 py-2.5 text-sm",
 };
 
 export function buttonStyles(
@@ -54,12 +54,13 @@ export function ButtonLink({
 
 /* --------------------------------------------------------------- badges -- */
 
-type BadgeTone = "neutral" | "accent" | "positive" | "danger" | "outline";
+type BadgeTone = "neutral" | "accent" | "positive" | "amber" | "danger" | "outline";
 
 const BADGE_TONES: Record<BadgeTone, string> = {
   neutral: "bg-line/70 text-muted",
-  accent: "bg-accent-soft text-accent",
+  accent: "bg-accent-soft text-brand",
   positive: "bg-positive-soft text-positive",
+  amber: "bg-amber-soft text-amber",
   danger: "bg-danger-soft text-danger",
   outline: "border border-line-strong text-muted",
 };
@@ -109,7 +110,7 @@ export function Card({
 
 export function Eyebrow({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <p className={cx("text-xs font-semibold tracking-[0.18em] text-accent uppercase", className)}>
+    <p className={cx("text-xs font-semibold tracking-[0.18em] text-brand uppercase", className)}>
       {children}
     </p>
   );
@@ -136,7 +137,7 @@ export function EmptyState({
 /* ---------------------------------------------------------------- forms -- */
 
 const CONTROL =
-  "w-full rounded-xl border border-line bg-raised px-3.5 py-2.5 text-sm text-text " +
+  "min-h-11 w-full rounded-xl border border-line bg-raised px-3.5 py-2.5 text-sm text-text " +
   "placeholder:text-faint transition-colors hover:border-line-strong " +
   "focus:border-accent focus:outline-none " +
   // A red border alone would not reach anyone who cannot see it; it sits

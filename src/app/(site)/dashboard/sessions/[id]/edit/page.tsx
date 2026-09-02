@@ -7,6 +7,7 @@ import { notFound } from "next/navigation";
 import { SessionForm } from "@/components/session-form";
 import { Eyebrow } from "@/components/ui";
 import { currentUser, requireUser } from "@/lib/auth";
+import { uploadsEnabled } from "@/lib/blob";
 import { listSessionRoles } from "@/lib/roles";
 import { getVisibleSession } from "@/lib/sessions";
 
@@ -55,7 +56,7 @@ export default async function EditSessionPage({
       </div>
 
       <div className="mt-10">
-        <SessionForm session={session} />
+        <SessionForm session={session} uploads={uploadsEnabled()} userId={user.id} />
       </div>
     </div>
   );

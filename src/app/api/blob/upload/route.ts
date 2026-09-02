@@ -1,7 +1,16 @@
 import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 
-import { MEDIA_KINDS, blobToken, mediaPrefix, uploadsEnabled, type MediaKind } from "@/lib/blob";
+import { currentUser } from "@/lib/auth";
+import {
+  HERO,
+  MEDIA_KINDS,
+  blobToken,
+  heroPrefix,
+  mediaPrefix,
+  uploadsEnabled,
+  type MediaKind,
+} from "@/lib/blob";
 import { isOpen, roleWindow } from "@/lib/format";
 import { getSessionRole } from "@/lib/roles";
 import { getSessionByToken } from "@/lib/sessions";
@@ -13,11 +22,12 @@ export const dynamic = "force-dynamic";
  * the store. The file never passes through here, only the permission to send
  * it, so the size limit is the store's and not a function body's.
  *
- * An applicant has no account, so the authorisation is the same one that lets
- * them see the form: a share link for a casting call that is open now, naming
- * a role in it. The token is then scoped to a pathname under that role, one
- * kind of file, its content types and its size. Nothing else can be uploaded
- * with it.
+ * Two kinds of sender. An applicant has no account, so their authorisation is
+ * the same one that lets them see the form: a share link for a casting call
+ * that is open now, naming a role in it. A casting director sending a header
+ * image is a signed-in account, and may only write under its own folder. Each
+ * token is scoped to a pathname, the content types and the size for its kind,
+ * and nothing else can be uploaded with it.
  */
 export async function POST(request: Request) {
   if (!uploadsEnabled()) {
@@ -34,6 +44,20 @@ export async function POST(request: Request) {
       onBeforeGenerateToken: async (pathname, clientPayload) => {
         const payload = parsePayload(clientPayload);
         if (!payload) throw new Error("Missing upload details");
+
+        if (payload.kind === "hero") {
+          const user = await currentUser();
+          if (!user) throw new Error("Sign in to add a header image");
+          if (!pathname.startsWith(heroPrefix(user.id))) {
+            throw new Error("That file is not going where it should");
+          }
+          return {
+            allowedContentTypes: [...HERO.contentTypes],
+            maximumSizeInBytes: HERO.maxBytes,
+            addRandomSuffix: true,
+            tokenPayload: JSON.stringify({ userId: user.id, kind: "hero" }),
+          };
+        }
 
         const { token, roleId, kind } = payload;
         const session = await getSessionByToken(token);
@@ -66,12 +90,15 @@ export async function POST(request: Request) {
   }
 }
 
-type Payload = { token: string; roleId: string; kind: MediaKind };
+type Payload =
+  | { kind: "hero" }
+  | { kind: MediaKind; token: string; roleId: string };
 
 function parsePayload(raw: string | null): Payload | null {
   if (!raw) return null;
   try {
-    const value = JSON.parse(raw) as Partial<Payload>;
+    const value = JSON.parse(raw) as { kind?: unknown; token?: unknown; roleId?: unknown };
+    if (value.kind === "hero") return { kind: "hero" };
     if (
       typeof value.token !== "string" ||
       typeof value.roleId !== "string" ||
@@ -79,7 +106,7 @@ function parsePayload(raw: string | null): Payload | null {
     ) {
       return null;
     }
-    return { token: value.token, roleId: value.roleId, kind: value.kind };
+    return { kind: value.kind, token: value.token, roleId: value.roleId };
   } catch {
     return null;
   }

@@ -177,7 +177,7 @@ export function SubmissionForm({
       <p className="mt-2">
         <Link
           href="/faq/applicants"
-          className="text-sm text-accent underline-offset-4 hover:underline"
+          className="text-sm text-brand underline-offset-4 hover:underline"
         >
           What each field means
         </Link>
@@ -196,7 +196,7 @@ export function SubmissionForm({
         </div>
       ) : null}
 
-      <div className="mt-6 grid gap-4 sm:grid-cols-2">
+      <div className="mt-6 grid gap-6 sm:grid-cols-2">
         <Field label="Age" htmlFor="age" error={errors.age}>
           <Select
             key={attempt}
@@ -226,7 +226,7 @@ export function SubmissionForm({
             responsibility. Please fill this in yourself rather than passing it to them.
           </p>
 
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="mt-4 grid gap-6 sm:grid-cols-2">
             <Field
               label="Parent or guardian's name"
               htmlFor="guardianName"
@@ -282,7 +282,7 @@ export function SubmissionForm({
         </div>
       ) : null}
 
-      <div className="mt-4 grid gap-4 sm:grid-cols-2">
+      <div className="mt-4 grid gap-6 sm:grid-cols-2">
         <Field label={minor ? "Applicant's full name" : "Full name"} htmlFor="name" error={errors.name}>
           <Input id="name" name="name" autoComplete="name" defaultValue={values.name ?? ""} required />
         </Field>
@@ -404,7 +404,7 @@ export function SubmissionForm({
           </p>
           <input type="hidden" name="photoUrl" value={uploaded.photo?.url ?? ""} />
           <input type="hidden" name="videoUrl" value={uploaded.video?.url ?? ""} />
-          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <div className="mt-4 grid gap-6 sm:grid-cols-2">
             <div>
               <Field label="Profile photo" htmlFor="photo" hint="JPEG, PNG or WebP, up to 5 MB." error={errors.photoUrl}>
                 <Input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" />
@@ -444,7 +444,7 @@ export function SubmissionForm({
             href="/legal/submission-terms"
             target="_blank"
             rel="noopener"
-            className="text-accent underline-offset-4 hover:underline"
+            className="text-brand underline-offset-4 hover:underline"
           >
             Read the full Terms of Submission and Acceptable Use Policy ↗
           </Link>
@@ -477,8 +477,8 @@ export function SubmissionForm({
         <p className="mt-3 text-xs text-faint">Version {SUBMISSION_TERMS.version}</p>
       </div>
 
-      <div className="mt-6 flex flex-wrap items-center gap-4">
-        <Button type="submit" disabled={pending}>
+      <div className="sticky bottom-0 -mx-7 -mb-7 mt-6 border-t border-line bg-surface/95 px-7 py-4 backdrop-blur sm:static sm:mx-0 sm:mb-0 sm:border-0 sm:bg-transparent sm:p-0">
+        <Button type="submit" disabled={pending} className="w-full sm:w-auto">
           {pending ? "Sending" : "Send submission"}
         </Button>
       </div>

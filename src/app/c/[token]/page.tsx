@@ -2,8 +2,9 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { ApplicantMasthead } from "@/components/applicant-masthead";
 import { DeadlineBadge } from "@/components/deadline-badge";
-import { Badge, Eyebrow } from "@/components/ui";
+import { Badge } from "@/components/ui";
 import { ageRange, formatDateTime, isOpen, notYetOpen, roleWindow, shootWindow } from "@/lib/format";
 import { canPreview } from "@/lib/preview";
 import { listSessionRoles } from "@/lib/roles";
@@ -42,6 +43,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
 
   return (
     <div className="mx-auto max-w-4xl px-5 py-12">
+      <ApplicantMasthead heroUrl={session.heroUrl} name={session.name} />
       {preview ? (
         <p className="mb-8 rounded-xl border border-accent/40 bg-accent-soft px-4 py-3 text-sm leading-relaxed text-text">
           <strong>Draft preview.</strong> This is exactly what an applicant sees, except that the
@@ -49,8 +51,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
         </p>
       ) : null}
 
-      <Eyebrow>Casting call</Eyebrow>
-      <h1 className="mt-3 text-3xl font-semibold tracking-tight text-balance md:text-4xl">
+      <h1 className="text-3xl font-semibold tracking-tight text-balance md:text-4xl">
         {session.name}
       </h1>
       <p className="mt-2 text-lg text-muted">{session.company}</p>
@@ -90,7 +91,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
                   <DeadlineBadge session={roleWindow(role)} />
                 </div>
 
-                <h2 className="text-lg font-semibold tracking-tight transition-colors group-hover:text-accent">
+                <h2 className="text-lg font-semibold tracking-tight transition-colors group-hover:text-brand">
                   {role.title}
                 </h2>
                 <p className="line-clamp-3 text-sm leading-relaxed text-muted">

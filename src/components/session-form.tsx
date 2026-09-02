@@ -1,5 +1,6 @@
 "use client";
 
+import { upload } from "@vercel/blob/client";
 import { useActionState, useState } from "react";
 
 import { createCastingSession, editCastingSession } from "@/lib/actions";
@@ -19,6 +20,7 @@ const LABELS: Record<string, string> = {
   opensAt: "Submissions open",
   closesAt: "Submissions close",
   productionEndsAt: "Production finishes",
+  heroUrl: "Header image",
 };
 
 /**
@@ -38,7 +40,96 @@ function Picked({ value }: { value: string }) {
   );
 }
 
-export function SessionForm({ session }: { session?: CastingSession }) {
+/**
+ * The optional image across the top of the applicant's page. It goes straight
+ * to the store from the browser, like an applicant's tape, and only its URL
+ * travels with the form. Offered only when a store is connected.
+ */
+function HeroUpload({
+  userId,
+  current,
+  error,
+}: {
+  userId: string;
+  current: string | null;
+  error?: string;
+}) {
+  const [url, setUrl] = useState<string>(current ?? "");
+  const [progress, setProgress] = useState<number | null>(null);
+  const [problem, setProblem] = useState<string | null>(null);
+
+  async function send(file: File) {
+    setProblem(null);
+    setProgress(0);
+    try {
+      const result = await upload(`calls/${userId}/hero/${file.name}`, file, {
+        access: "public",
+        handleUploadUrl: "/api/blob/upload",
+        clientPayload: JSON.stringify({ kind: "hero" }),
+        onUploadProgress: ({ percentage }) => setProgress(percentage),
+      });
+      setUrl(result.url);
+    } catch (caught) {
+      setProblem(
+        caught instanceof Error && caught.message
+          ? `The image did not upload: ${caught.message}`
+          : "The image did not upload. Check its size and type, then try again.",
+      );
+    } finally {
+      setProgress(null);
+    }
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      <input type="hidden" name="heroUrl" value={url} />
+      {url ? (
+        // eslint-disable-next-line @next/next/no-img-element -- a public blob the director just chose
+        <img src={url} alt="" className="max-h-48 w-full rounded-xl border border-line object-cover" />
+      ) : null}
+      <Field
+        label="Header image"
+        htmlFor="hero"
+        hint="Optional. Shown across the top of the page applicants see. JPEG, PNG or WebP, up to 8 MB; wide images work best."
+        error={error ?? problem ?? undefined}
+      >
+        <Input
+          id="hero"
+          name="hero"
+          type="file"
+          accept="image/jpeg,image/png,image/webp"
+          onChange={(event) => {
+            const file = event.target.files?.[0];
+            if (file) void send(file);
+          }}
+        />
+      </Field>
+      {progress !== null ? (
+        <p className="text-sm text-muted" aria-live="polite">
+          Uploading: {progress}%
+        </p>
+      ) : null}
+      {url ? (
+        <div>
+          <Button type="button" variant="ghost" size="sm" onClick={() => setUrl("")}>
+            Remove the image
+          </Button>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+export function SessionForm({
+  session,
+  uploads,
+  userId,
+}: {
+  session?: CastingSession;
+  /** Whether a file store is connected, which is what makes a header image possible. */
+  uploads: boolean;
+  userId: string;
+}) {
   const [state, formAction, pending] = useActionState(
     session ? editCastingSession : createCastingSession,
     IDLE_FORM_STATE,
@@ -140,6 +231,13 @@ export function SessionForm({ session }: { session?: CastingSession }) {
               required
             />
           </Field>
+          {uploads ? (
+            <div className="sm:col-span-2">
+              <HeroUpload userId={userId} current={session?.heroUrl ?? null} error={errors.heroUrl} />
+            </div>
+          ) : (
+            <input type="hidden" name="heroUrl" value={session?.heroUrl ?? ""} />
+          )}
         </div>
       </fieldset>
 

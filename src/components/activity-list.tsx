@@ -40,7 +40,7 @@ function Subject({ entry }: { entry: ActivityEntry }) {
   return entry.roleId ? (
     <Link
       href={`/dashboard/roles/${entry.roleId}`}
-      className="text-text underline-offset-4 hover:text-accent hover:underline"
+      className="text-text underline-offset-4 hover:text-brand hover:underline"
     >
       {entry.roleTitle}
     </Link>

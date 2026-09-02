@@ -21,6 +21,7 @@ import { emailConfigured } from "@/lib/email";
 import { formatDate, formatDateTime, formatRelative, isOpen, notYetOpen } from "@/lib/format";
 import { listSessionRoles } from "@/lib/roles";
 import { requestOrigin } from "@/lib/origin";
+import { callState } from "@/lib/rag";
 import { RETENTION_DAYS, daysUntilPurge, purgeDate } from "@/lib/retention";
 import { getVisibleSession, shareSlug } from "@/lib/sessions";
 import { countsByRole, countsForSession, listSessionSubmissions } from "@/lib/submissions";
@@ -214,7 +215,7 @@ export default async function SessionPage({
                   <td className="px-4 py-3">
                     <Link
                       href={`/dashboard/roles/${submission.roleId}`}
-                      className="text-accent underline-offset-4 hover:underline"
+                      className="text-brand underline-offset-4 hover:underline"
                     >
                       {submission.roleTitle}
                     </Link>
@@ -267,7 +268,7 @@ export default async function SessionPage({
                   className="group flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-line bg-surface p-5 transition-colors hover:border-line-strong"
                 >
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium transition-colors group-hover:text-accent">
+                    <p className="truncate font-medium transition-colors group-hover:text-brand">
                       {role.title}
                     </p>
                     <p className="truncate text-sm text-muted">
@@ -344,7 +345,7 @@ export default async function SessionPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Badge tone={draft ? "accent" : "positive"}>{draft ? "Draft" : "Published"}</Badge>
+          <Badge tone={callState(session).tone}>{callState(session).label}</Badge>
           <DeadlineBadge session={session} />
           <ButtonLink href={`/dashboard/sessions/${session.id}/edit`} variant="secondary" size="sm">
             Edit

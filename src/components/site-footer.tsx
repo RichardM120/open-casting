@@ -1,12 +1,17 @@
 import Link from "next/link";
 
+import { Logo } from "./logo";
+
 export function SiteFooter() {
   return (
     <footer className="mt-24 border-t border-line">
       <div className="mx-auto flex max-w-6xl flex-col gap-3 px-5 py-8 text-sm text-faint sm:flex-row sm:items-center sm:justify-between">
-        <p>
-          Open Casting is the tool a casting call runs its casting with. The sample casting calls
-          on it are invented.
+        <p className="flex items-start gap-2.5">
+          <Logo tone="onLight" size="sm" />
+          <span>
+            Open Casting is the tool a casting call runs its casting with. The sample casting
+            calls on it are invented.
+          </span>
         </p>
         <div className="flex flex-wrap gap-x-5 gap-y-2">
           {/*

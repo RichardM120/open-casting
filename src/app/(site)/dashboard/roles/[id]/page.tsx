@@ -283,7 +283,7 @@ function SubmissionCard({ submission }: { submission: Submission }) {
       <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line pt-4 text-sm">
         <a
           href={`mailto:${submission.email}`}
-          className="text-accent underline-offset-4 hover:underline"
+          className="text-brand underline-offset-4 hover:underline"
         >
           {submission.email}
         </a>

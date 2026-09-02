@@ -55,7 +55,7 @@ export default async function AccountsPage() {
               An account belongs to a client, so there is nothing to fill in yet.{" "}
               <Link
                 href="/admin/clients/new"
-                className="text-accent underline-offset-4 hover:underline"
+                className="text-brand underline-offset-4 hover:underline"
               >
                 Take on the first client
               </Link>
@@ -123,7 +123,7 @@ export default async function AccountsPage() {
                   What they may run comes from their client.{" "}
                   <Link
                     href={`/admin/clients/${account.client_id}`}
-                    className="text-accent underline-offset-4 hover:underline"
+                    className="text-brand underline-offset-4 hover:underline"
                   >
                     Change it on {account.company}
                   </Link>

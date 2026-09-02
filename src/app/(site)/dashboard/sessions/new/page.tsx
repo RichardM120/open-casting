@@ -6,6 +6,7 @@ import { SetupProgress } from "@/components/setup-progress";
 import { SessionForm } from "@/components/session-form";
 import { Eyebrow } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
+import { uploadsEnabled } from "@/lib/blob";
 
 export const metadata: Metadata = {
   title: "New casting call",
@@ -13,7 +14,7 @@ export const metadata: Metadata = {
 };
 
 export default async function NewSessionPage() {
-  await requireUser("/dashboard/sessions/new");
+  const user = await requireUser("/dashboard/sessions/new");
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-12">
@@ -41,7 +42,7 @@ export default async function NewSessionPage() {
       </div>
 
       <div className="mt-10">
-        <SessionForm />
+        <SessionForm uploads={uploadsEnabled()} userId={user.id} />
       </div>
     </div>
   );

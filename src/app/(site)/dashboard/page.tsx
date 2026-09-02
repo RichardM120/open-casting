@@ -3,11 +3,11 @@ import Link from "next/link";
 import { HelpNote } from "@/components/help-note";
 
 import { ActivityList } from "@/components/activity-list";
-import { DeadlineBadge } from "@/components/deadline-badge";
 import { Badge, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
 import { listActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
 import { formatDateTime, isOpen } from "@/lib/format";
+import { callState, cardTone } from "@/lib/rag";
 import { listVisibleSessions, sessionStats } from "@/lib/sessions";
 import { countsBySession, type SubmissionCounts } from "@/lib/submissions";
 
@@ -50,6 +50,12 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   );
 
   const drafts = sessions.filter((session) => session.publishedAt === null).length;
+
+  // Live first, then what is being reviewed, then what is counting down to
+  // deletion, then what is still being set up.
+  const ordered = sessions
+    .map((session) => ({ session, state: callState(session) }))
+    .sort((a, b) => a.state.rank - b.state.rank);
   const atLimit = user.maxSessions !== null && sessions.length >= user.maxSessions;
 
   return (
@@ -134,7 +140,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
             {sessions.length === 1 ? "casting call is" : "casting calls are"} accepting submissions
             now.
             {drafts > 0
-              ? ` ${drafts} ${drafts === 1 ? "is a draft" : "are drafts"} and not yet published, so nobody can open ${drafts === 1 ? "its" : "their"} link.`
+              ? ` ${drafts} ${drafts === 1 ? "is" : "are"} still in progress and not yet published, so nobody can open ${drafts === 1 ? "its" : "their"} link.`
               : ""}
             {user.maxSessions !== null
               ? ` Your account covers ${user.maxSessions} ${user.maxSessions === 1 ? "casting call" : "casting calls"}.`
@@ -142,18 +148,19 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           </p>
 
           <ul className="mt-6 flex flex-col gap-3">
-            {sessions.map((session) => {
+            {ordered.map(({ session, state }) => {
               const count = stats.get(session.id);
               return (
                 <li
                   key={session.id}
-                  className="rounded-2xl border border-line bg-surface p-5 transition-colors hover:border-line-strong"
+                  data-state={state.key}
+                  className={`rounded-2xl border border-line p-5 transition-colors hover:border-line-strong ${cardTone(state)}`}
                 >
                   <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                     <div className="min-w-0 flex-1">
                       <Link
                         href={`/dashboard/sessions/${session.id}`}
-                        className="block truncate font-medium transition-colors hover:text-accent"
+                        className="block truncate font-medium transition-colors hover:text-brand"
                       >
                         {session.name}
                       </Link>
@@ -162,21 +169,19 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                         {session.productionCompany ? ` · ${session.productionCompany}` : ""} ·{" "}
                         {formatDateTime(session.opensAt)} to {formatDateTime(session.closesAt)}
                       </p>
+                      <p className="mt-1 text-xs text-muted">{state.line}</p>
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      {session.publishedAt === null ? (
-                        <>
-                          <Badge tone="accent">Draft</Badge>
-                          <Link
-                            href={`/dashboard/sessions/${session.id}`}
-                            className="text-sm text-accent underline-offset-4 hover:underline"
-                          >
-                            Continue setting up
-                          </Link>
-                        </>
+                      <Badge tone={state.tone}>{state.label}</Badge>
+                      {state.key === "draft" ? (
+                        <Link
+                          href={`/dashboard/sessions/${session.id}`}
+                          className="text-sm text-brand underline-offset-4 hover:underline"
+                        >
+                          Continue setting up
+                        </Link>
                       ) : null}
-                      <DeadlineBadge session={session} />
                       <ButtonLink
                         href={`/dashboard/sessions/${session.id}`}
                         variant="secondary"
@@ -248,7 +253,7 @@ function Figures({
         No roles yet.{" "}
         <Link
           href={`/dashboard/roles/new?session=${sessionId}`}
-          className="text-accent underline-offset-4 hover:underline"
+          className="text-brand underline-offset-4 hover:underline"
         >
           Post the first role
         </Link>
@@ -273,7 +278,7 @@ function Figures({
           <dd
             data-figure={figure.key}
             className={`mt-0.5 text-lg font-semibold tabular-nums ${
-              figure.accent && figure.value > 0 ? "text-accent" : "text-text"
+              figure.accent && figure.value > 0 ? "text-brand" : "text-text"
             }`}
           >
             {figure.value}
@@ -294,7 +299,7 @@ function Stat({
   tone?: "accent" | "positive";
 }) {
   const colour =
-    value === 0 ? "text-text" : tone === "accent" ? "text-accent" : tone === "positive" ? "text-positive" : "text-text";
+    value === 0 ? "text-text" : tone === "accent" ? "text-brand" : tone === "positive" ? "text-positive" : "text-text";
 
   return (
     <div className="rounded-2xl border border-line bg-surface p-5">

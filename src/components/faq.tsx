@@ -33,7 +33,7 @@ export function FaqItem({ q, children }: { q: string; children: ReactNode }) {
           +
         </span>
       </summary>
-      <div className="flex flex-col gap-3 px-5 pb-5 text-sm leading-relaxed text-muted [&_a]:text-accent [&_a]:underline-offset-4 hover:[&_a]:underline">
+      <div className="flex flex-col gap-3 px-5 pb-5 text-sm leading-relaxed text-muted [&_a]:text-brand [&_a]:underline-offset-4 hover:[&_a]:underline">
         {children}
       </div>
     </details>

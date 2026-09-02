@@ -618,6 +618,9 @@ const SCHEMA = `
   -- text is carried over from the table that used to hold it, which then goes.
   ALTER TABLE sessions_casting
     ADD COLUMN IF NOT EXISTS production_company text NOT NULL DEFAULT '';
+  -- An optional image across the top of the applicant's page. A public
+  -- blob: it is on a page anyone with the link can open.
+  ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS hero_url text;
 
   DO $$
   BEGIN

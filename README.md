@@ -400,6 +400,28 @@ It runs two ways, deliberately:
 
 The date is shown on every casting call's page, and both FAQs state it.
 
+## The look, and the applicant's own page
+
+Charcoal, terracotta, cream and gold, from the brand board: cream ground,
+white cards, charcoal text, a terracotta header with white on it, and gold for
+the one primary action on a screen. Every colour used for text reaches 4.5:1
+on what it sits on; gold is a fill, never a colour for words, which is why
+the accent text of the old dark theme became terracotta. Focus rings are
+terracotta too, controls are at least 44px tall, and the submission form's
+send button stays in reach on a phone.
+
+The applicant's pages under `/c/` stand alone: no site navigation, no footer
+of links, a parchment ground, and an optional header image across the top
+that the casting director uploads on the casting call form (a public blob,
+offered only when a store is connected). The same URL is the director's
+preview and the applicants' page.
+
+The casting calls list is a traffic light. Live and about-to-open calls are
+green and come first; a call closed to submissions and being reviewed is
+amber; a call whose production has finished is red, with the deletion date on
+it; a call still being set up is "In progress", with no ground of its own.
+The setup wizard is numbered 1 to 4, each step with what it is for.
+
 ## The casting call is where submissions are read
 
 The dashboard list shows each casting call and its numbers only: roles,

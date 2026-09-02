@@ -50,7 +50,7 @@ export function NewAccountForm({ clients }: { clients: Client[] }) {
             </div>
             <div className="flex flex-wrap gap-x-3">
               <dt className="text-faint">password</dt>
-              <dd className="break-all text-accent select-all">{created.password}</dd>
+              <dd className="break-all text-brand select-all">{created.password}</dd>
             </div>
           </dl>
           <p className="mt-3 text-xs text-faint">
@@ -126,7 +126,7 @@ export function NewAccountForm({ clients }: { clients: Client[] }) {
         <p className="rounded-xl border border-line bg-raised px-4 py-3 text-xs leading-relaxed text-muted">
           The plan, the ceilings and the access date come from the client, so every account
           under it gets the same. Change them on{" "}
-          <Link href="/admin/clients" className="text-accent underline-offset-4 hover:underline">
+          <Link href="/admin/clients" className="text-brand underline-offset-4 hover:underline">
             the client
           </Link>
           .

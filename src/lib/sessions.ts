@@ -13,6 +13,7 @@ type Row = {
   owner_id: string | null;
   company: string;
   production_company: string;
+  hero_url: string | null;
   opens_at: Date;
   closes_at: Date;
   closed_at: Date | null;
@@ -29,7 +30,7 @@ type Row = {
  * such.
  */
 export const SESSION_COLUMNS = `
-  id, slug, name, production_type, synopsis, owner_id, company, production_company,
+  id, slug, name, production_type, synopsis, owner_id, company, production_company, hero_url,
   opens_at, closes_at,
   to_char(production_ends_at, 'YYYY-MM-DD') AS production_ends_at,
   closed_at, published_at, purged_at, public_token, created_at
@@ -45,6 +46,7 @@ export function toSession(row: Row): CastingSession {
     ownerId: row.owner_id,
     company: row.company,
     productionCompany: row.production_company,
+    heroUrl: row.hero_url,
     opensAt: row.opens_at.toISOString(),
     closesAt: row.closes_at.toISOString(),
     closedAt: row.closed_at?.toISOString() ?? null,
@@ -185,6 +187,8 @@ export type NewSession = {
   synopsis: string;
   /** Who is making it. Free text, and internal. */
   productionCompany: string;
+  /** The header image on the applicant's page, or null for none. */
+  heroUrl: string | null;
   /** ISO timestamps: the moments submissions open and close. */
   opensAt: string;
   closesAt: string;
@@ -209,8 +213,8 @@ export async function createSession(
   const rows = await query<Row>(
     `INSERT INTO sessions_casting
        (id, slug, name, production_type, synopsis, owner_id, company, opens_at,
-        closes_at, production_ends_at, public_token, production_company, client_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+        closes_at, production_ends_at, public_token, production_company, client_id, hero_url)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
      RETURNING ${SESSION_COLUMNS}`,
     [
       `ses_${crypto.randomUUID().slice(0, 12)}`,
@@ -226,6 +230,7 @@ export async function createSession(
       shareToken(),
       input.productionCompany,
       clientId,
+      input.heroUrl,
     ],
   );
   return toSession(rows[0]);
@@ -246,13 +251,15 @@ export async function updateSession(
        opens_at = $${params.length + 6},
        closes_at = $${params.length + 7},
        production_ends_at = $${params.length + 8},
-       production_company = $${params.length + 9}
+       production_company = $${params.length + 9},
+       hero_url = $${params.length + 10}
      WHERE id = $${params.length + 1}${where ? ` AND ${where}` : ""}
      RETURNING ${SESSION_COLUMNS}`,
     [
       ...params, id,
       input.name, slugify(input.name), input.productionType, input.synopsis,
       input.opensAt, input.closesAt, input.productionEndsAt, input.productionCompany,
+      input.heroUrl,
     ],
   );
   if (!rows[0]) return null;

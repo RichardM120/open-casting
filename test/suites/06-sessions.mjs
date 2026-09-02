@@ -240,6 +240,17 @@ section("13 a draft can be left and picked up again");
   await dir.p.waitForURL(new RegExp(`/dashboard/sessions/${draft}`), { timeout: 20000 });
   check("back on the draft, still unpublished", (await dir.p.locator("main").getByText("Not published yet").count()) > 0);
   check("with the wizard where it was left", (await dir.p.locator('[aria-current="step"]').innerText()).includes("Post the roles"));
+  check("and the step numbered", (await dir.p.locator('[aria-current="step"]').innerText()).includes("2"));
+  check("marked in progress", (await dir.p.locator("main").getByText("In progress").count()) > 0);
+
+  // The list: live first, in green; a call still being set up last, with no ground of its own.
+  await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
+  const liveCard = dir.p.locator(`li[data-state]:has(a[href="/dashboard/sessions/${live}"])`).first();
+  const draftCard = dir.p.locator(`li[data-state]:has(a[href="/dashboard/sessions/${draft}"])`).first();
+  check("the live call is marked live", (await liveCard.getAttribute("data-state")) === "live" && (await liveCard.getByText("Live", { exact: true }).count()) > 0);
+  check("the new call is in progress", (await draftCard.getAttribute("data-state")) === "draft" && (await draftCard.getByText("In progress", { exact: true }).count()) > 0);
+  check("live sits above in progress", (await liveCard.boundingBox()).y < (await draftCard.boundingBox()).y);
+  check("no header image field without a store", (await dir.p.goto(`${BASE}/dashboard/sessions/new`, { waitUntil: "networkidle" })) && (await dir.p.locator("#hero").count()) === 0);
 }
 
 for (const s of [dir, other, prod, admin]) await s.c.close();

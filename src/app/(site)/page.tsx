@@ -51,7 +51,7 @@ export default async function HomePage() {
           here to search, by design: a casting call is circulated by the people casting it.
         </p>
         <p className="mt-4 text-sm">
-          <Link href="/faq/applicants" className="text-accent underline-offset-4 hover:underline">
+          <Link href="/faq/applicants" className="text-brand underline-offset-4 hover:underline">
             What the fields on a casting call mean
           </Link>
         </p>
