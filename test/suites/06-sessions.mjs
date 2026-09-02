@@ -38,7 +38,7 @@ await dir.p.screenshot({ path: `${SHOTS}/session-required.png`, fullPage: true }
 section("2 opening a casting call, then posting two roles into it");
 const live = await openSession(dir.p, { name: `Live ${t}`, company: CO, opensAt: at(-2), closesAt: at(20, "23:59") });
 check("lands on the casting call page", dir.p.url().includes(live), dir.p.url());
-check("confirms it opened", (await dir.p.getByText(/Casting call opened/).count()) > 0);
+check("confirms it is saved as a draft", (await dir.p.getByText(/saved as a draft/).count()) > 0);
 check("says it is accepting submissions", (await dir.p.getByText(/Accepting submissions until/).count()) > 0);
 
 const roleA = await postRole(dir.p, { title: `LEAD-${t}`, company: CO, sessionId: live });
@@ -191,7 +191,6 @@ check(
     (await admin.p.getByText(/removed a casting call/).count()) > 0,
 );
 
-for (const s of [dir, other, prod, admin]) await s.c.close();
 section("12 the date picker asks before it commits");
 {
   await dir.p.goto(`${BASE}/dashboard/sessions/new`, { waitUntil: "networkidle" });
@@ -243,5 +242,6 @@ section("13 a draft can be left and picked up again");
   check("with the wizard where it was left", (await dir.p.locator('[aria-current="step"]').innerText()).includes("Post the roles"));
 }
 
+for (const s of [dir, other, prod, admin]) await s.c.close();
 await browser.close();
 finish();
