@@ -197,7 +197,7 @@ export default async function SessionPage({
             <tbody>
               {listed.map((submission) => (
                 <tr key={submission.id} className="border-b border-line align-top last:border-0">
-                  <td className="px-4 py-3">
+                  <td className="min-w-44 px-4 py-3">
                     <SubmissionStatusControl submissionId={submission.id} status={submission.status} />
                   </td>
                   <td className="px-4 py-3">

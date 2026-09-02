@@ -15,7 +15,7 @@ export function SubmissionStatusControl({
   status: SubmissionStatus;
 }) {
   return (
-    <form action={updateSubmissionStatus}>
+    <form action={updateSubmissionStatus} className="min-w-40">
       <input type="hidden" name="submissionId" value={submissionId} />
       <StatusSelect key={status} status={status} />
     </form>
@@ -31,7 +31,7 @@ function StatusSelect({ status }: { status: SubmissionStatus }) {
       defaultValue={status}
       disabled={pending}
       aria-label="Submission status"
-      className="w-40 py-1.5 text-xs"
+      className="py-1.5 text-xs"
       onChange={(event) => event.currentTarget.form?.requestSubmit()}
     >
       {SUBMISSION_STATUSES.map((option) => (
