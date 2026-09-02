@@ -100,7 +100,7 @@ export default function CastingDirectorFaqPage() {
             else: what they see is the production, its roles, and who is casting it.
           </p>
           <p>
-            <Link href="/dashboard/clients/new">Add a client</Link>, then open its first
+            <Link href="/dashboard/production-companies/new">Add a production company</Link>, then open its first
             production.
           </p>
         </FaqItem>

@@ -7,7 +7,7 @@ import { ShareLink } from "@/components/share-link";
 import { Badge, Button, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
 import { publishCastingSession, removeSession, toggleSessionClosed } from "@/lib/actions";
 import { currentUser, requireUser } from "@/lib/auth";
-import { getVisibleClient } from "@/lib/clients";
+import { getVisibleProductionCompany } from "@/lib/production-companies";
 import { formatDate, formatDateTime, isOpen, notYetOpen } from "@/lib/format";
 import { listSessionRoles } from "@/lib/roles";
 import { requestOrigin } from "@/lib/origin";
@@ -35,12 +35,12 @@ export default async function SessionPage({
   const session = await getVisibleSession(id, user);
   if (!session) notFound();
 
-  const [roles, counts, query, origin, client] = await Promise.all([
+  const [roles, counts, query, origin, productionCompany] = await Promise.all([
     listSessionRoles(id),
     countsByRole(user),
     searchParams,
     requestOrigin(),
-    session.clientId ? getVisibleClient(session.clientId, user) : null,
+    session.productionCompanyId ? getVisibleProductionCompany(session.productionCompanyId, user) : null,
   ]);
   const shareUrl = `${origin}/c/${shareSlug(session)}`;
 
@@ -92,7 +92,7 @@ export default async function SessionPage({
           <Eyebrow>{session.productionType}</Eyebrow>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight">{session.name}</h1>
           <p className="mt-2 text-muted">
-            {client ? `${client.name} · ` : ""}open {formatDateTime(session.opensAt)} to{" "}
+            {productionCompany ? `${productionCompany.name} · ` : ""}open {formatDateTime(session.opensAt)} to{" "}
             {formatDateTime(session.closesAt)}
           </p>
         </div>

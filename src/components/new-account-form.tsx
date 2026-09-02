@@ -1,23 +1,20 @@
 "use client";
 
+import Link from "next/link";
 import { useActionState } from "react";
 
 import { createAccount } from "@/lib/actions";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
-import { ROLE_DESCRIPTIONS, SIGNUP_ROLES, TIERS, TIER_KEYS } from "@/lib/types";
+import { ROLE_DESCRIPTIONS, SIGNUP_ROLES, type Client } from "@/lib/types";
 
 import { useErrorFocus } from "./use-error-focus";
 import { Button, ErrorSummary, Field, Input, Select } from "./ui";
 
 const LABELS: Record<string, string> = {
   name: "Their name",
-  company: "Company or agency",
+  clientId: "Client",
   email: "Email",
   role: "What they can see",
-  tier: "Tier",
-  maxSessions: "Productions",
-  maxRolesPerSession: "Roles per production",
-  accessUntil: "Access until",
 };
 
 const ROLE_HEADINGS: Record<(typeof SIGNUP_ROLES)[number], string> = {
@@ -30,7 +27,7 @@ const ROLE_HEADINGS: Record<(typeof SIGNUP_ROLES)[number], string> = {
  * chosen, and shown once, so it is worth something and there is no habit of
  * everyone sharing the same one.
  */
-export function NewAccountForm() {
+export function NewAccountForm({ clients }: { clients: Client[] }) {
   const [state, formAction, pending] = useActionState(createAccount, IDLE_FORM_STATE);
   const { errors, values } = state;
   const formRef = useErrorFocus(state.status, errors);
@@ -92,12 +89,23 @@ export function NewAccountForm() {
             />
           </Field>
           <Field
-            label="Company or agency"
-            htmlFor="company"
-            hint="Producers see every role under a matching company name, so spell it consistently."
-            error={errors.company}
+            label="Client"
+            htmlFor="clientId"
+            hint="The company paying for this account. It sets what they are allowed to run."
+            error={errors.clientId}
           >
-            <Input id="company" name="company" defaultValue={values.company ?? ""} required />
+            <Select
+              id="clientId"
+              name="clientId"
+              defaultValue={values.clientId ?? clients[0]?.id ?? ""}
+              required
+            >
+              {clients.map((client) => (
+                <option key={client.id} value={client.id}>
+                  {client.name}
+                </option>
+              ))}
+            </Select>
           </Field>
           <Field
             label="What they can see"
@@ -115,65 +123,14 @@ export function NewAccountForm() {
           </Field>
         </div>
 
-        <fieldset className="rounded-xl border border-line bg-raised p-5">
-          <legend className="px-2 text-sm font-medium">What the arrangement covers</legend>
-          <p className="text-xs leading-relaxed text-muted">
-            The tier is the fee schedule from the Master Services Agreement; the rest is what
-            you agreed on top of it. Leave any of them blank for no limit. They are enforced
-            when the account tries to post, not merely displayed, and you can change them later.
-          </p>
-          <div className="mt-4">
-            <Field label="Tier" htmlFor="tier" error={errors.tier}>
-              <Select id="tier" name="tier" defaultValue={values.tier ?? "indie"}>
-                {TIER_KEYS.map((key) => (
-                  <option key={key} value={key}>
-                    {TIERS[key].label}
-                    {TIERS[key].submissions
-                      ? `, up to ${TIERS[key].submissions!.toLocaleString("en-GB")} submissions`
-                      : ", agreed separately"}
-                  </option>
-                ))}
-              </Select>
-            </Field>
-          </div>
-          <div className="mt-4 grid gap-4 sm:grid-cols-3">
-            <Field label="Productions" htmlFor="maxSessions" error={errors.maxSessions}>
-              <Input
-                id="maxSessions"
-                name="maxSessions"
-                inputMode="numeric"
-                placeholder="No limit"
-                defaultValue={values.maxSessions ?? ""}
-              />
-            </Field>
-            <Field
-              label="Roles per production"
-              htmlFor="maxRolesPerSession"
-              error={errors.maxRolesPerSession}
-            >
-              <Input
-                id="maxRolesPerSession"
-                name="maxRolesPerSession"
-                inputMode="numeric"
-                placeholder="No limit"
-                defaultValue={values.maxRolesPerSession ?? ""}
-              />
-            </Field>
-            <Field
-              label="Access until"
-              htmlFor="accessUntil"
-              hint="They cannot sign in after this."
-              error={errors.accessUntil}
-            >
-              <Input
-                id="accessUntil"
-                name="accessUntil"
-                type="date"
-                defaultValue={values.accessUntil ?? ""}
-              />
-            </Field>
-          </div>
-        </fieldset>
+        <p className="rounded-xl border border-line bg-raised px-4 py-3 text-xs leading-relaxed text-muted">
+          The plan, the ceilings and the access date come from the client, so every account
+          under it gets the same. Change them on{" "}
+          <Link href="/dashboard/clients" className="text-accent underline-offset-4 hover:underline">
+            the client
+          </Link>
+          .
+        </p>
 
         <div className="mt-1">
           <Button type="submit" disabled={pending}>

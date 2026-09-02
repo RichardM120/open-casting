@@ -20,13 +20,40 @@ export const SUBMISSION_STATUSES = [
 export type SubmissionStatus = (typeof SUBMISSION_STATUSES)[number];
 
 /**
- * A client the agency casts for: the company whose productions these are.
+ * A client: a company paying for Open Casting.
+ *
+ * The top of the hierarchy. Accounts belong to a client, and what the client
+ * bought lives here rather than on each account, so a customer is managed in
+ * one place. Suspending a client locks out every account under it.
+ */
+export type Client = {
+  id: string;
+  name: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  billingEmail: string;
+  billingReference: string;
+  address: string;
+  notes: string;
+  tier: Tier | null;
+  /** Null means no ceiling, as it does on an account. */
+  maxSessions: number | null;
+  maxRolesPerSession: number | null;
+  /** yyyy-mm-dd, or null for no end date. */
+  accessUntil: string | null;
+  suspendedAt: string | null;
+  createdAt: string;
+};
+
+/**
+ * A production company a client casts for: whose productions these are.
  *
  * Clients sit above productions, so a production belongs to exactly one. This
  * is an internal record. Applicants never see it, because who commissioned a
  * production is the agency's business and often confidential until later.
  */
-export type Client = {
+export type ProductionCompany = {
   id: string;
   name: string;
   /** Free notes: the contact there, the billing reference, whatever is useful. */
@@ -52,11 +79,11 @@ export type CastingSession = {
   ownerId: string | null;
   /**
    * The agency that owns this, which is what producer visibility matches on.
-   * Not the client: see clientId.
+   * Not the production company: see productionCompanyId.
    */
   company: string;
-  /** The client whose production this is. Null only for rows predating clients. */
-  clientId: string | null;
+  /** The production company whose production this is. Null only for older rows. */
+  productionCompanyId: string | null;
   /**
    * ISO timestamps. Submissions are accepted from opensAt up to closesAt. The
    * casting director enters both in UK time; they are stored as instants.
@@ -214,11 +241,11 @@ export const ROLE_DESCRIPTIONS: Record<SignupRole, string> = {
   producer: "Sees every production under the company, and everything posted into them.",
 };
 
-/** A demo client. The seed supplies the owner and agency. */
-export type SeedClient = Pick<Client, "id" | "name" | "notes">;
+/** A demo productionCompany. The seed supplies the owner and agency. */
+export type SeedProductionCompany = Pick<ProductionCompany, "id" | "name" | "notes">;
 
 export type Database = {
-  clients: SeedClient[];
+  productionCompanies: SeedProductionCompany[];
   sessions: SeedSession[];
   /** Roles with their production's details filled in, ready to insert. */
   roles: Omit<Role, "ownerId">[];

@@ -12,7 +12,7 @@ type Row = {
   synopsis: string;
   owner_id: string | null;
   company: string;
-  client_id: string | null;
+  production_company_id: string | null;
   opens_at: Date;
   closes_at: Date;
   closed_at: Date | null;
@@ -29,7 +29,7 @@ type Row = {
  * such.
  */
 export const SESSION_COLUMNS = `
-  id, slug, name, production_type, synopsis, owner_id, company, client_id,
+  id, slug, name, production_type, synopsis, owner_id, company, production_company_id,
   opens_at, closes_at,
   to_char(production_ends_at, 'YYYY-MM-DD') AS production_ends_at,
   closed_at, published_at, purged_at, public_token, created_at
@@ -44,7 +44,7 @@ export function toSession(row: Row): CastingSession {
     synopsis: row.synopsis,
     ownerId: row.owner_id,
     company: row.company,
-    clientId: row.client_id,
+    productionCompanyId: row.production_company_id,
     opensAt: row.opens_at.toISOString(),
     closesAt: row.closes_at.toISOString(),
     closedAt: row.closed_at?.toISOString() ?? null,
@@ -184,7 +184,7 @@ export type NewSession = {
   productionType: ProductionType;
   synopsis: string;
   /** The client this production is for. */
-  clientId: string;
+  productionCompanyId: string;
   /** ISO timestamps: the moments submissions open and close. */
   opensAt: string;
   closesAt: string;
@@ -195,20 +195,22 @@ export type NewSession = {
 /**
  * Opens a production.
  *
- * `company` is the owner's own agency and is passed in rather than typed: it is
- * what producer visibility matches on, so letting a form set it would let one
- * account post into another agency's view of the dashboard.
+ * `company` is the client's name, taken from the signed-in account rather than
+ * typed: it is what producer visibility matches on, so letting a form set it
+ * would let one account post into another client's view of the dashboard.
+ * `clientId` records the same thing by id, for the owner's usage figures.
  */
 export async function createSession(
   input: NewSession,
   ownerId: string,
   company: string,
+  clientId: string | null,
 ): Promise<CastingSession> {
   const rows = await query<Row>(
     `INSERT INTO sessions_casting
        (id, slug, name, production_type, synopsis, owner_id, company, opens_at,
-        closes_at, production_ends_at, public_token, client_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        closes_at, production_ends_at, public_token, production_company_id, client_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
      RETURNING ${SESSION_COLUMNS}`,
     [
       `ses_${crypto.randomUUID().slice(0, 12)}`,
@@ -222,7 +224,8 @@ export async function createSession(
       input.closesAt,
       input.productionEndsAt,
       shareToken(),
-      input.clientId,
+      input.productionCompanyId,
+      clientId,
     ],
   );
   return toSession(rows[0]);
@@ -243,13 +246,13 @@ export async function updateSession(
        opens_at = $${params.length + 6},
        closes_at = $${params.length + 7},
        production_ends_at = $${params.length + 8},
-       client_id = $${params.length + 9}
+       production_company_id = $${params.length + 9}
      WHERE id = $${params.length + 1}${where ? ` AND ${where}` : ""}
      RETURNING ${SESSION_COLUMNS}`,
     [
       ...params, id,
       input.name, slugify(input.name), input.productionType, input.synopsis,
-      input.opensAt, input.closesAt, input.productionEndsAt, input.clientId,
+      input.opensAt, input.closesAt, input.productionEndsAt, input.productionCompanyId,
     ],
   );
   if (!rows[0]) return null;

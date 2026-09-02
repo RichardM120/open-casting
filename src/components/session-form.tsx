@@ -5,14 +5,14 @@ import { useActionState } from "react";
 import { createCastingSession, editCastingSession } from "@/lib/actions";
 import { toLocalInput } from "@/lib/format";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
-import { PRODUCTION_TYPES, type CastingSession, type Client } from "@/lib/types";
+import { PRODUCTION_TYPES, type CastingSession, type ProductionCompany } from "@/lib/types";
 
 import { useErrorFocus } from "./use-error-focus";
 import { Button, ButtonLink, ErrorSummary, Field, Input, Select, Textarea } from "./ui";
 
 const LABELS: Record<string, string> = {
   name: "Production",
-  clientId: "Client",
+  productionCompanyId: "Production company",
   productionType: "Production type",
   synopsis: "Synopsis",
   opensAt: "Submissions open",
@@ -27,10 +27,10 @@ const LABELS: Record<string, string> = {
  */
 export function SessionForm({
   session,
-  clients,
+  productionCompanies,
 }: {
   session?: CastingSession;
-  clients: Client[];
+  productionCompanies: ProductionCompany[];
 }) {
   const [state, formAction, pending] = useActionState(
     session ? editCastingSession : createCastingSession,
@@ -45,7 +45,7 @@ export function SessionForm({
     state.status === "idle" && session
       ? {
           name: session.name,
-          clientId: session.clientId ?? "",
+          productionCompanyId: session.productionCompanyId ?? "",
           productionType: session.productionType,
           synopsis: session.synopsis,
           opensAt: toLocalInput(session.opensAt),
@@ -74,7 +74,7 @@ export function SessionForm({
       <fieldset className="rounded-2xl border border-line bg-surface p-6 md:p-7">
         <legend className="px-2 text-sm font-semibold tracking-tight">The production</legend>
         <p className="text-sm text-muted">
-          What applicants see above every role you post into it, and the client it is for.
+          What applicants see above every role you post into it, and the production company it is for.
         </p>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <Field label="Production" htmlFor="name" error={errors.name}>
@@ -101,20 +101,20 @@ export function SessionForm({
             </Select>
           </Field>
           <Field
-            label="Client"
-            htmlFor="clientId"
+            label="Production company"
+            htmlFor="productionCompanyId"
             hint="Who the production is for. Yours to see, never shown to applicants."
-            error={errors.clientId}
+            error={errors.productionCompanyId}
           >
             <Select
-              id="clientId"
-              name="clientId"
-              defaultValue={values.clientId ?? clients[0]?.id ?? ""}
+              id="productionCompanyId"
+              name="productionCompanyId"
+              defaultValue={values.productionCompanyId ?? productionCompanies[0]?.id ?? ""}
               required
             >
-              {clients.map((client) => (
-                <option key={client.id} value={client.id}>
-                  {client.name}
+              {productionCompanies.map((productionCompany) => (
+                <option key={productionCompany.id} value={productionCompany.id}>
+                  {productionCompany.name}
                 </option>
               ))}
             </Select>

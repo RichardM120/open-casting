@@ -16,7 +16,7 @@ every pull request. It fails the build rather than warning.
 | `npm run lint` | ESLint, including the React hooks rules. |
 | `npm run typecheck` | `next typegen` then `tsc --noEmit`. Typegen first, because the route types are generated and a fresh checkout has no `.next`. The same script runs locally and in CI, so the two cannot disagree. |
 | `npm run build` **with no `DATABASE_URL`** | Every data page is `force-dynamic`; a build that needs a live database is a deploy that breaks when the database is slow. |
-| `npm run test:e2e` | Browser checks against a production build and a real Postgres: thirteen suites, including the production's casting window, the one-submission-per-production rule, that a client never reaches an applicant, and the pre-launch wall. |
+| `npm run test:e2e` | Browser checks against a production build and a real Postgres: fourteen suites, including the production's casting window, the one-submission-per-production rule, that a production company never reaches an applicant, that suspending a client locks out every account under it, and the pre-launch wall. |
 
 The end-to-end suites live in `test/suites/` and run through `test/run.mjs`,
 which gives each suite a dropped-and-reseeded database and its own server.

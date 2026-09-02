@@ -128,22 +128,47 @@ export async function signInAsAdmin(page) {
 }
 
 /**
+ * Takes on a paying client, unless one of that name already exists. Everything
+ * else in a fixture hangs off this: accounts belong to a client, and what the
+ * client bought is what they are allowed to run.
+ */
+export async function addPayingClient(adminPage, name, limits = {}) {
+  await adminPage.goto(`${BASE}/dashboard/clients`, { waitUntil: "networkidle" });
+  if ((await adminPage.locator("#main").getByText(name, { exact: true }).count()) > 0) return;
+
+  await adminPage.goto(`${BASE}/dashboard/clients/new`, { waitUntil: "networkidle" });
+  await adminPage.fill("#name", name);
+  if (limits.maxSessions !== undefined) {
+    await adminPage.fill("#maxSessions", String(limits.maxSessions));
+  }
+  if (limits.maxRolesPerSession !== undefined) {
+    await adminPage.fill("#maxRolesPerSession", String(limits.maxRolesPerSession));
+  }
+  if (limits.accessUntil !== undefined) {
+    await adminPage.fill("#accessUntil", limits.accessUntil);
+  }
+  await adminPage.getByRole("button", { name: "Take on the client" }).click();
+  await adminPage.waitForURL(/\/dashboard\/clients\/cl_/, { timeout: 20000 });
+}
+
+/**
  * Creates an account the way the administrator does, and reads back the
  * generated password. There is no other way to get one, which is the point.
  */
 export async function createAccount(adminPage, user) {
+  // An account belongs to a client, and what the client bought is what its
+  // accounts may do, so the ceilings are set there rather than per account.
+  await addPayingClient(adminPage, user.company, {
+    maxSessions: user.maxSessions,
+    maxRolesPerSession: user.maxRolesPerSession,
+    accessUntil: user.accessUntil,
+  });
+
   await adminPage.goto(`${BASE}/dashboard/accounts`, { waitUntil: "networkidle" });
   await adminPage.fill("#name", user.name);
   await adminPage.fill("#email", user.email);
-  await adminPage.fill("#company", user.company);
+  await adminPage.selectOption("#clientId", { label: user.company });
   await adminPage.selectOption("#role", user.role ?? "director");
-  if (user.maxSessions !== undefined) {
-    await adminPage.fill("#maxSessions", String(user.maxSessions));
-  }
-  if (user.maxRolesPerSession !== undefined) {
-    await adminPage.fill("#maxRolesPerSession", String(user.maxRolesPerSession));
-  }
-  if (user.accessUntil !== undefined) await adminPage.fill("#accessUntil", user.accessUntil);
   await adminPage.getByRole("button", { name: "Create the account" }).click();
 
   const shown = adminPage.locator("dd.select-all");
@@ -197,27 +222,28 @@ export async function adminSession(browser, errors) {
  * `opensAt` and `closesAt` are `datetime-local` values; see `at()`.
  */
 /**
- * Adds a client unless the account already has one by that name. Productions
- * belong to a client, so every fixture needs one before it can open anything.
+ * Adds a production company unless the account already has one by that name.
+ * Productions belong to one, so every fixture needs one before it can open
+ * anything.
  */
-export async function addClient(page, name, notes = "") {
-  await page.goto(`${BASE}/dashboard/clients`, { waitUntil: "networkidle" });
-  // Scoped to the list: the header carries the account's own company name, and
-  // fixtures often name a client after it.
+export async function addProductionCompany(page, name, notes = "") {
+  await page.goto(`${BASE}/dashboard/production-companies`, { waitUntil: "networkidle" });
+  // Scoped to the list: the header carries the account's own client name, and
+  // fixtures often name a production company after it.
   if ((await page.locator("#main").getByText(name, { exact: true }).count()) > 0) return;
 
-  await page.goto(`${BASE}/dashboard/clients/new`, { waitUntil: "networkidle" });
+  await page.goto(`${BASE}/dashboard/production-companies/new`, { waitUntil: "networkidle" });
   await page.fill("#name", name);
   if (notes) await page.fill("#notes", notes);
-  await page.getByRole("button", { name: "Add the client" }).click();
-  await page.waitForURL(/\/dashboard\/clients\?/, { timeout: 20000 });
+  await page.getByRole("button", { name: "Add the production company" }).click();
+  await page.waitForURL(/\/dashboard\/production-companies\?/, { timeout: 20000 });
 }
 
 export async function openSession(page, fields) {
-  // `company` names the client the production is for. The agency comes from the
-  // signed-in account and is not a field on this form.
-  const clientName = fields.client ?? fields.company;
-  await addClient(page, clientName);
+  // `company` names the production company the work is for. The paying client
+  // comes from the signed-in account and is not a field on this form.
+  const companyName = fields.productionCompany ?? fields.client ?? fields.company;
+  await addProductionCompany(page, companyName);
 
   await page.goto(`${BASE}/dashboard/sessions/new`, { waitUntil: "networkidle" });
   await page.fill("#name", fields.name);
@@ -225,7 +251,7 @@ export async function openSession(page, fields) {
     "#synopsis",
     fields.synopsis ?? "A production used by the test suite, described at length.",
   );
-  await page.selectOption("#clientId", { label: clientName });
+  await page.selectOption("#productionCompanyId", { label: companyName });
   await page.fill("#opensAt", fields.opensAt ?? at(0));
   await page.fill("#closesAt", fields.closesAt ?? at(30, "23:59"));
   await page.fill("#productionEndsAt", fields.productionEndsAt ?? day(60));

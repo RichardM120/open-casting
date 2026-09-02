@@ -45,8 +45,8 @@ section("3 step 2 explains the director's own scope");
 check("director wording", (await dir.p.getByText(/productions you open, and nothing else/).count()) > 0);
 check("warns colleagues cannot see it", (await dir.p.getByText(/cannot see your productions/).count()) > 0);
 check(
-  "explains clients come first",
-  (await dir.p.getByText(/Start by adding the client you are casting for/).count()) > 0,
+  "explains production companies come first",
+  (await dir.p.getByText(/Start by adding the production company you are casting for/).count()) > 0,
 );
 check(
   "then the production",
@@ -68,10 +68,10 @@ section("3b accounts cannot be self-registered");
   await c.close();
 }
 
-section("4 finishing sends a director to add their first client");
-await dir.p.getByRole("button", { name: "Add your first client" }).click();
-await dir.p.waitForURL("**/dashboard/clients/new", { timeout: 20000 });
-check("lands on the client form", true);
+section("4 finishing sends a director to add their first production company");
+await dir.p.getByRole("button", { name: "Add your first production company" }).click();
+await dir.p.waitForURL("**/dashboard/production-companies/new", { timeout: 20000 });
+check("lands on the production company form", true);
 await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 check("the nudge banner is gone", (await dir.p.getByText(/setup is not finished/).count()) === 0);
 
@@ -107,7 +107,7 @@ section("6b the navigation matches the role, and the hierarchy");
   // Productions first, because a role cannot exist without one.
   const order = await admin.p.locator("header nav").first().locator("a").allTextContents();
   check(`admin nav in order: ${JSON.stringify(order)}`,
-    JSON.stringify(order) === JSON.stringify(["Productions", "Clients", "Activity", "Accounts", "FAQ"]));
+    JSON.stringify(order) === JSON.stringify(["Productions", "Production companies", "Activity", "Clients", "Accounts", "FAQ"]));
 
   await half.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
   const theirs = await half.p.locator("header nav").first().locator("a").allTextContents();

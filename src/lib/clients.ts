@@ -1,102 +1,154 @@
 import "server-only";
 
-import type { SessionUser } from "./auth";
-import { FOREIGN_KEY_VIOLATION, query } from "./db";
-import type { Client } from "./types";
+import { query } from "./db";
+import type { Client, Tier } from "./types";
 
 type Row = {
   id: string;
   name: string;
+  contact_name: string;
+  contact_email: string;
+  contact_phone: string;
+  billing_email: string;
+  billing_reference: string;
+  address: string;
   notes: string;
-  owner_id: string | null;
-  company: string;
+  tier: string | null;
+  max_sessions: number | null;
+  max_roles_per_session: number | null;
+  access_until: string | null;
+  suspended_at: Date | null;
   created_at: Date;
 };
 
-const CLIENT_COLUMNS = "id, name, notes, owner_id, company, created_at";
+/** access_until is rendered in SQL so the driver's timezone cannot shift the day. */
+const CLIENT_COLUMNS = `
+  id, name, contact_name, contact_email, contact_phone, billing_email,
+  billing_reference, address, notes, tier, max_sessions, max_roles_per_session,
+  to_char(access_until, 'YYYY-MM-DD') AS access_until,
+  suspended_at, created_at
+`;
 
 function toClient(row: Row): Client {
   return {
     id: row.id,
     name: row.name,
+    contactName: row.contact_name,
+    contactEmail: row.contact_email,
+    contactPhone: row.contact_phone,
+    billingEmail: row.billing_email,
+    billingReference: row.billing_reference,
+    address: row.address,
     notes: row.notes,
-    ownerId: row.owner_id,
-    company: row.company,
+    tier: (row.tier as Tier | null) ?? null,
+    maxSessions: row.max_sessions,
+    maxRolesPerSession: row.max_roles_per_session,
+    accessUntil: row.access_until,
+    suspendedAt: row.suspended_at?.toISOString() ?? null,
     createdAt: row.created_at.toISOString(),
   };
 }
 
 /**
- * The same rule as productions, so a client list never reveals more than the
- * productions under it already would: a director sees the clients they created,
- * a producer every client under their agency, an admin all of them.
+ * Every client. There is no visibility rule here because there is no audience
+ * but the owner: the pages that call this are admin-only, and the proxy refuses
+ * a director before the page runs.
  */
-export function clientVisibility(
-  viewer: SessionUser,
-  prefix = "",
-): { where: string; params: unknown[] } {
-  switch (viewer.role) {
-    case "admin":
-      return { where: "", params: [] };
-    case "producer":
-      return { where: `lower(${prefix}company) = lower($1)`, params: [viewer.company] };
-    default:
-      return { where: `${prefix}owner_id = $1`, params: [viewer.id] };
-  }
-}
-
-export async function listVisibleClients(viewer: SessionUser): Promise<Client[]> {
-  const { where, params } = clientVisibility(viewer);
+export async function listClients(): Promise<Client[]> {
   const rows = await query<Row>(
-    `SELECT ${CLIENT_COLUMNS} FROM clients
-      ${where ? `WHERE ${where}` : ""}
-      ORDER BY lower(name) ASC`,
-    params,
+    `SELECT ${CLIENT_COLUMNS} FROM clients ORDER BY lower(name) ASC`,
   );
   return rows.map(toClient);
 }
 
-export async function getVisibleClient(
-  id: string,
-  viewer: SessionUser,
-): Promise<Client | null> {
-  const { where, params } = clientVisibility(viewer);
+export async function getClient(id: string): Promise<Client | null> {
   const rows = await query<Row>(
-    `SELECT ${CLIENT_COLUMNS} FROM clients
-      WHERE id = $${params.length + 1}${where ? ` AND ${where}` : ""}`,
-    [...params, id],
+    `SELECT ${CLIENT_COLUMNS} FROM clients WHERE id = $1`,
+    [id],
   );
   return rows[0] ? toClient(rows[0]) : null;
 }
 
-/** How many productions sit under each visible client, for the list. */
-export async function clientProductionCounts(
-  viewer: SessionUser,
-): Promise<Map<string, number>> {
-  const { where, params } = clientVisibility(viewer, "c.");
-  const rows = await query<{ id: string; productions: string }>(
-    `SELECT c.id, count(s.id)::text AS productions
-       FROM clients c
-       LEFT JOIN sessions_casting s ON s.client_id = c.id
-      ${where ? `WHERE ${where}` : ""}
-      GROUP BY c.id`,
-    params,
+/** What a client is actually using, against what they bought. */
+export type ClientUsage = {
+  accounts: number;
+  productions: number;
+  roles: number;
+  submissions: number;
+};
+
+export async function clientUsage(): Promise<Map<string, ClientUsage>> {
+  const rows = await query<{
+    id: string;
+    accounts: string;
+    productions: string;
+    roles: string;
+    submissions: string;
+  }>(
+    `SELECT c.id,
+            (SELECT count(*) FROM users u WHERE u.client_id = c.id)::text AS accounts,
+            (SELECT count(*) FROM sessions_casting s WHERE s.client_id = c.id)::text
+              AS productions,
+            (SELECT count(*) FROM roles r
+               JOIN sessions_casting s ON s.id = r.session_id
+              WHERE s.client_id = c.id)::text AS roles,
+            (SELECT count(*) FROM submissions sub
+               JOIN sessions_casting s ON s.id = sub.session_id
+              WHERE s.client_id = c.id)::text AS submissions
+       FROM clients c`,
   );
-  return new Map(rows.map((row) => [row.id, Number(row.productions)]));
+  return new Map(
+    rows.map((row) => [
+      row.id,
+      {
+        accounts: Number(row.accounts),
+        productions: Number(row.productions),
+        roles: Number(row.roles),
+        submissions: Number(row.submissions),
+      },
+    ]),
+  );
 }
 
-export type NewClient = { name: string; notes: string };
+export type NewClient = {
+  name: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone: string;
+  billingEmail: string;
+  billingReference: string;
+  address: string;
+  notes: string;
+  tier: Tier | null;
+  maxSessions: number | null;
+  maxRolesPerSession: number | null;
+  accessUntil: string | null;
+};
 
-export async function createClient(
-  input: NewClient,
-  ownerId: string,
-  company: string,
-): Promise<Client> {
+const WRITABLE = `
+  name = $2, contact_name = $3, contact_email = $4, contact_phone = $5,
+  billing_email = $6, billing_reference = $7, address = $8, notes = $9,
+  tier = $10, max_sessions = $11, max_roles_per_session = $12, access_until = $13
+`;
+
+function writableValues(input: NewClient): unknown[] {
+  return [
+    input.name, input.contactName, input.contactEmail, input.contactPhone,
+    input.billingEmail, input.billingReference, input.address, input.notes,
+    input.tier, input.maxSessions, input.maxRolesPerSession,
+    input.accessUntil || null,
+  ];
+}
+
+export async function createClient(input: NewClient): Promise<Client> {
   const rows = await query<Row>(
-    `INSERT INTO clients (id, name, notes, owner_id, company)
-     VALUES ($1, $2, $3, $4, $5)
+    `INSERT INTO clients
+       (id, name, contact_name, contact_email, contact_phone, billing_email,
+        billing_reference, address, notes, tier, max_sessions,
+        max_roles_per_session, access_until)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
      RETURNING ${CLIENT_COLUMNS}`,
-    [`cli_${crypto.randomUUID().slice(0, 12)}`, input.name, input.notes, ownerId, company],
+    [`cl_${crypto.randomUUID().slice(0, 12)}`, ...writableValues(input)],
   );
   return toClient(rows[0]);
 }
@@ -104,41 +156,50 @@ export async function createClient(
 export async function updateClient(
   id: string,
   input: NewClient,
-  viewer: SessionUser,
 ): Promise<Client | null> {
-  const { where, params } = clientVisibility(viewer);
   const rows = await query<Row>(
-    `UPDATE clients SET name = $${params.length + 2}, notes = $${params.length + 3}
-      WHERE id = $${params.length + 1}${where ? ` AND ${where}` : ""}
-      RETURNING ${CLIENT_COLUMNS}`,
-    [...params, id, input.name, input.notes],
+    `UPDATE clients SET ${WRITABLE} WHERE id = $1 RETURNING ${CLIENT_COLUMNS}`,
+    [id, ...writableValues(input)],
   );
   return rows[0] ? toClient(rows[0]) : null;
 }
 
 /**
- * Removes a client that has nothing under it.
- *
- * A client holding productions is refused rather than cascaded: deleting one
- * would take real casting work and its submissions with it, and the database
- * says no to that anyway. "in-use" is the answer the form turns into a
- * sentence telling the director what to move first.
+ * Stops or restarts a whole client. Every account under it is refused on the
+ * next request, because the session lookup checks the client as well as the
+ * account, so this does not wait for anyone to sign out.
+ */
+export async function setClientSuspended(
+  id: string,
+  suspended: boolean,
+): Promise<boolean> {
+  const rows = await query<{ id: string }>(
+    `UPDATE clients SET suspended_at = ${suspended ? "now()" : "NULL"}
+      WHERE id = $1 RETURNING id`,
+    [id],
+  );
+  return rows.length > 0;
+}
+
+/**
+ * Removes a client that has nothing under it. One with accounts or productions
+ * is refused: deleting it would take real casting work and people's contact
+ * details with it. Suspending is the reversible way to stop a customer.
  */
 export async function deleteClient(
   id: string,
-  viewer: SessionUser,
 ): Promise<"deleted" | "not-found" | "in-use"> {
-  const { where, params } = clientVisibility(viewer);
-  try {
-    const rows = await query<{ id: string }>(
-      `DELETE FROM clients
-        WHERE id = $${params.length + 1}${where ? ` AND ${where}` : ""}
-        RETURNING id`,
-      [...params, id],
-    );
-    return rows.length > 0 ? "deleted" : "not-found";
-  } catch (error) {
-    if ((error as { code?: string }).code === FOREIGN_KEY_VIOLATION) return "in-use";
-    throw error;
-  }
+  const [{ count }] = await query<{ count: string }>(
+    `SELECT ((SELECT count(*) FROM users WHERE client_id = $1)
+           + (SELECT count(*) FROM sessions_casting WHERE client_id = $1))::text
+         AS count`,
+    [id],
+  );
+  if (Number(count) > 0) return "in-use";
+
+  const rows = await query<{ id: string }>(
+    "DELETE FROM clients WHERE id = $1 RETURNING id",
+    [id],
+  );
+  return rows.length > 0 ? "deleted" : "not-found";
 }

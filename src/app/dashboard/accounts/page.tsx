@@ -2,11 +2,11 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { AccountLimitsForm } from "@/components/account-limits-form";
 import { NewAccountForm } from "@/components/new-account-form";
 import { Badge, Button, Eyebrow } from "@/components/ui";
 import { toggleAccountSuspended } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
+import { listClients } from "@/lib/clients";
 import { ROLE_LABELS, TIERS, type Tier } from "@/lib/types";
 import { listAccounts } from "@/lib/users";
 
@@ -18,7 +18,7 @@ export default async function AccountsPage() {
   // A 404 rather than a message: a non-admin should not learn this page exists.
   if (user.role !== "admin") notFound();
 
-  const accounts = await listAccounts();
+  const [accounts, clients] = await Promise.all([listAccounts(), listClients()]);
   const suspended = accounts.filter((account) => account.suspended_at).length;
 
   return (
@@ -45,7 +45,20 @@ export default async function AccountsPage() {
           it is shown once.
         </p>
         <div className="mt-6">
-          <NewAccountForm />
+          {clients.length === 0 ? (
+            <p className="rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">
+              An account belongs to a client, so there is nothing to fill in yet.{" "}
+              <Link
+                href="/dashboard/clients/new"
+                className="text-accent underline-offset-4 hover:underline"
+              >
+                Take on the first client
+              </Link>
+              , then come back.
+            </p>
+          ) : (
+            <NewAccountForm clients={clients} />
+          )}
         </div>
       </section>
 
@@ -76,8 +89,7 @@ export default async function AccountsPage() {
               </div>
 
               <p className="text-sm text-muted">
-                {account.sessions}
-                {account.max_sessions === null ? "" : `/${account.max_sessions}`}{" "}
+                {account.sessions}{" "}
                 {account.sessions === 1 ? "production" : "productions"} ·{" "}
                 {account.roles} {account.roles === 1 ? "role" : "roles"} ·{" "}
                 {account.submissions} {account.submissions === 1 ? "submission" : "submissions"}
@@ -101,13 +113,17 @@ export default async function AccountsPage() {
               )}
               </div>
 
-              {account.role === "admin" ? null : (
-                <AccountLimitsForm
-                  accountId={account.id}
-                  maxSessions={account.max_sessions}
-                  maxRolesPerSession={account.max_roles_per_session}
-                  accessUntil={account.access_until}
-                />
+              {account.role === "admin" || !account.client_id ? null : (
+                <p className="mt-3 border-t border-line pt-3 text-sm text-muted">
+                  What they may run comes from their client.{" "}
+                  <Link
+                    href={`/dashboard/clients/${account.client_id}`}
+                    className="text-accent underline-offset-4 hover:underline"
+                  >
+                    Change it on {account.company}
+                  </Link>
+                  .
+                </p>
               )}
             </li>
           );

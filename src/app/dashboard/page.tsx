@@ -6,7 +6,7 @@ import { DeadlineBadge } from "@/components/deadline-badge";
 import { Badge, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
 import { listActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
-import { listVisibleClients } from "@/lib/clients";
+import { listVisibleProductionCompanies } from "@/lib/production-companies";
 import { formatDateTime, isOpen, roleWindow } from "@/lib/format";
 import { listVisibleRoles, type ListedRole } from "@/lib/roles";
 import { listVisibleSessions, sessionStats } from "@/lib/sessions";
@@ -29,13 +29,13 @@ export const metadata: Metadata = {
  */
 export default async function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
   const user = await requireUser("/dashboard");
-  const [sessions, stats, roles, counts, activity, clients, params] = await Promise.all([
+  const [sessions, stats, roles, counts, activity, productionCompanies, params] = await Promise.all([
     listVisibleSessions(user),
     sessionStats(user),
     listVisibleRoles(user),
     countsByRole(user),
     listActivity(user, { limit: 8 }),
-    listVisibleClients(user),
+    listVisibleProductionCompanies(user),
     searchParams,
   ]);
 
@@ -44,20 +44,20 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     rolesBySession.set(role.sessionId, [...(rolesBySession.get(role.sessionId) ?? []), role]);
   }
 
-  // Productions are shown under the client they are for, in the client order
-  // the list already uses. Anything without a client (only rows predating them)
+  // Productions are shown under the production company they are for, in the order
+  // the list already uses. Anything without one (only rows predating them)
   // falls into a group at the end rather than disappearing.
   const groups = [
-    ...clients.map((client) => ({
-      id: client.id,
-      name: client.name,
-      sessions: sessions.filter((session) => session.clientId === client.id),
+    ...productionCompanies.map((productionCompany) => ({
+      id: productionCompany.id,
+      name: productionCompany.name,
+      sessions: sessions.filter((session) => session.productionCompanyId === productionCompany.id),
     })),
     {
       id: "none",
-      name: "No client",
+      name: "No productionCompany",
       sessions: sessions.filter(
-        (session) => !clients.some((client) => client.id === session.clientId),
+        (session) => !productionCompanies.some((productionCompany) => productionCompany.id === session.productionCompanyId),
       ),
     },
   ].filter((group) => group.sessions.length > 0);

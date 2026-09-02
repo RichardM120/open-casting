@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 
 import { ClientForm } from "@/components/client-form";
 import { Eyebrow } from "@/components/ui";
@@ -7,11 +8,12 @@ import { requireUser } from "@/lib/auth";
 
 export const metadata: Metadata = {
   title: "New client",
-  description: "Add a company you cast for, then open its productions.",
+  description: "Take on a company paying for Open Casting.",
 };
 
 export default async function NewClientPage() {
-  await requireUser("/dashboard/clients/new");
+  const user = await requireUser("/dashboard/clients/new");
+  if (user.role !== "admin") notFound();
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-12">
@@ -24,10 +26,12 @@ export default async function NewClientPage() {
 
       <div className="mt-6">
         <Eyebrow>New client</Eyebrow>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Add a client</h1>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
+          Take on a client
+        </h1>
         <p className="mt-3 max-w-2xl text-muted">
-          The company whose work this is. Once it exists you can open productions under it, and
-          the dashboard will keep them together.
+          The company, who to talk to, where the invoice goes, and what they are on. Their
+          accounts come next, and inherit all of it.
         </p>
       </div>
 

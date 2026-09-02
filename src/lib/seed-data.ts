@@ -1,4 +1,4 @@
-import type { Database, SeedClient, SeedRole, SeedSession, Submission } from "./types";
+import type { Database, SeedProductionCompany, SeedRole, SeedSession, Submission } from "./types";
 
 /**
  * Demo content. The database seeds itself from this when it is empty, so a
@@ -6,10 +6,11 @@ import type { Database, SeedClient, SeedRole, SeedSession, Submission } from "./
  */
 
 /**
- * The clients the demo agency casts for. Wildseed holds two productions, which
- * is the usual shape: a client comes back rather than appearing once.
+ * The production companies the demo agency casts for. Wildseed holds two
+ * productions, which is the usual shape: a company comes back rather than
+ * appearing once.
  */
-const clients: SeedClient[] = [
+const productionCompanies: SeedProductionCompany[] = [
   {
     id: "cli_wildseed",
     name: "Wildseed Films",
@@ -45,7 +46,7 @@ const clients: SeedClient[] = [
 const sessions: SeedSession[] = [
   {
     id: "ses_saltmarsh",
-    clientId: "cli_wildseed",
+    productionCompanyId: "cli_wildseed",
     publicToken: "4f21c9ba7e",
     slug: "saltmarsh",
     name: "Saltmarsh",
@@ -59,7 +60,7 @@ const sessions: SeedSession[] = [
   },
   {
     id: "ses_northbank",
-    clientId: "cli_tworivers",
+    productionCompanyId: "cli_tworivers",
     publicToken: "7c03ae5d18",
     slug: "northbank",
     name: "Northbank",
@@ -73,7 +74,7 @@ const sessions: SeedSession[] = [
   },
   {
     id: "ses_hearth",
-    clientId: "cli_hearth",
+    productionCompanyId: "cli_hearth",
     publicToken: "2b96fd40ac",
     slug: "hearth-winter-campaign",
     name: "Hearth: Winter Campaign",
@@ -87,7 +88,7 @@ const sessions: SeedSession[] = [
   },
   {
     id: "ses_glasshouse",
-    clientId: "cli_marlowe",
+    productionCompanyId: "cli_marlowe",
     publicToken: "e81a37f65d",
     slug: "the-glasshouse",
     name: "The Glasshouse",
@@ -101,7 +102,7 @@ const sessions: SeedSession[] = [
   },
   {
     id: "ses_lantern",
-    clientId: "cli_lantern",
+    productionCompanyId: "cli_lantern",
     publicToken: "93cd6b02fa",
     slug: "lantern",
     name: "Lantern",
@@ -115,7 +116,7 @@ const sessions: SeedSession[] = [
   },
   {
     id: "ses_kestrel",
-    clientId: "cli_wildseed",
+    productionCompanyId: "cli_wildseed",
     publicToken: "6d40ba18ce",
     slug: "kestrel",
     name: "Kestrel",
@@ -492,7 +493,7 @@ export function seedDatabase(): Database {
   });
 
   return {
-    clients: structuredClone(clients),
+    productionCompanies: structuredClone(productionCompanies),
     sessions: structuredClone(sessions),
     roles: seedRoles,
     submissions: seedSubmissions,

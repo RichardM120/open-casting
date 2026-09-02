@@ -132,7 +132,105 @@ export async function transaction<T>(
   return rawTransaction(run);
 }
 
+/**
+ * Gives every account a client, and every production the client it ran under.
+ *
+ * One client per distinct company name, carrying across what those accounts
+ * were sold. A NULL ceiling means no limit, so if any account under a name had
+ * one, the client gets none: a migration must not quietly tighten what a paying
+ * customer already had. Idempotent, and run again after the demo owner and the
+ * bootstrapped administrator are created, since those arrive after the schema.
+ */
+const CLIENT_BACKFILL = `
+  INSERT INTO clients (id, name, tier, max_sessions, max_roles_per_session, access_until)
+  SELECT 'cl_' || substr(md5(lower(u.company)), 1, 12),
+         min(u.company),
+         (array_agg(u.tier ORDER BY u.tier) FILTER (WHERE u.tier IS NOT NULL))[1],
+         CASE WHEN bool_or(u.max_sessions IS NULL) THEN NULL
+              ELSE max(u.max_sessions) END,
+         CASE WHEN bool_or(u.max_roles_per_session IS NULL) THEN NULL
+              ELSE max(u.max_roles_per_session) END,
+         CASE WHEN bool_or(u.access_until IS NULL) THEN NULL
+              ELSE max(u.access_until) END
+    FROM users u
+   WHERE u.client_id IS NULL AND btrim(u.company) <> ''
+   GROUP BY lower(u.company)
+  ON CONFLICT DO NOTHING;
+
+  UPDATE users u
+     SET client_id = 'cl_' || substr(md5(lower(u.company)), 1, 12)
+   WHERE u.client_id IS NULL AND btrim(u.company) <> '';
+
+  UPDATE sessions_casting s SET client_id = u.client_id
+    FROM users u
+   WHERE u.id = s.owner_id AND s.client_id IS NULL AND u.client_id IS NOT NULL;
+`;
+
 const SCHEMA = `
+  -- Renames, before anything is created.
+  --
+  -- "Client" used to mean the company a director casts for. It now means the
+  -- company paying for Open Casting, and the older sense is a production
+  -- company. These run first so an existing installation is renamed in place;
+  -- if a CREATE ran first it would make an empty table and strand the real one.
+  DO $$
+  BEGIN
+    IF to_regclass('clients') IS NOT NULL
+       AND to_regclass('production_companies') IS NULL THEN
+      ALTER TABLE clients RENAME TO production_companies;
+    END IF;
+  END $$;
+
+  DO $$
+  BEGIN
+    IF EXISTS (
+      SELECT 1 FROM information_schema.columns
+       WHERE table_schema = current_schema()
+         AND table_name = 'sessions_casting' AND column_name = 'client_id'
+    ) AND NOT EXISTS (
+      SELECT 1 FROM information_schema.columns
+       WHERE table_schema = current_schema()
+         AND table_name = 'sessions_casting' AND column_name = 'production_company_id'
+    ) THEN
+      ALTER TABLE sessions_casting RENAME COLUMN client_id TO production_company_id;
+    END IF;
+  END $$;
+
+  -- The indexes and the constraint follow the table, so renaming them is only
+  -- tidiness. Without it the CREATE INDEX statements below would build a second
+  -- copy of each under the new name.
+  DO $$
+  BEGIN
+    IF to_regclass('clients_company_idx') IS NOT NULL
+       AND to_regclass('production_companies_company_idx') IS NULL THEN
+      ALTER INDEX clients_company_idx RENAME TO production_companies_company_idx;
+    END IF;
+    IF to_regclass('clients_owner_idx') IS NOT NULL
+       AND to_regclass('production_companies_owner_idx') IS NULL THEN
+      ALTER INDEX clients_owner_idx RENAME TO production_companies_owner_idx;
+    END IF;
+    IF to_regclass('clients_owner_name_idx') IS NOT NULL
+       AND to_regclass('production_companies_owner_name_idx') IS NULL THEN
+      ALTER INDEX clients_owner_name_idx RENAME TO production_companies_owner_name_idx;
+    END IF;
+    IF to_regclass('sessions_client_idx') IS NOT NULL
+       AND to_regclass('sessions_production_company_idx') IS NULL THEN
+      ALTER INDEX sessions_client_idx RENAME TO sessions_production_company_idx;
+    END IF;
+  END $$;
+
+  DO $$
+  BEGIN
+    -- Guarded on the table as well as the constraint: on a database with no
+    -- tables yet there is nothing to rename, and a missing table is an error
+    -- the constraint's own handler would not catch.
+    IF to_regclass('sessions_casting') IS NOT NULL THEN
+      ALTER TABLE sessions_casting
+        RENAME CONSTRAINT sessions_casting_client_fk TO sessions_casting_production_company_fk;
+    END IF;
+  EXCEPTION WHEN undefined_object OR duplicate_object THEN NULL;
+  END $$;
+
   CREATE TABLE IF NOT EXISTS users (
     id            text PRIMARY KEY,
     email         text        NOT NULL,
@@ -243,9 +341,47 @@ const SCHEMA = `
 
   -- A production and its casting window. Roles belong to it and open and close
   -- together, because a production casts as a unit.
-  -- The clients the agency casts for. A production belongs to one of these.
-  -- Internal only: nothing on the public side of the app reads this table.
+  -- The clients: the companies paying for Open Casting. One row per customer,
+  -- managed by the owner from the admin side. Accounts belong to a client, and
+  -- what the client bought (the tier, the ceilings, how long access runs) is
+  -- held here rather than repeated on each of its accounts.
   CREATE TABLE IF NOT EXISTS clients (
+    id                    text PRIMARY KEY,
+    name                  text NOT NULL,
+    contact_name          text NOT NULL DEFAULT '',
+    contact_email         text NOT NULL DEFAULT '',
+    contact_phone         text NOT NULL DEFAULT '',
+    billing_email         text NOT NULL DEFAULT '',
+    billing_reference     text NOT NULL DEFAULT '',
+    address               text NOT NULL DEFAULT '',
+    notes                 text NOT NULL DEFAULT '',
+    -- What they bought. NULL ceilings mean no limit, as they do on an account.
+    tier                  text,
+    max_sessions          integer,
+    max_roles_per_session integer,
+    access_until          date,
+    -- Set to stop the whole client: every account under it is locked out at
+    -- once, checked on every request rather than only at sign-in.
+    suspended_at          timestamptz,
+    created_at            timestamptz NOT NULL DEFAULT now()
+  );
+
+  CREATE UNIQUE INDEX IF NOT EXISTS clients_name_idx ON clients (lower(name));
+
+  -- Accounts belong to a client. Nullable for rows that predate clients; the
+  -- backfill below gives every existing account one.
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS client_id text;
+  DO $$
+  BEGIN
+    ALTER TABLE users ADD CONSTRAINT users_client_fk
+      FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END $$;
+  CREATE INDEX IF NOT EXISTS users_client_idx ON users (client_id);
+
+  -- The production companies a director casts for. A production belongs to one
+  -- of these. Internal only: nothing on the public side of the app reads it.
+  CREATE TABLE IF NOT EXISTS production_companies (
     id         text PRIMARY KEY,
     name       text        NOT NULL,
     notes      text        NOT NULL DEFAULT '',
@@ -255,12 +391,14 @@ const SCHEMA = `
     created_at timestamptz NOT NULL DEFAULT now()
   );
 
-  CREATE INDEX IF NOT EXISTS clients_company_idx ON clients (lower(company));
-  CREATE INDEX IF NOT EXISTS clients_owner_idx ON clients (owner_id);
-  -- One client of a given name per account, so the picker cannot fill with
-  -- near-duplicates of the same company.
-  CREATE UNIQUE INDEX IF NOT EXISTS clients_owner_name_idx
-    ON clients (owner_id, lower(name));
+  CREATE INDEX IF NOT EXISTS production_companies_company_idx
+    ON production_companies (lower(company));
+  CREATE INDEX IF NOT EXISTS production_companies_owner_idx
+    ON production_companies (owner_id);
+  -- One company of a given name per account, so the picker cannot fill with
+  -- near-duplicates of the same name.
+  CREATE UNIQUE INDEX IF NOT EXISTS production_companies_owner_name_idx
+    ON production_companies (owner_id, lower(name));
 
   CREATE TABLE IF NOT EXISTS sessions_casting (
     id         text PRIMARY KEY,
@@ -474,36 +612,58 @@ const SCHEMA = `
   ALTER TABLE roles DROP COLUMN IF EXISTS union_status;
   ALTER TABLE submissions DROP COLUMN IF EXISTS union_status;
 
-  -- Clients sit above productions. The column is nullable because rows created
-  -- before clients existed have to keep working; the form requires one from
-  -- here on. ON DELETE RESTRICT: a client with productions cannot be deleted
-  -- out from under them, which the action reports as a plain refusal.
-  ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS client_id text;
+  -- Production companies sit above productions. The column is nullable because
+  -- rows created before they existed have to keep working; the form requires
+  -- one from here on. ON DELETE RESTRICT: a company with productions cannot be
+  -- deleted out from under them, which the action reports as a plain refusal.
+  ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS production_company_id text;
   DO $$
   BEGIN
     ALTER TABLE sessions_casting
-      ADD CONSTRAINT sessions_casting_client_fk
-      FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT;
+      ADD CONSTRAINT sessions_casting_production_company_fk
+      FOREIGN KEY (production_company_id) REFERENCES production_companies(id)
+      ON DELETE RESTRICT;
   EXCEPTION WHEN duplicate_object THEN NULL;
   END $$;
 
-  CREATE INDEX IF NOT EXISTS sessions_client_idx ON sessions_casting (client_id);
+  CREATE INDEX IF NOT EXISTS sessions_production_company_idx
+    ON sessions_casting (production_company_id);
 
-  -- Every production that predates clients gets one named after the company it
-  -- was opened under, which until now was the agency's own name. The id is
-  -- derived from the owner and that name, so this is the same client every time
-  -- it runs and the insert and the update below agree on it.
-  INSERT INTO clients (id, name, notes, owner_id, company)
+  -- Every production that predates them gets one named after the company it was
+  -- opened under, which until then was the agency's own name. The id is derived
+  -- from the owner and that name, so this is the same row every time it runs
+  -- and the insert and the update below agree on it.
+  INSERT INTO production_companies (id, name, notes, owner_id, company)
   SELECT 'cli_' || substr(md5(coalesce(s.owner_id, '') || lower(s.company)), 1, 12),
          min(s.company), '', s.owner_id, min(s.company)
     FROM sessions_casting s
-   WHERE s.client_id IS NULL
+   WHERE s.production_company_id IS NULL
    GROUP BY s.owner_id, lower(s.company)
   ON CONFLICT DO NOTHING;
 
   UPDATE sessions_casting s
-     SET client_id = 'cli_' || substr(md5(coalesce(s.owner_id, '') || lower(s.company)), 1, 12)
-   WHERE s.client_id IS NULL;
+     SET production_company_id =
+           'cli_' || substr(md5(coalesce(s.owner_id, '') || lower(s.company)), 1, 12)
+   WHERE s.production_company_id IS NULL;
+
+  -- A production also records the client it was run for. It is set from the
+  -- owner's client when the production is opened, so visibility is one column
+  -- match rather than a join through the account on every query.
+  ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS client_id text;
+  DO $$
+  BEGIN
+    ALTER TABLE sessions_casting ADD CONSTRAINT sessions_casting_client_fk
+      FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END $$;
+  CREATE INDEX IF NOT EXISTS sessions_client_idx ON sessions_casting (client_id);
+
+  ${CLIENT_BACKFILL}
+
+  -- Productions with no owner left fall back to matching the company name.
+  UPDATE sessions_casting s SET client_id = c.id
+    FROM clients c
+   WHERE lower(c.name) = lower(s.company) AND s.client_id IS NULL;
 `;
 
 /** Postgres error code for a unique constraint violation. */
@@ -529,6 +689,9 @@ function ensureSchema(): Promise<void> {
     await backfillSessions();
     await backfillTokens();
     await bootstrapAdmin();
+    // The demo owner and the administrator are made above, after the schema's
+    // own pass, so they need one of their own.
+    await pool().query(CLIENT_BACKFILL);
     await purgeOnBoot();
   })().catch((error) => {
     // Let the next request retry rather than caching a failed bootstrap.
@@ -554,15 +717,15 @@ export const DEMO_USER = {
 
 /** Inserts the demo roles and submissions, skipping any that already exist. */
 async function seed(): Promise<void> {
-  const { clients, sessions, roles, submissions } = seedDatabase();
+  const { productionCompanies, sessions, roles, submissions } = seedDatabase();
 
   await rawTransaction(async (client) => {
-    // Clients first: the productions reference them.
-    for (const account of clients) {
+    // Production companies first: the productions reference them.
+    for (const company of productionCompanies) {
       await client.query(
-        `INSERT INTO clients (id, name, notes, owner_id, company)
+        `INSERT INTO production_companies (id, name, notes, owner_id, company)
          VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING`,
-        [account.id, account.name, account.notes, DEMO_USER.id, DEMO_USER.company],
+        [company.id, company.name, company.notes, DEMO_USER.id, DEMO_USER.company],
       );
     }
 
@@ -571,13 +734,13 @@ async function seed(): Promise<void> {
       await client.query(
         `INSERT INTO sessions_casting
            (id, slug, name, production_type, synopsis, owner_id, company, opens_at,
-            closes_at, production_ends_at, public_token, client_id, published_at)
+            closes_at, production_ends_at, public_token, production_company_id, published_at)
          VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12, now()) ON CONFLICT (id) DO NOTHING`,
         [
           session.id, session.slug, session.name, session.productionType,
           session.synopsis, DEMO_USER.id, session.company, session.opensAt,
           session.closesAt, session.productionEndsAt, session.publicToken,
-          session.clientId,
+          session.productionCompanyId,
         ],
       );
     }

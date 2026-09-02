@@ -4,7 +4,7 @@ import Link from "next/link";
 import { SessionForm } from "@/components/session-form";
 import { ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
-import { listVisibleClients } from "@/lib/clients";
+import { listVisibleProductionCompanies } from "@/lib/production-companies";
 
 export const metadata: Metadata = {
   title: "New production",
@@ -13,11 +13,11 @@ export const metadata: Metadata = {
 
 export default async function NewSessionPage() {
   const user = await requireUser("/dashboard/sessions/new");
-  const clients = await listVisibleClients(user);
+  const productionCompanies = await listVisibleProductionCompanies(user);
 
-  // A production belongs to a client, so there is nothing to fill in until one
+  // A production belongs to a production company, so there is nothing to fill in until one
   // exists. Saying so beats a form with an empty, required dropdown.
-  if (clients.length === 0) {
+  if (productionCompanies.length === 0) {
     return (
       <div className="mx-auto max-w-3xl px-5 py-12">
         <Link href="/dashboard" className="text-sm text-muted hover:text-text">
@@ -28,9 +28,9 @@ export default async function NewSessionPage() {
         </h1>
         <div className="mt-10">
           <EmptyState
-            title="Add a client first"
-            description="Every production is for a client, so the work stays sorted by who it is for. Add one and you can open its first production straight afterwards."
-            action={<ButtonLink href="/dashboard/clients/new">New client</ButtonLink>}
+            title="Add a production company first"
+            description="Every production is for a production company, so the work stays sorted by who it is for. Add one and you can open its first production straight afterwards."
+            action={<ButtonLink href="/dashboard/production-companies/new">New production company</ButtonLink>}
           />
         </div>
       </div>
@@ -56,7 +56,7 @@ export default async function NewSessionPage() {
       </div>
 
       <div className="mt-10">
-        <SessionForm clients={clients} />
+        <SessionForm productionCompanies={productionCompanies} />
       </div>
     </div>
   );

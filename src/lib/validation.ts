@@ -116,6 +116,43 @@ export const limitsSchema = z.object({
   accessUntil: optionalDate,
 });
 
+/** A client: the company paying for Open Casting. Filled in by the owner. */
+export const clientSchema = z.object({
+  name: trimmed.min(2, "Name the client").max(80),
+  contactName: trimmed.max(80),
+  contactEmail: z
+    .string()
+    .trim()
+    .max(120)
+    .refine(
+      (value) => value === "" || z.email().safeParse(value).success,
+      "Enter a valid email address, or leave blank",
+    ),
+  contactPhone: trimmed.max(40),
+  billingEmail: z
+    .string()
+    .trim()
+    .max(120)
+    .refine(
+      (value) => value === "" || z.email().safeParse(value).success,
+      "Enter a valid email address, or leave blank",
+    ),
+  billingReference: trimmed.max(80),
+  address: trimmed.max(300),
+  notes: trimmed.max(1000, "Keep the notes under 1000 characters"),
+  ...limitsSchema.shape,
+  // The client form offers "No plan set", which arrives as an empty string.
+  // limitsSchema's tier is a bare enum, so it has to be widened here.
+  tier: trimmed
+    .refine(
+      (value) => value === "" || (TIER_KEYS as string[]).includes(value),
+      "Choose a plan, or leave it unset",
+    )
+    .transform((value) => (value === "" ? undefined : value)),
+});
+
+export type ClientInput = z.infer<typeof clientSchema>;
+
 /**
  * What the administrator fills in to make somebody an account. There is no
  * password field: one is generated and shown once, so a weak shared password
@@ -123,10 +160,12 @@ export const limitsSchema = z.object({
  */
 export const newAccountSchema = z.object({
   name: trimmed.min(2, "Enter their name").max(80),
-  company: trimmed.min(2, "Name their company or agency").max(80),
+  // The account's company comes from the client it belongs to, so it is chosen
+  // rather than typed: a typed name is what let one account land in another
+  // client's view of the dashboard.
+  clientId: trimmed.min(1, "Choose the client this account belongs to"),
   email: trimmed.max(120).pipe(z.email("Enter a valid email address")),
   role: z.enum(SIGNUP_ROLES, { message: "Choose what they will be able to see" }),
-  ...limitsSchema.shape,
 });
 
 export type NewAccountInput = z.infer<typeof newAccountSchema>;
@@ -164,19 +203,19 @@ function localDateTime(message: string) {
 }
 
 /** A client record. Internal, so there is nothing here an applicant ever sees. */
-export const clientSchema = z.object({
+export const productionCompanySchema = z.object({
   name: trimmed.min(2, "Name the client").max(80),
   notes: trimmed.max(600, "Keep the notes under 600 characters"),
 });
 
-export type ClientInput = z.infer<typeof clientSchema>;
+export type ProductionCompanyInput = z.infer<typeof productionCompanySchema>;
 
 export const sessionSchema = z
   .object({
     name: trimmed.min(2, "Name the production").max(80),
     productionType: z.enum(PRODUCTION_TYPES, { message: "Choose a production type" }),
     synopsis: trimmed.min(20, "Describe the production in a sentence or two").max(600),
-    clientId: trimmed.min(1, "Choose the client this production is for"),
+    productionCompanyId: trimmed.min(1, "Choose the client this production is for"),
     opensAt: localDateTime("Choose when submissions open"),
     closesAt: localDateTime("Choose when submissions close"),
     productionEndsAt: trimmed.regex(

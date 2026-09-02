@@ -117,11 +117,21 @@ export type SessionUser = {
   id: string;
   name: string;
   email: string;
+  /**
+   * The client's name. Producer visibility matches on clientId rather than on
+   * this, so it is a label; it is kept because older rows may have no client.
+   */
   company: string;
+  /** The client paying for this account. Null only for rows predating clients. */
+  clientId: string | null;
   role: UserRole;
   /** Null until the setup wizard has been finished. */
   onboardedAt: string | null;
-  /** What the administrator sold this account. Null means no ceiling. */
+  /**
+   * What was sold. Taken from the client when the account has one, so a
+   * customer's ceiling is raised in one place, and from the account itself
+   * only for rows that predate clients. Null means no ceiling.
+   */
   maxSessions: number | null;
   maxRolesPerSession: number | null;
 };
@@ -141,19 +151,27 @@ export const currentUser = cache(async (): Promise<SessionUser | null> => {
     name: string;
     email: string;
     company: string;
+    client_id: string | null;
     role: UserRole;
     onboarded_at: Date | null;
     max_sessions: number | null;
     max_roles_per_session: number | null;
   }>(
-    `SELECT u.id, u.name, u.email, u.company, u.role, u.onboarded_at,
-            u.max_sessions, u.max_roles_per_session
+    `SELECT u.id, u.name, u.email, u.role, u.onboarded_at, u.client_id,
+            coalesce(c.name, u.company) AS company,
+            CASE WHEN c.id IS NULL THEN u.max_sessions ELSE c.max_sessions END
+              AS max_sessions,
+            CASE WHEN c.id IS NULL THEN u.max_roles_per_session
+                 ELSE c.max_roles_per_session END AS max_roles_per_session
        FROM sessions s
        JOIN users u ON u.id = s.user_id
+       LEFT JOIN clients c ON c.id = u.client_id
       WHERE s.token_hash = $1
         AND s.expires_at > now()
         AND u.suspended_at IS NULL
-        AND (u.access_until IS NULL OR u.access_until >= (now() AT TIME ZONE 'utc')::date)`,
+        AND (u.access_until IS NULL OR u.access_until >= (now() AT TIME ZONE 'utc')::date)
+        AND c.suspended_at IS NULL
+        AND (c.access_until IS NULL OR c.access_until >= (now() AT TIME ZONE 'utc')::date)`,
     [tokenHash(token)],
   );
 
@@ -164,6 +182,7 @@ export const currentUser = cache(async (): Promise<SessionUser | null> => {
         name: row.name,
         email: row.email,
         company: row.company,
+        clientId: row.client_id,
         role: row.role,
         onboardedAt: row.onboarded_at?.toISOString() ?? null,
         maxSessions: row.max_sessions,

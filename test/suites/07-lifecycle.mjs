@@ -36,9 +36,12 @@ const dir = await provision(browser, errors, admin.p, {
   maxSessions: 2,
   maxRolesPerSession: 2,
 });
+await admin.p.goto(`${BASE}/dashboard/clients`, { waitUntil: "networkidle" });
+check("the allowance is shown against the client",
+  (await admin.p.getByText(/0 of 2 productions/).count()) > 0);
 await admin.p.goto(`${BASE}/dashboard/accounts`, { waitUntil: "networkidle" });
-const row = admin.p.locator("main ul > li").filter({ hasText: `lc${t}@example.com` });
-check("the allowance is shown against the account", (await row.getByText(/0\/2 productions/).count()) > 0);
+check("and the account points at its client",
+  (await admin.p.getByText(/What they may run comes from their client/).count()) > 0);
 await admin.p.screenshot({ path: `${SHOTS}/accounts.png`, fullPage: true });
 
 section("2 a new production is a draft, and its link opens for nobody");
@@ -125,19 +128,22 @@ check("names the date the details go", (await dir.p.getByText(/destroyed 30 days
 }
 
 section("7 the administrator can change the arrangement afterwards");
-await admin.p.goto(`${BASE}/dashboard/accounts`, { waitUntil: "networkidle" });
-const row2 = admin.p.locator("main ul > li").filter({ hasText: `lc${t}@example.com` });
-await row2.locator('input[name="maxSessions"]').fill("5");
-await row2.getByRole("button", { name: "Save limits" }).click();
-await admin.p.waitForTimeout(2500);
-check("the change is confirmed", (await admin.p.getByText(/Updated what Cass Dir is allowed/).count()) > 0);
+await admin.p.goto(`${BASE}/dashboard/clients`, { waitUntil: "networkidle" });
+await admin.p.locator("#main").getByText(CO, { exact: true }).click();
+await admin.p.waitForURL(/\/dashboard\/clients\/cl_/, { timeout: 20000 });
+const clientUrl = admin.p.url().split("?")[0];
+await admin.p.fill("#maxSessions", "5");
+await admin.p.getByRole("button", { name: "Save the client" }).click();
+await admin.p.waitForURL(/saved=1/, { timeout: 20000 });
+check("the change is confirmed", (await admin.p.getByText(/The client was saved/).count()) > 0);
 await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 check("the director can open one again", (await dir.p.locator("main").getByRole("link", { name: "New production" }).count()) > 0);
 
-section("8 an account can be given an end date");
-await row2.locator('input[name="accessUntil"]').fill(day(-1));
-await row2.getByRole("button", { name: "Save limits" }).click();
-await admin.p.waitForTimeout(2500);
+section("8 a client can be given an end date");
+await admin.p.goto(clientUrl, { waitUntil: "networkidle" });
+await admin.p.fill("#accessUntil", day(-1));
+await admin.p.getByRole("button", { name: "Save the client" }).click();
+await admin.p.waitForURL(/saved=1/, { timeout: 20000 });
 await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 check("an expired account is signed out", dir.p.url().includes("/login"), dir.p.url());
 {

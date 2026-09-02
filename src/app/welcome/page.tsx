@@ -16,14 +16,14 @@ const WHAT_YOU_SEE: Record<UserRole, { heading: string; points: string[]; cta: {
   director: {
     heading: "You will see the productions you open, and nothing else",
     points: [
-      "Start by adding the client you are casting for. Every production belongs to one, so the work stays sorted by who it is for.",
+      "Start by adding the production company you are casting for. Every production belongs to one, so the work stays sorted by who it is for.",
       "Then open a production under it. It holds the opening and closing times, and the roles you post into it open and close with it.",
       "Every submission made to your roles lands in one list, newest first.",
       "Move people through New, Shortlisted, Callback and Declined as you work.",
       "Colleagues with a casting director account cannot see your productions. A producer at your company can.",
       "Nothing is emailed to applicants automatically. Their address is on every submission.",
     ],
-    cta: { href: "/dashboard/clients/new", label: "Add your first client" },
+    cta: { href: "/dashboard/production-companies/new", label: "Add your first production company" },
   },
   producer: {
     heading: "You will see every production under your company",

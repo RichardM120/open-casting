@@ -19,12 +19,15 @@ const PUBLIC_NAV = [{ href: "/faq", label: "FAQ" }] as const;
  */
 const OWNER_NAV = [
   { href: "/dashboard", label: "Productions" },
-  { href: "/dashboard/clients", label: "Clients" },
+  { href: "/dashboard/production-companies", label: "Production companies" },
   { href: "/dashboard/activity", label: "Activity" },
 ] as const;
 
-/** The one area a director has no business in, so the only one that differs. */
-const ADMIN_NAV = [{ href: "/dashboard/accounts", label: "Accounts" }] as const;
+/** The owner's areas. A director has no business in either. */
+const ADMIN_NAV = [
+  { href: "/dashboard/clients", label: "Clients" },
+  { href: "/dashboard/accounts", label: "Accounts" },
+] as const;
 
 export function SiteHeader({ user }: { user: SessionUser | null }) {
   const pathname = usePathname();

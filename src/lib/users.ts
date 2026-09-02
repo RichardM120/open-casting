@@ -9,6 +9,8 @@ export type User = {
   email: string;
   name: string;
   company: string;
+  /** The client paying for this account. Null only for rows predating clients. */
+  client_id: string | null;
   role: UserRole;
   suspended_at: Date | null;
   onboarded_at: Date | null;
@@ -34,7 +36,7 @@ export type AccountLimits = {
 type UserRow = User & { password_hash: string | null };
 
 const COLUMNS = `
-  id, email, name, company, role, suspended_at, onboarded_at,
+  id, email, name, company, client_id, role, suspended_at, onboarded_at,
   max_sessions, max_roles_per_session, mfa_required, tier,
   to_char(access_until, 'YYYY-MM-DD') AS access_until
 `;
@@ -84,13 +86,30 @@ export async function syncAdminRole(user: User): Promise<User> {
 /* --------------------------------------------------------------- queries -- */
 
 /**
+ * Keeps a client's accounts carrying its current name.
+ *
+ * The name on the account row is what producer visibility matches on, so a
+ * client rename that did not reach here would split a company in two: the
+ * renamed client on one side, its producers still matching the old string on
+ * the other.
+ */
+export async function renameClientAccounts(
+  clientId: string,
+  name: string,
+): Promise<void> {
+  await query("UPDATE users SET company = $2 WHERE client_id = $1", [clientId, name]);
+}
+
+/**
  * Creates an account. Only the administrator reaches this (there is no
  * self-registration), so the caller must have checked that first.
  */
 export async function createUser(input: {
   name: string;
   email: string;
+  /** The client's name, kept on the row as the label visibility matches on. */
   company: string;
+  clientId?: string | null;
   password: string;
   role: SignupRole;
   limits?: AccountLimits;
@@ -101,8 +120,8 @@ export async function createUser(input: {
     const rows = await query<User>(
       `INSERT INTO users
          (id, email, name, company, password_hash, role,
-          max_sessions, max_roles_per_session, access_until, tier)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+          max_sessions, max_roles_per_session, access_until, tier, client_id)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
        RETURNING ${COLUMNS}`,
       [
         `usr_${crypto.randomUUID().slice(0, 12)}`,
@@ -115,6 +134,7 @@ export async function createUser(input: {
         input.limits?.maxRolesPerSession ?? null,
         input.limits?.accessUntil ?? null,
         input.limits?.tier ?? null,
+        input.clientId ?? null,
       ],
     );
     return rows[0];
@@ -223,9 +243,10 @@ export async function clearFailedLogins(email: string): Promise<void> {
 export type Account = User & { roles: number; submissions: number; sessions: number };
 
 /** Every account, with how much each has posted. Admin only; enforce upstream. */
-export async function listAccounts(): Promise<Account[]> {
+export async function listAccounts(clientId?: string): Promise<Account[]> {
   return query<Account>(
     `SELECT u.id, u.email, u.name, u.company, u.role, u.suspended_at, u.onboarded_at,
+            u.client_id,
             u.max_sessions, u.max_roles_per_session, u.mfa_required, u.tier,
             to_char(u.access_until, 'YYYY-MM-DD') AS access_until,
             count(DISTINCT r.id)::int  AS roles,
@@ -235,8 +256,10 @@ export async function listAccounts(): Promise<Account[]> {
        LEFT JOIN roles r            ON r.owner_id = u.id
        LEFT JOIN sessions_casting sc ON sc.owner_id = u.id
        LEFT JOIN submissions s      ON s.role_id = r.id
+      ${clientId ? "WHERE u.client_id = $1" : ""}
       GROUP BY u.id
       ORDER BY u.suspended_at IS NULL DESC, lower(u.company), lower(u.name)`,
+    clientId ? [clientId] : [],
   );
 }
 

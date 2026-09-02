@@ -16,6 +16,7 @@ import {
   pruneExpiredChallenges,
 } from "./mfa";
 import { requestOrigin } from "./origin";
+import { getClient } from "./clients";
 import { clientAddress, overLimit } from "./rate-limit";
 import { submittedValues, type FormState } from "./form-state";
 import { decoyPasswordHash, verifyPassword } from "./password";
@@ -129,10 +130,30 @@ export async function signIn(
 
   // The arrangement has an end date and it has passed. Said plainly, because
   // "wrong password" would send someone hunting for a problem they do not have.
-  if (user.access_until && user.access_until < new Date().toISOString().slice(0, 10)) {
+  // Checked on the client as well as the account: what a customer bought ends
+  // for everyone under them, and sign-in is the other way in besides a live
+  // session, which currentUser already refuses.
+  const client = user.client_id ? await getClient(user.client_id) : null;
+  const today = new Date().toISOString().slice(0, 10);
+
+  if (client?.suspendedAt) {
     return invalid(
       {},
-      `Access to this account ended on ${user.access_until}. Contact the administrator to extend it.`,
+      "This account has been suspended. Contact the site administrator.",
+      formData,
+    );
+  }
+
+  const endedOn =
+    user.access_until && user.access_until < today
+      ? user.access_until
+      : client?.accessUntil && client.accessUntil < today
+        ? client.accessUntil
+        : null;
+  if (endedOn) {
+    return invalid(
+      {},
+      `Access to this account ended on ${endedOn}. Contact the administrator to extend it.`,
       formData,
     );
   }

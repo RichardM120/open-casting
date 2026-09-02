@@ -10,6 +10,7 @@ import { verifyContext, verifyValue } from "@/lib/token";
  */
 const GUARDED: { prefix: string; role?: "admin" }[] = [
   { prefix: "/dashboard/accounts", role: "admin" },
+  { prefix: "/dashboard/clients", role: "admin" },
   { prefix: "/dashboard" },
 ];
 
