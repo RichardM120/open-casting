@@ -21,7 +21,6 @@ import { canPreview } from "@/lib/preview";
 import { ShareLink } from "@/components/share-link";
 import { getSessionRole } from "@/lib/roles";
 import { getSessionByToken, shareSlug } from "@/lib/sessions";
-import { listSubmissions } from "@/lib/submissions";
 
 export const dynamic = "force-dynamic";
 
@@ -53,7 +52,6 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
   if (session.publishedAt === null && !owner) notFound();
   const shareUrl = owner ? `${await requestOrigin()}/c/${shareSlug(session)}` : null;
 
-  const submissions = await listSubmissions(role.id);
   const window = roleWindow(role);
   const open = isOpen(window);
   const upcoming = notYetOpen(window);
@@ -118,7 +116,6 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
             <Detail label="Opens" value={formatDateTime(role.session.opensAt)} />
             <Detail label="Closes" value={formatDateTime(role.session.closesAt)} />
             <Detail label="Posted" value={formatRelative(role.postedAt)} />
-            <Detail label="Submissions" value={`${submissions.length} so far`} />
           </dl>
 
           <Section title="The casting call">

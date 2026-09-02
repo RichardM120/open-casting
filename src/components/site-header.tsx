@@ -77,7 +77,7 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
           className="flex items-center gap-3 text-lg font-semibold tracking-tight text-white sm:gap-2.5 sm:text-base"
         >
           <Logo tone="onBrand" className="size-9 sm:size-7" />
-          <span>Open Casting</span>
+          <span>Open Cast</span>
         </Link>
 
         <nav aria-label="Main" className="hidden items-center gap-1 sm:flex">
