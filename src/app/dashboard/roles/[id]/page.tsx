@@ -23,7 +23,8 @@ import {
 import { getVisibleRole } from "@/lib/roles";
 import { shareSlug } from "@/lib/sessions";
 import { PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
-import { ProfilePhoto, mediaSrc } from "@/components/profile-photo";
+import { ProfilePhoto } from "@/components/profile-photo";
+import { mediaSrc } from "@/lib/media";
 import { countsForRole, listSubmissions } from "@/lib/submissions";
 import type { Submission } from "@/lib/types";
 

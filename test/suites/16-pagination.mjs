@@ -73,9 +73,12 @@ check("the summary counts everything", (await dir.p.getByText("200 across 1 role
 check("twenty-five rows", (await dir.p.locator("table tbody tr").count()) === 25, String(await dir.p.locator("table tbody tr").count()));
 check("says which are showing", (await dir.p.getByText("Showing 1 to 25 of 200").count()) > 0);
 check("newest first", (await dir.p.locator("table tbody tr").first().innerText()).includes("Applicant 1\n") || (await dir.p.locator("table tbody tr").first().getByText("Applicant 1", { exact: true }).count()) > 0);
-check("six photos on the first page", (await dir.p.locator('table img[alt$="photo"]').count()) === 6, String(await dir.p.locator('table img[alt$="photo"]').count()));
+// The harness has no file store, so the six photos on this page cannot be
+// fetched, and each shows as "not available" rather than as a broken image.
+check("six photos attempted on the first page", (await dir.p.locator('table [data-photo="unavailable"]').count()) === 6, String(await dir.p.locator('table [data-photo="unavailable"]').count()));
 check("nineteen placeholders", (await dir.p.locator('table [data-photo="none"]').count()) === 19, String(await dir.p.locator('table [data-photo="none"]').count()));
 check("the placeholder says what it is", (await dir.p.locator('table [data-photo="none"]').first().getAttribute("aria-label")) === "No photo submitted");
+check("and so does the other", (await dir.p.locator('table [data-photo="unavailable"]').first().getAttribute("aria-label")) === "Photo not available");
 await dir.p.screenshot({ path: `${SHOTS}/pagination.png`, fullPage: true });
 
 await dir.p.getByRole("link", { name: "Next", exact: true }).click();
@@ -89,7 +92,7 @@ await dir.p.getByRole("link", { name: "8", exact: true }).click();
 await dir.p.waitForURL(/page=8/, { timeout: 20000 });
 await dir.p.waitForLoadState("networkidle");
 check("the last page", (await dir.p.getByText("Showing 176 to 200 of 200").count()) > 0);
-check("seven photos on it", (await dir.p.locator('table img[alt$="photo"]').count()) === 7, String(await dir.p.locator('table img[alt$="photo"]').count()));
+check("seven photos attempted on it", (await dir.p.locator('table [data-photo="unavailable"]').count()) === 7, String(await dir.p.locator('table [data-photo="unavailable"]').count()));
 check("eighteen placeholders on it", (await dir.p.locator('table [data-photo="none"]').count()) === 18);
 check("Next goes no further", (await dir.p.locator('nav[aria-label="Pages"]').getByRole("link", { name: "Next", exact: true }).count()) === 0);
 
@@ -108,7 +111,7 @@ const cards = dir.p.locator('li:has(select[aria-label="Submission status"])');
 check("twenty-five cards", (await cards.count()) === 25, String(await cards.count()));
 check("says which are showing", (await dir.p.getByText("Showing 1 to 25 of 200").count()) > 0);
 check("the total is still two hundred", (await dir.p.getByText("200 total").count()) > 0);
-check("six photos among the cards", (await dir.p.locator('li img[alt$="photo"]').count()) === 6);
+check("six photos attempted among the cards", (await dir.p.locator('li [data-photo="unavailable"]').count()) === 6);
 check("and nineteen placeholders", (await dir.p.locator('li [data-photo="none"]').count()) === 19);
 await dir.p.getByRole("link", { name: "Next", exact: true }).click();
 await dir.p.waitForURL(/page=2/, { timeout: 20000 });
