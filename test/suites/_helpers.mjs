@@ -236,7 +236,7 @@ export async function openSession(page, fields) {
   await page.fill("#opensAt", fields.opensAt ?? at(0));
   await page.fill("#closesAt", fields.closesAt ?? at(30, "23:59"));
   await page.fill("#productionEndsAt", fields.productionEndsAt ?? day(60));
-  await page.getByRole("button", { name: "Open the casting call" }).click();
+  await page.getByRole("button", { name: "Save and continue" }).click();
   await page.waitForURL(/\/dashboard\/sessions\/ses_/, { timeout: 20000 });
   return page.url().match(/sessions\/(ses_[^?]+)/)[1];
 }

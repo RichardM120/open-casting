@@ -192,5 +192,56 @@ check(
 );
 
 for (const s of [dir, other, prod, admin]) await s.c.close();
+section("12 the date picker asks before it commits");
+{
+  await dir.p.goto(`${BASE}/dashboard/sessions/new`, { waitUntil: "networkidle" });
+  const opener = dir.p.getByRole("button", { name: "Pick a date and time for Submissions open" });
+  await opener.click();
+  const dialog = dir.p.getByRole("dialog", { name: "Pick a date and time for Submissions open" });
+  check("the picker opens", await dialog.isVisible());
+  await dialog.getByRole("button", { name: /\b15 \w+ \d{4}$/ }).click();
+  await dir.p.selectOption("#opensAt-hour", "10");
+  await dir.p.selectOption("#opensAt-minute", "30");
+  check("nothing reaches the field before Confirm", (await dir.p.inputValue("#opensAt")) === "");
+  await dialog.getByRole("button", { name: "Confirm" }).click();
+  const picked = await dir.p.inputValue("#opensAt");
+  check("Confirm commits the day and the time", /^\d{4}-\d{2}-15T10:30$/.test(picked), picked);
+  check("and the field reads it back", (await dir.p.getByText(/^Set to /).count()) > 0);
+  check("the picker closed", (await dir.p.getByRole("dialog").count()) === 0);
+
+  await opener.click();
+  await dir.p.getByRole("dialog").getByRole("button", { name: /\b20 \w+ \d{4}$/ }).click();
+  await dir.p.getByRole("dialog").getByRole("button", { name: "Cancel" }).click();
+  check("Cancel leaves the field alone", (await dir.p.inputValue("#opensAt")) === picked);
+
+  await opener.click();
+  await dir.p.keyboard.press("Escape");
+  check("Escape closes it", (await dir.p.getByRole("dialog").count()) === 0);
+  check("with the field unchanged", (await dir.p.inputValue("#opensAt")) === picked);
+
+  await dir.p.getByRole("button", { name: "Pick a date for Production finishes" }).click();
+  await dir.p.getByRole("dialog").getByRole("button", { name: /\b20 \w+ \d{4}$/ }).click();
+  await dir.p.screenshot({ path: `${SHOTS}/date-picker.png`, fullPage: true });
+  await dir.p.getByRole("dialog").getByRole("button", { name: "Confirm" }).click();
+  const date = await dir.p.inputValue("#productionEndsAt");
+  check("a date-only field takes a date", /^\d{4}-\d{2}-20$/.test(date), date);
+  check("typing into the field still works", await dir.p.fill("#opensAt", at(3, "12:00")).then(async () => (await dir.p.inputValue("#opensAt")) === at(3, "12:00")));
+}
+
+section("13 a draft can be left and picked up again");
+{
+  const draft = await openSession(dir.p, { name: `Draft ${t}`, company: CO, opensAt: at(5), closesAt: at(40, "23:59") });
+  check("the new call says it is saved as a draft", (await dir.p.getByText("saved as a draft").count()) > 0);
+  await dir.p.getByRole("link", { name: "Save and finish later" }).click();
+  await dir.p.waitForURL(/\/dashboard\?draft=1/, { timeout: 20000 });
+  check("the list says it is saved", (await dir.p.getByText("Saved as a draft.").count()) > 0);
+  const back = dir.p.locator(`li:has(a[href="/dashboard/sessions/${draft}"])`).getByRole("link", { name: "Continue setting up" });
+  check("the draft offers a way back", (await back.count()) === 1);
+  await back.click();
+  await dir.p.waitForURL(new RegExp(`/dashboard/sessions/${draft}`), { timeout: 20000 });
+  check("back on the draft, still unpublished", (await dir.p.locator("main").getByText("Not published yet").count()) > 0);
+  check("with the wizard where it was left", (await dir.p.locator('[aria-current="step"]').innerText()).includes("Post the roles"));
+}
+
 await browser.close();
 finish();

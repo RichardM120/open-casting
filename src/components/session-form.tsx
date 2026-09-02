@@ -7,6 +7,7 @@ import { formatDateTime, fromLocalInput, toLocalInput } from "@/lib/format";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
 import { PRODUCTION_TYPES, type CastingSession } from "@/lib/types";
 
+import { DateTimeField } from "./date-time-field";
 import { useErrorFocus } from "./use-error-focus";
 import { Button, ButtonLink, ErrorSummary, Field, Input, Select, Textarea } from "./ui";
 
@@ -45,9 +46,8 @@ export function SessionForm({ session }: { session?: CastingSession }) {
   const { errors, values: submitted } = state;
   const formRef = useErrorFocus(state.status, errors);
 
-  // The browser draws the date and time picker and closes it on its own, with
-  // no confirmation of its own. Echoing the chosen moment under the field, in
-  // words, is the confirmation: what was picked, read back as a date and time.
+  // The picker asks before it commits, and the chosen moment is then echoed
+  // under the field in words: what was picked, read back as a date and time.
   const [opens, setOpens] = useState<string | null>(null);
   const [closes, setCloses] = useState<string | null>(null);
 
@@ -156,12 +156,14 @@ export function SessionForm({ session }: { session?: CastingSession }) {
             hint="Roles can be seen before this, but the form does not appear until then."
             error={errors.opensAt}
           >
-            <Input
+            <DateTimeField
               id="opensAt"
               name="opensAt"
-              type="datetime-local"
+              label="Submissions open"
+              mode="datetime"
               defaultValue={values.opensAt ?? ""}
-              onChange={(event) => setOpens(event.target.value)}
+              defaultTime="09:00"
+              onChange={setOpens}
               required
             />
             <Picked value={opens ?? values.opensAt ?? ""} />
@@ -172,12 +174,15 @@ export function SessionForm({ session }: { session?: CastingSession }) {
             hint="You can close early once you have what you need."
             error={errors.closesAt}
           >
-            <Input
+            <DateTimeField
               id="closesAt"
               name="closesAt"
-              type="datetime-local"
+              label="Submissions close"
+              mode="datetime"
               defaultValue={values.closesAt ?? ""}
-              onChange={(event) => setCloses(event.target.value)}
+              defaultTime="23:59"
+              align="end"
+              onChange={setCloses}
               required
             />
             <Picked value={closes ?? values.closesAt ?? ""} />
@@ -201,10 +206,11 @@ export function SessionForm({ session }: { session?: CastingSession }) {
             hint="If the schedule moves, change this and the deletion date follows."
             error={errors.productionEndsAt}
           >
-            <Input
+            <DateTimeField
               id="productionEndsAt"
               name="productionEndsAt"
-              type="date"
+              label="Production finishes"
+              mode="date"
               defaultValue={values.productionEndsAt ?? ""}
               required
             />
@@ -214,13 +220,7 @@ export function SessionForm({ session }: { session?: CastingSession }) {
 
       <div className="flex flex-wrap items-center gap-4 border-t border-line pt-6">
         <Button type="submit" disabled={pending}>
-          {pending
-            ? session
-              ? "Saving"
-              : "Opening"
-            : session
-              ? "Save changes"
-              : "Open the casting call"}
+          {pending ? "Saving" : session ? "Save changes" : "Save and continue"}
         </Button>
         <ButtonLink
           href={session ? `/dashboard/sessions/${session.id}` : "/dashboard"}
@@ -229,6 +229,12 @@ export function SessionForm({ session }: { session?: CastingSession }) {
         >
           Cancel
         </ButtonLink>
+        {session ? null : (
+          <p className="basis-full text-xs leading-relaxed text-muted">
+            Saved as a draft. Nothing is shown to applicants until you publish, and you can come
+            back to it from Casting calls at any time.
+          </p>
+        )}
       </div>
     </form>
   );

@@ -21,6 +21,7 @@ export default async function NewSessionPage() {
       <HelpNote title="What this screen is for" faq="/faq/casting-directors">
         <p dangerouslySetInnerHTML={{ __html: 'A casting call holds the opening and closing times. Every role you post into it takes submissions only between them, so set the window here and not per role.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'The production company is yours to see and is never shown to applicants. Once the call exists, post its roles.' }} />
+        <p dangerouslySetInnerHTML={{ __html: 'It is saved as a draft the moment you continue. Leave and come back to it from <strong>Casting calls</strong> whenever you like; nothing is shown to applicants until you publish.' }} />
       </HelpNote>
       <Link href="/dashboard" className="text-sm text-muted transition-colors hover:text-text">
         &larr; Casting calls
@@ -29,12 +30,13 @@ export default async function NewSessionPage() {
       <div className="mt-6">
         <Eyebrow>New casting call</Eyebrow>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
-          Open a casting call
+          Set up a casting call
         </h1>
         <p className="mt-3 max-w-2xl text-muted">
           One casting call, however many roles. It holds the opening and closing times, and every
           role you post into it takes submissions only between them. Post the roles once it
-          exists.
+          exists. It is saved as a draft as you go, so you can leave and come back to it before
+          you publish.
         </p>
       </div>
 

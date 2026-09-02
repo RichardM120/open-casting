@@ -55,7 +55,7 @@ export default async function SessionPage({
     query.published === "1"
       ? "Published. The link below is live, so send it wherever you want the call to go."
       : query.created === "1"
-        ? "Casting call opened. Post the roles for it, then publish."
+        ? "Casting call saved as a draft. Post the roles for it, then publish when you are ready. You can come back to it from Casting calls at any time."
         : query.saved === "1"
           ? "Changes saved. Every role in this casting call follows the new times."
           : query.removed === "1"
@@ -190,7 +190,8 @@ export default async function SessionPage({
           <h2 className="text-lg font-semibold tracking-tight">Not published yet</h2>
           <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
             Nobody can open this but you. Check it over as an applicant will see it, and publish
-            when you are happy. That is the moment the link starts working.
+            when you are happy. That is the moment the link starts working. Everything here is
+            saved as you go, so you can leave and come back from Casting calls whenever you like.
           </p>
           <ul className="mt-4 flex flex-col gap-2 text-sm text-muted">
             <Ready done={roles.length > 0}>
@@ -212,6 +213,9 @@ export default async function SessionPage({
             </form>
             <ButtonLink href={`/c/${shareSlug(session)}`} variant="secondary" size="sm">
               Preview as an applicant
+            </ButtonLink>
+            <ButtonLink href="/dashboard?draft=1" variant="ghost" size="sm">
+              Save and finish later
             </ButtonLink>
           </div>
           <p className="mt-4 text-xs leading-relaxed text-faint">

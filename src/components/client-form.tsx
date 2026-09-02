@@ -6,6 +6,7 @@ import { createClientRecord, editClientRecord } from "@/lib/actions";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
 import { TIERS, TIER_KEYS, type Client } from "@/lib/types";
 
+import { DateTimeField } from "./date-time-field";
 import { useErrorFocus } from "./use-error-focus";
 import { Button, ButtonLink, ErrorSummary, Field, Input, Select, Textarea } from "./ui";
 
@@ -151,11 +152,13 @@ export function ClientForm({ client }: { client?: Client }) {
             </Select>
           </Field>
           <Field label="Access until" htmlFor="accessUntil" error={errors.accessUntil}>
-            <Input
+            <DateTimeField
               id="accessUntil"
               name="accessUntil"
-              type="date"
+              label="Access until"
+              mode="date"
               defaultValue={values.accessUntil ?? ""}
+              align="end"
             />
           </Field>
           <Field

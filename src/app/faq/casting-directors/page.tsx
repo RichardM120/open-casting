@@ -104,7 +104,7 @@ export default function CastingDirectorFaqPage() {
         </FaqItem>
         <FaqItem q="When does my link start working?">
           <p>
-            When you publish. A new production is a draft: you post its roles, open the link
+            When you publish. A new casting call is a draft: you post its roles, open the link
             yourself to check it reads the way you want, and publish when you are happy. Until
             then the link opens for you and for nobody else.
           </p>

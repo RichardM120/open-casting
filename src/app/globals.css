@@ -62,4 +62,12 @@
     background-position: right 0.75rem center;
     background-size: 1rem;
   }
+
+  /*
+   * A date field's own pop-up is hidden: the calendar button beside it opens
+   * a picker that asks before it commits. Typing into the field still works.
+   */
+  .date-field::-webkit-calendar-picker-indicator {
+    display: none;
+  }
 }

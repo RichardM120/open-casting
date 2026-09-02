@@ -7,6 +7,7 @@ import { formatDateTime } from "@/lib/format";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
 import type { CastingSession, Role } from "@/lib/types";
 
+import { DateTimeField } from "./date-time-field";
 import { useErrorFocus } from "./use-error-focus";
 import { Button, ButtonLink, Checkbox, ErrorSummary, Field, Input, Select, Textarea } from "./ui";
 
@@ -217,10 +218,11 @@ export function RoleForm({
           htmlFor="shootStartsAt"
           error={errors.shootStartsAt}
         >
-          <Input
+          <DateTimeField
             id="shootStartsAt"
             name="shootStartsAt"
-            type="date"
+            label="First shoot day"
+            mode="date"
             defaultValue={values.shootStartsAt ?? ""}
             required
           />
@@ -231,11 +233,13 @@ export function RoleForm({
           hint="Leave blank if it shoots on one day."
           error={errors.shootEndsAt}
         >
-          <Input
+          <DateTimeField
             id="shootEndsAt"
             name="shootEndsAt"
-            type="date"
+            label="Last shoot day"
+            mode="date"
             defaultValue={values.shootEndsAt ?? ""}
+            align="end"
           />
         </Field>
         <div className="sm:col-span-2">

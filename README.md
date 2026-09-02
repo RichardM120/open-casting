@@ -91,7 +91,7 @@ nav, so hiding the link is presentation rather than protection.
 | `/c/[token]` | One casting call's casting call, the only page an applicant sees |
 | `/c/[token]/[roleId]` | The full brief, plus the submission form |
 | `/dashboard` | Your casting calls, each with its roles and submission counts. Sign-in required |
-| `/dashboard/sessions/new` | Open a casting call |
+| `/dashboard/sessions/new` | Set up a casting call; saved as a draft on the first save |
 | `/dashboard/sessions/[id]` | One casting call: its link, its roles, publish, close early, remove |
 | `/dashboard/sessions/[id]/edit` | Move a casting call's times, taking its roles with them |
 | `/dashboard/roles/new` | Post a role into a casting call |
@@ -340,7 +340,7 @@ not strong enough for a value that is doing this job.
    The data is theirs.
 6. **The call closes**, at its closing time or early.
 7. **Thirty days after the casting call ends, the applicants' details are
-   destroyed.** See below.
+   destroyed.** See below. Everything is saved as they go: a draft can be left with **Save and finish later** and picked up again from the Casting calls list, where it carries a **Continue setting up** link and the progress dots resume where they were.
 
 ## Agreements
 
@@ -397,6 +397,18 @@ It runs two ways, deliberately:
   keeping the data for ever in silence.
 
 The date is shown on every casting call's page, and both FAQs state it.
+
+## Dates and times
+
+Every date field in the dashboard (the casting window, when the production
+finishes, shoot days, a client's access date) is a native field with the
+browser's own pop-up hidden, and a calendar button beside it that opens
+`DateTimeField` instead: a Monday-first calendar, hour and minute for the
+casting window, and **Confirm**. Nothing reaches the field until Confirm;
+Cancel, Escape and a click elsewhere leave it as it was, and Clear empties it.
+The field can still be typed into, which is also how the end-to-end suite
+fills it. Under the casting window fields the chosen moment is read back in
+words, in UK time, which is how the server stores it.
 
 ## Photos and videos
 

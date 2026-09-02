@@ -85,6 +85,16 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         </p>
       ) : null}
 
+      {params.draft ? (
+        <p
+          role="status"
+          className="mb-8 rounded-2xl border border-accent/30 bg-accent-soft p-4 text-sm text-text"
+        >
+          Saved as a draft. Nothing is shown to applicants until you publish it, and you can pick
+          it up again from the list below whenever you like.
+        </p>
+      ) : null}
+
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <Eyebrow>Casting calls</Eyebrow>
@@ -163,7 +173,17 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                     </div>
 
                     <div className="flex flex-wrap items-center gap-2">
-                      {session.publishedAt === null ? <Badge tone="accent">Draft</Badge> : null}
+                      {session.publishedAt === null ? (
+                        <>
+                          <Badge tone="accent">Draft</Badge>
+                          <Link
+                            href={`/dashboard/sessions/${session.id}`}
+                            className="text-sm text-accent underline-offset-4 hover:underline"
+                          >
+                            Continue setting up
+                          </Link>
+                        </>
+                      ) : null}
                       {count?.unread ? <Badge tone="accent">{count.unread} to read</Badge> : null}
                       <Badge tone="outline">
                         {count?.submissions ?? 0}{" "}

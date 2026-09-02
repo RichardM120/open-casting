@@ -8,7 +8,7 @@ import { cx } from "./ui";
  * lights up only once the earlier ones are done.
  */
 export const SETUP_STEPS = [
-  { key: "open", label: "Open the casting call" },
+  { key: "open", label: "Set up the casting call" },
   { key: "roles", label: "Post the roles" },
   { key: "publish", label: "Publish" },
   { key: "share", label: "Share the link" },
