@@ -70,7 +70,7 @@ section("4 a forged context cookie does not get past the edge");
       path: "/",
     },
   ]);
-  await p.goto(`${BASE}/dashboard/accounts`, { waitUntil: "networkidle" });
+  await p.goto(`${BASE}/admin/accounts`, { waitUntil: "networkidle" });
   check("the signature is checked, not just the shape", p.url().includes("/login"), p.url());
   await c.close();
 }
@@ -79,7 +79,7 @@ section("5 a director cannot reach the admin console");
 const dir = await provision(browser, errors, admin.p, {
   name: "Auth Dir", company: `Auth Co ${t}`, email: `au${t}@example.com`, role: "director",
 });
-const accounts = await dir.p.goto(`${BASE}/dashboard/accounts`, { waitUntil: "networkidle" });
+const accounts = await dir.p.goto(`${BASE}/admin/accounts`, { waitUntil: "networkidle" });
 check("the edge turns it into a 404", accounts.status() === 404, String(accounts.status()));
 check("their own dashboard still works", (await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" })).status() === 200);
 
@@ -109,7 +109,7 @@ section("6b the Google callback refuses anything it did not start");
 section("7 the server decides, not the cookie");
 {
   // Suspend the director while they hold a valid, correctly signed context.
-  await admin.p.goto(`${BASE}/dashboard/accounts`, { waitUntil: "networkidle" });
+  await admin.p.goto(`${BASE}/admin/accounts`, { waitUntil: "networkidle" });
   await admin.p
     .locator("main ul > li")
     .filter({ hasText: `au${t}@example.com` })

@@ -5,14 +5,14 @@ import { useActionState } from "react";
 import { createCastingSession, editCastingSession } from "@/lib/actions";
 import { toLocalInput } from "@/lib/format";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
-import { PRODUCTION_TYPES, type CastingSession, type ProductionCompany } from "@/lib/types";
+import { PRODUCTION_TYPES, type CastingSession } from "@/lib/types";
 
 import { useErrorFocus } from "./use-error-focus";
 import { Button, ButtonLink, ErrorSummary, Field, Input, Select, Textarea } from "./ui";
 
 const LABELS: Record<string, string> = {
   name: "Production",
-  productionCompanyId: "Production company",
+  productionCompany: "Production company",
   productionType: "Production type",
   synopsis: "Synopsis",
   opensAt: "Submissions open",
@@ -25,13 +25,7 @@ const LABELS: Record<string, string> = {
  * here govern every role in the production, which is the whole point of
  * putting them here rather than on each role, so the form says so.
  */
-export function SessionForm({
-  session,
-  productionCompanies,
-}: {
-  session?: CastingSession;
-  productionCompanies: ProductionCompany[];
-}) {
+export function SessionForm({ session }: { session?: CastingSession }) {
   const [state, formAction, pending] = useActionState(
     session ? editCastingSession : createCastingSession,
     IDLE_FORM_STATE,
@@ -45,7 +39,7 @@ export function SessionForm({
     state.status === "idle" && session
       ? {
           name: session.name,
-          productionCompanyId: session.productionCompanyId ?? "",
+          productionCompany: session.productionCompany,
           productionType: session.productionType,
           synopsis: session.synopsis,
           opensAt: toLocalInput(session.opensAt),
@@ -74,7 +68,7 @@ export function SessionForm({
       <fieldset className="rounded-2xl border border-line bg-surface p-6 md:p-7">
         <legend className="px-2 text-sm font-semibold tracking-tight">The production</legend>
         <p className="text-sm text-muted">
-          What applicants see above every role you post into it, and the production company it is for.
+          What applicants see above every role you post into it.
         </p>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <Field label="Production" htmlFor="name" error={errors.name}>
@@ -102,22 +96,16 @@ export function SessionForm({
           </Field>
           <Field
             label="Production company"
-            htmlFor="productionCompanyId"
-            hint="Who the production is for. Yours to see, never shown to applicants."
-            error={errors.productionCompanyId}
+            htmlFor="productionCompany"
+            hint="Who is making it. Yours to see, never shown to applicants. Optional."
+            error={errors.productionCompany}
           >
-            <Select
-              id="productionCompanyId"
-              name="productionCompanyId"
-              defaultValue={values.productionCompanyId ?? productionCompanies[0]?.id ?? ""}
-              required
-            >
-              {productionCompanies.map((productionCompany) => (
-                <option key={productionCompany.id} value={productionCompany.id}>
-                  {productionCompany.name}
-                </option>
-              ))}
-            </Select>
+            <Input
+              id="productionCompany"
+              name="productionCompany"
+              placeholder="Wildseed Films"
+              defaultValue={values.productionCompany ?? ""}
+            />
           </Field>
           <Field
             label="Synopsis"

@@ -12,27 +12,35 @@ import { ButtonLink, cx } from "./ui";
 const PUBLIC_NAV = [{ href: "/faq", label: "FAQ" }] as const;
 
 /**
- * Two things to look at once signed in: the productions, which is where the
- * roles and submissions live, and the record of what has been done. Roles are
- * reached through their production rather than from a list of their own, and
- * production companies through the productions grouped under them, so there is
+ * The casting director's section: the productions, which is where the roles and
+ * submissions live, and the record of what has been done. Roles are reached
+ * through their production rather than from a list of their own, so there is
  * one place to look.
  */
-const OWNER_NAV = [
+const CASTING_NAV = [
   { href: "/dashboard", label: "Productions" },
   { href: "/dashboard/activity", label: "Activity" },
 ] as const;
 
-/** The owner's areas. A director has no business in either. */
+/** The owner's section: who is paying, who they are, and what the site did. */
 const ADMIN_NAV = [
-  { href: "/dashboard/clients", label: "Clients" },
-  { href: "/dashboard/accounts", label: "Accounts" },
+  { href: "/admin", label: "Overview" },
+  { href: "/admin/clients", label: "Clients" },
+  { href: "/admin/accounts", label: "Accounts" },
+  { href: "/admin/activity", label: "Activity" },
 ] as const;
 
 export function SiteHeader({ user }: { user: SessionUser | null }) {
   const pathname = usePathname();
+
+  // Two sections, and the nav shows the one you are in rather than both at
+  // once. Which section you are in is the path, not the role: an admin doing
+  // their own casting is in the casting director's section and wants its nav.
+  const inAdmin = pathname === "/admin" || pathname.startsWith("/admin/");
   const nav = user
-    ? [...OWNER_NAV, ...(user.role === "admin" ? ADMIN_NAV : []), ...PUBLIC_NAV]
+    ? inAdmin && user.role === "admin"
+      ? [...ADMIN_NAV, ...PUBLIC_NAV]
+      : [...CASTING_NAV, ...PUBLIC_NAV]
     : PUBLIC_NAV;
 
   /** The most specific match wins, so /dashboard/activity does not light up /dashboard too. */

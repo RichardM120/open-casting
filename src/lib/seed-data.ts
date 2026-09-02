@@ -1,42 +1,9 @@
-import type { Database, SeedProductionCompany, SeedRole, SeedSession, Submission } from "./types";
+import type { Database, SeedRole, SeedSession, Submission } from "./types";
 
 /**
  * Demo content. The database seeds itself from this when it is empty, so a
  * fresh clone has something to look at straight away.
  */
-
-/**
- * The production companies the demo agency casts for. Wildseed holds two
- * productions, which is the usual shape: a company comes back rather than
- * appearing once.
- */
-const productionCompanies: SeedProductionCompany[] = [
-  {
-    id: "cli_wildseed",
-    name: "Wildseed Films",
-    notes: "Feature and short work. Commissioning producer: Ines Baptiste.",
-  },
-  {
-    id: "cli_tworivers",
-    name: "Two Rivers Television",
-    notes: "Returning drama. Books through the production office, not the channel.",
-  },
-  {
-    id: "cli_hearth",
-    name: "Hearth Retail Group",
-    notes: "Seasonal campaigns. Usage and buyout are agreed per campaign.",
-  },
-  {
-    id: "cli_marlowe",
-    name: "Marlowe Audio",
-    notes: "Audio drama and audiobooks. Records remotely where the actor can.",
-  },
-  {
-    id: "cli_lantern",
-    name: "Lantern Theatre Company",
-    notes: "Casts its own seasons in house.",
-  },
-];
 
 /**
  * One production per casting. The production owns the live window, so the
@@ -46,7 +13,7 @@ const productionCompanies: SeedProductionCompany[] = [
 const sessions: SeedSession[] = [
   {
     id: "ses_saltmarsh",
-    productionCompanyId: "cli_wildseed",
+    productionCompany: "Wildseed Films",
     publicToken: "4f21c9ba7e",
     slug: "saltmarsh",
     name: "Saltmarsh",
@@ -60,7 +27,7 @@ const sessions: SeedSession[] = [
   },
   {
     id: "ses_northbank",
-    productionCompanyId: "cli_tworivers",
+    productionCompany: "Two Rivers Television",
     publicToken: "7c03ae5d18",
     slug: "northbank",
     name: "Northbank",
@@ -74,7 +41,7 @@ const sessions: SeedSession[] = [
   },
   {
     id: "ses_hearth",
-    productionCompanyId: "cli_hearth",
+    productionCompany: "Hearth Retail Group",
     publicToken: "2b96fd40ac",
     slug: "hearth-winter-campaign",
     name: "Hearth: Winter Campaign",
@@ -88,7 +55,7 @@ const sessions: SeedSession[] = [
   },
   {
     id: "ses_glasshouse",
-    productionCompanyId: "cli_marlowe",
+    productionCompany: "Marlowe Audio",
     publicToken: "e81a37f65d",
     slug: "the-glasshouse",
     name: "The Glasshouse",
@@ -102,7 +69,7 @@ const sessions: SeedSession[] = [
   },
   {
     id: "ses_lantern",
-    productionCompanyId: "cli_lantern",
+    productionCompany: "Lantern Theatre Company",
     publicToken: "93cd6b02fa",
     slug: "lantern",
     name: "Lantern",
@@ -116,7 +83,7 @@ const sessions: SeedSession[] = [
   },
   {
     id: "ses_kestrel",
-    productionCompanyId: "cli_wildseed",
+    productionCompany: "Wildseed Films",
     publicToken: "6d40ba18ce",
     slug: "kestrel",
     name: "Kestrel",
@@ -493,7 +460,6 @@ export function seedDatabase(): Database {
   });
 
   return {
-    productionCompanies: structuredClone(productionCompanies),
     sessions: structuredClone(sessions),
     roles: seedRoles,
     submissions: seedSubmissions,

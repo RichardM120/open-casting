@@ -9,8 +9,9 @@ import { verifyContext, verifyValue } from "@/lib/token";
  * again regardless. See `src/lib/token.ts` for why that division exists.
  */
 const GUARDED: { prefix: string; role?: "admin" }[] = [
-  { prefix: "/dashboard/accounts", role: "admin" },
-  { prefix: "/dashboard/clients", role: "admin" },
+  // The two sections. /admin is the owner's: clients, accounts and the
+  // site-wide trail. /dashboard is a casting director's own work.
+  { prefix: "/admin", role: "admin" },
   { prefix: "/dashboard" },
 ];
 

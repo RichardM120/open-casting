@@ -82,7 +82,7 @@ section("5 a tampered link is refused");
 section("6 the real link works, once");
 await me.p.goto(link, { waitUntil: "networkidle" });
 check("now signed in", (await me.p.context().cookies()).some((c) => c.name === "oc_session"));
-check("as an admin", (await me.p.goto(`${BASE}/dashboard/accounts`, { waitUntil: "networkidle" })).status() === 200);
+check("as an admin", (await me.p.goto(`${BASE}/admin/accounts`, { waitUntil: "networkidle" })).status() === 200);
 {
   const { c, p } = await ctx();
   await p.goto(link, { waitUntil: "networkidle" });

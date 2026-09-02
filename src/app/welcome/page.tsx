@@ -16,19 +16,18 @@ const WHAT_YOU_SEE: Record<UserRole, { heading: string; points: string[]; cta: {
   director: {
     heading: "You will see the productions you open, and nothing else",
     points: [
-      "Start by adding the production company you are casting for. Every production belongs to one, so the work stays sorted by who it is for.",
-      "Then open a production under it. It holds the opening and closing times, and the roles you post into it open and close with it.",
+      "Start by opening a production. It holds the opening and closing times, and the roles you post into it open and close with it.",
       "Every submission made to your roles lands in one list, newest first.",
       "Move people through New, Shortlisted, Callback and Declined as you work.",
       "Colleagues with a casting director account cannot see your productions. A producer at your company can.",
       "Nothing is emailed to applicants automatically. Their address is on every submission.",
     ],
-    cta: { href: "/dashboard/production-companies/new", label: "Add your first production company" },
+    cta: { href: "/dashboard/sessions/new", label: "Open your first production" },
   },
   producer: {
     heading: "You will see every production under your company",
     points: [
-      "Productions from all your casting directors, grouped by the client they are for, with the roles in them.",
+      "Productions from all your casting directors, and the roles in them, in one place.",
       "Each production owns its opening and closing times, and its roles open and close together.",
       "You can read and act on their submissions, and edit or close their roles.",
       "Matching is on the company name, so it has to be spelled the same way.",
@@ -44,7 +43,7 @@ const WHAT_YOU_SEE: Record<UserRole, { heading: string; points: string[]; cta: {
       "Removing a role, or a whole production, permanently deletes the applicants' contact details with it. Closing early is the reversible option.",
       "Every action is recorded in the activity trail, including yours.",
     ],
-    cta: { href: "/dashboard/accounts", label: "Review the accounts" },
+    cta: { href: "/admin/accounts", label: "Review the accounts" },
   },
 };
 

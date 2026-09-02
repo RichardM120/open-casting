@@ -45,12 +45,8 @@ section("3 step 2 explains the director's own scope");
 check("director wording", (await dir.p.getByText(/productions you open, and nothing else/).count()) > 0);
 check("warns colleagues cannot see it", (await dir.p.getByText(/cannot see your productions/).count()) > 0);
 check(
-  "explains production companies come first",
-  (await dir.p.getByText(/Start by adding the production company you are casting for/).count()) > 0,
-);
-check(
-  "then the production",
-  (await dir.p.getByText(/Then open a production under it/).count()) > 0,
+  "explains productions come first",
+  (await dir.p.getByText(/Start by opening a production/).count()) > 0,
 );
 await dir.p.screenshot({ path: `${SHOTS}/wizard-2.png`, fullPage: true });
 await dir.p.getByRole("link", { name: "Continue" }).click();
@@ -68,10 +64,10 @@ section("3b accounts cannot be self-registered");
   await c.close();
 }
 
-section("4 finishing sends a director to add their first production company");
-await dir.p.getByRole("button", { name: "Add your first production company" }).click();
-await dir.p.waitForURL("**/dashboard/production-companies/new", { timeout: 20000 });
-check("lands on the production company form", true);
+section("4 finishing sends a director to open a production");
+await dir.p.getByRole("button", { name: "Open your first production" }).click();
+await dir.p.waitForURL("**/dashboard/sessions/new", { timeout: 20000 });
+check("lands on the production form", true);
 await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 check("the nudge banner is gone", (await dir.p.getByText(/setup is not finished/).count()) === 0);
 
@@ -102,18 +98,25 @@ check("warns removal is permanent", (await admin.p.getByText(/permanently delete
 check("warns their own actions are logged", (await admin.p.getByText(/including yours/).count()) > 0);
 await admin.p.screenshot({ path: `${SHOTS}/wizard-admin.png`, fullPage: true });
 
-section("6b the navigation matches the role, and the hierarchy");
+section("6b the two sections each carry their own navigation");
 {
-  // Productions first, because a role cannot exist without one.
+  // The casting director's section, which an admin is in when doing their own
+  // casting: no admin links, because that is a different section.
   const order = await admin.p.locator("header nav").first().locator("a").allTextContents();
-  check(`admin nav in order: ${JSON.stringify(order)}`,
-    JSON.stringify(order) === JSON.stringify(["Productions", "Activity", "Clients", "Accounts", "FAQ"]));
+  check(`casting nav in order: ${JSON.stringify(order)}`,
+    JSON.stringify(order) === JSON.stringify(["Productions", "Activity", "FAQ"]));
+
+  await admin.p.goto(`${BASE}/admin`, { waitUntil: "networkidle" });
+  const adminOrder = await admin.p.locator("header nav").first().locator("a").allTextContents();
+  check(`admin nav in order: ${JSON.stringify(adminOrder)}`,
+    JSON.stringify(adminOrder) === JSON.stringify(["Overview", "Clients", "Accounts", "Activity", "FAQ"]));
+  await admin.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 
   await half.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
   const theirs = await half.p.locator("header nav").first().locator("a").allTextContents();
   check(`a producer gets no Accounts: ${JSON.stringify(theirs)}`, !theirs.includes("Accounts"));
   check("and the page itself still refuses",
-    (await half.p.goto(`${BASE}/dashboard/accounts`, { waitUntil: "networkidle" })).status() === 404);
+    (await half.p.goto(`${BASE}/admin/accounts`, { waitUntil: "networkidle" })).status() === 404);
 
   // A back-link that names a destination differently from the nav is a bug.
   await admin.p.goto(`${BASE}/dashboard/activity`, { waitUntil: "networkidle" });

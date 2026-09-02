@@ -9,6 +9,18 @@ export function SiteFooter() {
           on it are invented.
         </p>
         <div className="flex flex-wrap gap-x-5 gap-y-2">
+          {/*
+            Temporary, while the wall is up and there is no mail provider to
+            send an administrator their second factor. Both still go through
+            the usual checks: the admin section refuses anyone who is not one.
+            Remove these two when sign-in is doing the routing.
+          */}
+          <Link href="/admin" className="transition-colors hover:text-text">
+            Admin
+          </Link>
+          <Link href="/dashboard" className="transition-colors hover:text-text">
+            Casting director
+          </Link>
           <Link href="/faq/applicants" className="transition-colors hover:text-text">
             Applicant FAQ
           </Link>

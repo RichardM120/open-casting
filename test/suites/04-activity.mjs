@@ -102,7 +102,7 @@ await prod.p.goto(`${BASE}/dashboard/activity`, { waitUntil: "networkidle" });
 check("a producer at the company sees it", (await prod.p.getByText(`ACT-${t}`).count()) > 0);
 
 section("7 account events are admin-only");
-await admin.p.goto(`${BASE}/dashboard/accounts`, { waitUntil: "networkidle" });
+await admin.p.goto(`${BASE}/admin/accounts`, { waitUntil: "networkidle" });
 await admin.p.locator("main ul > li").filter({ hasText: `ot${t}@example.com` })
   .getByRole("button", { name: "Suspend" }).click();
 await admin.p.waitForTimeout(2500);

@@ -36,10 +36,10 @@ const dir = await provision(browser, errors, admin.p, {
   maxSessions: 2,
   maxRolesPerSession: 2,
 });
-await admin.p.goto(`${BASE}/dashboard/clients`, { waitUntil: "networkidle" });
+await admin.p.goto(`${BASE}/admin/clients`, { waitUntil: "networkidle" });
 check("the allowance is shown against the client",
   (await admin.p.getByText(/0 of 2 productions/).count()) > 0);
-await admin.p.goto(`${BASE}/dashboard/accounts`, { waitUntil: "networkidle" });
+await admin.p.goto(`${BASE}/admin/accounts`, { waitUntil: "networkidle" });
 check("and the account points at its client",
   (await admin.p.getByText(/What they may run comes from their client/).count()) > 0);
 await admin.p.screenshot({ path: `${SHOTS}/accounts.png`, fullPage: true });
@@ -128,9 +128,9 @@ check("names the date the details go", (await dir.p.getByText(/destroyed 30 days
 }
 
 section("7 the administrator can change the arrangement afterwards");
-await admin.p.goto(`${BASE}/dashboard/clients`, { waitUntil: "networkidle" });
+await admin.p.goto(`${BASE}/admin/clients`, { waitUntil: "networkidle" });
 await admin.p.locator("#main").getByText(CO, { exact: true }).click();
-await admin.p.waitForURL(/\/dashboard\/clients\/cl_/, { timeout: 20000 });
+await admin.p.waitForURL(/\/admin\/clients\/cl_/, { timeout: 20000 });
 const clientUrl = admin.p.url().split("?")[0];
 await admin.p.fill("#maxSessions", "5");
 await admin.p.getByRole("button", { name: "Save the client" }).click();

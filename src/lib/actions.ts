@@ -16,13 +16,6 @@ import {
   updateClient,
 } from "./clients";
 import {
-  createProductionCompany,
-  deleteProductionCompany,
-  getVisibleProductionCompany,
-  listVisibleProductionCompanies,
-  updateProductionCompany,
-} from "./production-companies";
-import {
   createSession,
   deleteSessionAsAdmin,
   getSession,
@@ -67,7 +60,6 @@ import {
 import { generatePassword } from "./password";
 import {
   clientSchema,
-  productionCompanySchema,
   fieldErrors,
   newAccountSchema,
   roleSchema,
@@ -419,7 +411,7 @@ export async function createAccount(
   _previous: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const user = await requireUser("/dashboard/accounts");
+  const user = await requireUser("/admin/accounts");
   if (user.role !== "admin") {
     return invalid({}, "Only the administrator can create accounts.", formData);
   }
@@ -487,7 +479,7 @@ export async function createAccount(
 export async function toggleAccountSuspended(formData: FormData): Promise<void> {
   const id = String(formData.get("accountId") ?? "");
   const suspended = formData.get("suspended") === "1";
-  const user = await requireUser("/dashboard/accounts");
+  const user = await requireUser("/admin/accounts");
 
   // An admin locking themselves out would leave nobody able to undo it.
   if (user.role !== "admin" || !id || id === user.id) return;
@@ -520,7 +512,7 @@ export async function createClientRecord(
   _previous: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const gate = await requireOwner("/dashboard/clients/new");
+  const gate = await requireOwner("/admin/clients/new");
   if ("status" in gate) return gate;
 
   const parsed = clientSchema.safeParse(Object.fromEntries(formData));
@@ -556,7 +548,7 @@ export async function createClientRecord(
   });
 
   revalidateEverything();
-  redirect(`/dashboard/clients/${client.id}?created=1`);
+  redirect(`/admin/clients/${client.id}?created=1`);
 }
 
 export async function editClientRecord(
@@ -564,7 +556,7 @@ export async function editClientRecord(
   formData: FormData,
 ): Promise<FormState> {
   const id = String(formData.get("clientId") ?? "");
-  const gate = await requireOwner(`/dashboard/clients/${id}`);
+  const gate = await requireOwner(`/admin/clients/${id}`);
   if ("status" in gate) return gate;
 
   const parsed = clientSchema.safeParse(Object.fromEntries(formData));
@@ -606,18 +598,18 @@ export async function editClientRecord(
   });
 
   revalidateEverything();
-  redirect(`/dashboard/clients/${client.id}?saved=1`);
+  redirect(`/admin/clients/${client.id}?saved=1`);
 }
 
 /** Stops or restarts a whole client, and everyone signed in under it. */
 export async function toggleClientSuspended(formData: FormData): Promise<void> {
   const id = String(formData.get("clientId") ?? "");
-  const user = await requireUser("/dashboard/clients");
-  if (user.role !== "admin" || !id) redirect("/dashboard/clients");
+  const user = await requireUser("/admin/clients");
+  if (user.role !== "admin" || !id) redirect("/admin/clients");
 
   const suspend = formData.get("suspend") === "on";
   const client = await getClient(id);
-  if (!client) redirect("/dashboard/clients");
+  if (!client) redirect("/admin/clients");
 
   await setClientSuspended(id, suspend);
   await record({
@@ -630,22 +622,22 @@ export async function toggleClientSuspended(formData: FormData): Promise<void> {
   });
 
   revalidateEverything();
-  redirect(`/dashboard/clients/${id}?${suspend ? "suspended" : "restored"}=1`);
+  redirect(`/admin/clients/${id}?${suspend ? "suspended" : "restored"}=1`);
 }
 
 export async function removeClient(formData: FormData): Promise<void> {
   const id = String(formData.get("clientId") ?? "");
-  const user = await requireUser("/dashboard/clients");
+  const user = await requireUser("/admin/clients");
   if (user.role !== "admin" || formData.get("confirm") !== "on" || !id) {
-    redirect("/dashboard/clients");
+    redirect("/admin/clients");
   }
 
   const client = await getClient(id);
-  if (!client) redirect("/dashboard/clients");
+  if (!client) redirect("/admin/clients");
 
   const outcome = await deleteClient(id);
-  if (outcome === "in-use") redirect(`/dashboard/clients/${id}?inuse=1`);
-  if (outcome === "not-found") redirect("/dashboard/clients");
+  if (outcome === "in-use") redirect(`/admin/clients/${id}?inuse=1`);
+  if (outcome === "not-found") redirect("/admin/clients");
 
   await record({
     action: "client.removed",
@@ -657,129 +649,7 @@ export async function removeClient(formData: FormData): Promise<void> {
   });
 
   revalidateEverything();
-  redirect("/dashboard/clients?removed=1");
-}
-
-/* --------------------------------------------- production companies -- */
-
-/**
- * Adds a client. Clients sit above productions, so this is what a director
- * does before opening the first production for a company.
- */
-export async function createProductionCompanyRecord(
-  _previous: FormState,
-  formData: FormData,
-): Promise<FormState> {
-  const user = await requireUser("/dashboard/production-companies/new");
-
-  const parsed = productionCompanySchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) {
-    return invalid(
-      fieldErrors(parsed.error),
-      "Check the highlighted fields and try again.",
-      formData,
-    );
-  }
-
-  // One client of a given name per account, enforced by the database. Catching
-  // it here turns the constraint into a sentence instead of a 500.
-  const existing = await listVisibleProductionCompanies(user);
-  if (existing.some((c) => c.name.toLowerCase() === parsed.data.name.toLowerCase())) {
-    return invalid(
-      { name: "You already have a production company with that name" },
-      "Check the highlighted fields and try again.",
-      formData,
-    );
-  }
-
-  const client = await createProductionCompany(parsed.data, user.id, user.company);
-  await record({
-    action: "production_company.created",
-    actorId: user.id,
-    actorName: user.name,
-    ownerId: client.ownerId,
-    company: client.company,
-    detail: client.name,
-  });
-
-  revalidateEverything();
-  redirect(`/dashboard/production-companies?created=1`);
-}
-
-export async function editProductionCompanyRecord(
-  _previous: FormState,
-  formData: FormData,
-): Promise<FormState> {
-  const id = String(formData.get("productionCompanyId") ?? "");
-  const user = await requireUser(`/dashboard/production-companies/${id}/edit`);
-
-  const parsed = productionCompanySchema.safeParse(Object.fromEntries(formData));
-  if (!parsed.success) {
-    return invalid(
-      fieldErrors(parsed.error),
-      "Check the highlighted fields and try again.",
-      formData,
-    );
-  }
-
-  const existing = await listVisibleProductionCompanies(user);
-  if (
-    existing.some(
-      (c) => c.id !== id && c.name.toLowerCase() === parsed.data.name.toLowerCase(),
-    )
-  ) {
-    return invalid(
-      { name: "You already have a production company with that name" },
-      "Check the highlighted fields and try again.",
-      formData,
-    );
-  }
-
-  const client = await updateProductionCompany(id, parsed.data, user);
-  if (!client) {
-    return invalid({}, "That client is no longer yours to edit.", formData);
-  }
-
-  await record({
-    action: "production_company.edited",
-    actorId: user.id,
-    actorName: user.name,
-    ownerId: client.ownerId,
-    company: client.company,
-    detail: client.name,
-  });
-
-  revalidateEverything();
-  redirect(`/dashboard/production-companies?saved=1`);
-}
-
-/**
- * Removes a client that has no productions under it. One that still holds
- * productions is refused: removing it would mean taking real casting work and
- * its submissions with it, which is never what deleting a client should mean.
- */
-export async function removeProductionCompany(formData: FormData): Promise<void> {
-  const id = String(formData.get("productionCompanyId") ?? "");
-  const user = await requireUser("/dashboard/production-companies");
-
-  const client = await getVisibleProductionCompany(id, user);
-  if (!client) redirect("/dashboard/production-companies");
-
-  const outcome = await deleteProductionCompany(id, user);
-  if (outcome === "in-use") redirect(`/dashboard/production-companies?inuse=1`);
-  if (outcome === "not-found") redirect("/dashboard/production-companies");
-
-  await record({
-    action: "production_company.removed",
-    actorId: user.id,
-    actorName: user.name,
-    ownerId: client.ownerId,
-    company: client.company,
-    detail: client.name,
-  });
-
-  revalidateEverything();
-  redirect("/dashboard/production-companies?removed=1");
+  redirect("/admin/clients?removed=1");
 }
 
 /* ---------------------------------------------------------- productions -- */
@@ -798,17 +668,6 @@ export async function createCastingSession(
   if (!parsed.success) {
     return invalid(
       fieldErrors(parsed.error),
-      "Check the highlighted fields and try again.",
-      formData,
-    );
-  }
-
-  // A posted client id is just a string from the browser, so it is checked
-  // against what this account may see before a production is hung off it.
-  const client = await getVisibleProductionCompany(parsed.data.productionCompanyId, user);
-  if (!client) {
-    return invalid(
-      { productionCompanyId: "Choose one of your clients" },
       "Check the highlighted fields and try again.",
       formData,
     );
@@ -852,17 +711,6 @@ export async function editCastingSession(
   if (!parsed.success) {
     return invalid(
       fieldErrors(parsed.error),
-      "Check the highlighted fields and try again.",
-      formData,
-    );
-  }
-
-  // A posted client id is just a string from the browser, so it is checked
-  // against what this account may see before a production is hung off it.
-  const client = await getVisibleProductionCompany(parsed.data.productionCompanyId, user);
-  if (!client) {
-    return invalid(
-      { productionCompanyId: "Choose one of your clients" },
       "Check the highlighted fields and try again.",
       formData,
     );

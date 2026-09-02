@@ -47,22 +47,21 @@ deliberately left alone.
 /faq  /faq/*            Reference, open to anyone
 /legal/*                The agreements, open so a casting link can cite them
 
-/dashboard                        Productions by company, with their roles  ─┐
-  /production-companies           Who you cast for                          │
-  /production-companies/new       Add one                                   │
-  /production-companies/[id]/edit Rename it, or keep notes on it            │ the order
-  /sessions/new                   Open a production under one               │ the work
-  /sessions/[id]                  One production: its link and its roles    │ happens in
-  /sessions/[id]/edit             Its times                                 │
-  /roles/new                      Post a role into it                       │
-  /roles/[id]                     Its submissions                           │
-  /roles/[id]/edit                Edit it                                  ─┘
-/dashboard/activity               The trail
+/dashboard              Productions, with the roles in each  ─┐
+  /sessions/new         Open one                               │
+  /sessions/[id]        One production: its link and its roles │  the order the
+  /sessions/[id]/edit   Its times                              │  work happens in
+  /roles/new            Post a role into it                    │
+  /roles/[id]           Its submissions                        │
+  /roles/[id]/edit      Edit it                               ─┘
+/dashboard/activity     The trail, scoped to what you may see
 
-/dashboard/clients                Who pays for Open Casting  ─┐
-  /clients/new                    Take one on                 │ owner only
-  /clients/[id]                   Plan, ceilings, accounts     │
-/dashboard/accounts               Accounts, made under a client ─┘
+/admin                  The service at a glance   ─┐
+  /admin/clients        Who pays for Open Casting  │ owner only
+  /admin/clients/new    Take one on                │
+  /admin/clients/[id]   Plan, ceilings, accounts   │
+  /admin/accounts       Accounts, made under a client │
+  /admin/activity       Everything, across every client ─┘
 
 /c/<slug>-<token>              A production, as an applicant sees it
 /c/<slug>-<token>/<role-slug>  One role, and the submission form
@@ -72,11 +71,11 @@ deliberately left alone.
 client and a role cannot exist without a production, so the dashboard is the
 list of productions grouped by client with the roles under each, and every page
 links back one level: a role to its production, a production to the list. The
-nav is Productions, Activity and FAQ, with Clients and Accounts added for the
-owner, and the back-links use the same words for the same places. Production
-companies are not in it: they are reached from the productions grouped under
-them on the dashboard, and from the production form when there is a new one to
-add. `/dashboard/sessions` still answers, with a permanent
+nav is Productions, Activity and FAQ in the casting section, and Overview,
+Clients, Accounts and Activity in the owner's, and the back-links use the same
+words for the same places. While the site is walled off and there is no mail
+provider to send an administrator their second factor, the footer carries a
+temporary link to each section. `/dashboard/sessions` still answers, with a permanent
 redirect to `/dashboard`, and `/faq/performers` redirects to `/faq/applicants`,
 so an old bookmark lands in the right place.
 
@@ -399,25 +398,34 @@ It runs two ways, deliberately:
 
 The date is shown on every production's page, and both FAQs state it.
 
-## Clients, production companies, productions, applicants
+## Two sections, and four words
 
-Four words, one hierarchy, used consistently in the interface:
+The site is in two parts, guarded separately:
+
+| Section | Who | What is in it |
+| --- | --- | --- |
+| `/admin` | the owner | Clients, the accounts under them, the site-wide trail |
+| `/dashboard` | casting directors and producers | Productions, roles, submissions, their own trail |
+
+Which section you are in is the path, not the role, so an owner doing their own
+casting gets the casting navigation while they are in `/dashboard`.
+
+Four words, one hierarchy:
 
 | The word | What it means | In the code |
 | --- | --- | --- |
 | **Client** | A company paying for Open Casting. Managed by the owner alone. | `clients` |
-| **Production company** | A company that client casts for. Internal: never shown to applicants. | `production_companies` |
 | **Production** | One project, with however many roles. | `sessions_casting` |
+| **Production company** | Who is making it. A line on the production, not a record. | `sessions_casting.production_company` |
 | **Applicant** | Someone who submits for a role. | `submissions` |
 
 ```
 Open Casting (the owner)
  └ Client                 CW Casting Ltd        plan, ceilings, billing, status
     ├ Accounts            directors, producers  inherit the client's plan
-    └ Production company  Wildseed Films
-       └ Production       Saltmarsh
-          └ Role          Nell (Lead)
-             └ Applicant  Aoife Brennan
+    └ Production          Saltmarsh             production company: Wildseed Films
+       └ Role             Nell (Lead)
+          └ Applicant     Aoife Brennan
 ```
 
 The code keeps its older names (a production is a *casting session*, at

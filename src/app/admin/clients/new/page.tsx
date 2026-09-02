@@ -12,13 +12,13 @@ export const metadata: Metadata = {
 };
 
 export default async function NewClientPage() {
-  const user = await requireUser("/dashboard/clients/new");
+  const user = await requireUser("/admin/clients/new");
   if (user.role !== "admin") notFound();
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-12">
       <Link
-        href="/dashboard/clients"
+        href="/admin/clients"
         className="text-sm text-muted transition-colors hover:text-text"
       >
         &larr; Clients

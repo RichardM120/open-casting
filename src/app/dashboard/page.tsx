@@ -6,7 +6,6 @@ import { DeadlineBadge } from "@/components/deadline-badge";
 import { Badge, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
 import { listActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
-import { listVisibleProductionCompanies } from "@/lib/production-companies";
 import { formatDateTime, isOpen, roleWindow } from "@/lib/format";
 import { listVisibleRoles, type ListedRole } from "@/lib/roles";
 import { listVisibleSessions, sessionStats } from "@/lib/sessions";
@@ -29,13 +28,12 @@ export const metadata: Metadata = {
  */
 export default async function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
   const user = await requireUser("/dashboard");
-  const [sessions, stats, roles, counts, activity, productionCompanies, params] = await Promise.all([
+  const [sessions, stats, roles, counts, activity, params] = await Promise.all([
     listVisibleSessions(user),
     sessionStats(user),
     listVisibleRoles(user),
     countsByRole(user),
     listActivity(user, { limit: 8 }),
-    listVisibleProductionCompanies(user),
     searchParams,
   ]);
 
@@ -43,24 +41,6 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   for (const role of roles) {
     rolesBySession.set(role.sessionId, [...(rolesBySession.get(role.sessionId) ?? []), role]);
   }
-
-  // Productions are shown under the production company they are for, in the order
-  // the list already uses. Anything without one (only rows predating them)
-  // falls into a group at the end rather than disappearing.
-  const groups = [
-    ...productionCompanies.map((productionCompany) => ({
-      id: productionCompany.id,
-      name: productionCompany.name,
-      sessions: sessions.filter((session) => session.productionCompanyId === productionCompany.id),
-    })),
-    {
-      id: "none",
-      name: "No productionCompany",
-      sessions: sessions.filter(
-        (session) => !productionCompanies.some((productionCompany) => productionCompany.id === session.productionCompanyId),
-      ),
-    },
-  ].filter((group) => group.sessions.length > 0);
 
   const totals = sessions.reduce(
     (accumulator, session) => {
@@ -153,31 +133,8 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               : ""}
           </p>
 
-          <div className="mt-6 flex flex-col gap-8">
-            {groups.map((group) => (
-              <section key={group.id}>
-                <div className="flex items-baseline justify-between gap-4 border-b border-line pb-2">
-                  <h2 className="text-sm font-semibold tracking-tight">
-                    {group.id === "none" ? (
-                      group.name
-                    ) : (
-                      // The only way to a production company now that they are
-                      // out of the nav: from the productions grouped under it.
-                      <Link
-                        href={`/dashboard/production-companies/${group.id}/edit`}
-                        className="transition-colors hover:text-accent"
-                      >
-                        {group.name}
-                      </Link>
-                    )}
-                  </h2>
-                  <span className="text-xs text-faint">
-                    {group.sessions.length}{" "}
-                    {group.sessions.length === 1 ? "production" : "productions"}
-                  </span>
-                </div>
-                <ul className="mt-3 flex flex-col gap-3">
-                  {group.sessions.map((session) => {
+          <ul className="mt-6 flex flex-col gap-3">
+            {sessions.map((session) => {
               const count = stats.get(session.id);
               const sessionRoles = rolesBySession.get(session.id) ?? [];
               return (
@@ -194,8 +151,9 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                         {session.name}
                       </Link>
                       <p className="truncate text-sm text-muted">
-                        {session.productionType} · {formatDateTime(session.opensAt)} to{" "}
-                        {formatDateTime(session.closesAt)}
+                        {session.productionType}
+                        {session.productionCompany ? ` · ${session.productionCompany}` : ""} ·{" "}
+                        {formatDateTime(session.opensAt)} to {formatDateTime(session.closesAt)}
                       </p>
                     </div>
 
@@ -244,12 +202,9 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                     </p>
                   )}
                 </li>
-                    );
-                  })}
-                </ul>
-              </section>
-            ))}
-          </div>
+              );
+            })}
+          </ul>
         </>
       ) : (
         <div className="mt-10">

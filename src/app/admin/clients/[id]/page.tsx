@@ -15,7 +15,7 @@ export const dynamic = "force-dynamic";
 
 export async function generateMetadata({
   params,
-}: PageProps<"/dashboard/clients/[id]">): Promise<Metadata> {
+}: PageProps<"/admin/clients/[id]">): Promise<Metadata> {
   const user = await currentUser();
   const client = user?.role === "admin" ? await getClient((await params).id) : null;
   return { title: client ? client.name : "Client not found" };
@@ -25,9 +25,9 @@ export async function generateMetadata({
 export default async function ClientPage({
   params,
   searchParams,
-}: PageProps<"/dashboard/clients/[id]">) {
+}: PageProps<"/admin/clients/[id]">) {
   const { id } = await params;
-  const user = await requireUser(`/dashboard/clients/${id}`);
+  const user = await requireUser(`/admin/clients/${id}`);
   if (user.role !== "admin") notFound();
 
   const client = await getClient(id);
@@ -55,7 +55,7 @@ export default async function ClientPage({
   return (
     <div className="mx-auto max-w-4xl px-5 py-12">
       <Link
-        href="/dashboard/clients"
+        href="/admin/clients"
         className="text-sm text-muted transition-colors hover:text-text"
       >
         &larr; Clients
@@ -106,7 +106,7 @@ export default async function ClientPage({
           <p className="mt-4 rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">
             No accounts yet.{" "}
             <Link
-              href="/dashboard/accounts"
+              href="/admin/accounts"
               className="text-accent underline-offset-4 hover:underline"
             >
               Make the first one
@@ -131,7 +131,7 @@ export default async function ClientPage({
           </ul>
         )}
         <div className="mt-4">
-          <ButtonLink href="/dashboard/accounts" variant="secondary" size="sm">
+          <ButtonLink href="/admin/accounts" variant="secondary" size="sm">
             Manage accounts
           </ButtonLink>
         </div>

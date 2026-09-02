@@ -202,7 +202,7 @@ export function ClientForm({ client }: { client?: Client }) {
         <Button type="submit" disabled={pending}>
           {pending ? "Saving..." : client ? "Save the client" : "Take on the client"}
         </Button>
-        <ButtonLink href="/dashboard/clients" variant="ghost">
+        <ButtonLink href="/admin/clients" variant="ghost">
           Cancel
         </ButtonLink>
       </div>

@@ -86,28 +86,14 @@ export default function CastingDirectorFaqPage() {
       </FaqSection>
 
       <FaqSection
-        title="Clients and productions"
-        intro="A client is the company you are casting for. A production is one of their projects, with however many roles in it. The production holds the times submissions run between, and its roles open and close with it."
+        title="Productions"
+        intro="A production is one project with however many roles in it. It holds the times submissions run between, and its roles open and close with it."
       >
-        <FaqItem q="What is a client, and why do I add one first?">
-          <p>
-            A client is who the work is for. Everything you run sits under one, so the dashboard
-            stays sorted by company rather than becoming one long list of productions, and a
-            client you cast for repeatedly keeps its productions together.
-          </p>
-          <p>
-            Clients are internal. Applicants never see the client on a share link or anywhere
-            else: what they see is the production, its roles, and who is casting it.
-          </p>
-          <p>
-            <Link href="/dashboard/production-companies/new">Add a production company</Link>, then open its first
-            production.
-          </p>
-        </FaqItem>
         <FaqItem q="Why do I open a production before posting a role?">
           <p>
-            Because a production casts as a unit. It holds the name, the synopsis, the client
-            and the opening and closing times, and every role you post into it follows them. That
+            Because a production casts as a unit. It holds the name, the synopsis, the
+            production company and the opening and closing times, and every role you post into
+            it follows them. That
             is one thing to change when a schedule moves, not one per role, and it makes it
             impossible for two roles on the same production to disagree about when casting
             closes.

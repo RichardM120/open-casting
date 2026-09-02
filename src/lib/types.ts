@@ -47,25 +47,6 @@ export type Client = {
 };
 
 /**
- * A production company a client casts for: whose productions these are.
- *
- * Clients sit above productions, so a production belongs to exactly one. This
- * is an internal record. Applicants never see it, because who commissioned a
- * production is the agency's business and often confidential until later.
- */
-export type ProductionCompany = {
-  id: string;
-  name: string;
-  /** Free notes: the contact there, the billing reference, whatever is useful. */
-  notes: string;
-  /** The account that created it. */
-  ownerId: string | null;
-  /** The agency the owner belongs to, which is what producers match on. */
-  company: string;
-  createdAt: string;
-};
-
-/**
  * One production and its casting window. A production casts as a unit rather
  * than role by role, so the roles posted into it open and close with it and
  * carry its name, type, synopsis and company.
@@ -79,11 +60,11 @@ export type CastingSession = {
   ownerId: string | null;
   /**
    * The agency that owns this, which is what producer visibility matches on.
-   * Not the production company: see productionCompanyId.
+   * Not the production company, which is a line on the production.
    */
   company: string;
-  /** The production company whose production this is. Null only for older rows. */
-  productionCompanyId: string | null;
+  /** Who is making it. A line on the form, never shown to an applicant. */
+  productionCompany: string;
   /**
    * ISO timestamps. Submissions are accepted from opensAt up to closesAt. The
    * casting director enters both in UK time; they are stored as instants.
@@ -241,11 +222,7 @@ export const ROLE_DESCRIPTIONS: Record<SignupRole, string> = {
   producer: "Sees every production under the company, and everything posted into them.",
 };
 
-/** A demo productionCompany. The seed supplies the owner and agency. */
-export type SeedProductionCompany = Pick<ProductionCompany, "id" | "name" | "notes">;
-
 export type Database = {
-  productionCompanies: SeedProductionCompany[];
   sessions: SeedSession[];
   /** Roles with their production's details filled in, ready to insert. */
   roles: Omit<Role, "ownerId">[];

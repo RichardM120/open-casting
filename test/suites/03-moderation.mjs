@@ -62,10 +62,10 @@ const other = await provision(browser, errors, admin0.p, { name: "Other", compan
 check("404 on the edit page", (await other.p.goto(`${BASE}/dashboard/roles/${roleId}/edit`, { waitUntil: "networkidle" })).status() === 404);
 
 section("4 accounts page is admin only");
-check("non-admin gets 404", (await other.p.goto(`${BASE}/dashboard/accounts`, { waitUntil: "networkidle" })).status() === 404);
+check("non-admin gets 404", (await other.p.goto(`${BASE}/admin/accounts`, { waitUntil: "networkidle" })).status() === 404);
 // The bootstrapped administrator, not a made account: there is only one.
 const admin = admin0;
-check("admin reaches it", (await admin.p.goto(`${BASE}/dashboard/accounts`, { waitUntil: "networkidle" })).status() === 200);
+check("admin reaches it", (await admin.p.goto(`${BASE}/admin/accounts`, { waitUntil: "networkidle" })).status() === 200);
 check("lists other accounts", (await admin.p.getByText(`md${t}@example.com`).count()) > 0);
 check("cannot suspend self", (await admin.p.getByText("Cannot suspend yourself").count()) > 0);
 
