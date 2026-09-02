@@ -24,6 +24,8 @@ export async function sendEmail(message: {
   to: string;
   subject: string;
   text: string;
+  /** Files to attach, content base64-encoded, as the provider takes them. */
+  attachments?: Array<{ filename: string; content: string }>;
 }): Promise<Delivery> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
 
@@ -52,6 +54,7 @@ export async function sendEmail(message: {
         to: [message.to],
         subject: message.subject,
         text: message.text,
+        ...(message.attachments?.length ? { attachments: message.attachments } : {}),
       }),
     });
 

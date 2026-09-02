@@ -30,6 +30,7 @@ const SHAPE: Record<Action, { verb: string; tone: string }> = {
   "account.suspended": { verb: "suspended", tone: "bg-danger" },
   "account.restored": { verb: "restored", tone: "bg-positive" },
   "data.purged": { verb: "removed applicant details from", tone: "bg-muted" },
+  "data.exported": { verb: "exported the submissions of", tone: "bg-accent" },
 };
 
 function Subject({ entry }: { entry: ActivityEntry }) {

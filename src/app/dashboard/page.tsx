@@ -7,10 +7,9 @@ import { DeadlineBadge } from "@/components/deadline-badge";
 import { Badge, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
 import { listActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
-import { formatDateTime, isOpen, roleWindow } from "@/lib/format";
-import { listVisibleRoles, type ListedRole } from "@/lib/roles";
+import { formatDateTime, isOpen } from "@/lib/format";
 import { listVisibleSessions, sessionStats } from "@/lib/sessions";
-import { countsByRole } from "@/lib/submissions";
+import { countsBySession, type SubmissionCounts } from "@/lib/submissions";
 
 // Counts and listings come from the database on every request, so this page is
 // never prerendered, and a deploy build does not need a reachable database.
@@ -29,19 +28,13 @@ export const metadata: Metadata = {
  */
 export default async function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
   const user = await requireUser("/dashboard");
-  const [sessions, stats, roles, counts, activity, params] = await Promise.all([
+  const [sessions, stats, bySession, activity, params] = await Promise.all([
     listVisibleSessions(user),
     sessionStats(user),
-    listVisibleRoles(user),
-    countsByRole(user),
+    countsBySession(user),
     listActivity(user, { limit: 8 }),
     searchParams,
   ]);
-
-  const rolesBySession = new Map<string, ListedRole[]>();
-  for (const role of roles) {
-    rolesBySession.set(role.sessionId, [...(rolesBySession.get(role.sessionId) ?? []), role]);
-  }
 
   const totals = sessions.reduce(
     (accumulator, session) => {
@@ -62,7 +55,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   return (
     <div className="mx-auto max-w-6xl px-5 py-12">
       <HelpNote title="What this screen is for" faq="/faq/casting-directors">
-        <p dangerouslySetInnerHTML={{ __html: 'Every casting call you can see, with its roles underneath. Open one to post roles, publish it, and read what has come in.' }} />
+        <p dangerouslySetInnerHTML={{ __html: 'Every casting call you can see, with its numbers: how many have submitted, how many are still to review, and how many are shortlisted, called back or declined. Open one to post roles, publish it, and read the submissions themselves.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'Start a new one from <strong>New casting call</strong> in the navigation.' }} />
       </HelpNote>
       {user.onboardedAt ? null : (
@@ -151,7 +144,6 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           <ul className="mt-6 flex flex-col gap-3">
             {sessions.map((session) => {
               const count = stats.get(session.id);
-              const sessionRoles = rolesBySession.get(session.id) ?? [];
               return (
                 <li
                   key={session.id}
@@ -184,48 +176,22 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                           </Link>
                         </>
                       ) : null}
-                      {count?.unread ? <Badge tone="accent">{count.unread} to read</Badge> : null}
-                      <Badge tone="outline">
-                        {count?.submissions ?? 0}{" "}
-                        {count?.submissions === 1 ? "submission" : "submissions"}
-                      </Badge>
                       <DeadlineBadge session={session} />
+                      <ButtonLink
+                        href={`/dashboard/sessions/${session.id}`}
+                        variant="secondary"
+                        size="sm"
+                      >
+                        Open
+                      </ButtonLink>
                     </div>
                   </div>
 
-                  {sessionRoles.length > 0 ? (
-                    <ul className="mt-4 flex flex-wrap gap-2 border-t border-line pt-4">
-                      {sessionRoles.map((role) => {
-                        const roleCount = counts.get(role.id);
-                        const open = isOpen(roleWindow(role));
-                        return (
-                          <li key={role.id}>
-                            <Link
-                              href={`/dashboard/roles/${role.id}`}
-                              className={`inline-flex items-center gap-2 rounded-full border border-line px-3 py-1.5 text-sm transition-colors hover:border-line-strong hover:text-accent ${open ? "text-text" : "text-muted"}`}
-                            >
-                              <span>{role.title}</span>
-                              <span className="text-xs text-faint">
-                                {roleCount?.New
-                                  ? `${roleCount.New} to read`
-                                  : `${roleCount?.total ?? 0} ${roleCount?.total === 1 ? "submission" : "submissions"}`}
-                              </span>
-                            </Link>
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  ) : (
-                    <p className="mt-4 border-t border-line pt-4 text-sm text-muted">
-                      No roles yet.{" "}
-                      <Link
-                        href={`/dashboard/roles/new?session=${session.id}`}
-                        className="text-accent underline-offset-4 hover:underline"
-                      >
-                        Post the first role
-                      </Link>
-                    </p>
-                  )}
+                  <Figures
+                    roles={count?.roles ?? 0}
+                    counts={bySession.get(session.id)}
+                    sessionId={session.id}
+                  />
                 </li>
               );
             })}
@@ -260,6 +226,61 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         </div>
       </section>
     </div>
+  );
+}
+
+/**
+ * One casting call's numbers, and nothing else: who has submitted is on the
+ * casting call's own page. "To review" is what nobody has looked at yet.
+ */
+function Figures({
+  roles,
+  counts,
+  sessionId,
+}: {
+  roles: number;
+  counts: SubmissionCounts | undefined;
+  sessionId: string;
+}) {
+  if (roles === 0) {
+    return (
+      <p className="mt-4 border-t border-line pt-4 text-sm text-muted">
+        No roles yet.{" "}
+        <Link
+          href={`/dashboard/roles/new?session=${sessionId}`}
+          className="text-accent underline-offset-4 hover:underline"
+        >
+          Post the first role
+        </Link>
+      </p>
+    );
+  }
+
+  const figures: Array<{ key: string; label: string; value: number; accent?: boolean }> = [
+    { key: "roles", label: "Roles", value: roles },
+    { key: "submitted", label: "Submitted", value: counts?.total ?? 0 },
+    { key: "to-review", label: "To review", value: counts?.New ?? 0, accent: true },
+    { key: "shortlisted", label: "Shortlisted", value: counts?.Shortlisted ?? 0 },
+    { key: "callback", label: "Callback", value: counts?.Callback ?? 0 },
+    { key: "declined", label: "Declined", value: counts?.Declined ?? 0 },
+  ];
+
+  return (
+    <dl className="mt-4 grid grid-cols-3 gap-x-6 gap-y-3 border-t border-line pt-4 sm:grid-cols-6">
+      {figures.map((figure) => (
+        <div key={figure.key}>
+          <dt className="text-xs text-muted">{figure.label}</dt>
+          <dd
+            data-figure={figure.key}
+            className={`mt-0.5 text-lg font-semibold tabular-nums ${
+              figure.accent && figure.value > 0 ? "text-accent" : "text-text"
+            }`}
+          >
+            {figure.value}
+          </dd>
+        </div>
+      ))}
+    </dl>
   );
 }
 

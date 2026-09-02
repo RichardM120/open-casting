@@ -92,6 +92,8 @@ nav, so hiding the link is presentation rather than protection.
 | `/c/[token]/[roleId]` | The full brief, plus the submission form |
 | `/dashboard` | Your casting calls, each with its roles and submission counts. Sign-in required |
 | `/dashboard/sessions/new` | Set up a casting call; saved as a draft on the first save |
+| `/dashboard/sessions/[id]` | A casting call: its roles, every submission across them, and the way out as a spreadsheet |
+| `/dashboard/sessions/[id]/export` | That list as an `.xlsx` download |
 | `/dashboard/sessions/[id]` | One casting call: its link, its roles, publish, close early, remove |
 | `/dashboard/sessions/[id]/edit` | Move a casting call's times, taking its roles with them |
 | `/dashboard/roles/new` | Post a role into a casting call |
@@ -397,6 +399,23 @@ It runs two ways, deliberately:
   keeping the data for ever in silence.
 
 The date is shown on every casting call's page, and both FAQs state it.
+
+## The casting call is where submissions are read
+
+The dashboard list shows each casting call and its numbers only: roles,
+submitted, to review, shortlisted, callback, declined. Who submitted is on the
+casting call's own page, which lists every submission across its roles with
+its status, a filter by status, and a status control on each row; a role's
+page still has the full card for each applicant.
+
+The list leaves the site as a spreadsheet. **Download spreadsheet** serves
+`/dashboard/sessions/[id]/export`, an `.xlsx` built with exceljs (one row per
+applicant, the role, status, contact details and cover note; a second sheet
+naming the casting call and the moment of export). **Email it to me** sends
+the same file as an attachment to the signed-in account's own address and to
+nowhere else, and is offered only when a mail provider is configured. Both
+are recorded in the activity trail as `data.exported`: a file of applicants'
+details leaving the site is worth a line.
 
 ## Dates and times
 

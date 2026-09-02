@@ -89,6 +89,54 @@ export async function listSubmissions(roleId: string): Promise<Submission[]> {
   return rows.map(toSubmission);
 }
 
+/** A submission with the role it was made for: one row of a casting call's list. */
+export type SessionSubmission = Submission & { roleTitle: string };
+
+/**
+ * Every submission to a casting call, across all its roles, newest first. The
+ * caller has already established it may see the casting call; that is the
+ * same rule as seeing the submissions.
+ */
+export async function listSessionSubmissions(sessionId: string): Promise<SessionSubmission[]> {
+  const rows = await query<SubmissionRow & { role_title: string }>(
+    `SELECT s.*, r.title AS role_title
+       FROM submissions s
+       JOIN roles r ON r.id = s.role_id
+      WHERE s.session_id = $1
+      ORDER BY s.submitted_at DESC`,
+    [sessionId],
+  );
+  return rows.map((row) => ({ ...toSubmission(row), roleTitle: row.role_title }));
+}
+
+/** Counts keyed by casting call id, across whatever this account may see. */
+export async function countsBySession(
+  viewer: SessionUser,
+): Promise<Map<string, SubmissionCounts>> {
+  const { where, params } = visibility(viewer, { owner: "r.owner_id", company: "r.company" });
+  const rows = await query<{ session_id: string; status: string; count: string }>(
+    `SELECT s.session_id, s.status, count(*)::text AS count
+       FROM submissions s
+       JOIN roles r ON r.id = s.role_id
+      ${where ? `WHERE ${where}` : ""}
+      GROUP BY s.session_id, s.status`,
+    params,
+  );
+
+  const counts = new Map<string, SubmissionCounts>();
+  for (const row of rows) {
+    let entry = counts.get(row.session_id);
+    if (!entry) {
+      entry = emptyCounts();
+      counts.set(row.session_id, entry);
+    }
+    const n = Number(row.count);
+    entry[row.status as SubmissionStatus] += n;
+    entry.total += n;
+  }
+  return counts;
+}
+
 /** Counts keyed by role id, across whatever this account may see. */
 export async function countsByRole(viewer: SessionUser): Promise<Map<string, SubmissionCounts>> {
   const { where, params } = visibility(viewer, { owner: "r.owner_id", company: "r.company" });

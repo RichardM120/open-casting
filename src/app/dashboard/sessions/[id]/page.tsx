@@ -6,15 +6,23 @@ import { notFound } from "next/navigation";
 
 import { DeadlineBadge } from "@/components/deadline-badge";
 import { ShareLink } from "@/components/share-link";
+import { SubmissionStatusControl } from "@/components/submission-status-control";
 import { Badge, Button, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
-import { publishCastingSession, removeSession, toggleSessionClosed } from "@/lib/actions";
+import {
+  emailSubmissionsSheet,
+  publishCastingSession,
+  removeSession,
+  toggleSessionClosed,
+} from "@/lib/actions";
 import { currentUser, requireUser } from "@/lib/auth";
-import { formatDate, formatDateTime, isOpen, notYetOpen } from "@/lib/format";
+import { emailConfigured } from "@/lib/email";
+import { formatDate, formatDateTime, formatRelative, isOpen, notYetOpen } from "@/lib/format";
 import { listSessionRoles } from "@/lib/roles";
 import { requestOrigin } from "@/lib/origin";
 import { RETENTION_DAYS, daysUntilPurge, purgeDate } from "@/lib/retention";
 import { getVisibleSession, shareSlug } from "@/lib/sessions";
-import { countsByRole } from "@/lib/submissions";
+import { countsByRole, listSessionSubmissions } from "@/lib/submissions";
+import { SUBMISSION_STATUSES, type SubmissionStatus } from "@/lib/types";
 
 export async function generateMetadata({
   params,
@@ -36,11 +44,12 @@ export default async function SessionPage({
   const session = await getVisibleSession(id, user);
   if (!session) notFound();
 
-  const [roles, counts, query, origin] = await Promise.all([
+  const [roles, counts, query, origin, everySubmission] = await Promise.all([
     listSessionRoles(id),
     countsByRole(user),
     searchParams,
     requestOrigin(),
+    listSessionSubmissions(id),
   ]);
   const shareUrl = `${origin}/c/${shareSlug(session)}`;
 
@@ -50,6 +59,19 @@ export default async function SessionPage({
   );
   const open = isOpen(session);
   const draft = session.publishedAt === null;
+
+  // The list can be narrowed to one status from the query string; anything
+  // else shows everything. "New" is what nobody has looked at yet.
+  const status =
+    typeof query.status === "string" &&
+    (SUBMISSION_STATUSES as readonly string[]).includes(query.status)
+      ? (query.status as SubmissionStatus)
+      : null;
+  const listed = status
+    ? everySubmission.filter((submission) => submission.status === status)
+    : everySubmission;
+  const byStatus = (which: SubmissionStatus) =>
+    everySubmission.filter((submission) => submission.status === which).length;
 
   const flash =
     query.published === "1"
@@ -61,6 +83,151 @@ export default async function SessionPage({
           : query.removed === "1"
             ? "The role was removed, along with its submissions."
             : null;
+
+  const submissionsSection = (
+    <section className="mt-10" aria-labelledby="submissions-heading">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h2 id="submissions-heading" className="text-lg font-semibold tracking-tight">
+            Submissions
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            {everySubmission.length === 0
+              ? "Nothing has come in yet."
+              : `${everySubmission.length} across ${roles.length} ${roles.length === 1 ? "role" : "roles"}, ${byStatus("New")} still to review.`}
+          </p>
+        </div>
+        {everySubmission.length > 0 ? (
+          <div className="flex flex-wrap items-center gap-2">
+            <ButtonLink
+              href={`/dashboard/sessions/${session.id}/export`}
+              variant="secondary"
+              size="sm"
+            >
+              Download spreadsheet
+            </ButtonLink>
+            {emailConfigured() ? (
+              <form action={emailSubmissionsSheet}>
+                <input type="hidden" name="sessionId" value={session.id} />
+                <Button type="submit" variant="secondary" size="sm">
+                  Email it to me
+                </Button>
+              </form>
+            ) : null}
+          </div>
+        ) : null}
+      </div>
+
+      {query.emailed === "1" ? (
+        <p
+          role="status"
+          className="mt-4 rounded-xl border border-line bg-positive-soft px-4 py-3 text-sm text-positive"
+        >
+          Sent to {user.email}, as a spreadsheet attached to the email. It holds applicants&apos;
+          details, so delete it when you no longer need it.
+        </p>
+      ) : null}
+      {query.emailed === "0" ? (
+        <p
+          role="alert"
+          className="mt-4 rounded-xl border border-danger/40 bg-danger-soft px-4 py-3 text-sm text-danger"
+        >
+          The email could not be sent. Download the spreadsheet instead.
+        </p>
+      ) : null}
+
+      {everySubmission.length > 0 ? (
+        <nav aria-label="Narrow the list" className="mt-4 flex flex-wrap gap-1.5 text-sm">
+          {[null, ...SUBMISSION_STATUSES].map((which) => {
+            const current = which === status;
+            const n = which ? byStatus(which) : everySubmission.length;
+            return (
+              <Link
+                key={which ?? "all"}
+                href={which ? `/dashboard/sessions/${session.id}?status=${which}` : `/dashboard/sessions/${session.id}`}
+                aria-current={current ? "page" : undefined}
+                className={`rounded-full border px-3 py-1 transition-colors ${
+                  current
+                    ? "border-accent bg-accent-soft text-text"
+                    : "border-line text-muted hover:border-line-strong hover:text-text"
+                }`}
+              >
+                {which ?? "All"} · {n}
+              </Link>
+            );
+          })}
+        </nav>
+      ) : null}
+
+      {listed.length > 0 ? (
+        <div className="mt-4 overflow-x-auto rounded-2xl border border-line bg-surface">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-line text-left text-xs text-muted">
+                <th scope="col" className="px-4 py-3 font-medium">Applicant</th>
+                <th scope="col" className="px-4 py-3 font-medium">Role</th>
+                <th scope="col" className="px-4 py-3 font-medium">Age</th>
+                <th scope="col" className="px-4 py-3 font-medium">Location</th>
+                <th scope="col" className="px-4 py-3 font-medium">Submitted</th>
+                <th scope="col" className="px-4 py-3 font-medium">Status</th>
+                <th scope="col" className="px-4 py-3 font-medium">
+                  <span className="sr-only">Open</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {listed.map((submission) => (
+                <tr key={submission.id} className="border-b border-line align-top last:border-0">
+                  <td className="px-4 py-3">
+                    <span className="font-medium">{submission.name}</span>
+                    <br />
+                    <a
+                      href={`mailto:${submission.email}`}
+                      className="text-xs text-muted underline-offset-4 hover:underline"
+                    >
+                      {submission.email}
+                    </a>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Link
+                      href={`/dashboard/roles/${submission.roleId}`}
+                      className="text-accent underline-offset-4 hover:underline"
+                    >
+                      {submission.roleTitle}
+                    </Link>
+                  </td>
+                  <td className="px-4 py-3 tabular-nums">{submission.age}</td>
+                  <td className="px-4 py-3">{submission.location}</td>
+                  <td className="px-4 py-3 text-muted">{formatRelative(submission.submittedAt)}</td>
+                  <td className="px-4 py-3">
+                    <SubmissionStatusControl submissionId={submission.id} status={submission.status} />
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <Link
+                      href={`/dashboard/roles/${submission.roleId}`}
+                      className="whitespace-nowrap text-muted transition-colors hover:text-text"
+                    >
+                      Full details
+                    </Link>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : everySubmission.length > 0 ? (
+        <p className="mt-4 rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">
+          Nothing is marked {status} at the moment.
+        </p>
+      ) : (
+        <p className="mt-4 rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">
+          Submissions appear here as they arrive, across every role in the casting call. Each one
+          can be moved through New, Shortlisted, Callback and Declined from here, and the whole
+          list can be downloaded as a spreadsheet or emailed to you.
+        </p>
+      )}
+    </section>
+  );
 
   const rolesSection = (
     <>
@@ -116,6 +283,7 @@ export default async function SessionPage({
       <HelpNote title="What to do on this screen" faq="/faq/casting-directors">
         <p dangerouslySetInnerHTML={{ __html: '<strong>Post the roles</strong> first. Then <strong>publish</strong>: that is the moment the share link starts working, and it cannot be undone.' }} />
         <p dangerouslySetInnerHTML={{ __html: "Send the link wherever you want the call to go. To stop a call, close it early; removing it deletes the applicants' details." }} />
+        <p dangerouslySetInnerHTML={{ __html: 'Once published, every submission across the roles is listed here with its status. Download the list as a spreadsheet, or have it emailed to you.' }} />
       </HelpNote>
       <Link href="/dashboard" className="text-sm text-muted transition-colors hover:text-text">
         &larr; Casting calls
@@ -259,6 +427,8 @@ export default async function SessionPage({
                 : ""
             }. Export anything you need before then. The casting call and its roles are kept.`}
       </p>
+
+      {draft ? null : submissionsSection}
 
       {draft ? null : rolesSection}
 

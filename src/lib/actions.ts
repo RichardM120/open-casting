@@ -9,6 +9,9 @@ import { record, describeChanges, describeSessionChanges } from "./activity";
 import { requireUser, type SessionUser } from "./auth";
 import { checkStore, deleteMedia, isSubmissionMediaUrl } from "./blob";
 import { UNIQUE_VIOLATION } from "./db";
+import { emailConfigured, sendEmail } from "./email";
+import { exportFilename, submissionsWorkbook } from "./export";
+import { purgeDate } from "./retention";
 import {
   createClient,
   deleteClient,
@@ -25,7 +28,7 @@ import {
   setSessionClosed,
   updateSession,
 } from "./sessions";
-import { formatDateTime, isOpen, notYetOpen, roleWindow } from "./format";
+import { formatDate, formatDateTime, isOpen, notYetOpen, roleWindow } from "./format";
 import { clientAddress, overLimit } from "./rate-limit";
 import { submittedValues, type FormState } from "./form-state";
 import {
@@ -44,6 +47,7 @@ import {
   submissionContext,
   mediaUrlsForRole,
   mediaUrlsForSession,
+  listSessionSubmissions,
 } from "./submissions";
 import {
   ADULT_AGE,
@@ -325,6 +329,51 @@ export async function updateSubmissionStatus(formData: FormData): Promise<void> 
     });
   }
   revalidateEverything();
+}
+
+/**
+ * The casting call's submissions, as a spreadsheet, to the signed-in account's
+ * own address and nowhere else: a file of applicants' details goes to the
+ * person who may already see them, not to whoever types an address. Without a
+ * mail provider it says so rather than pretending; the download always works.
+ */
+export async function emailSubmissionsSheet(formData: FormData): Promise<void> {
+  const id = String(formData.get("sessionId") ?? "");
+  const user = await requireUser(`/dashboard/sessions/${id}`);
+  const session = await getVisibleSession(id, user);
+  if (!session) redirect("/dashboard");
+
+  if (!emailConfigured()) redirect(`/dashboard/sessions/${id}?emailed=0`);
+
+  const submissions = await listSessionSubmissions(id);
+  const roles = new Set(submissions.map((submission) => submission.roleId)).size;
+  const file = await submissionsWorkbook(session, submissions);
+  const count = `${submissions.length} ${submissions.length === 1 ? "submission" : "submissions"}`;
+
+  const delivery = await sendEmail({
+    to: user.email,
+    subject: `Submissions for ${session.name}`,
+    text: [
+      `Attached: the submissions for ${session.name}, as of ${formatDateTime(new Date().toISOString())}.`,
+      "",
+      `${count} across ${roles} ${roles === 1 ? "role" : "roles"}. Each row is one applicant: the role they went for, their status, their contact details and their cover note.`,
+      "",
+      `This file holds applicants' personal details. Keep it only as long as you need it. On Open Casting their details are destroyed on ${formatDate(purgeDate(session.productionEndsAt))}; delete your own copies when you no longer need them.`,
+    ].join("\n"),
+    attachments: [{ filename: exportFilename(session), content: file.toString("base64") }],
+  });
+
+  if (!delivery.delivered) redirect(`/dashboard/sessions/${id}?emailed=0`);
+
+  await record({
+    action: "data.exported",
+    actorId: user.id,
+    actorName: user.name,
+    ownerId: session.ownerId,
+    company: session.company,
+    detail: `${session.name} · ${count} emailed to ${user.email}`,
+  });
+  redirect(`/dashboard/sessions/${id}?emailed=1`);
 }
 
 /* ------------------------------------------------------------ moderation -- */
