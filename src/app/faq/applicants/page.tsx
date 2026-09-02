@@ -112,15 +112,15 @@ export default function ApplicantFaqPage() {
       <FieldGlossary
         items={[
           {
-            term: "Rate",
+            term: "Pay",
             means:
-              "Every role on Open Casting is paid. The rate says how much and on what basis: per day, per week, per session. It usually does not include a buyout unless it says so. Get it in writing before the first day.",
+              "Every role on Open Casting is paid. What it pays and on what basis is agreed with the casting director, so ask before you tape if it is not spelled out, and get it in writing before the first day.",
           },
           {
             term: "Buyout and usage",
             means: (
               <>
-                Common on commercials. The <em>rate</em> pays you for the day; the{" "}
+                Common on commercials. Your fee pays you for the day; the{" "}
                 <em>buyout</em> pays for the right to use the footage: where, in what media, and
                 for how long. &ldquo;UK, all media, 12 months&rdquo; means exactly that, and the
                 fee should reflect it. A buyout negotiated &ldquo;separately&rdquo; is not agreed

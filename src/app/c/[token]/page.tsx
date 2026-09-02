@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 
 import { DeadlineBadge } from "@/components/deadline-badge";
 import { Badge, Eyebrow } from "@/components/ui";
-import { ageRange, formatDateTime, isOpen, notYetOpen, roleWindow } from "@/lib/format";
+import { ageRange, formatDateTime, isOpen, notYetOpen, roleWindow, shootWindow } from "@/lib/format";
 import { canPreview } from "@/lib/preview";
 import { listSessionRoles } from "@/lib/roles";
 import { getSessionByToken } from "@/lib/sessions";
@@ -100,8 +100,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
                 <dl className="mt-1 grid grid-cols-2 gap-x-6 gap-y-2 border-t border-line pt-4 text-sm sm:grid-cols-4">
                   <Meta label="Location" value={role.location} />
                   <Meta label="Playing age" value={ageRange(role.ageMin, role.ageMax)} />
-                  <Meta label="Rate" value={role.rate} />
-                  <Meta label="Shoot dates" value={role.shootDates} />
+                  <Meta label="Shoot dates" value={shootWindow(role)} />
                 </dl>
               </Link>
             </li>

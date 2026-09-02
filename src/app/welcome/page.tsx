@@ -144,7 +144,7 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
               >
                 casting director guide
               </Link>{" "}
-              covers what each field on a role commits you to, including the rate, the buyout
+              covers what each field on a role commits you to, including the buyout
               and usage, and how to write terms applicants will actually read.
             </p>
             <p className="mt-3 text-sm leading-relaxed text-muted">

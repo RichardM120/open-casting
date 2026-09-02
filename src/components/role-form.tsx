@@ -18,8 +18,8 @@ const LABELS: Record<string, string> = {
   ageMin: "Playing age from",
   ageMax: "Playing age to",
   location: "Location",
-  shootDates: "Shoot dates",
-  rate: "Rate",
+  shootStartsAt: "First shoot day",
+  shootEndsAt: "Last shoot day",
   disclaimer: "Terms for applicants",
 };
 
@@ -57,8 +57,8 @@ export function RoleForm({
           ageMin: String(role.ageMin),
           ageMax: String(role.ageMax),
           location: role.location,
-          shootDates: role.shootDates,
-          rate: role.rate,
+          shootStartsAt: role.shootStartsAt,
+          shootEndsAt: role.shootEndsAt ?? "",
           sessionId: role.sessionId,
           disclaimer: role.disclaimer,
           selfTape: role.selfTape ? "on" : "",
@@ -212,28 +212,30 @@ export function RoleForm({
             required
           />
         </Field>
-        <Field label="Shoot dates" htmlFor="shootDates" error={errors.shootDates}>
+        <Field
+          label="First shoot day"
+          htmlFor="shootStartsAt"
+          error={errors.shootStartsAt}
+        >
           <Input
-            id="shootDates"
-            name="shootDates"
-            placeholder="12 Oct to 6 Nov 2026"
-            defaultValue={values.shootDates ?? ""}
+            id="shootStartsAt"
+            name="shootStartsAt"
+            type="date"
+            defaultValue={values.shootStartsAt ?? ""}
             required
           />
         </Field>
         <Field
-          label="Rate"
-          htmlFor="rate"
-          hint="Every role is paid. Say how much, and what comes with it."
-          error={errors.rate}
-          className="sm:col-span-2"
+          label="Last shoot day"
+          htmlFor="shootEndsAt"
+          hint="Leave blank if it shoots on one day."
+          error={errors.shootEndsAt}
         >
           <Input
-            id="rate"
-            name="rate"
-            placeholder="£950 a week plus travel"
-            defaultValue={values.rate ?? ""}
-            required
+            id="shootEndsAt"
+            name="shootEndsAt"
+            type="date"
+            defaultValue={values.shootEndsAt ?? ""}
           />
         </Field>
         <div className="sm:col-span-2">

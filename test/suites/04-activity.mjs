@@ -1,4 +1,5 @@
 import {
+  day,
   BASE,
   SHOTS,
   launch,
@@ -25,8 +26,7 @@ await dir.p.goto(`${BASE}/dashboard/roles/new`, { waitUntil: "networkidle" });
 await dir.p.selectOption("#sessionId", sessionId);
 await dir.p.fill("#title", `ACT-${t}`);
 await dir.p.fill("#characterBrief", "A character brief comfortably long enough to pass validation.");
-await dir.p.fill("#location", "Leeds"); await dir.p.fill("#shootDates", "Apr 2027");
-await dir.p.fill("#rate", "£300/day");
+await dir.p.fill("#location", "Leeds"); await dir.p.fill("#shootStartsAt", day(150));
 await dir.p.getByRole("button", { name: "Post the role" }).click();
 await dir.p.waitForURL(/\/dashboard\/roles\/rol_/, { timeout: 20000 });
 const id = dir.p.url().match(/roles\/(rol_[^?]+)/)[1];
@@ -44,12 +44,11 @@ check(
 await dir.p.goto(`${BASE}/dashboard/roles/${id}`, { waitUntil: "networkidle" });
 
 section("2 an edit says what changed");
-await dir.p.goto(`${BASE}/dashboard/roles/${id}/edit`, { waitUntil: "networkidle" });
-await dir.p.fill("#rate", "£350/day"); await dir.p.fill("#shootDates", "May 2027");
+await dir.p.goto(`${BASE}/dashboard/roles/${id}/edit`, { waitUntil: "networkidle" }); await dir.p.fill("#shootStartsAt", day(160));
 await dir.p.getByRole("button", { name: "Save changes" }).click();
 await dir.p.getByText("Changes saved").waitFor({ timeout: 20000 });
 const trail = await dir.p.locator("main ol").last().textContent();
-check("names the changed fields", trail.includes("rate") && trail.includes("shoot dates"), trail.slice(0, 160));
+check("names the changed fields", trail.includes("shoot dates"), trail.slice(0, 160));
 
 section("2b moving the production's times is recorded against the production");
 await dir.p.goto(`${BASE}/dashboard/sessions/${sessionId}/edit`, { waitUntil: "networkidle" });
@@ -69,7 +68,7 @@ const token = await shareTokenForRole(dir.p, id);
   const { c, p } = await ctx();
   await p.goto(`${BASE}/c/${token}/${id}`, { waitUntil: "networkidle" });
   await p.fill("#name", "Perry Former"); await p.fill("#email", `pf${t}@example.com`);
-  await p.fill("#phone", "07700 900666"); await p.fill("#location", "Leeds"); await p.fill("#age", "29");
+  await p.fill("#phone", "07700 900666"); await p.fill("#location", "Leeds"); await p.selectOption("#age", "29");
   await p.fill("#coverNote", "A cover note comfortably longer than the twenty character minimum.");
   await p.check("#acceptSubmissionTerms");
   await p.getByRole("button", { name: "Send submission" }).click();

@@ -24,7 +24,7 @@ const token = await shareTokenForRole(dir.p, roleId);
 section("1 owner can edit their own role");
 await dir.p.goto(`${BASE}/dashboard/roles/${roleId}/edit`, { waitUntil: "networkidle" });
 check("edit form prefilled", (await dir.p.inputValue("#title")) === `MOD-${t}`);
-await dir.p.fill("#rate", "£999/day");
+await dir.p.fill("#location", "Whitby, Yorkshire");
 await dir.p.fill("#disclaimer", "Edited terms: usage UK only, 3 months.");
 await dir.p.getByRole("button", { name: "Save changes" }).click();
 await dir.p.waitForURL("**/dashboard/roles/**", { timeout: 20000 });
@@ -33,7 +33,7 @@ check("save confirmed", true);
 {
   const { c, p } = await ctx();
   await p.goto(`${BASE}/c/${token}/${roleId}`, { waitUntil: "networkidle" });
-  check("edit is live publicly", (await p.getByText("£999/day").count()) > 0);
+  check("edit is live publicly", (await p.getByText("Whitby, Yorkshire").count()) > 0);
   check("new terms shown", (await p.getByText("Edited terms").count()) > 0);
   await c.close();
 }
@@ -98,7 +98,7 @@ section("6 removal is admin only and destroys the submissions");
   const { c, p } = await ctx();
   await p.goto(`${BASE}/c/${token}/${roleId}`, { waitUntil: "networkidle" });
   await p.fill("#name", "Doomed Sub"); await p.fill("#email", `dm${t}@example.com`);
-  await p.fill("#phone", "07700 900555"); await p.fill("#location", "York"); await p.fill("#age", "30");
+  await p.fill("#phone", "07700 900555"); await p.fill("#location", "York"); await p.selectOption("#age", "30");
   await p.fill("#coverNote", "A cover note comfortably longer than the twenty character minimum.");
   // The edit in step 1 gave this role terms, so acceptance is now required.
   await p.check("#acceptTerms");

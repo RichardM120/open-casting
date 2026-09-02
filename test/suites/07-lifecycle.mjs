@@ -71,8 +71,7 @@ await dir.p.goto(`${BASE}/dashboard/roles/new?session=${first}`, { waitUntil: "n
 await dir.p.selectOption("#sessionId", first);
 await dir.p.fill("#title", `THREE-${t}`);
 await dir.p.fill("#characterBrief", "A character brief comfortably long enough to pass validation.");
-await dir.p.fill("#location", "Leeds"); await dir.p.fill("#shootDates", "Mar 2027");
-await dir.p.fill("#rate", "£400/day");
+await dir.p.fill("#location", "Leeds"); await dir.p.fill("#shootStartsAt", day(150));
 await dir.p.getByRole("button", { name: "Post the role" }).click();
 await dir.p.waitForTimeout(2500);
 check("a third role is refused", (await dir.p.getByText(/2 roles per production/).count()) > 0);
@@ -98,7 +97,7 @@ section("4b an applicant submits through the link");
   await p.getByText(`ONE-${t}`).click();
   await p.waitForURL(/\/c\/[^/]+\/[^/]+$/, { timeout: 20000 });
   await p.fill("#name", "Perry Former"); await p.fill("#email", `pf${t}@example.com`);
-  await p.fill("#phone", "07700 900777"); await p.fill("#location", "Leeds"); await p.fill("#age", "30");
+  await p.fill("#phone", "07700 900777"); await p.fill("#location", "Leeds"); await p.selectOption("#age", "30");
   await p.fill("#coverNote", "A cover note comfortably longer than the twenty character minimum.");
   await p.check("#acceptSubmissionTerms");
   await p.getByRole("button", { name: "Send submission" }).click();

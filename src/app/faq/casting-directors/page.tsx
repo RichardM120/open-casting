@@ -192,17 +192,6 @@ export default function CastingDirectorFaqPage() {
               "The range you would believe on screen or stage. It is not a proxy for actual age, and framing it as one will lose you people who could play it.",
           },
           {
-            term: "Rate",
-            means: (
-              <>
-                Every role on Open Casting is paid, so this is the one line applicants read
-                first. Be specific. &ldquo;Competitive&rdquo; and &ldquo;TBC&rdquo; read as
-                &ldquo;low&rdquo; and cost you good submissions. State the basis (day, week,
-                session) and whether a buyout is included or separate.
-              </>
-            ),
-          },
-          {
             term: "Self-tape",
             means:
               "Ticking this says you will accept a tape instead of an in-person audition. If you will only see people in the room, leave it off rather than disappoint people who have made one.",
@@ -243,7 +232,7 @@ export default function CastingDirectorFaqPage() {
             argue about later:
           </p>
           <ul className="ml-4 list-disc space-y-1.5">
-            <li>Usage and buyout: territory, media and duration, and whether the rate covers it.</li>
+            <li>Usage and buyout: territory, media and duration, and what the fee covers.</li>
             <li>That submitting creates no engagement and no obligation on either side.</li>
             <li>
               Whether self-tape time or travel to an audition is paid. Usually it is not, so say

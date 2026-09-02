@@ -130,6 +130,16 @@ export function formatDate(value: string): string {
   });
 }
 
+/**
+ * "12 Nov 2026" for a single day, "12 to 13 Nov 2026" for a run. The end is
+ * optional, because plenty of roles shoot on one day.
+ */
+export function shootWindow(role: { shootStartsAt: string; shootEndsAt: string | null }): string {
+  const start = formatDate(role.shootStartsAt);
+  if (!role.shootEndsAt || role.shootEndsAt === role.shootStartsAt) return start;
+  return `${start} to ${formatDate(role.shootEndsAt)}`;
+}
+
 /** "18 Sep 2026, 18:00", in UK time. */
 export function formatDateTime(iso: string): string {
   return `${formatDate(iso)}, ${formatTime(iso)}`;

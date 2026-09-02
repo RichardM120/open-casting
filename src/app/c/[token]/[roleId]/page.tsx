@@ -12,6 +12,7 @@ import {
   isOpen,
   notYetOpen,
   roleWindow,
+  shootWindow,
 } from "@/lib/format";
 import { canPreview } from "@/lib/preview";
 import { getSessionRole } from "@/lib/roles";
@@ -87,8 +88,7 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
           <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 rounded-2xl border border-line bg-surface p-6 sm:grid-cols-3">
             <Detail label="Location" value={role.location} />
             <Detail label="Playing age" value={ageRange(role.ageMin, role.ageMax)} />
-            <Detail label="Rate" value={role.rate} />
-            <Detail label="Shoot dates" value={role.shootDates} />
+            <Detail label="Shoot dates" value={shootWindow(role)} />
             <Detail label="Opens" value={formatDateTime(role.session.opensAt)} />
             <Detail label="Closes" value={formatDateTime(role.session.closesAt)} />
             <Detail label="Posted" value={formatRelative(role.postedAt)} />

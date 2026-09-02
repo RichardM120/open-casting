@@ -87,7 +87,7 @@ const token = await shareTokenForRole(dir.p, role);
   check("and a version stated", (await p.getByText(/Version 2026-09-01/).count()) > 0);
 
   await p.fill("#name", "Adult Applicant"); await p.fill("#email", `ad${t}@example.com`);
-  await p.fill("#phone", "07700 900900"); await p.fill("#location", "Leeds"); await p.fill("#age", "34");
+  await p.fill("#phone", "07700 900900"); await p.fill("#location", "Leeds"); await p.selectOption("#age", "34");
   await p.fill("#coverNote", "A cover note comfortably longer than the twenty character minimum.");
   await p.getByRole("button", { name: "Send submission" }).click();
   await p.waitForTimeout(2500);
@@ -108,7 +108,7 @@ section("6 a child's submission needs a parent or guardian");
   await p.goto(`${BASE}/c/${token}/${role}`, { waitUntil: "networkidle" });
   check("no guardian section for an adult", (await p.locator("#guardianName").count()) === 0);
 
-  await p.fill("#age", "12");
+  await p.selectOption("#age", "12");
   await p.waitForTimeout(400);
   check("typing an age under 18 asks for one", (await p.locator("#guardianName").count()) === 1);
   check("and says why", (await p.getByText(/legal parental responsibility/).count()) > 0);

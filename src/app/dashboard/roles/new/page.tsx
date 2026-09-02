@@ -9,7 +9,7 @@ import { listVisibleSessions } from "@/lib/sessions";
 
 export const metadata: Metadata = {
   title: "Post a role",
-  description: "Put a role up with the brief, the rate and the dates spelled out.",
+  description: "Put a role up with the brief and the dates spelled out.",
 };
 
 export default async function NewRolePage({ searchParams }: PageProps<"/dashboard/roles/new">) {
@@ -60,7 +60,7 @@ export default async function NewRolePage({ searchParams }: PageProps<"/dashboar
         <Link href="/faq/casting-directors" className="text-accent underline-offset-4 hover:underline">
           What each field commits you to
         </Link>
-        , including the rate, the buyout, and how to write terms worth having.
+        , including the buyout, and how to write terms worth having.
       </p>
 
       <div className="mt-10">

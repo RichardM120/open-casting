@@ -20,8 +20,8 @@ type RoleRow = {
   self_tape: boolean;
   age_min: number;
   age_max: number;
-  rate: string;
-  shoot_dates: string;
+  shoot_starts_at: string;
+  shoot_ends_at: string | null;
   casting_director: string;
   company: string;
   disclaimer: string;
@@ -33,7 +33,9 @@ type RoleRow = {
 
 const COLUMNS = `
   id, slug, title, production, production_type, synopsis, character_brief,
-  requirements, location, self_tape, age_min, age_max, rate, shoot_dates,
+  requirements, location, self_tape, age_min, age_max,
+  to_char(shoot_starts_at, 'YYYY-MM-DD') AS shoot_starts_at,
+  to_char(shoot_ends_at, 'YYYY-MM-DD') AS shoot_ends_at,
   casting_director, company, disclaimer, closed_at, owner_id, session_id, posted_at
 `;
 
@@ -51,8 +53,8 @@ function toRole(row: RoleRow): Role {
     selfTape: row.self_tape,
     ageMin: row.age_min,
     ageMax: row.age_max,
-    rate: row.rate,
-    shootDates: row.shoot_dates,
+    shootStartsAt: row.shoot_starts_at,
+    shootEndsAt: row.shoot_ends_at,
     castingDirector: row.casting_director,
     company: row.company,
     disclaimer: row.disclaimer,
@@ -219,8 +221,8 @@ export async function createRole(
   const rows = await query<RoleRow>(
     `INSERT INTO roles (
        id, slug, title, production, production_type, synopsis, character_brief,
-       requirements, location, self_tape, age_min, age_max, rate, shoot_dates,
-       casting_director, company, owner_id, disclaimer, session_id
+       requirements, location, self_tape, age_min, age_max, shoot_starts_at,
+       shoot_ends_at, casting_director, company, owner_id, disclaimer, session_id
      ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
      RETURNING ${COLUMNS}`,
     [
@@ -237,8 +239,8 @@ export async function createRole(
       input.selfTape,
       input.ageMin,
       input.ageMax,
-      input.rate,
-      input.shootDates,
+      input.shootStartsAt,
+      input.shootEndsAt,
       poster.name,
       session.company,
       poster.id,
@@ -284,15 +286,16 @@ export async function updateRole(
        self_tape = $${params.length + 6},
        age_min = $${params.length + 7},
        age_max = $${params.length + 8},
-       rate = $${params.length + 9},
-       shoot_dates = $${params.length + 10},
+       shoot_starts_at = $${params.length + 9},
+       shoot_ends_at = $${params.length + 10},
        disclaimer = $${params.length + 11}
      WHERE id = $${params.length + 1}${where ? ` AND ${where}` : ""}
      RETURNING ${COLUMNS}`,
     [
       ...params, id,
       input.title, input.characterBrief, input.requirements, input.location,
-      input.selfTape, input.ageMin, input.ageMax, input.rate, input.shootDates,
+      input.selfTape, input.ageMin, input.ageMax, input.shootStartsAt,
+      input.shootEndsAt,
       input.disclaimer,
     ],
   );

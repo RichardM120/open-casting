@@ -143,8 +143,8 @@ const TRACKED: { key: keyof Role; label: string }[] = [
   { key: "selfTape", label: "self-tape" },
   { key: "ageMin", label: "playing age" },
   { key: "ageMax", label: "playing age" },
-  { key: "rate", label: "rate" },
-  { key: "shootDates", label: "shoot dates" },
+  { key: "shootStartsAt", label: "shoot dates" },
+  { key: "shootEndsAt", label: "shoot dates" },
   { key: "disclaimer", label: "terms" },
 ];
 

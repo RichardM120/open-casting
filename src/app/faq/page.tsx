@@ -15,7 +15,7 @@ const GUIDES = [
     eyebrow: "For applicants",
     title: "Submitting for a role",
     description:
-      "What the words on a casting call mean (rate, buyout, usage, playing age), when the form is open, what you are agreeing to when you submit, and what happens to your details.",
+      "What the words on a casting call mean (buyout, usage, playing age), when the form is open, what you are agreeing to when you submit, and what happens to your details.",
   },
   {
     href: "/faq/casting-directors",

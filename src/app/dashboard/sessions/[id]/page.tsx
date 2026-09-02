@@ -60,6 +60,54 @@ export default async function SessionPage({
             ? "The role was removed, along with its submissions."
             : null;
 
+  const rolesSection = (
+    <>
+      {roles.length > 0 ? (
+        <ul className="mt-8 flex flex-col gap-3">
+          {roles.map((role) => {
+            const count = counts.get(role.id);
+            return (
+              <li key={role.id}>
+                <Link
+                  href={`/dashboard/roles/${role.id}`}
+                  className="group flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-line bg-surface p-5 transition-colors hover:border-line-strong"
+                >
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate font-medium transition-colors group-hover:text-accent">
+                      {role.title}
+                    </p>
+                    <p className="truncate text-sm text-muted">
+                      {role.location}
+                    </p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    {count?.New ? <Badge tone="accent">{count.New} to read</Badge> : null}
+                    <Badge tone="outline">
+                      {count?.total ?? 0} {count?.total === 1 ? "submission" : "submissions"}
+                    </Badge>
+                    {role.closedAt ? <Badge tone="outline">Closed early</Badge> : null}
+                  </div>
+                </Link>
+              </li>
+            );
+          })}
+        </ul>
+      ) : (
+        <div className="mt-8">
+          <EmptyState
+            title="No roles in this production yet"
+            description="Post the roles you are casting. They open and close with the production, so there is no closing date to set per role."
+            action={
+              <ButtonLink href={`/dashboard/roles/new?session=${session.id}`} size="sm">
+                Post a role
+              </ButtonLink>
+            }
+          />
+        </div>
+      )}
+    </>
+  );
+
   return (
     <div className="mx-auto max-w-5xl px-5 py-12">
       <Link href="/dashboard" className="text-sm text-muted transition-colors hover:text-text">
@@ -96,6 +144,7 @@ export default async function SessionPage({
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
+          <Badge tone={draft ? "accent" : "positive"}>{draft ? "Draft" : "Published"}</Badge>
           <DeadlineBadge session={session} />
           <ButtonLink href={`/dashboard/sessions/${session.id}/edit`} variant="secondary" size="sm">
             Edit
@@ -126,6 +175,8 @@ export default async function SessionPage({
               ? `Accepting submissions until ${formatDateTime(session.closesAt)}. An applicant may submit to this production once, whichever role they go for.`
               : `Past its closing time. The roles stay up for reference and take no new submissions.`}
       </p>
+
+      {draft ? rolesSection : null}
 
       {draft ? (
         <section className="mt-8 rounded-2xl border border-accent/30 bg-accent-soft p-6">
@@ -198,49 +249,7 @@ export default async function SessionPage({
             }. Export anything you need before then. The production and its roles are kept.`}
       </p>
 
-      {roles.length > 0 ? (
-        <ul className="mt-8 flex flex-col gap-3">
-          {roles.map((role) => {
-            const count = counts.get(role.id);
-            return (
-              <li key={role.id}>
-                <Link
-                  href={`/dashboard/roles/${role.id}`}
-                  className="group flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-line bg-surface p-5 transition-colors hover:border-line-strong"
-                >
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium transition-colors group-hover:text-accent">
-                      {role.title}
-                    </p>
-                    <p className="truncate text-sm text-muted">
-                      {role.location} · {role.rate}
-                    </p>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-2">
-                    {count?.New ? <Badge tone="accent">{count.New} to read</Badge> : null}
-                    <Badge tone="outline">
-                      {count?.total ?? 0} {count?.total === 1 ? "submission" : "submissions"}
-                    </Badge>
-                    {role.closedAt ? <Badge tone="outline">Closed early</Badge> : null}
-                  </div>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-      ) : (
-        <div className="mt-8">
-          <EmptyState
-            title="No roles in this production yet"
-            description="Post the roles you are casting. They open and close with the production, so there is no closing date to set per role."
-            action={
-              <ButtonLink href={`/dashboard/roles/new?session=${session.id}`} size="sm">
-                Post a role
-              </ButtonLink>
-            }
-          />
-        </div>
-      )}
+      {draft ? null : rolesSection}
 
       {user.role === "admin" ? (
         <details className="mt-10 rounded-2xl border border-danger/30 bg-surface p-6">

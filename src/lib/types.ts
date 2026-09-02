@@ -115,9 +115,9 @@ export type Role = {
   selfTape: boolean;
   ageMin: number;
   ageMax: number;
-  /** Every role is paid. This says how much, and what comes with it. */
-  rate: string;
-  shootDates: string;
+  /** yyyy-mm-dd. When it shoots; the end is null for a single day. */
+  shootStartsAt: string;
+  shootEndsAt: string | null;
   /** The name of the account that posted it. */
   castingDirector: string;
   /** Terms the applicant must accept to submit. Empty when none are set. */

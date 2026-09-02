@@ -9,7 +9,7 @@ import { IDLE_FORM_STATE } from "@/lib/form-state";
 import { ADULT_AGE } from "@/lib/types";
 
 import { useErrorFocus } from "./use-error-focus";
-import { Button, ButtonLink, ErrorSummary, Field, Input, Textarea, cx } from "./ui";
+import { Button, ButtonLink, ErrorSummary, Field, Input, Select, Textarea, cx } from "./ui";
 
 const LABELS: Record<string, string> = {
   name: "Full name",
@@ -26,6 +26,9 @@ const LABELS: Record<string, string> = {
   guardianEmail: "Parent or guardian's email",
   guardianConsent: "Parental consent",
 };
+
+/** The ages the picker offers, matching what the form accepts. */
+const AGES = Array.from({ length: 96 }, (_, index) => index + 5);
 
 export function SubmissionForm({
   roleId,
@@ -48,9 +51,23 @@ export function SubmissionForm({
   const formRef = useErrorFocus(state.status, state.errors);
 
   // Watched rather than read on submit, so the guardian section appears as soon
-  // as an age under 18 is typed. Asking for it only after a refusal is a worse
+  // as an age under 18 is chosen. Asking for it only after a refusal is a worse
   // way to find out, and this is the one part of the form a child cannot fill in.
-  const [age, setAge] = useState(state.values.age ?? "");
+  //
+  // React resets the form once the action returns. A text input picks its value
+  // back up from defaultValue, but a select does not: it takes one at mount and
+  // then holds whatever the reset left, which emptied this field after a refusal
+  // about some other part of the form. Remounting it per attempt is what makes
+  // it behave like the rest of the fields.
+  const submittedAge = state.values.age ?? "";
+  const [age, setAge] = useState(submittedAge);
+  const [seen, setSeen] = useState(state);
+  const [attempt, setAttempt] = useState(0);
+  if (seen !== state) {
+    setSeen(state);
+    setAttempt(attempt + 1);
+    setAge(submittedAge);
+  }
   const minor = age !== "" && Number(age) > 0 && Number(age) < ADULT_AGE;
 
   if (state.status === "success") {
@@ -147,16 +164,21 @@ export function SubmissionForm({
           />
         </Field>
         <Field label="Age" htmlFor="age" error={errors.age}>
-          <Input
+          <Select
+            key={attempt}
             id="age"
             name="age"
-            type="number"
-            min={5}
-            max={100}
-            value={age}
+            defaultValue={age}
             onChange={(event) => setAge(event.target.value)}
             required
-          />
+          >
+            <option value="">Choose your age</option>
+            {AGES.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </Select>
         </Field>
         <Field
           label="Showreel link"

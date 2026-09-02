@@ -455,8 +455,6 @@ const SCHEMA = `
     self_tape        boolean     NOT NULL,
     age_min          integer     NOT NULL,
     age_max          integer     NOT NULL,
-    rate             text        NOT NULL,
-    shoot_dates      text        NOT NULL,
     -- Legacy. Roles once carried their own closing date; the production owns
     -- it now, and this is only read to derive productions for roles that
     -- predate them.
@@ -598,6 +596,18 @@ const SCHEMA = `
   ALTER TABLE roles DROP COLUMN IF EXISTS union_status;
   ALTER TABLE submissions DROP COLUMN IF EXISTS union_status;
 
+  -- The rate is no longer asked for on a role.
+  ALTER TABLE roles DROP COLUMN IF EXISTS rate;
+
+  -- Shoot dates are picked rather than typed, so they are dates. The free text
+  -- they replace cannot be parsed into a range reliably, so it is dropped
+  -- rather than guessed at.
+  ALTER TABLE roles ADD COLUMN IF NOT EXISTS shoot_starts_at date;
+  ALTER TABLE roles ADD COLUMN IF NOT EXISTS shoot_ends_at date;
+  UPDATE roles SET shoot_starts_at = current_date WHERE shoot_starts_at IS NULL;
+  ALTER TABLE roles ALTER COLUMN shoot_starts_at SET NOT NULL;
+  ALTER TABLE roles DROP COLUMN IF EXISTS shoot_dates;
+
   -- Who is making the production. A line on the form rather than a record of
   -- its own: a casting director types it, and nothing else hangs off it. The
   -- text is carried over from the table that used to hold it, which then goes.
@@ -719,15 +729,16 @@ async function seed(): Promise<void> {
       await client.query(
         `INSERT INTO roles (
            id, slug, title, production, production_type, synopsis, character_brief,
-           requirements, location, self_tape, age_min, age_max, rate, shoot_dates,
-           casting_director, company, posted_at, owner_id, disclaimer, session_id
+           requirements, location, self_tape, age_min, age_max, shoot_starts_at,
+           shoot_ends_at, casting_director, company, posted_at, owner_id, disclaimer,
+           session_id
          ) VALUES (
            $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20
          ) ON CONFLICT (id) DO NOTHING`,
         [
           role.id, role.slug, role.title, role.production, role.productionType,
           role.synopsis, role.characterBrief, role.requirements, role.location,
-          role.selfTape, role.ageMin, role.ageMax, role.rate, role.shootDates,
+          role.selfTape, role.ageMin, role.ageMax, role.shootStartsAt, role.shootEndsAt,
           role.castingDirector, role.company, role.postedAt, DEMO_USER.id,
           role.disclaimer, role.sessionId,
         ],

@@ -271,8 +271,7 @@ export async function postRole(page, fields) {
     fields.characterBrief ?? "A character brief comfortably long enough to pass validation.",
   );
   await page.fill("#location", fields.location ?? "Leeds, UK");
-  await page.fill("#shootDates", fields.shootDates ?? "Mar 2027");
-  await page.fill("#rate", fields.rate ?? "£400/day");
+  await page.fill("#shootStartsAt", fields.shootStartsAt ?? day(120));
   if (fields.disclaimer) await page.fill("#disclaimer", fields.disclaimer);
   await page.getByRole("button", { name: "Post the role" }).click();
   await page.waitForURL(/\/dashboard\/roles\/rol_/, { timeout: 20000 });
@@ -309,7 +308,7 @@ export async function submit(page, token, roleId, applicant, { acceptTerms = fal
   await page.fill("#email", applicant.email);
   await page.fill("#phone", applicant.phone ?? "07700 900000");
   await page.fill("#location", applicant.location ?? "Leeds");
-  await page.fill("#age", String(applicant.age ?? 30));
+  await page.selectOption("#age", String(applicant.age ?? 30));
   await page.fill(
     "#coverNote",
     applicant.coverNote ?? "A cover note comfortably longer than the twenty character minimum.",

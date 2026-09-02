@@ -126,7 +126,7 @@ section("5 role with terms: acceptance is required");
   await p.fill("#name", "Terms Tester");
   await p.fill("#email", `terms${t}@example.com`);
   await p.fill("#phone", "07700 900111");
-  await p.fill("#location", "London"); await p.fill("#age", "65");
+  await p.fill("#location", "London"); await p.selectOption("#age", "65");
   await p.fill("#coverNote", "A cover note comfortably longer than the twenty character minimum.");
   await p.check("#acceptSubmissionTerms");
   await p.getByRole("button", { name: "Send submission" }).click();
@@ -136,6 +136,11 @@ section("5 role with terms: acceptance is required");
   check("checkbox marked invalid", (await p.locator("#acceptTerms[aria-invalid='true']").count()) === 1);
   check("summary lists it", (await p.locator("[data-error-summary]").getByText(/Terms for this role/).count()) > 0);
 
+{
+  const got = await p.locator("#age").inputValue();
+  const names = await p.locator("#name").inputValue();
+  check(`the age survives a refusal (age=${JSON.stringify(got)}, name=${JSON.stringify(names)})`, got === "65");
+}
   await p.check("#acceptTerms");
   await p.getByRole("button", { name: "Send submission" }).click();
   await p.getByText("Submission sent").waitFor({ timeout: 20000 });
@@ -151,7 +156,7 @@ section("6 role without terms: no checkbox, submits cleanly");
   check("no terms block", (await p.getByText("Terms for this role").count()) === 0);
   check("no acceptance checkbox", (await p.locator("#acceptTerms").count()) === 0);
   await p.fill("#name", "No Terms"); await p.fill("#email", `not${t}@example.com`);
-  await p.fill("#phone", "07700 900222"); await p.fill("#location", "Essex"); await p.fill("#age", "33");
+  await p.fill("#phone", "07700 900222"); await p.fill("#location", "Essex"); await p.selectOption("#age", "33");
   await p.fill("#coverNote", "A cover note comfortably longer than the twenty character minimum.");
   await p.check("#acceptSubmissionTerms");
   await p.getByRole("button", { name: "Send submission" }).click();
@@ -165,7 +170,7 @@ section("7 errors are in situ and accessible");
   const { c, p } = await ctx();
   await p.goto(`${BASE}/c/${SALTMARSH}/nell-saltmarsh`, { waitUntil: "networkidle" });
   await p.fill("#name", "A"); await p.fill("#email", `x${t}@example.com`);
-  await p.fill("#phone", "07700 900333"); await p.fill("#location", "Leeds"); await p.fill("#age", "31");
+  await p.fill("#phone", "07700 900333"); await p.fill("#location", "Leeds"); await p.selectOption("#age", "31");
   await p.fill("#coverNote", "too short");
   await p.check("#acceptSubmissionTerms");
   await p.getByRole("button", { name: "Send submission" }).click();
