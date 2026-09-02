@@ -398,6 +398,33 @@ It runs two ways, deliberately:
 
 The date is shown on every casting call's page, and both FAQs state it.
 
+## Photos and videos
+
+An applicant can attach a profile photo (up to 5 MB) and a video (up to
+200 MB) to a submission. The file goes straight from the browser into Vercel
+Blob; only its URL travels with the form. `/api/blob/upload` mints the token
+for that, and it checks what the form itself would: a share link for a casting
+call that is open now, naming a role in it. The token is scoped to one kind of
+file under that role, its content types and its size, so nothing else can be
+sent with it.
+
+Blobs are **private**. A casting tape is personal data, sometimes of a child,
+and an unguessable public URL is still a URL. The dashboard reads a file back
+through `/api/media`, which checks the viewer may see the submission it belongs
+to, passes a Range request through so a tape can be scrubbed, and never lets
+a shared cache keep a copy. The files are deleted with the submission: on
+removal, and thirty days after the production finishes.
+
+A file goes to the store before the form is sent, so the form remembers what
+it has uploaded: a submission refused for a missing field is corrected and
+sent again without the tape going up twice. A file whose form never arrives
+at all is an orphan, and the daily retention sweep (`/api/retention`) deletes
+any orphan older than a day.
+
+Without `BLOB_READ_WRITE_TOKEN` the form offers no uploads and everything else
+works as before; the end-to-end suite runs that way. The store itself is not
+exercised by the suite, so an upload is worth trying by hand after a deploy.
+
 ## Two sections, and four words
 
 The site is in two parts, guarded separately:

@@ -556,6 +556,10 @@ const SCHEMA = `
   ALTER TABLE submissions ADD COLUMN IF NOT EXISTS guardian_name text;
   ALTER TABLE submissions ADD COLUMN IF NOT EXISTS guardian_email text;
   ALTER TABLE submissions ADD COLUMN IF NOT EXISTS guardian_consent_at timestamptz;
+  -- A profile photo and a video, uploaded straight to the store. Private, and
+  -- deleted with the submission.
+  ALTER TABLE submissions ADD COLUMN IF NOT EXISTS photo_url text;
+  ALTER TABLE submissions ADD COLUMN IF NOT EXISTS video_url text;
 
   CREATE UNIQUE INDEX IF NOT EXISTS submissions_session_email_idx
     ON submissions (session_id, lower(email))

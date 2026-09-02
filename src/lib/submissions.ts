@@ -42,13 +42,15 @@ type SubmissionRow = {
   guardian_name: string | null;
   guardian_email: string | null;
   guardian_consent_at: Date | null;
+  photo_url: string | null;
+  video_url: string | null;
   submitted_at: Date;
 };
 
 const COLUMNS = `
   id, role_id, session_id, name, email, phone, location, age, reel_url,
   profile_url, cover_note, status, accepted_terms, accepted_at, terms_version,
-  guardian_name, guardian_email, guardian_consent_at, submitted_at
+  guardian_name, guardian_email, guardian_consent_at, photo_url, video_url, submitted_at
 `;
 
 function toSubmission(row: SubmissionRow): Submission {
@@ -71,6 +73,8 @@ function toSubmission(row: SubmissionRow): Submission {
     guardianName: row.guardian_name,
     guardianEmail: row.guardian_email,
     guardianConsentAt: row.guardian_consent_at?.toISOString() ?? null,
+    photoUrl: row.photo_url,
+    videoUrl: row.video_url,
     submittedAt: row.submitted_at.toISOString(),
   };
 }
@@ -141,8 +145,8 @@ export async function createSubmission(input: NewSubmission): Promise<Submission
       `INSERT INTO submissions (
          id, role_id, session_id, name, email, phone, location, age, reel_url,
          profile_url, cover_note, accepted_terms, accepted_at, terms_version,
-         guardian_name, guardian_email, guardian_consent_at
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17)
+         guardian_name, guardian_email, guardian_consent_at, photo_url, video_url
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
        RETURNING ${COLUMNS}`,
       [
         `sub_${crypto.randomUUID().slice(0, 12)}`,
@@ -162,6 +166,8 @@ export async function createSubmission(input: NewSubmission): Promise<Submission
         input.guardianName,
         input.guardianEmail,
         input.guardianConsentAt,
+        input.photoUrl,
+        input.videoUrl,
       ],
     );
     return toSubmission(rows[0]);
@@ -224,4 +230,39 @@ export async function submissionContext(id: string): Promise<{
         company: row.company,
       }
     : null;
+}
+
+/** The submission a stored file belongs to, for the route that reads it back. */
+export async function findSubmissionByMediaUrl(url: string): Promise<Submission | null> {
+  const rows = await query<SubmissionRow>(
+    `SELECT ${COLUMNS} FROM submissions WHERE photo_url = $1 OR video_url = $1 LIMIT 1`,
+    [url],
+  );
+  return rows[0] ? toSubmission(rows[0]) : null;
+}
+
+/** Every file under a casting call, so removing it can remove them too. */
+export async function mediaUrlsForSession(sessionId: string): Promise<string[]> {
+  const rows = await query<{ photo_url: string | null; video_url: string | null }>(
+    "SELECT photo_url, video_url FROM submissions WHERE session_id = $1",
+    [sessionId],
+  );
+  return rows.flatMap((row) => [row.photo_url, row.video_url]).filter((u): u is string => Boolean(u));
+}
+
+/** Every file any submission still refers to: what the orphan sweep must keep. */
+export async function allMediaUrls(): Promise<string[]> {
+  const rows = await query<{ photo_url: string | null; video_url: string | null }>(
+    "SELECT photo_url, video_url FROM submissions WHERE photo_url IS NOT NULL OR video_url IS NOT NULL",
+  );
+  return rows.flatMap((row) => [row.photo_url, row.video_url]).filter((u): u is string => Boolean(u));
+}
+
+/** Every file under a role, for the same reason. */
+export async function mediaUrlsForRole(roleId: string): Promise<string[]> {
+  const rows = await query<{ photo_url: string | null; video_url: string | null }>(
+    "SELECT photo_url, video_url FROM submissions WHERE role_id = $1",
+    [roleId],
+  );
+  return rows.flatMap((row) => [row.photo_url, row.video_url]).filter((u): u is string => Boolean(u));
 }

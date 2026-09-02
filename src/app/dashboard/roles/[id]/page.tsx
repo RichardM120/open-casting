@@ -220,12 +220,21 @@ function SubmissionCard({ submission }: { submission: Submission }) {
   return (
     <li className="rounded-2xl border border-line bg-surface p-6">
       <div className="flex flex-wrap items-start gap-4">
-        <span
-          aria-hidden="true"
-          className="flex size-11 shrink-0 items-center justify-center rounded-full bg-raised text-sm font-medium text-muted"
-        >
-          {initials(submission.name)}
-        </span>
+        {submission.photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element -- our own authenticated route
+          <img
+            src={mediaSrc(submission.photoUrl)}
+            alt={`${submission.name}'s photo`}
+            className="size-16 shrink-0 rounded-xl border border-line object-cover"
+          />
+        ) : (
+          <span
+            aria-hidden="true"
+            className="flex size-11 shrink-0 items-center justify-center rounded-full bg-raised text-sm font-medium text-muted"
+          >
+            {initials(submission.name)}
+          </span>
+        )}
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -244,6 +253,19 @@ function SubmissionCard({ submission }: { submission: Submission }) {
       <p className="mt-4 max-w-prose text-sm leading-relaxed text-muted">
         {submission.coverNote}
       </p>
+
+      {submission.videoUrl ? (
+        // Nothing is fetched until the director presses play: a long list of
+        // tapes should not pull every one of them down on the way in.
+        <video
+          controls
+          preload="none"
+          src={mediaSrc(submission.videoUrl)}
+          className="mt-4 max-h-80 w-full max-w-xl rounded-xl border border-line bg-black"
+        >
+          <a href={mediaSrc(submission.videoUrl)}>Watch the video</a>
+        </video>
+      ) : null}
 
       {submission.acceptedTerms ? (
         <details className="mt-4 rounded-xl border border-line bg-raised p-4">
@@ -270,9 +292,17 @@ function SubmissionCard({ submission }: { submission: Submission }) {
         {submission.profileUrl ? (
           <ExternalLink href={submission.profileUrl}>Profile</ExternalLink>
         ) : null}
+        {submission.videoUrl ? (
+          <ExternalLink href={mediaSrc(submission.videoUrl)}>Video</ExternalLink>
+        ) : null}
       </div>
     </li>
   );
+}
+
+/** The authenticated route that serves an applicant's file. Blobs are private. */
+function mediaSrc(url: string): string {
+  return `/api/media?u=${encodeURIComponent(url)}`;
 }
 
 function ExternalLink({ href, children }: { href: string; children: React.ReactNode }) {

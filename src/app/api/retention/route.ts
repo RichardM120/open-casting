@@ -1,7 +1,9 @@
 import { NextResponse } from "next/server";
 
+import { sweepOrphanedMedia } from "@/lib/blob";
 import { sendEmail } from "@/lib/email";
 import { claimPurgeWarnings, purgeExpiredSubmissions } from "@/lib/retention";
+import { allMediaUrls } from "@/lib/submissions";
 
 export const dynamic = "force-dynamic";
 
@@ -47,12 +49,18 @@ export async function POST(request: Request) {
   }
 
   const purged = await purgeExpiredSubmissions();
+
+  // Files whose form never arrived. After the purge, so a file that belonged
+  // to a submission just deleted is not held for another day by a stale list.
+  const orphanedFiles = await sweepOrphanedMedia(await allMediaUrls());
+
   return NextResponse.json(
     {
       ok: true,
       warned: warnings.length,
       sessions: purged.length,
       submissions: purged.reduce((total, entry) => total + entry.submissions, 0),
+      orphanedFiles,
     },
     { headers: { "cache-control": "no-store" } },
   );

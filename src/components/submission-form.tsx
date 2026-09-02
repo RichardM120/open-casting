@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { upload } from "@vercel/blob/client";
 import { useActionState, useState } from "react";
 
 import { submitApplication } from "@/lib/actions";
@@ -11,6 +12,19 @@ import { ADULT_AGE } from "@/lib/types";
 import { useErrorFocus } from "./use-error-focus";
 import { Button, ButtonLink, ErrorSummary, Field, Input, Select, Textarea, cx } from "./ui";
 
+type MediaKind = "photo" | "video";
+type Uploaded = { url: string; name: string };
+
+/** Says a file is already with the store, so the applicant need not pick it again. */
+function UploadedNote({ file }: { file: Uploaded | undefined }) {
+  if (!file) return null;
+  return (
+    <p className="mt-1.5 text-xs text-muted" aria-live="polite">
+      Uploaded: {file.name}. Choose another file to replace it.
+    </p>
+  );
+}
+
 const LABELS: Record<string, string> = {
   name: "Full name",
   email: "Email",
@@ -19,6 +33,8 @@ const LABELS: Record<string, string> = {
   age: "Age",
   reelUrl: "Showreel link",
   profileUrl: "Profile link",
+  photoUrl: "Profile photo",
+  videoUrl: "Video",
   coverNote: "Cover note",
   acceptTerms: "Terms for this role",
   acceptSubmissionTerms: "Terms of Submission",
@@ -37,6 +53,9 @@ export function SubmissionForm({
   closesOn,
   disclaimer,
   backTo,
+  uploads,
+  token,
+  sessionId,
 }: {
   roleId: string;
   roleTitle: string;
@@ -46,8 +65,55 @@ export function SubmissionForm({
   disclaimer: string;
   /** The casting call's own page. There is nowhere else for an applicant to go. */
   backTo: string;
+  /** Whether a file store is configured. Without one, no upload fields. */
+  uploads: boolean;
+  token: string;
+  sessionId: string;
 }) {
   const [state, formAction, pending] = useActionState(submitApplication, IDLE_FORM_STATE);
+  const [progress, setProgress] = useState<{ kind: string; percent: number } | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+  // What has already gone to the store. Kept across a refused submission, and
+  // posted again as the hidden fields below, so a corrected form does not send
+  // a two-hundred-megabyte tape a second time.
+  const [uploaded, setUploaded] = useState<Partial<Record<MediaKind, Uploaded>>>({});
+
+  // Files go straight to the store first, from the browser, and only their
+  // URLs travel with the rest of the form: a video is far larger than a
+  // server action may carry. The store checks the share link, the window and
+  // the size before it accepts anything.
+  async function withUploads(formData: FormData) {
+    setUploadError(null);
+    for (const kind of ["photo", "video"] as const) {
+      const file = formData.get(kind);
+      formData.delete(kind);
+      if (!(file instanceof File) || file.size === 0) continue;
+      try {
+        const result = await upload(
+          `submissions/${sessionId}/${roleId}/${kind}/${file.name}`,
+          file,
+          {
+            access: "private",
+            handleUploadUrl: "/api/blob/upload",
+            clientPayload: JSON.stringify({ token, roleId, kind }),
+            onUploadProgress: ({ percentage }) => setProgress({ kind, percent: percentage }),
+          },
+        );
+        formData.set(kind === "photo" ? "photoUrl" : "videoUrl", result.url);
+        setUploaded((current) => ({ ...current, [kind]: { url: result.url, name: file.name } }));
+      } catch (error) {
+        setProgress(null);
+        setUploadError(
+          error instanceof Error && error.message
+            ? `${kind === "photo" ? "The photo" : "The video"} did not upload: ${error.message}`
+            : `${kind === "photo" ? "The photo" : "The video"} did not upload. Check its size and type, then try again.`,
+        );
+        return;
+      }
+    }
+    setProgress(null);
+    formAction(formData);
+  }
   const formRef = useErrorFocus(state.status, state.errors);
 
   // Watched rather than read on submit, so the guardian section appears as soon
@@ -95,7 +161,7 @@ export function SubmissionForm({
   return (
     <form
       ref={formRef}
-      action={formAction}
+      action={withUploads}
       className="rounded-2xl border border-line bg-surface p-7"
     >
       <h2 className="text-xl font-semibold tracking-tight">Submit for this role</h2>
@@ -324,6 +390,42 @@ export function SubmissionForm({
           {errors.acceptTerms ? (
             <p id="acceptTerms-error" className="mt-1.5 text-xs text-danger">
               {errors.acceptTerms}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {uploads ? (
+        <div className="mt-6 rounded-xl border border-line bg-raised p-5">
+          <h3 className="text-sm font-semibold tracking-tight">Photo and video</h3>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            Optional. A recent photo of you, and a self-tape or showreel if you have one. Both are
+            seen only by the casting team and are deleted with your submission.
+          </p>
+          <input type="hidden" name="photoUrl" value={uploaded.photo?.url ?? ""} />
+          <input type="hidden" name="videoUrl" value={uploaded.video?.url ?? ""} />
+          <div className="mt-4 grid gap-4 sm:grid-cols-2">
+            <div>
+              <Field label="Profile photo" htmlFor="photo" hint="JPEG, PNG or WebP, up to 5 MB." error={errors.photoUrl}>
+                <Input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" />
+              </Field>
+              <UploadedNote file={uploaded.photo} />
+            </div>
+            <div>
+              <Field label="Video" htmlFor="video" hint="MP4, MOV or WebM, up to 200 MB." error={errors.videoUrl}>
+                <Input id="video" name="video" type="file" accept="video/mp4,video/quicktime,video/webm,video/x-m4v" />
+              </Field>
+              <UploadedNote file={uploaded.video} />
+            </div>
+          </div>
+          {progress ? (
+            <p className="mt-3 text-sm text-muted" aria-live="polite">
+              Uploading the {progress.kind}: {progress.percent}%
+            </p>
+          ) : null}
+          {uploadError ? (
+            <p role="alert" className="mt-3 text-sm text-danger">
+              {uploadError}
             </p>
           ) : null}
         </div>

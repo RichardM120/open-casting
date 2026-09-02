@@ -15,6 +15,7 @@ import {
   shootWindow,
 } from "@/lib/format";
 import { requestOrigin } from "@/lib/origin";
+import { uploadsEnabled } from "@/lib/blob";
 import { canPreview } from "@/lib/preview";
 import { ShareLink } from "@/components/share-link";
 import { getSessionRole } from "@/lib/roles";
@@ -143,6 +144,9 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
         <div className="lg:sticky lg:top-24 lg:self-start">
           {open ? (
             <SubmissionForm
+              uploads={uploadsEnabled()}
+              token={token}
+              sessionId={session.id}
               roleId={role.id}
               roleTitle={role.title}
               session={role.session.name}

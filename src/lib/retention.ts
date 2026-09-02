@@ -1,6 +1,8 @@
 import "server-only";
 
+import { deleteMedia } from "./blob";
 import { query } from "./db";
+import { mediaUrlsForSession } from "./submissions";
 
 /**
  * How the sweep talks to the database. It is a parameter because the bootstrap
@@ -78,7 +80,11 @@ export async function purgeExpiredSubmissions(run: Runner = query): Promise<Purg
       [session.id],
     );
 
+    // The files go with the rows. Collected first, because once the rows are
+    // gone nothing else knows where the files were.
+    const media = await mediaUrlsForSession(session.id);
     await run("DELETE FROM submissions WHERE session_id = $1", [session.id]);
+    await deleteMedia(media);
     await run("UPDATE sessions_casting SET purged_at = now() WHERE id = $1", [session.id]);
 
     purged.push({ sessionId: session.id, name: session.name, submissions: Number(count) });

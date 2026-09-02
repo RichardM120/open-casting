@@ -7,6 +7,7 @@ import { SUBMISSION_TERMS } from "@/content/legal";
 
 import { record, describeChanges, describeSessionChanges } from "./activity";
 import { requireUser, type SessionUser } from "./auth";
+import { deleteMedia, isSubmissionMediaUrl } from "./blob";
 import { UNIQUE_VIOLATION } from "./db";
 import {
   createClient,
@@ -41,6 +42,8 @@ import {
   createSubmission,
   setSubmissionStatus,
   submissionContext,
+  mediaUrlsForRole,
+  mediaUrlsForSession,
 } from "./submissions";
 import {
   ADULT_AGE,
@@ -166,6 +169,23 @@ export async function submitApplication(
     }
   }
 
+  // Uploaded files come back as URLs. A form can post any string, so each is
+  // checked against the store and the prefix the upload token was minted for,
+  // before it is stored against anybody.
+  const media = { photoUrl: null as string | null, videoUrl: null as string | null };
+  for (const [field, kind] of [["photoUrl", "photo"], ["videoUrl", "video"]] as const) {
+    const posted = String(formData.get(field) ?? "").trim();
+    if (!posted) continue;
+    if (!isSubmissionMediaUrl(posted, role.sessionId, roleId, kind)) {
+      return invalid(
+        { [field]: "That file did not upload properly. Please try again." },
+        "One of the files did not upload properly. Please try again.",
+        formData,
+      );
+    }
+    media[field] = posted;
+  }
+
   // The role decides whether terms must be accepted, not the form that was
   // posted. Otherwise dropping the checkbox from the request would skip it.
   if (role.disclaimer && !acceptTerms) {
@@ -193,6 +213,8 @@ export async function submitApplication(
       guardianName: minor ? (guardianName ?? null) : null,
       guardianEmail: minor ? (guardianEmail ?? null) : null,
       guardianConsentAt: minor ? new Date().toISOString() : null,
+      photoUrl: media.photoUrl,
+      videoUrl: media.videoUrl,
     });
   } catch (error) {
     // The unique index is the authority here, so two simultaneous submissions
@@ -396,7 +418,11 @@ export async function removeRole(formData: FormData): Promise<void> {
     detail: `${role.production} · ${role.company}`,
   });
 
+  const roleMedia = await mediaUrlsForRole(id);
+
   await deleteRoleAsAdmin(id);
+
+  await deleteMedia(roleMedia);
   revalidateEverything();
   redirect(`/dashboard/sessions/${role.sessionId}?removed=1`);
 }
@@ -824,7 +850,11 @@ export async function removeSession(formData: FormData): Promise<void> {
     detail: `${session.name} · ${session.company}`,
   });
 
+  const sessionMedia = await mediaUrlsForSession(id);
+
   await deleteSessionAsAdmin(id);
+
+  await deleteMedia(sessionMedia);
   revalidateEverything();
   redirect("/dashboard?removed=1");
 }

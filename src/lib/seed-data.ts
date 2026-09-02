@@ -295,6 +295,8 @@ const submissions: Omit<
     age: 33,
     reelUrl: "https://vimeo.com/example/aoife-brennan-reel",
     profileUrl: "https://spotlight.com/example/aoife-brennan",
+    photoUrl: null,
+    videoUrl: null,
     coverNote:
       "I grew up on the Blackwater estuary and have spent more of my life in a boat than out of one. The long silences in the brief are what made me want to submit.",
     status: "Shortlisted",
@@ -312,6 +314,8 @@ const submissions: Omit<
     age: 36,
     reelUrl: "https://vimeo.com/example/d-okonkwo",
     profileUrl: "https://spotlight.com/example/d-okonkwo",
+    photoUrl: null,
+    videoUrl: null,
     coverNote:
       "Most recently on stage at the Old Vic. I can send an additional self-tape on water at short notice if useful.",
     status: "Callback",
@@ -329,6 +333,8 @@ const submissions: Omit<
     age: 29,
     reelUrl: "https://vimeo.com/example/marta-kowalczyk",
     profileUrl: "",
+    photoUrl: null,
+    videoUrl: null,
     coverNote:
       "First feature submission. I have three shorts on my reel, the last of which played Encounters.",
     status: "New",
@@ -346,6 +352,8 @@ const submissions: Omit<
     age: 63,
     reelUrl: "https://vimeo.com/example/dai-llewellyn",
     profileUrl: "https://spotlight.com/example/dai-llewellyn",
+    photoUrl: null,
+    videoUrl: null,
     coverNote:
       "Welsh, and I have restored two wooden boats badly enough to know how it is done properly.",
     status: "Shortlisted",
@@ -363,6 +371,8 @@ const submissions: Omit<
     age: 38,
     reelUrl: "https://vimeo.com/example/simone-achebe",
     profileUrl: "https://spotlight.com/example/simone-achebe",
+    photoUrl: null,
+    videoUrl: null,
     coverNote:
       "Two series regular credits, both northern. Free for the whole block from January.",
     status: "New",
@@ -380,6 +390,8 @@ const submissions: Omit<
     age: 41,
     reelUrl: "https://vimeo.com/example/hannah-pryce",
     profileUrl: "https://spotlight.com/example/hannah-pryce",
+    photoUrl: null,
+    videoUrl: null,
     coverNote: "Sheffield born. Tape attached, second take is the one.",
     status: "Declined",
     acceptedTerms: null,
@@ -396,6 +408,8 @@ const submissions: Omit<
     age: 71,
     reelUrl: "",
     profileUrl: "",
+    photoUrl: null,
+    videoUrl: null,
     coverNote:
       "Submitting as a pair, married 46 years. We have done two commercials together, both as a couple.",
     status: "Shortlisted",
@@ -414,6 +428,8 @@ const submissions: Omit<
     age: 58,
     reelUrl: "https://soundcloud.com/example/errol-vance-reel",
     profileUrl: "",
+    photoUrl: null,
+    videoUrl: null,
     coverNote:
       "Home booth, Source Connect if you need it. Brummie, and unapologetic about it.",
     status: "New",

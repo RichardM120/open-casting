@@ -147,6 +147,9 @@ export type Submission = {
   age: number;
   reelUrl: string;
   profileUrl: string;
+  /** Uploaded with the submission, held privately, deleted with it. */
+  photoUrl: string | null;
+  videoUrl: string | null;
   coverNote: string;
   status: SubmissionStatus;
   /**

@@ -154,6 +154,9 @@ section("6 role without terms: no checkbox, submits cleanly");
   const { c, p } = await ctx();
   await p.goto(`${BASE}/c/${SALTMARSH}/nell-saltmarsh`, { waitUntil: "networkidle" });
   check("no terms block", (await p.getByText("Terms for this role").count()) === 0);
+  // The harness has no file store, so the form offers no uploads. Everything
+  // else on it is unchanged: the store is an addition, not a dependency.
+  check("no upload fields without a store", (await p.locator("#photo").count()) === 0 && (await p.locator("#video").count()) === 0);
   check("no acceptance checkbox", (await p.locator("#acceptTerms").count()) === 0);
   await p.fill("#name", "No Terms"); await p.fill("#email", `not${t}@example.com`);
   await p.fill("#phone", "07700 900222"); await p.fill("#location", "Essex"); await p.selectOption("#age", "33");
