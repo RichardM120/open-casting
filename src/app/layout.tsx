@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
+import { connection } from "next/server";
 
 import { PrelaunchBanner } from "@/components/prelaunch-banner";
 
@@ -29,7 +30,13 @@ export const metadata: Metadata = {
  * and the applicant's pages under /c have a layout of their own with neither:
  * an applicant holds one link and there is nothing else for them to go to.
  */
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  // Every page is rendered per request, never prerendered: the Content
+  // Security Policy carries a nonce minted per request, and a page built once
+  // at deploy time would ship scripts without it, which the policy then
+  // blocks. The 404 page is the one that would otherwise go static.
+  await connection();
+
   return (
     <html
       lang="en"
