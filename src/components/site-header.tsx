@@ -6,7 +6,7 @@ import { usePathname } from "next/navigation";
 import { signOut } from "@/lib/auth-actions";
 import type { SessionUser } from "@/lib/auth";
 
-import { Logo } from "./logo";
+import { Lockup } from "./logo";
 import { ButtonLink, cx } from "./ui";
 
 // Nothing to browse: signed out, there is only the way in and the help pages.
@@ -72,12 +72,8 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
   return (
     <header className="sticky top-0 z-20 bg-brand text-brand-ink shadow-md shadow-black/10">
       <div className="mx-auto flex min-h-16 max-w-6xl items-center gap-6 px-5 py-2">
-        <Link
-          href="/"
-          className="flex items-center gap-3 font-semibold tracking-[0.08em] text-white uppercase"
-        >
-          <Logo tone="onBrand" className="size-10 sm:size-9" />
-          <span className="text-base sm:text-[15px]">Open Casting</span>
+        <Link href="/" className="flex items-center rounded-xl">
+          <Lockup />
         </Link>
 
         <nav aria-label="Main" className="hidden items-center gap-1 sm:flex">
