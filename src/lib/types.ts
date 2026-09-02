@@ -20,6 +20,25 @@ export const SUBMISSION_STATUSES = [
 export type SubmissionStatus = (typeof SUBMISSION_STATUSES)[number];
 
 /**
+ * A client the agency casts for: the company whose productions these are.
+ *
+ * Clients sit above productions, so a production belongs to exactly one. This
+ * is an internal record. Applicants never see it, because who commissioned a
+ * production is the agency's business and often confidential until later.
+ */
+export type Client = {
+  id: string;
+  name: string;
+  /** Free notes: the contact there, the billing reference, whatever is useful. */
+  notes: string;
+  /** The account that created it. */
+  ownerId: string | null;
+  /** The agency the owner belongs to, which is what producers match on. */
+  company: string;
+  createdAt: string;
+};
+
+/**
  * One production and its casting window. A production casts as a unit rather
  * than role by role, so the roles posted into it open and close with it and
  * carry its name, type, synopsis and company.
@@ -31,7 +50,13 @@ export type CastingSession = {
   productionType: ProductionType;
   synopsis: string;
   ownerId: string | null;
+  /**
+   * The agency that owns this, which is what producer visibility matches on.
+   * Not the client: see clientId.
+   */
   company: string;
+  /** The client whose production this is. Null only for rows predating clients. */
+  clientId: string | null;
   /**
    * ISO timestamps. Submissions are accepted from opensAt up to closesAt. The
    * casting director enters both in UK time; they are stored as instants.
@@ -45,7 +70,7 @@ export type CastingSession = {
    * its dates say, and its share link opens for nobody but its owner.
    */
   publishedAt: string | null;
-  /** Set when the performers' details were destroyed under the retention policy. */
+  /** Set when the applicants' details were destroyed under the retention policy. */
   purgedAt: string | null;
   /**
    * yyyy-mm-dd. When the production itself finishes, which is what the
@@ -55,9 +80,9 @@ export type CastingSession = {
    */
   productionEndsAt: string;
   /**
-   * The unguessable half of the share link. Performers reach a production only
+   * The unguessable half of the share link. Applicants reach a production only
    * by holding this, as there is no public index, so it is never rendered
-   * anywhere a performer could see another production's.
+   * anywhere an applicant could see another production's.
    */
   publicToken: string;
   createdAt: string;
@@ -87,7 +112,7 @@ export type Role = {
   shootDates: string;
   /** The name of the account that posted it. */
   castingDirector: string;
-  /** Terms the performer must accept to submit. Empty when none are set. */
+  /** Terms the applicant must accept to submit. Empty when none are set. */
   disclaimer: string;
   /** Set when closed ahead of the production's closing time. ISO timestamp, or null. */
   closedAt: string | null;
@@ -189,7 +214,11 @@ export const ROLE_DESCRIPTIONS: Record<SignupRole, string> = {
   producer: "Sees every production under the company, and everything posted into them.",
 };
 
+/** A demo client. The seed supplies the owner and agency. */
+export type SeedClient = Pick<Client, "id" | "name" | "notes">;
+
 export type Database = {
+  clients: SeedClient[];
   sessions: SeedSession[];
   /** Roles with their production's details filled in, ready to insert. */
   roles: Omit<Role, "ownerId">[];

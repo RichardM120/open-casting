@@ -36,7 +36,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           can see follows from your account.
         </p>
         <p className="mt-3 text-sm leading-relaxed text-muted">
-          Performers never sign in. If you were sent a casting link, open that instead.
+          Applicants never sign in. If you were sent a casting link, open that instead.
         </p>
 
         <div className="mt-8 rounded-2xl border border-line bg-surface p-7">
@@ -51,14 +51,14 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         </h2>
         <p className="mt-4 max-w-prose leading-relaxed text-muted">
           Open Casting is the tool a production uses to run its own open call. It is not a job
-          board: there is no listing to browse and nothing for performers to join. You post the
+          board: there is no listing to browse and nothing for applicants to join. You post the
           roles, send out one link, and read everything that comes back in a single list.
         </p>
 
         <dl className="mt-8 flex flex-col gap-6">
           <Point term="A production at a time">
             Open a production, post its roles, and set the times once. Every role in it opens
-            and closes together, and a performer submits to the production once, not once per
+            and closes together, and an applicant submits to the production once, not once per
             part.
           </Point>
           <Point term="One link to circulate">
@@ -66,7 +66,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
             wherever the call should reach. It opens your production and nothing else.
           </Point>
           <Point term="Nothing to join">
-            Performers do not register and do not sign in. Under-18s go through a parent or
+            Applicants do not register and do not sign in. Under-18s go through a parent or
             guardian, who confirms it on the form.
           </Point>
           <Point term="Deleted when it is done">

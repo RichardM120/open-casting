@@ -26,7 +26,7 @@ const SHARE = "/c/saltmarsh-4f21c9ba7e";
 section("1 every page is behind the interstitial");
 {
   const { c, p } = await ctx();
-  for (const path of ["/", "/faq", "/faq/performers", "/login", "/legal/submission-terms", "/dashboard", "/dashboard/activity"]) {
+  for (const path of ["/", "/faq", "/faq/applicants", "/login", "/legal/submission-terms", "/dashboard", "/dashboard/activity"]) {
     await p.goto(BASE + path, { waitUntil: "networkidle" });
     check(`${path} -> /gate`, new URL(p.url()).pathname === "/gate", p.url());
   }

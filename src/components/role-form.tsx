@@ -20,7 +20,7 @@ const LABELS: Record<string, string> = {
   location: "Location",
   shootDates: "Shoot dates",
   rate: "Rate",
-  disclaimer: "Terms for performers",
+  disclaimer: "Terms for applicants",
 };
 
 /**
@@ -202,7 +202,7 @@ export function RoleForm({
         </Field>
       </Fieldset>
 
-      <Fieldset legend="Practicalities" description="What performers need to know before they tape.">
+      <Fieldset legend="Practicalities" description="What applicants need to know before they tape.">
         <Field label="Location" htmlFor="location" error={errors.location}>
           <Input
             id="location"
@@ -246,11 +246,11 @@ export function RoleForm({
       </Fieldset>
 
       <Fieldset
-        legend="Terms for performers"
+        legend="Terms for applicants"
         description={
           role
-            ? "Shown on the listing, and performers tick to accept them. Changing them does not alter what anyone has already accepted, as that was recorded with their submission."
-            : "Optional. Shown on the listing, and performers tick to accept them before they can submit."
+            ? "Shown on the listing, and applicants tick to accept them. Changing them does not alter what anyone has already accepted, as that was recorded with their submission."
+            : "Optional. Shown on the listing, and applicants tick to accept them before they can submit."
         }
       >
         <Field

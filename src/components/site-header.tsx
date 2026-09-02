@@ -12,13 +12,14 @@ import { ButtonLink, cx } from "./ui";
 const PUBLIC_NAV = [{ href: "/faq", label: "FAQ" }] as const;
 
 /**
- * Two things to look at once signed in: the productions, which is where the
- * roles and submissions live, and the record of what has been done. Roles are
- * reached through their production rather than from a list of their own, so
- * there is one place to look.
+ * Three things to look at once signed in: the productions, which is where the
+ * roles and submissions live, the clients they are for, and the record of what
+ * has been done. Roles are reached through their production rather than from a
+ * list of their own, so there is one place to look.
  */
 const OWNER_NAV = [
   { href: "/dashboard", label: "Productions" },
+  { href: "/dashboard/clients", label: "Clients" },
   { href: "/dashboard/activity", label: "Activity" },
 ] as const;
 

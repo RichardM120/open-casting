@@ -7,6 +7,7 @@ import { ShareLink } from "@/components/share-link";
 import { Badge, Button, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
 import { publishCastingSession, removeSession, toggleSessionClosed } from "@/lib/actions";
 import { currentUser, requireUser } from "@/lib/auth";
+import { getVisibleClient } from "@/lib/clients";
 import { formatDate, formatDateTime, isOpen, notYetOpen } from "@/lib/format";
 import { listSessionRoles } from "@/lib/roles";
 import { requestOrigin } from "@/lib/origin";
@@ -34,11 +35,12 @@ export default async function SessionPage({
   const session = await getVisibleSession(id, user);
   if (!session) notFound();
 
-  const [roles, counts, query, origin] = await Promise.all([
+  const [roles, counts, query, origin, client] = await Promise.all([
     listSessionRoles(id),
     countsByRole(user),
     searchParams,
     requestOrigin(),
+    session.clientId ? getVisibleClient(session.clientId, user) : null,
   ]);
   const shareUrl = `${origin}/c/${shareSlug(session)}`;
 
@@ -90,7 +92,7 @@ export default async function SessionPage({
           <Eyebrow>{session.productionType}</Eyebrow>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight">{session.name}</h1>
           <p className="mt-2 text-muted">
-            {session.company} · open {formatDateTime(session.opensAt)} to{" "}
+            {client ? `${client.name} · ` : ""}open {formatDateTime(session.opensAt)} to{" "}
             {formatDateTime(session.closesAt)}
           </p>
         </div>
@@ -122,7 +124,7 @@ export default async function SessionPage({
           : notYetOpen(session)
             ? `Not open yet. The roles below can be seen, but nobody can submit until ${formatDateTime(session.opensAt)}.`
             : open
-              ? `Accepting submissions until ${formatDateTime(session.closesAt)}. A performer may submit to this production once, whichever role they go for.`
+              ? `Accepting submissions until ${formatDateTime(session.closesAt)}. An applicant may submit to this production once, whichever role they go for.`
               : `Past its closing time. The roles stay up for reference and take no new submissions.`}
       </p>
 
@@ -130,7 +132,7 @@ export default async function SessionPage({
         <section className="mt-8 rounded-2xl border border-accent/30 bg-accent-soft p-6">
           <h2 className="text-lg font-semibold tracking-tight">Not published yet</h2>
           <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
-            Nobody can open this but you. Check it over as a performer will see it, and publish
+            Nobody can open this but you. Check it over as an applicant will see it, and publish
             when you are happy. That is the moment the link starts working.
           </p>
           <ul className="mt-4 flex flex-col gap-2 text-sm text-muted">
@@ -152,7 +154,7 @@ export default async function SessionPage({
               </Button>
             </form>
             <ButtonLink href={`/c/${shareSlug(session)}`} variant="secondary" size="sm">
-              Preview as a performer
+              Preview as an applicant
             </ButtonLink>
           </div>
           <p className="mt-4 text-xs leading-relaxed text-faint">
@@ -163,7 +165,7 @@ export default async function SessionPage({
         </section>
       ) : (
         <section className="mt-8 rounded-2xl border border-accent/30 bg-accent-soft p-6">
-          <h2 className="text-lg font-semibold tracking-tight">The link for performers</h2>
+          <h2 className="text-lg font-semibold tracking-tight">The link for applicants</h2>
           <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
             Send this to anyone you want to submit: an Instagram post, a mailout, an agent
             circular. It opens {session.name} and nothing else. There is no listing on Open
@@ -189,8 +191,8 @@ export default async function SessionPage({
 
       <p className="mt-4 max-w-prose rounded-xl border border-line bg-raised px-4 py-3 text-xs leading-relaxed text-muted">
         {session.purgedAt
-          ? `The performers' details were removed on ${formatDate(session.purgedAt)}, ${RETENTION_DAYS} days after this production finished. The roles and the counts are kept; the names, addresses and notes are gone.`
-          : `This production finishes on ${formatDate(session.productionEndsAt)}. Performers' details are destroyed ${RETENTION_DAYS} days later, on ${formatDate(purgeDate(session.productionEndsAt))}${
+          ? `The applicants' details were removed on ${formatDate(session.purgedAt)}, ${RETENTION_DAYS} days after this production finished. The roles and the counts are kept; the names, addresses and notes are gone.`
+          : `This production finishes on ${formatDate(session.productionEndsAt)}. Applicants' details are destroyed ${RETENTION_DAYS} days later, on ${formatDate(purgeDate(session.productionEndsAt))}${
               daysUntilPurge(session.productionEndsAt) <= 14
                 ? `, which is ${daysUntilPurge(session.productionEndsAt)} days away`
                 : ""
@@ -257,7 +259,7 @@ export default async function SessionPage({
               <strong className="text-text">
                 all {submissions} {submissions === 1 ? "submission" : "submissions"}
               </strong>{" "}
-              made to them, including the contact details performers gave. It cannot be undone.
+              made to them, including the contact details applicants gave. It cannot be undone.
               To stop new submissions without destroying anything, use{" "}
               <strong className="text-text">Close early</strong> instead.
             </p>

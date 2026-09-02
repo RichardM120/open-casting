@@ -45,8 +45,12 @@ section("3 step 2 explains the director's own scope");
 check("director wording", (await dir.p.getByText(/productions you open, and nothing else/).count()) > 0);
 check("warns colleagues cannot see it", (await dir.p.getByText(/cannot see your productions/).count()) > 0);
 check(
-  "explains productions come first",
-  (await dir.p.getByText(/Start by opening a production/).count()) > 0,
+  "explains clients come first",
+  (await dir.p.getByText(/Start by adding the client you are casting for/).count()) > 0,
+);
+check(
+  "then the production",
+  (await dir.p.getByText(/Then open a production under it/).count()) > 0,
 );
 await dir.p.screenshot({ path: `${SHOTS}/wizard-2.png`, fullPage: true });
 await dir.p.getByRole("link", { name: "Continue" }).click();
@@ -64,10 +68,10 @@ section("3b accounts cannot be self-registered");
   await c.close();
 }
 
-section("4 finishing sends a director to open a production");
-await dir.p.getByRole("button", { name: "Open your first production" }).click();
-await dir.p.waitForURL("**/dashboard/sessions/new", { timeout: 20000 });
-check("lands on the production form", true);
+section("4 finishing sends a director to add their first client");
+await dir.p.getByRole("button", { name: "Add your first client" }).click();
+await dir.p.waitForURL("**/dashboard/clients/new", { timeout: 20000 });
+check("lands on the client form", true);
 await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 check("the nudge banner is gone", (await dir.p.getByText(/setup is not finished/).count()) === 0);
 
@@ -103,7 +107,7 @@ section("6b the navigation matches the role, and the hierarchy");
   // Productions first, because a role cannot exist without one.
   const order = await admin.p.locator("header nav").first().locator("a").allTextContents();
   check(`admin nav in order: ${JSON.stringify(order)}`,
-    JSON.stringify(order) === JSON.stringify(["Productions", "Activity", "Accounts", "FAQ"]));
+    JSON.stringify(order) === JSON.stringify(["Productions", "Clients", "Activity", "Accounts", "FAQ"]));
 
   await half.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
   const theirs = await half.p.locator("header nav").first().locator("a").allTextContents();

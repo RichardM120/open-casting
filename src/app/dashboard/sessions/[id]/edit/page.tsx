@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { SessionForm } from "@/components/session-form";
 import { Eyebrow } from "@/components/ui";
 import { currentUser, requireUser } from "@/lib/auth";
+import { listVisibleClients } from "@/lib/clients";
 import { listSessionRoles } from "@/lib/roles";
 import { getVisibleSession } from "@/lib/sessions";
 
@@ -25,7 +26,7 @@ export default async function EditSessionPage({
   const session = await getVisibleSession(id, user);
   if (!session) notFound();
 
-  const roles = await listSessionRoles(id);
+  const [roles, clients] = await Promise.all([listSessionRoles(id), listVisibleClients(user)]);
 
   return (
     <div className="mx-auto max-w-3xl px-5 py-12">
@@ -49,7 +50,7 @@ export default async function EditSessionPage({
       </div>
 
       <div className="mt-10">
-        <SessionForm session={session} />
+        <SessionForm session={session} clients={clients} />
       </div>
     </div>
   );

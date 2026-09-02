@@ -1,7 +1,7 @@
 /**
  * The paperwork, as part of the process rather than beside it: the customer
  * accepts the Master Services Agreement before the platform will let them do
- * anything, and a performer accepts the Terms of Submission before their
+ * anything, and an applicant accepts the Terms of Submission before their
  * details are taken, with a parent doing it for a child.
  */
 import {
@@ -70,7 +70,7 @@ section("4 the administrator is the service provider, not a customer of it");
 await admin.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 check("no agreement gate for the admin", !admin.p.url().includes("/welcome"), admin.p.url());
 
-section("5 a performer accepts the Terms of Submission");
+section("5 an applicant accepts the Terms of Submission");
 const live = await openSession(dir.p, {
   name: `Legal ${t}`, company: CO, opensAt: at(0), closesAt: at(20, "23:59"), productionEndsAt: day(40),
 });
@@ -86,7 +86,7 @@ const token = await shareTokenForRole(dir.p, role);
   check("with the full text a click away", (await p.getByRole("link", { name: /Read the full Terms of Submission/ }).count()) > 0);
   check("and a version stated", (await p.getByText(/Version 2026-09-01/).count()) > 0);
 
-  await p.fill("#name", "Adult Performer"); await p.fill("#email", `ad${t}@example.com`);
+  await p.fill("#name", "Adult Applicant"); await p.fill("#email", `ad${t}@example.com`);
   await p.fill("#phone", "07700 900900"); await p.fill("#location", "Leeds"); await p.fill("#age", "34");
   await p.fill("#coverNote", "A cover note comfortably longer than the twenty character minimum.");
   await p.getByRole("button", { name: "Send submission" }).click();
@@ -113,7 +113,7 @@ section("6 a child's submission needs a parent or guardian");
   check("typing an age under 18 asks for one", (await p.locator("#guardianName").count()) === 1);
   check("and says why", (await p.getByText(/legal parental responsibility/).count()) > 0);
 
-  await p.fill("#name", "Child Performer"); await p.fill("#email", `ch${t}@example.com`);
+  await p.fill("#name", "Child Applicant"); await p.fill("#email", `ch${t}@example.com`);
   await p.fill("#phone", "07700 900901"); await p.fill("#location", "Leeds");
   await p.fill("#coverNote", "A cover note comfortably longer than the twenty character minimum.");
   await p.check("#acceptSubmissionTerms");
@@ -142,7 +142,7 @@ section("7 what was accepted is recorded against the submission");
        FROM submissions WHERE session_id = $1 ORDER BY name`,
     [live],
   );
-  const [adult, child] = [rows.rows.find((r) => r.name === "Adult Performer"), rows.rows.find((r) => r.name === "Child Performer")];
+  const [adult, child] = [rows.rows.find((r) => r.name === "Adult Applicant"), rows.rows.find((r) => r.name === "Child Applicant")];
   check("the adult's terms version is stored", adult?.terms_version === "2026-09-01", JSON.stringify(adult));
   check("with no guardian", adult?.guardian_name === null);
   check("the child's guardian is stored", child?.guardian_name === "Pat Guardian", JSON.stringify(child));

@@ -2,12 +2,12 @@
 
 The private tool a production uses to run its casting. The administrator creates
 an account for a casting director; they open a production, post its roles into
-it, and send one link. Performers submit through that link without an account,
+it, and send one link. Applicants submit through that link without an account,
 once per production, and every submission lands in one dashboard where it can be
 moved through New, Shortlisted, Callback and Declined.
 
 There is no public listing and no search. A casting call goes exactly as far as
-its link is circulated. The casting side signs in; performers never do.
+its link is circulated. The casting side signs in; applicants never do.
 
 ## Running it
 
@@ -47,26 +47,31 @@ deliberately left alone.
 /faq  /faq/*            Reference, open to anyone
 /legal/*                The agreements, open so a casting link can cite them
 
-/dashboard              Productions, with the roles in each   ─┐
-  /sessions/new         Open one                                │
-  /sessions/[id]        One production: its link and its roles │  the order the
-  /sessions/[id]/edit   Its times                               │  work happens in
-  /roles/new            Post a role into it                     │
-  /roles/[id]           Its submissions                         │
-  /roles/[id]/edit      Edit it                                ─┘
+/dashboard              Productions by client, with the roles in each  ─┐
+  /clients              The clients you cast for                        │
+  /clients/new          Add one                                         │
+  /clients/[id]/edit    Rename it, or keep notes on it                  │
+  /sessions/new         Open a production under a client                │ the order
+  /sessions/[id]        One production: its link and its roles          │ the work
+  /sessions/[id]/edit   Its times                                       │ happens in
+  /roles/new            Post a role into it                             │
+  /roles/[id]           Its submissions                                 │
+  /roles/[id]/edit      Edit it                                        ─┘
 /dashboard/activity     The trail
 /dashboard/accounts     Accounts, admin only
 
-/c/<slug>-<token>              A production, as a performer sees it
+/c/<slug>-<token>              A production, as an applicant sees it
 /c/<slug>-<token>/<role-slug>  One role, and the submission form
 ```
 
-**Navigation follows the hierarchy.** A role cannot exist without a production,
-so the dashboard is the list of productions with the roles under each, and every
-page links back one level: a role to its production, a production to the list.
-The nav is Productions, Activity and FAQ, and the back-links use the same words
-for the same places. `/dashboard/sessions` still answers, with a permanent
-redirect to `/dashboard`, so an old bookmark lands in the right place.
+**Navigation follows the hierarchy.** A production cannot exist without a
+client and a role cannot exist without a production, so the dashboard is the
+list of productions grouped by client with the roles under each, and every page
+links back one level: a role to its production, a production to the list. The
+nav is Productions, Clients, Activity and FAQ, and the back-links use the same
+words for the same places. `/dashboard/sessions` still answers, with a permanent
+redirect to `/dashboard`, and `/faq/performers` redirects to `/faq/applicants`,
+so an old bookmark lands in the right place.
 
 The only difference in the nav between accounts is **Accounts**, which an admin
 sees and a director does not. The page refuses a director independently of the
@@ -76,8 +81,8 @@ nav, so hiding the link is presentation rather than protection.
 
 | Route | What it does |
 | --- | --- |
-| `/` | The way in: sign-in for the casting side, and a note for performers |
-| `/c/[token]` | One production's casting call, the only page a performer sees |
+| `/` | The way in: sign-in for the casting side, and a note for applicants |
+| `/c/[token]` | One production's casting call, the only page an applicant sees |
 | `/c/[token]/[roleId]` | The full brief, plus the submission form |
 | `/dashboard` | Your productions, each with its roles and submission counts. Sign-in required |
 | `/dashboard/sessions/new` | Open a production |
@@ -90,7 +95,7 @@ nav, so hiding the link is presentation rather than protection.
 | `/dashboard/accounts` | Create, suspend and restore accounts. Admin only |
 | `/login` | Password or Google sign-in. There is no `/signup` |
 | `/welcome` | Three-step setup, tailored to the account's role |
-| `/faq/performers` | What the fields on a casting call mean and what submitting commits you to |
+| `/faq/applicants` | What the fields on a casting call mean and what submitting commits you to |
 | `/faq/casting-directors` | What each field commits you to, and writing terms |
 | `/api/health` | Whether the deployment can reach its database. No data, no secrets |
 
@@ -220,7 +225,7 @@ because there is no query that could find it.
 
 Set **`APP_URL`** to the canonical origin and share links are built from it
 rather than from whichever of the four domains the casting director happened to
-be on. Every redirect a performer does not make is one fewer round trip on a
+be on. Every redirect an applicant does not make is one fewer round trip on a
 phone and one fewer chance for a truncated link.
 
 ## Signing in
@@ -298,7 +303,7 @@ nothing to register for.
 - **The administrator's own account** is created from the environment on first
   boot (see *Deploying*), because otherwise a fresh deployment would have no
   way in at all.
-- **Performers never sign in.** A production has a share link carrying an
+- **Applicants never sign in.** A production has a share link carrying an
   unguessable token, shown on its page in the dashboard. That link is the whole
   of the access control: whoever holds it can read that production and submit to
   it while it is open, and can reach nothing else. `robots.txt` disallows
@@ -320,7 +325,7 @@ not strong enough for a value that is doing this job.
 2. **They open a production** and post its roles into it, inside those limits.
 3. **They check it and publish it.** A new production is a draft: its share link
    opens for them and for nobody else, so they can read it exactly as a
-   performer will. Publishing is what makes the link work, and it needs at least
+   applicant will. Publishing is what makes the link work, and it needs at least
    one role. It cannot be undone: once a link is on a post or in a mailout it is
    out of anyone's hands, so *close early* is how a call is stopped.
 4. **They circulate the link**: Instagram, a mailout, an agent circular.
@@ -328,7 +333,7 @@ not strong enough for a value that is doing this job.
 5. **They work the submissions** through New, Shortlisted, Callback and Declined.
    The data is theirs.
 6. **The call closes**, at its closing time or early.
-7. **Thirty days after the production ends, the performers' details are
+7. **Thirty days after the production ends, the applicants' details are
    destroyed.** See below.
 
 ## Agreements
@@ -387,13 +392,28 @@ It runs two ways, deliberately:
 
 The date is shown on every production's page, and both FAQs state it.
 
-## Productions
+## Clients, productions, applicants
 
-A **production** is one project with however many roles. In the code and the
-database it is a *casting session* (`sessions_casting`, `/dashboard/sessions/…`);
-the UI says production throughout. It owns the name, the production type, the
-synopsis, the company, and the opening and closing times submissions run
-between. Roles belong to a production and carry no dates of their own, and a
+Three words, one hierarchy, used consistently in the interface:
+
+| The word | What it means | In the code |
+| --- | --- | --- |
+| **Client** | The company you cast for. Internal: never shown to applicants. | `clients` |
+| **Production** | One of that client's projects, with however many roles. | `sessions_casting` |
+| **Applicant** | Someone who submits for a role. | `submissions` |
+
+The code keeps its older names (a production is a *casting session*, at
+`/dashboard/sessions/…`), and the interface says production throughout.
+
+`company` is a separate thing from `client` and is easy to confuse: it is the
+**agency the account belongs to**, and it is what producer visibility matches
+on (`sessionVisibility` in `src/lib/sessions.ts`). It is set from the signed-in
+account when a production is opened, never typed into the form, so one account
+cannot post into another agency's view of the dashboard. The client is what the
+production is *for*; the company is who is *casting* it.
+
+A **production** owns the name, the production type, the synopsis, the client,
+and the opening and closing times submissions run between. Roles belong to a production and carry no dates of their own, and a
 role takes its production details from the production it is posted into, so the
 role form asks only for the brief, the rate and the shoot dates. Every role is
 paid; there is no pay type and no union status.
@@ -408,7 +428,7 @@ That buys three things:
 - **One window per production.** Every role opens and closes together, so two
   roles on the same film cannot disagree about when casting closes. Moving the
   times moves all of them at once.
-- **One submission per performer per production.** A performer picks the role
+- **One submission per applicant per production.** An applicant picks the role
   that fits and submits once, rather than once per role. The unique index
   `submissions (session_id, lower(email))` decides it, so two requests arriving
   together cannot both get through.
@@ -416,7 +436,7 @@ That buys three things:
   at the same moment, and is reversible. Removing is the destructive one, is
   admin-only, and takes the roles and their submissions with it.
 
-Outside the window the roles stay listed and readable, so a performer can read
+Outside the window the roles stay listed and readable, so an applicant can read
 the brief and prepare a tape, but the submission form is not rendered, and the
 action refuses the write even if the form is replayed.
 
@@ -444,7 +464,7 @@ What each may **do**, on top of that:
 | Remove a production or a role, with its submissions | Admin only |
 | Suspend or restore an account | Admin only |
 
-Removal is admin-only on purpose: it destroys performers' contact details, and a
+Removal is admin-only on purpose: it destroys applicants' contact details, and a
 shared company name should not be enough to authorise that. Closing early is the
 non-destructive option: it stops new submissions and keeps the roles readable.
 Closing is recorded in `closed_at` rather than by moving the closing time, so the
@@ -473,7 +493,7 @@ which addresses have accounts, and repeated failures are throttled per address.
 ### Role terms
 
 A casting director can set optional terms on a role. Where they exist, the
-role page shows them and the performer must tick to accept before submitting,
+role page shows them and the applicant must tick to accept before submitting,
 enforced against the role in the action, not by trusting the posted form.
 
 The wording is **copied onto the submission** as it read at that moment, with a
@@ -530,7 +550,7 @@ Account events carry no owner or company, which is what keeps them to admins
 without a second rule.
 
 Writing an entry never throws into the caller. A trail that can fail a
-performer's submission would be worse than a gap in the trail.
+applicant's submission would be worse than a gap in the trail.
 
 ## Deploying
 
@@ -561,11 +581,11 @@ printing the connection string.
 
 ## Known limits
 
-Anyone holding a share link can submit; there is no per-performer identity, so a
+Anyone holding a share link can submit; there is no per-applicant identity, so a
 link that is forwarded is a link that works. Regenerating a token is not exposed
 in the UI yet; closing the production early is the way to stop a leaked link
 today. Headshots and tapes are links, not uploads. Nobody is emailed when a
-submission arrives or a status changes: the performer's address is on every
+submission arrives or a status changes: the applicant's address is on every
 submission, and replying is a manual step. A role cannot be moved between
 productions.
 There is no export: submissions are read in the dashboard.

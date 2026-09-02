@@ -64,7 +64,7 @@ export function NotLegalAdvice() {
       <strong className="text-text">This is plain-English guidance, not legal advice.</strong>{" "}
       It explains what the fields on this site mean and how they are normally used in UK film,
       television and theatre. It is not a contract, and it does not replace an agreement between
-      a performer and a production. If money, usage or a minor is involved, take proper advice
+      an applicant and a production. If money, usage or a minor is involved, take proper advice
       from Equity, an agent, or a solicitor.
     </p>
   );

@@ -243,6 +243,25 @@ const SCHEMA = `
 
   -- A production and its casting window. Roles belong to it and open and close
   -- together, because a production casts as a unit.
+  -- The clients the agency casts for. A production belongs to one of these.
+  -- Internal only: nothing on the public side of the app reads this table.
+  CREATE TABLE IF NOT EXISTS clients (
+    id         text PRIMARY KEY,
+    name       text        NOT NULL,
+    notes      text        NOT NULL DEFAULT '',
+    owner_id   text        REFERENCES users(id) ON DELETE CASCADE,
+    -- The owner's agency, which is what a producer's visibility matches on.
+    company    text        NOT NULL,
+    created_at timestamptz NOT NULL DEFAULT now()
+  );
+
+  CREATE INDEX IF NOT EXISTS clients_company_idx ON clients (lower(company));
+  CREATE INDEX IF NOT EXISTS clients_owner_idx ON clients (owner_id);
+  -- One client of a given name per account, so the picker cannot fill with
+  -- near-duplicates of the same company.
+  CREATE UNIQUE INDEX IF NOT EXISTS clients_owner_name_idx
+    ON clients (owner_id, lower(name));
+
   CREATE TABLE IF NOT EXISTS sessions_casting (
     id         text PRIMARY KEY,
     slug       text        NOT NULL,
@@ -258,7 +277,7 @@ const SCHEMA = `
     created_at timestamptz NOT NULL DEFAULT now()
   );
 
-  -- The unguessable half of a project's share link. Performers reach a casting
+  -- The unguessable half of a project's share link. Applicants reach a casting
   -- session only by holding this; there is no index to browse and nothing links
   -- to it, so the token is the whole of the access control.
   ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS public_token text;
@@ -275,7 +294,7 @@ const SCHEMA = `
   -- link is not a way in for anybody, and it is not live whatever its dates say.
   ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS published_at timestamptz;
 
-  -- Set when the performers' details have been destroyed under the retention
+  -- Set when the applicants' details have been destroyed under the retention
   -- policy, so the dashboard can say so rather than showing an empty list.
   ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS purged_at timestamptz;
 
@@ -342,7 +361,7 @@ const SCHEMA = `
   -- roles table without this column.
   ALTER TABLE roles ADD COLUMN IF NOT EXISTS owner_id text;
 
-  -- Terms the casting director sets on the role. Performers must tick to accept
+  -- Terms the casting director sets on the role. Applicants must tick to accept
   -- them, and the wording is copied onto the submission as it stood at the time,
   -- so a later edit cannot rewrite what somebody agreed to.
   ALTER TABLE roles ADD COLUMN IF NOT EXISTS disclaimer text NOT NULL DEFAULT '';
@@ -410,7 +429,7 @@ const SCHEMA = `
   -- once, not once per role. Enforced by the database rather than by a
   -- check-then-insert that two concurrent requests could both pass.
   DROP INDEX IF EXISTS submissions_role_email_idx;
-  -- What the performer accepted, and the guardian who accepted it for a child.
+  -- What the applicant accepted, and the guardian who accepted it for a child.
   ALTER TABLE submissions ADD COLUMN IF NOT EXISTS terms_version text;
   ALTER TABLE submissions ADD COLUMN IF NOT EXISTS guardian_name text;
   ALTER TABLE submissions ADD COLUMN IF NOT EXISTS guardian_email text;
@@ -454,10 +473,44 @@ const SCHEMA = `
   ALTER TABLE roles DROP COLUMN IF EXISTS pay_type;
   ALTER TABLE roles DROP COLUMN IF EXISTS union_status;
   ALTER TABLE submissions DROP COLUMN IF EXISTS union_status;
+
+  -- Clients sit above productions. The column is nullable because rows created
+  -- before clients existed have to keep working; the form requires one from
+  -- here on. ON DELETE RESTRICT: a client with productions cannot be deleted
+  -- out from under them, which the action reports as a plain refusal.
+  ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS client_id text;
+  DO $$
+  BEGIN
+    ALTER TABLE sessions_casting
+      ADD CONSTRAINT sessions_casting_client_fk
+      FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE RESTRICT;
+  EXCEPTION WHEN duplicate_object THEN NULL;
+  END $$;
+
+  CREATE INDEX IF NOT EXISTS sessions_client_idx ON sessions_casting (client_id);
+
+  -- Every production that predates clients gets one named after the company it
+  -- was opened under, which until now was the agency's own name. The id is
+  -- derived from the owner and that name, so this is the same client every time
+  -- it runs and the insert and the update below agree on it.
+  INSERT INTO clients (id, name, notes, owner_id, company)
+  SELECT 'cli_' || substr(md5(coalesce(s.owner_id, '') || lower(s.company)), 1, 12),
+         min(s.company), '', s.owner_id, min(s.company)
+    FROM sessions_casting s
+   WHERE s.client_id IS NULL
+   GROUP BY s.owner_id, lower(s.company)
+  ON CONFLICT DO NOTHING;
+
+  UPDATE sessions_casting s
+     SET client_id = 'cli_' || substr(md5(coalesce(s.owner_id, '') || lower(s.company)), 1, 12)
+   WHERE s.client_id IS NULL;
 `;
 
 /** Postgres error code for a unique constraint violation. */
 export const UNIQUE_VIOLATION = "23505";
+
+/** Postgres error code for a foreign key violation. */
+export const FOREIGN_KEY_VIOLATION = "23503";
 
 /**
  * Creates the tables, then loads the demo content if the database is empty.
@@ -501,20 +554,30 @@ export const DEMO_USER = {
 
 /** Inserts the demo roles and submissions, skipping any that already exist. */
 async function seed(): Promise<void> {
-  const { sessions, roles, submissions } = seedDatabase();
+  const { clients, sessions, roles, submissions } = seedDatabase();
 
   await rawTransaction(async (client) => {
-    // Sessions first: the roles reference them.
+    // Clients first: the productions reference them.
+    for (const account of clients) {
+      await client.query(
+        `INSERT INTO clients (id, name, notes, owner_id, company)
+         VALUES ($1, $2, $3, $4, $5) ON CONFLICT (id) DO NOTHING`,
+        [account.id, account.name, account.notes, DEMO_USER.id, DEMO_USER.company],
+      );
+    }
+
+    // Then the productions: the roles reference them.
     for (const session of sessions) {
       await client.query(
         `INSERT INTO sessions_casting
            (id, slug, name, production_type, synopsis, owner_id, company, opens_at,
-            closes_at, production_ends_at, public_token, published_at)
-         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11, now()) ON CONFLICT (id) DO NOTHING`,
+            closes_at, production_ends_at, public_token, client_id, published_at)
+         VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12, now()) ON CONFLICT (id) DO NOTHING`,
         [
           session.id, session.slug, session.name, session.productionType,
           session.synopsis, DEMO_USER.id, session.company, session.opensAt,
           session.closesAt, session.productionEndsAt, session.publicToken,
+          session.clientId,
         ],
       );
     }
@@ -561,7 +624,7 @@ async function seed(): Promise<void> {
  *
  * The scheduled job is the one that runs to time; this is here so that a
  * deployment where nobody configured the cron still honours the promise made to
- * performers, rather than keeping their details for ever in silence.
+ * applicants, rather than keeping their details for ever in silence.
  */
 async function purgeOnBoot(): Promise<void> {
   try {
@@ -656,7 +719,7 @@ async function bootstrapAdmin(): Promise<void> {
  * Gives every role a production. The earliest roles predate productions, so one
  * is derived per production name per owner: it opens when the earliest of its
  * roles was posted and closes at the end of the latest closing date any of them
- * advertised, which preserves what performers were already told.
+ * advertised, which preserves what applicants were already told.
  *
  * The id is a hash of the grouping key rather than random, so running this
  * twice cannot produce two productions for the same name.

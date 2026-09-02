@@ -196,14 +196,36 @@ export async function adminSession(browser, errors) {
  * Opens a production (a casting session, in the code) and returns its id.
  * `opensAt` and `closesAt` are `datetime-local` values; see `at()`.
  */
+/**
+ * Adds a client unless the account already has one by that name. Productions
+ * belong to a client, so every fixture needs one before it can open anything.
+ */
+export async function addClient(page, name, notes = "") {
+  await page.goto(`${BASE}/dashboard/clients`, { waitUntil: "networkidle" });
+  // Scoped to the list: the header carries the account's own company name, and
+  // fixtures often name a client after it.
+  if ((await page.locator("#main").getByText(name, { exact: true }).count()) > 0) return;
+
+  await page.goto(`${BASE}/dashboard/clients/new`, { waitUntil: "networkidle" });
+  await page.fill("#name", name);
+  if (notes) await page.fill("#notes", notes);
+  await page.getByRole("button", { name: "Add the client" }).click();
+  await page.waitForURL(/\/dashboard\/clients\?/, { timeout: 20000 });
+}
+
 export async function openSession(page, fields) {
+  // `company` names the client the production is for. The agency comes from the
+  // signed-in account and is not a field on this form.
+  const clientName = fields.client ?? fields.company;
+  await addClient(page, clientName);
+
   await page.goto(`${BASE}/dashboard/sessions/new`, { waitUntil: "networkidle" });
   await page.fill("#name", fields.name);
   await page.fill(
     "#synopsis",
     fields.synopsis ?? "A production used by the test suite, described at length.",
   );
-  await page.fill("#company", fields.company);
+  await page.selectOption("#clientId", { label: clientName });
   await page.fill("#opensAt", fields.opensAt ?? at(0));
   await page.fill("#closesAt", fields.closesAt ?? at(30, "23:59"));
   await page.fill("#productionEndsAt", fields.productionEndsAt ?? day(60));
@@ -265,25 +287,25 @@ export async function shareToken(page, sessionId) {
 
 /**
  * The share token for whichever production a role belongs to, read off the
- * "View as a performer" link on the role's own dashboard page.
+ * "View as an applicant" link on the role's own dashboard page.
  */
 export async function shareTokenForRole(page, roleId) {
   await page.goto(`${BASE}/dashboard/roles/${roleId}`, { waitUntil: "networkidle" });
-  const href = await page.getByRole("link", { name: "View as a performer" }).first().getAttribute("href");
+  const href = await page.getByRole("link", { name: "View as an applicant" }).first().getAttribute("href");
   return href.split("/c/")[1].split("/")[0];
 }
 
-/** Fills and sends the submission form, reached the way a performer reaches it. */
-export async function submit(page, token, roleId, performer, { acceptTerms = false } = {}) {
+/** Fills and sends the submission form, reached the way an applicant reaches it. */
+export async function submit(page, token, roleId, applicant, { acceptTerms = false } = {}) {
   await page.goto(`${BASE}/c/${token}/${roleId}`, { waitUntil: "networkidle" });
-  await page.fill("#name", performer.name);
-  await page.fill("#email", performer.email);
-  await page.fill("#phone", performer.phone ?? "07700 900000");
-  await page.fill("#location", performer.location ?? "Leeds");
-  await page.fill("#age", String(performer.age ?? 30));
+  await page.fill("#name", applicant.name);
+  await page.fill("#email", applicant.email);
+  await page.fill("#phone", applicant.phone ?? "07700 900000");
+  await page.fill("#location", applicant.location ?? "Leeds");
+  await page.fill("#age", String(applicant.age ?? 30));
   await page.fill(
     "#coverNote",
-    performer.coverNote ?? "A cover note comfortably longer than the twenty character minimum.",
+    applicant.coverNote ?? "A cover note comfortably longer than the twenty character minimum.",
   );
   if (acceptTerms) await page.check("#acceptTerms");
   await page.check("#acceptSubmissionTerms");

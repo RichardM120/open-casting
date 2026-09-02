@@ -63,7 +63,7 @@ check(
 );
 await dir.p.goto(`${BASE}/dashboard/roles/${id}`, { waitUntil: "networkidle" });
 
-section("3 a performer's submission is recorded");
+section("3 an applicant's submission is recorded");
 const token = await shareTokenForRole(dir.p, id);
 {
   const { c, p } = await ctx();

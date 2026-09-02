@@ -1,4 +1,4 @@
-import type { Database, SeedRole, SeedSession, Submission } from "./types";
+import type { Database, SeedClient, SeedRole, SeedSession, Submission } from "./types";
 
 /**
  * Demo content. The database seeds itself from this when it is empty, so a
@@ -6,13 +6,46 @@ import type { Database, SeedRole, SeedSession, Submission } from "./types";
  */
 
 /**
+ * The clients the demo agency casts for. Wildseed holds two productions, which
+ * is the usual shape: a client comes back rather than appearing once.
+ */
+const clients: SeedClient[] = [
+  {
+    id: "cli_wildseed",
+    name: "Wildseed Films",
+    notes: "Feature and short work. Commissioning producer: Ines Baptiste.",
+  },
+  {
+    id: "cli_tworivers",
+    name: "Two Rivers Television",
+    notes: "Returning drama. Books through the production office, not the channel.",
+  },
+  {
+    id: "cli_hearth",
+    name: "Hearth Retail Group",
+    notes: "Seasonal campaigns. Usage and buyout are agreed per campaign.",
+  },
+  {
+    id: "cli_marlowe",
+    name: "Marlowe Audio",
+    notes: "Audio drama and audiobooks. Records remotely where the actor can.",
+  },
+  {
+    id: "cli_lantern",
+    name: "Lantern Theatre Company",
+    notes: "Casts its own seasons in house.",
+  },
+];
+
+/**
  * One production per casting. The production owns the live window, so the
- * roles inside it open and close together and a performer submits to it once.
+ * roles inside it open and close together and an applicant submits to it once.
  * Times are UTC instants: 08:00Z is 09:00 in London in the summer.
  */
 const sessions: SeedSession[] = [
   {
     id: "ses_saltmarsh",
+    clientId: "cli_wildseed",
     publicToken: "4f21c9ba7e",
     slug: "saltmarsh",
     name: "Saltmarsh",
@@ -26,6 +59,7 @@ const sessions: SeedSession[] = [
   },
   {
     id: "ses_northbank",
+    clientId: "cli_tworivers",
     publicToken: "7c03ae5d18",
     slug: "northbank",
     name: "Northbank",
@@ -39,6 +73,7 @@ const sessions: SeedSession[] = [
   },
   {
     id: "ses_hearth",
+    clientId: "cli_hearth",
     publicToken: "2b96fd40ac",
     slug: "hearth-winter-campaign",
     name: "Hearth: Winter Campaign",
@@ -52,6 +87,7 @@ const sessions: SeedSession[] = [
   },
   {
     id: "ses_glasshouse",
+    clientId: "cli_marlowe",
     publicToken: "e81a37f65d",
     slug: "the-glasshouse",
     name: "The Glasshouse",
@@ -65,6 +101,7 @@ const sessions: SeedSession[] = [
   },
   {
     id: "ses_lantern",
+    clientId: "cli_lantern",
     publicToken: "93cd6b02fa",
     slug: "lantern",
     name: "Lantern",
@@ -78,6 +115,7 @@ const sessions: SeedSession[] = [
   },
   {
     id: "ses_kestrel",
+    clientId: "cli_wildseed",
     publicToken: "6d40ba18ce",
     slug: "kestrel",
     name: "Kestrel",
@@ -236,7 +274,7 @@ const roles: SeedRole[] = [
     requirements: [
       "Strong movement background",
       "Available for the full rehearsal period and tour",
-      "Deaf and disabled performers particularly encouraged; access costs are budgeted",
+      "Deaf and disabled applicants particularly encouraged; access costs are budgeted",
     ],
     location: "Leeds, UK, then a UK tour",
     selfTape: false,
@@ -269,7 +307,7 @@ const roles: SeedRole[] = [
     shootDates: "7 to 8 and 14 to 15 Nov 2026",
     castingDirector: "Jo Fenwick",
     disclaimer:
-      "This role is for a performer under 16. A parent or guardian must submit on their behalf and must be present for every day of the shoot. A licence from the local authority is required before filming and we will apply for it once the role is cast.",
+      "This role is for an applicant under 16. A parent or guardian must submit on their behalf and must be present for every day of the shoot. A licence from the local authority is required before filming and we will apply for it once the role is cast.",
     closedAt: null,
     postedAt: "2026-08-22T13:00:00.000Z",
   },
@@ -454,6 +492,7 @@ export function seedDatabase(): Database {
   });
 
   return {
+    clients: structuredClone(clients),
     sessions: structuredClone(sessions),
     roles: seedRoles,
     submissions: seedSubmissions,

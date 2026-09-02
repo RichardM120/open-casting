@@ -5,16 +5,16 @@ import { useActionState } from "react";
 import { createCastingSession, editCastingSession } from "@/lib/actions";
 import { toLocalInput } from "@/lib/format";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
-import { PRODUCTION_TYPES, type CastingSession } from "@/lib/types";
+import { PRODUCTION_TYPES, type CastingSession, type Client } from "@/lib/types";
 
 import { useErrorFocus } from "./use-error-focus";
 import { Button, ButtonLink, ErrorSummary, Field, Input, Select, Textarea } from "./ui";
 
 const LABELS: Record<string, string> = {
   name: "Production",
+  clientId: "Client",
   productionType: "Production type",
   synopsis: "Synopsis",
-  company: "Company",
   opensAt: "Submissions open",
   closesAt: "Submissions close",
   productionEndsAt: "Production finishes",
@@ -27,10 +27,10 @@ const LABELS: Record<string, string> = {
  */
 export function SessionForm({
   session,
-  defaultCompany,
+  clients,
 }: {
   session?: CastingSession;
-  defaultCompany?: string;
+  clients: Client[];
 }) {
   const [state, formAction, pending] = useActionState(
     session ? editCastingSession : createCastingSession,
@@ -45,9 +45,9 @@ export function SessionForm({
     state.status === "idle" && session
       ? {
           name: session.name,
+          clientId: session.clientId ?? "",
           productionType: session.productionType,
           synopsis: session.synopsis,
-          company: session.company,
           opensAt: toLocalInput(session.opensAt),
           closesAt: toLocalInput(session.closesAt),
           productionEndsAt: session.productionEndsAt,
@@ -74,7 +74,7 @@ export function SessionForm({
       <fieldset className="rounded-2xl border border-line bg-surface p-6 md:p-7">
         <legend className="px-2 text-sm font-semibold tracking-tight">The production</legend>
         <p className="text-sm text-muted">
-          What performers will see above every role you post into it.
+          What applicants see above every role you post into it, and the client it is for.
         </p>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <Field label="Production" htmlFor="name" error={errors.name}>
@@ -100,13 +100,24 @@ export function SessionForm({
               ))}
             </Select>
           </Field>
-          <Field label="Company" htmlFor="company" error={errors.company}>
-            <Input
-              id="company"
-              name="company"
-              defaultValue={values.company ?? defaultCompany ?? ""}
+          <Field
+            label="Client"
+            htmlFor="clientId"
+            hint="Who the production is for. Yours to see, never shown to applicants."
+            error={errors.clientId}
+          >
+            <Select
+              id="clientId"
+              name="clientId"
+              defaultValue={values.clientId ?? clients[0]?.id ?? ""}
               required
-            />
+            >
+              {clients.map((client) => (
+                <option key={client.id} value={client.id}>
+                  {client.name}
+                </option>
+              ))}
+            </Select>
           </Field>
           <Field
             label="Synopsis"
@@ -169,7 +180,7 @@ export function SessionForm({
           When the production finishes
         </legend>
         <p className="max-w-prose text-sm text-muted">
-          The date the shoot or run wraps, not the date casting closes. Everything performers
+          The date the shoot or run wraps, not the date casting closes. Everything applicants
           send you is deleted 30 days after it, which is what your agreement and their terms
           both promise. You will get an email 14 days and 48 hours beforehand.
         </p>

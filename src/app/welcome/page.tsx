@@ -16,18 +16,19 @@ const WHAT_YOU_SEE: Record<UserRole, { heading: string; points: string[]; cta: {
   director: {
     heading: "You will see the productions you open, and nothing else",
     points: [
-      "Start by opening a production. It holds the opening and closing times, and the roles you post into it open and close with it.",
+      "Start by adding the client you are casting for. Every production belongs to one, so the work stays sorted by who it is for.",
+      "Then open a production under it. It holds the opening and closing times, and the roles you post into it open and close with it.",
       "Every submission made to your roles lands in one list, newest first.",
       "Move people through New, Shortlisted, Callback and Declined as you work.",
       "Colleagues with a casting director account cannot see your productions. A producer at your company can.",
-      "Nothing is emailed to performers automatically. Their address is on every submission.",
+      "Nothing is emailed to applicants automatically. Their address is on every submission.",
     ],
-    cta: { href: "/dashboard/sessions/new", label: "Open your first production" },
+    cta: { href: "/dashboard/clients/new", label: "Add your first client" },
   },
   producer: {
     heading: "You will see every production under your company",
     points: [
-      "Productions from all your casting directors, and the roles in them, in one place.",
+      "Productions from all your casting directors, grouped by the client they are for, with the roles in them.",
       "Each production owns its opening and closing times, and its roles open and close together.",
       "You can read and act on their submissions, and edit or close their roles.",
       "Matching is on the company name, so it has to be spelled the same way.",
@@ -40,7 +41,7 @@ const WHAT_YOU_SEE: Record<UserRole, { heading: string; points: string[]; cta: {
     points: [
       "Every production, every role in it, and every submission made to them.",
       "Suspend an account and they are signed out at once and cannot sign back in. Their productions stay up.",
-      "Removing a role, or a whole production, permanently deletes the performers' contact details with it. Closing early is the reversible option.",
+      "Removing a role, or a whole production, permanently deletes the applicants' contact details with it. Closing early is the reversible option.",
       "Every action is recorded in the activity trail, including yours.",
     ],
     cta: { href: "/dashboard/accounts", label: "Review the accounts" },
@@ -94,8 +95,8 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
             </h2>
             <p className="mt-2 mb-6 max-w-prose text-sm leading-relaxed text-muted">
               Before anything else. This sets out who owns what, who is responsible for the
-              submissions you collect, and how long performers&rsquo; details are kept. You are
-              the data controller for everything performers send you; we process it for you.
+              submissions you collect, and how long applicants&rsquo; details are kept. You are
+              the data controller for everything applicants send you; we process it for you.
             </p>
             <AgreementStep nextStep={offset + 1}>
               <LegalScroller document={MSA} />
@@ -107,7 +108,7 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
           <>
             <h2 className="text-lg font-semibold tracking-tight">Check your details</h2>
             <p className="mt-2 mb-6 text-sm leading-relaxed text-muted">
-              These appear on the roles you post, so performers know who is casting.
+              These appear on the roles you post, so applicants know who is casting.
             </p>
             <ProfileStep user={user} nextStep={offset + 2} />
           </>
@@ -145,7 +146,7 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
                 casting director guide
               </Link>{" "}
               covers what each field on a role commits you to, including the rate, the buyout
-              and usage, and how to write terms performers will actually read.
+              and usage, and how to write terms applicants will actually read.
             </p>
             <p className="mt-3 text-sm leading-relaxed text-muted">
               One thing to know now: submissions carry names, emails and phone numbers. Under UK

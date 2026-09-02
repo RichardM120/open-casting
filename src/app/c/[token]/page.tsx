@@ -12,7 +12,7 @@ import { getSessionByToken } from "@/lib/sessions";
 export const dynamic = "force-dynamic";
 
 /**
- * A production's casting call. This is the only page a performer ever sees, and
+ * A production's casting call. This is the only page an applicant ever sees, and
  * the share token in the URL is the whole of the authorisation, so it is kept
  * out of search results rather than relying on nobody linking to it.
  */
@@ -33,7 +33,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
   if (!session) notFound();
 
   // A draft is not a casting call yet. Its owner can open the link to check
-  // what performers will see; to anyone else it does not exist.
+  // what applicants will see; to anyone else it does not exist.
   const preview = session.publishedAt === null;
   if (preview && !(await canPreview(session))) notFound();
 
@@ -44,7 +44,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
     <div className="mx-auto max-w-4xl px-5 py-12">
       {preview ? (
         <p className="mb-8 rounded-xl border border-accent/40 bg-accent-soft px-4 py-3 text-sm leading-relaxed text-text">
-          <strong>Draft preview.</strong> This is exactly what a performer sees, except that the
+          <strong>Draft preview.</strong> This is exactly what an applicant sees, except that the
           form is not there. Nobody else can open this link until you publish it.
         </p>
       ) : null}

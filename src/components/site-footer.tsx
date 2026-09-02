@@ -9,8 +9,8 @@ export function SiteFooter() {
           on it are invented.
         </p>
         <div className="flex flex-wrap gap-x-5 gap-y-2">
-          <Link href="/faq/performers" className="transition-colors hover:text-text">
-            Performer FAQ
+          <Link href="/faq/applicants" className="transition-colors hover:text-text">
+            Applicant FAQ
           </Link>
           <Link href="/faq/casting-directors" className="transition-colors hover:text-text">
             Casting FAQ

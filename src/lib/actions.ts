@@ -8,6 +8,13 @@ import { SUBMISSION_TERMS } from "@/content/legal";
 import { record, describeChanges, describeSessionChanges } from "./activity";
 import { requireUser } from "./auth";
 import {
+  createClient,
+  deleteClient,
+  getVisibleClient,
+  listVisibleClients,
+  updateClient,
+} from "./clients";
+import {
   createSession,
   deleteSessionAsAdmin,
   getSession,
@@ -45,6 +52,7 @@ import {
 } from "./users";
 import { generatePassword } from "./password";
 import {
+  clientSchema,
   fieldErrors,
   limitsSchema,
   newAccountSchema,
@@ -507,6 +515,128 @@ export async function toggleAccountSuspended(formData: FormData): Promise<void> 
   revalidateEverything();
 }
 
+/* -------------------------------------------------------------- clients -- */
+
+/**
+ * Adds a client. Clients sit above productions, so this is what a director
+ * does before opening the first production for a company.
+ */
+export async function createClientRecord(
+  _previous: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const user = await requireUser("/dashboard/clients/new");
+
+  const parsed = clientSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return invalid(
+      fieldErrors(parsed.error),
+      "Check the highlighted fields and try again.",
+      formData,
+    );
+  }
+
+  // One client of a given name per account, enforced by the database. Catching
+  // it here turns the constraint into a sentence instead of a 500.
+  const existing = await listVisibleClients(user);
+  if (existing.some((c) => c.name.toLowerCase() === parsed.data.name.toLowerCase())) {
+    return invalid(
+      { name: "You already have a client with that name" },
+      "Check the highlighted fields and try again.",
+      formData,
+    );
+  }
+
+  const client = await createClient(parsed.data, user.id, user.company);
+  await record({
+    action: "client.created",
+    actorId: user.id,
+    actorName: user.name,
+    ownerId: client.ownerId,
+    company: client.company,
+    detail: client.name,
+  });
+
+  revalidateEverything();
+  redirect(`/dashboard/clients?created=1`);
+}
+
+export async function editClientRecord(
+  _previous: FormState,
+  formData: FormData,
+): Promise<FormState> {
+  const id = String(formData.get("clientId") ?? "");
+  const user = await requireUser(`/dashboard/clients/${id}/edit`);
+
+  const parsed = clientSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) {
+    return invalid(
+      fieldErrors(parsed.error),
+      "Check the highlighted fields and try again.",
+      formData,
+    );
+  }
+
+  const existing = await listVisibleClients(user);
+  if (
+    existing.some(
+      (c) => c.id !== id && c.name.toLowerCase() === parsed.data.name.toLowerCase(),
+    )
+  ) {
+    return invalid(
+      { name: "You already have a client with that name" },
+      "Check the highlighted fields and try again.",
+      formData,
+    );
+  }
+
+  const client = await updateClient(id, parsed.data, user);
+  if (!client) {
+    return invalid({}, "That client is no longer yours to edit.", formData);
+  }
+
+  await record({
+    action: "client.edited",
+    actorId: user.id,
+    actorName: user.name,
+    ownerId: client.ownerId,
+    company: client.company,
+    detail: client.name,
+  });
+
+  revalidateEverything();
+  redirect(`/dashboard/clients?saved=1`);
+}
+
+/**
+ * Removes a client that has no productions under it. One that still holds
+ * productions is refused: removing it would mean taking real casting work and
+ * its submissions with it, which is never what deleting a client should mean.
+ */
+export async function removeClient(formData: FormData): Promise<void> {
+  const id = String(formData.get("clientId") ?? "");
+  const user = await requireUser("/dashboard/clients");
+
+  const client = await getVisibleClient(id, user);
+  if (!client) redirect("/dashboard/clients");
+
+  const outcome = await deleteClient(id, user);
+  if (outcome === "in-use") redirect(`/dashboard/clients?inuse=1`);
+  if (outcome === "not-found") redirect("/dashboard/clients");
+
+  await record({
+    action: "client.removed",
+    actorId: user.id,
+    actorName: user.name,
+    ownerId: client.ownerId,
+    company: client.company,
+    detail: client.name,
+  });
+
+  revalidateEverything();
+  redirect("/dashboard/clients?removed=1");
+}
+
 /* ---------------------------------------------------------- productions -- */
 
 /**
@@ -528,6 +658,17 @@ export async function createCastingSession(
     );
   }
 
+  // A posted client id is just a string from the browser, so it is checked
+  // against what this account may see before a production is hung off it.
+  const client = await getVisibleClient(parsed.data.clientId, user);
+  if (!client) {
+    return invalid(
+      { clientId: "Choose one of your clients" },
+      "Check the highlighted fields and try again.",
+      formData,
+    );
+  }
+
   // The ceiling the administrator sold them. Checked here rather than in the
   // form, because the form is not what decides it.
   if (user.maxSessions !== null) {
@@ -541,7 +682,7 @@ export async function createCastingSession(
     }
   }
 
-  const session = await createSession(parsed.data, user.id);
+  const session = await createSession(parsed.data, user.id, user.company);
   await record({
     action: "session.created",
     actorId: user.id,
@@ -566,6 +707,17 @@ export async function editCastingSession(
   if (!parsed.success) {
     return invalid(
       fieldErrors(parsed.error),
+      "Check the highlighted fields and try again.",
+      formData,
+    );
+  }
+
+  // A posted client id is just a string from the browser, so it is checked
+  // against what this account may see before a production is hung off it.
+  const client = await getVisibleClient(parsed.data.clientId, user);
+  if (!client) {
+    return invalid(
+      { clientId: "Choose one of your clients" },
       "Check the highlighted fields and try again.",
       formData,
     );

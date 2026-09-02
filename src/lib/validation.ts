@@ -163,12 +163,20 @@ function localDateTime(message: string) {
     .transform(fromLocalInput);
 }
 
+/** A client record. Internal, so there is nothing here an applicant ever sees. */
+export const clientSchema = z.object({
+  name: trimmed.min(2, "Name the client").max(80),
+  notes: trimmed.max(600, "Keep the notes under 600 characters"),
+});
+
+export type ClientInput = z.infer<typeof clientSchema>;
+
 export const sessionSchema = z
   .object({
     name: trimmed.min(2, "Name the production").max(80),
     productionType: z.enum(PRODUCTION_TYPES, { message: "Choose a production type" }),
     synopsis: trimmed.min(20, "Describe the production in a sentence or two").max(600),
-    company: trimmed.min(2, "Name the company").max(80),
+    clientId: trimmed.min(1, "Choose the client this production is for"),
     opensAt: localDateTime("Choose when submissions open"),
     closesAt: localDateTime("Choose when submissions close"),
     productionEndsAt: trimmed.regex(

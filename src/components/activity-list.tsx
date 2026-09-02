@@ -13,6 +13,9 @@ const SHAPE: Record<Action, { verb: string; tone: string }> = {
   "session.closed": { verb: "closed a production", tone: "bg-muted" },
   "session.reopened": { verb: "reopened a production", tone: "bg-positive" },
   "session.removed": { verb: "removed a production", tone: "bg-danger" },
+  "client.created": { verb: "added a client", tone: "bg-positive" },
+  "client.edited": { verb: "edited a client", tone: "bg-accent" },
+  "client.removed": { verb: "removed a client", tone: "bg-danger" },
   "role.posted": { verb: "posted", tone: "bg-positive" },
   "role.edited": { verb: "edited", tone: "bg-accent" },
   "role.closed": { verb: "closed", tone: "bg-muted" },
@@ -24,7 +27,7 @@ const SHAPE: Record<Action, { verb: string; tone: string }> = {
   "account.created": { verb: "created an account for", tone: "bg-positive" },
   "account.suspended": { verb: "suspended", tone: "bg-danger" },
   "account.restored": { verb: "restored", tone: "bg-positive" },
-  "data.purged": { verb: "removed performer details from", tone: "bg-muted" },
+  "data.purged": { verb: "removed applicant details from", tone: "bg-muted" },
 };
 
 function Subject({ entry }: { entry: ActivityEntry }) {

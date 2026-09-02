@@ -46,12 +46,12 @@ export default async function HomePage() {
       <div className="mt-12 rounded-2xl border border-line bg-surface p-7">
         <h2 className="text-lg font-semibold tracking-tight">Sent a casting link?</h2>
         <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
-          Performers do not sign in and do not need an account. Open the link the production sent
+          Applicants do not sign in and do not need an account. Open the link the production sent
           you and it goes straight to their roles and the submission form. There is no listing
           here to search, by design: a casting call is circulated by the people casting it.
         </p>
         <p className="mt-4 text-sm">
-          <Link href="/faq/performers" className="text-accent underline-offset-4 hover:underline">
+          <Link href="/faq/applicants" className="text-accent underline-offset-4 hover:underline">
             What the fields on a casting call mean
           </Link>
         </p>

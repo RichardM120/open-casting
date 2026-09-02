@@ -1,5 +1,5 @@
 /**
- * The only surface a performer ever sees: the way in, the help pages, and one
+ * The only surface an applicant ever sees: the way in, the help pages, and one
  * production reached by its share link. Everything else must be shut.
  */
 import {
@@ -32,7 +32,7 @@ section("1 the home page is the way in, and nothing else");
   check("and it goes to /login", (await signIns.getAttribute("href")) === "/login");
   check("no separate admin door", (await p.getByRole("link", { name: /sign in as admin/i }).count()) === 0);
   check("explains what you see follows from the account", (await p.getByText(/follows from your\s+account/).count()) > 0);
-  check("explains performers use a link", (await p.getByText(/Sent a casting link/).count()) > 0);
+  check("explains applicants use a link", (await p.getByText(/Sent a casting link/).count()) > 0);
   check("no browse anywhere on it", (await p.getByRole("link", { name: /browse/i }).count()) === 0);
   await p.screenshot({ path: `${SHOTS}/home.png`, fullPage: true });
   await c.close();
@@ -80,10 +80,10 @@ section("2b the sign-in page introduces the tool");
 section("3 FAQ pages stay open");
 {
   const { c, p } = await ctx();
-  for (const path of ["/faq", "/faq/performers", "/faq/casting-directors"]) {
+  for (const path of ["/faq", "/faq/applicants", "/faq/casting-directors"]) {
     check(`${path} -> 200`, (await p.goto(BASE + path, { waitUntil: "networkidle" })).status() === 200);
   }
-  await p.goto(`${BASE}/faq/performers`, { waitUntil: "networkidle" });
+  await p.goto(`${BASE}/faq/applicants`, { waitUntil: "networkidle" });
   check("glossary explains buyout and usage", (await p.getByText("Buyout and usage").count()) > 0);
   check("says every role is paid", (await p.getByText(/Every role on Open Casting is paid/).count()) > 0);
   check("under-18 guidance present", (await p.getByText(/licence/i).count()) > 0);
@@ -92,7 +92,7 @@ section("3 FAQ pages stay open");
   await p.goto(`${BASE}/faq/casting-directors`, { waitUntil: "networkidle" });
   check("explains who sees submissions", (await p.getByText(/Producer/).count()) > 0);
   check("covers UK GDPR duty", (await p.getByText(/UK GDPR/).count()) > 0);
-  check("explains circulating the link", (await p.getByText(/How do performers find my roles/).count()) > 0);
+  check("explains circulating the link", (await p.getByText(/How do applicants find my roles/).count()) > 0);
   await c.close();
 }
 

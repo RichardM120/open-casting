@@ -266,7 +266,7 @@ function slugify(value: string): string {
  * not editable here, and nor are the production's details: those are changed
  * on the production, which pushes them down to every role in it.
  *
- * Editing the terms does not rewrite history: what a performer accepted was
+ * Editing the terms does not rewrite history: what an applicant accepted was
  * copied onto their submission when they made it.
  */
 export async function updateRole(

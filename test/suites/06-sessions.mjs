@@ -1,5 +1,5 @@
 /**
- * The production is what times a role and what a performer submits into.
+ * The production is what times a role and what an applicant submits into.
  * These checks are about that boundary: the window governs every role in the
  * production at once, and one person gets one submission per production.
  */
@@ -86,7 +86,7 @@ section("5 a different person may still submit for the same role");
   const { c, p } = await ctx();
   await submit(p, token, roleB, { name: "Perry Two", email: `p2${t}@example.com` });
   await p.getByText("Submission sent").waitFor({ timeout: 20000 });
-  check("second performer is fine", true);
+  check("second applicant is fine", true);
   await c.close();
 }
 

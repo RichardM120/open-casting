@@ -7,7 +7,7 @@ import { ButtonLink, Eyebrow } from "@/components/ui";
 export const metadata: Metadata = {
   title: "FAQ for casting directors",
   description:
-    "What each field on a role commits you to, who can see your submissions, and how to write terms performers will accept.",
+    "What each field on a role commits you to, who can see your submissions, and how to write terms applicants will accept.",
 };
 
 export default function CastingDirectorFaqPage() {
@@ -50,13 +50,13 @@ export default function CastingDirectorFaqPage() {
             productions. If you need them to, they need a producer account.
           </p>
         </FaqItem>
-        <FaqItem q="Do performers need an account?">
+        <FaqItem q="Do applicants need an account?">
           <p>
-            No, and deliberately so. Asking performers to register is the fastest way to lose the
+            No, and deliberately so. Asking applicants to register is the fastest way to lose the
             people an open call exists to reach.
           </p>
         </FaqItem>
-        <FaqItem q="How do performers find my roles?">
+        <FaqItem q="How do applicants find my roles?">
           <p>
             You send them the link. Every production has one, on its page in your dashboard, and
             it opens that production and nothing else. There is no public listing on Open Casting
@@ -86,12 +86,27 @@ export default function CastingDirectorFaqPage() {
       </FaqSection>
 
       <FaqSection
-        title="Productions"
-        intro="A production is one project with however many roles. It holds the times submissions run between, and its roles open and close with it."
+        title="Clients and productions"
+        intro="A client is the company you are casting for. A production is one of their projects, with however many roles in it. The production holds the times submissions run between, and its roles open and close with it."
       >
+        <FaqItem q="What is a client, and why do I add one first?">
+          <p>
+            A client is who the work is for. Everything you run sits under one, so the dashboard
+            stays sorted by company rather than becoming one long list of productions, and a
+            client you cast for repeatedly keeps its productions together.
+          </p>
+          <p>
+            Clients are internal. Applicants never see the client on a share link or anywhere
+            else: what they see is the production, its roles, and who is casting it.
+          </p>
+          <p>
+            <Link href="/dashboard/clients/new">Add a client</Link>, then open its first
+            production.
+          </p>
+        </FaqItem>
         <FaqItem q="Why do I open a production before posting a role?">
           <p>
-            Because a production casts as a unit. It holds the name, the synopsis, the company,
+            Because a production casts as a unit. It holds the name, the synopsis, the client
             and the opening and closing times, and every role you post into it follows them. That
             is one thing to change when a schedule moves, not one per role, and it makes it
             impossible for two roles on the same production to disagree about when casting
@@ -115,7 +130,7 @@ export default function CastingDirectorFaqPage() {
         </FaqItem>
         <FaqItem q="How long do you keep the submissions?">
           <p>
-            Thirty days after the production finishes, the performers&rsquo; details are deleted:
+            Thirty days after the production finishes, the applicants&rsquo; details are deleted:
             names, email addresses, phone numbers, links, cover notes. The clock runs from the
             production end date you set, not from when casting closed, because a shoot can run for
             months after the call shut. The production, its roles and the counts are kept.
@@ -130,7 +145,7 @@ export default function CastingDirectorFaqPage() {
           <p>
             Only while the production is open: from its opening time to its closing time, both in
             UK time, and only if it has not been closed early. Before the opening time the roles
-            are listed and readable, so performers can prepare, but the form is not there. After
+            are listed and readable, so applicants can prepare, but the form is not there. After
             it closes, the same.
           </p>
         </FaqItem>
@@ -163,7 +178,7 @@ export default function CastingDirectorFaqPage() {
 
       <FaqSection
         title="What each field commits you to"
-        intro="Performers make real decisions on the strength of these: turning down other work, travelling, spending an evening on a tape."
+        intro="Applicants make real decisions on the strength of these: turning down other work, travelling, spending an evening on a tape."
       >
         <div />
       </FaqSection>
@@ -194,7 +209,7 @@ export default function CastingDirectorFaqPage() {
             term: "Rate",
             means: (
               <>
-                Every role on Open Casting is paid, so this is the one line performers read
+                Every role on Open Casting is paid, so this is the one line applicants read
                 first. Be specific. &ldquo;Competitive&rdquo; and &ldquo;TBC&rdquo; read as
                 &ldquo;low&rdquo; and cost you good submissions. State the basis (day, week,
                 session) and whether a buyout is included or separate.
@@ -223,10 +238,10 @@ export default function CastingDirectorFaqPage() {
             ),
           },
           {
-            term: "Terms for performers",
+            term: "Terms for applicants",
             means: (
               <>
-                Optional. Where you set them, performers must tick to accept before they can
+                Optional. Where you set them, applicants must tick to accept before they can
                 submit, and the wording is stored against their submission exactly as it read at
                 that moment, so editing the role later cannot change what somebody agreed to.
               </>
@@ -238,7 +253,7 @@ export default function CastingDirectorFaqPage() {
       <FaqSection title="Writing the terms">
         <FaqItem q="What should I put in them?">
           <p>
-            The things a performer would otherwise have to ask, and the ones you would rather not
+            The things an applicant would otherwise have to ask, and the ones you would rather not
             argue about later:
           </p>
           <ul className="ml-4 list-disc space-y-1.5">
@@ -266,11 +281,11 @@ export default function CastingDirectorFaqPage() {
             belongs there too.
           </p>
         </FaqItem>
-        <FaqItem q="What about performers under 18?">
+        <FaqItem q="What about applicants under 18?">
           <p>
             You are responsible for obtaining a child performance licence from the relevant local
             authority and for providing a registered chaperone. Say so in the terms, and expect a
-            parent or guardian to submit on the performer&rsquo;s behalf.
+            parent or guardian to submit on the applicant&rsquo;s behalf.
           </p>
         </FaqItem>
       </FaqSection>
@@ -295,14 +310,14 @@ export default function CastingDirectorFaqPage() {
             <strong className="text-text">Shortlisted</strong>,{" "}
             <strong className="text-text">Callback</strong> and{" "}
             <strong className="text-text">Declined</strong> are yours to use as you work through.
-            They are for your own tracking. Nothing is sent to the performer when you change one.
+            They are for your own tracking. Nothing is sent to the applicant when you change one.
           </p>
         </FaqItem>
-        <FaqItem q="Are performers told when they are declined?">
+        <FaqItem q="Are applicants told when they are declined?">
           <p>
-            No. Nothing on this site emails performers. If you want to let people know, do it
+            No. Nothing on this site emails applicants. If you want to let people know, do it
             yourself. The email address is on every submission, and it is the single thing
-            performers most often say they wish happened.
+            applicants most often say they wish happened.
           </p>
         </FaqItem>
       </FaqSection>
@@ -311,8 +326,8 @@ export default function CastingDirectorFaqPage() {
 
       <div className="mt-10 flex flex-wrap gap-3">
         <ButtonLink href="/dashboard/sessions/new">Open a production</ButtonLink>
-        <ButtonLink href="/faq/performers" variant="secondary">
-          FAQ for performers
+        <ButtonLink href="/faq/applicants" variant="secondary">
+          FAQ for applicants
         </ButtonLink>
       </div>
     </div>

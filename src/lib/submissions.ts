@@ -131,7 +131,7 @@ export type NewSubmission = Omit<Submission, "id" | "status" | "submittedAt">;
 
 /**
  * Throws `DuplicateSubmissionError` if this email has already submitted into
- * the same production: a production considers a performer once, not once per
+ * the same production: a production considers an applicant once, not once per
  * role. The unique index does the deciding, so two requests racing each other
  * cannot both get through.
  */

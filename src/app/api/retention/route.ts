@@ -34,12 +34,12 @@ export async function POST(request: Request) {
       to: warning.email,
       subject:
         warning.days === 14
-          ? `${warning.name}: performer details are deleted in 14 days`
-          : `${warning.name}: performer details are deleted in 48 hours`,
+          ? `${warning.name}: applicant details are deleted in 14 days`
+          : `${warning.name}: applicant details are deleted in 48 hours`,
       text: [
         `The casting data for ${warning.name} is scheduled for permanent deletion on ${warning.purgeOn}.`,
         "",
-        `That is ${warning.submissions} ${warning.submissions === 1 ? "submission" : "submissions"}: names, contact details, notes and any links performers gave you.`,
+        `That is ${warning.submissions} ${warning.submissions === 1 ? "submission" : "submissions"}: names, contact details, notes and any links applicants gave you.`,
         "",
         "Export anything you still need before then. After the deletion the production and its roles remain, but the personal data is gone and cannot be recovered.",
       ].join("\n"),

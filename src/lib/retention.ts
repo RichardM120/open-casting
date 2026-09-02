@@ -13,7 +13,7 @@ export type Runner = <T extends Record<string, unknown>>(
 ) => Promise<T[]>;
 
 /**
- * How long a performer's details survive after the production they applied to
+ * How long an applicant's details survive after the production they applied to
  * finishes. Thirty days, as the Master Services Agreement and the public Terms
  * of Submission both promise.
  *
@@ -53,7 +53,7 @@ export type Warning = {
 };
 
 /**
- * Destroys the performers' details for every production that finished more than
+ * Destroys the applicants' details for every production that finished more than
  * the retention period ago, and marks the session so the dashboard can say what
  * happened rather than showing an empty list.
  *

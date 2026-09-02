@@ -1,6 +1,6 @@
 /**
  * The journey end to end: the administrator sells an arrangement, the casting
- * director works inside it, publishes when ready, and the performers' details
+ * director works inside it, publishes when ready, and the applicants' details
  * are destroyed on a schedule once the call is over.
  */
 import {
@@ -48,7 +48,7 @@ check("publishing is blocked with no roles", await dir.p.getByRole("button", { n
 check("no share link yet", (await dir.p.locator("code.select-all").count()) === 0);
 
 const token = await dir.p
-  .getByRole("link", { name: "Preview as a performer" })
+  .getByRole("link", { name: "Preview as an applicant" })
   .getAttribute("href")
   .then((href) => href.split("/c/")[1]);
 
@@ -88,7 +88,7 @@ check("the link is now shown", (await dir.p.locator("code.select-all").count()) 
   await c.close();
 }
 
-section("4b a performer submits through the link");
+section("4b an applicant submits through the link");
 {
   const { c, p } = await ctx();
   await p.goto(`${BASE}/c/${token}`, { waitUntil: "networkidle" });
@@ -119,8 +119,8 @@ await dir.p.goto(`${BASE}/dashboard/sessions/${first}`, { waitUntil: "networkidl
 check("names the date the details go", (await dir.p.getByText(/destroyed 30 days later/).count()) > 0);
 {
   const { c, p } = await ctx();
-  await p.goto(`${BASE}/faq/performers`, { waitUntil: "networkidle" });
-  check("and performers are told the same", (await p.getByText(/Thirty days after the production finishes/).count()) > 0);
+  await p.goto(`${BASE}/faq/applicants`, { waitUntil: "networkidle" });
+  check("and applicants are told the same", (await p.getByText(/Thirty days after the production finishes/).count()) > 0);
   await c.close();
 }
 
@@ -154,7 +154,7 @@ section("9 the roles it published stay up for the people holding the link");
   await c.close();
 }
 
-section("10 six months on, the performers' details are destroyed");
+section("10 six months on, the applicants' details are destroyed");
 {
   // Back-date the closing time rather than waiting six months for it.
   const { Pool } = await import("pg");

@@ -6,7 +6,7 @@ import type { FieldErrors } from "./validation";
  *
  * `values` echoes what was submitted. React resets an uncontrolled form once
  * its action resolves, so a form that failed validation has to re-seed its own
- * fields from here or the performer loses everything they typed.
+ * fields from here or the applicant loses everything they typed.
  */
 export type FormState = {
   status: "idle" | "success" | "error";

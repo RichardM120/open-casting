@@ -6,6 +6,7 @@ import { DeadlineBadge } from "@/components/deadline-badge";
 import { Badge, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
 import { listActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
+import { listVisibleClients } from "@/lib/clients";
 import { formatDateTime, isOpen, roleWindow } from "@/lib/format";
 import { listVisibleRoles, type ListedRole } from "@/lib/roles";
 import { listVisibleSessions, sessionStats } from "@/lib/sessions";
@@ -28,12 +29,13 @@ export const metadata: Metadata = {
  */
 export default async function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
   const user = await requireUser("/dashboard");
-  const [sessions, stats, roles, counts, activity, params] = await Promise.all([
+  const [sessions, stats, roles, counts, activity, clients, params] = await Promise.all([
     listVisibleSessions(user),
     sessionStats(user),
     listVisibleRoles(user),
     countsByRole(user),
     listActivity(user, { limit: 8 }),
+    listVisibleClients(user),
     searchParams,
   ]);
 
@@ -41,6 +43,24 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   for (const role of roles) {
     rolesBySession.set(role.sessionId, [...(rolesBySession.get(role.sessionId) ?? []), role]);
   }
+
+  // Productions are shown under the client they are for, in the client order
+  // the list already uses. Anything without a client (only rows predating them)
+  // falls into a group at the end rather than disappearing.
+  const groups = [
+    ...clients.map((client) => ({
+      id: client.id,
+      name: client.name,
+      sessions: sessions.filter((session) => session.clientId === client.id),
+    })),
+    {
+      id: "none",
+      name: "No client",
+      sessions: sessions.filter(
+        (session) => !clients.some((client) => client.id === session.clientId),
+      ),
+    },
+  ].filter((group) => group.sessions.length > 0);
 
   const totals = sessions.reduce(
     (accumulator, session) => {
@@ -133,8 +153,18 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               : ""}
           </p>
 
-          <ul className="mt-6 flex flex-col gap-3">
-            {sessions.map((session) => {
+          <div className="mt-6 flex flex-col gap-8">
+            {groups.map((group) => (
+              <section key={group.id}>
+                <div className="flex items-baseline justify-between gap-4 border-b border-line pb-2">
+                  <h2 className="text-sm font-semibold tracking-tight">{group.name}</h2>
+                  <span className="text-xs text-faint">
+                    {group.sessions.length}{" "}
+                    {group.sessions.length === 1 ? "production" : "productions"}
+                  </span>
+                </div>
+                <ul className="mt-3 flex flex-col gap-3">
+                  {group.sessions.map((session) => {
               const count = stats.get(session.id);
               const sessionRoles = rolesBySession.get(session.id) ?? [];
               return (
@@ -151,8 +181,8 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                         {session.name}
                       </Link>
                       <p className="truncate text-sm text-muted">
-                        {session.productionType} · {session.company} ·{" "}
-                        {formatDateTime(session.opensAt)} to {formatDateTime(session.closesAt)}
+                        {session.productionType} · {formatDateTime(session.opensAt)} to{" "}
+                        {formatDateTime(session.closesAt)}
                       </p>
                     </div>
 
@@ -201,9 +231,12 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                     </p>
                   )}
                 </li>
-              );
-            })}
-          </ul>
+                    );
+                  })}
+                </ul>
+              </section>
+            ))}
+          </div>
         </>
       ) : (
         <div className="mt-10">

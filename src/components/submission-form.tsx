@@ -41,7 +41,7 @@ export function SubmissionForm({
   session: string;
   closesOn: string;
   disclaimer: string;
-  /** The production's own page. There is nowhere else for a performer to go. */
+  /** The production's own page. There is nowhere else for an applicant to go. */
   backTo: string;
 }) {
   const [state, formAction, pending] = useActionState(submitApplication, IDLE_FORM_STATE);
@@ -93,7 +93,7 @@ export function SubmissionForm({
       </p>
       <p className="mt-2">
         <Link
-          href="/faq/performers"
+          href="/faq/applicants"
           className="text-sm text-accent underline-offset-4 hover:underline"
         >
           What each field means
@@ -359,7 +359,7 @@ export function SubmissionForm({
 
 /**
  * Shown in place of the form outside the production's casting window. Not yet
- * open and closed are different situations for a performer, so they read
+ * open and closed are different situations for an applicant, so they read
  * differently: one is worth coming back for.
  */
 export function SubmissionsClosed({

@@ -32,7 +32,7 @@ export function StepIndicator({ step, total }: { step: number; total: number }) 
 /**
  * The gate on everything else: the customer reads the Master Services Agreement
  * and Data Processing Schedule and accepts it, in their own account, before the
- * platform will let them do anything with performers' data.
+ * platform will let them do anything with applicants' data.
  */
 export function AgreementStep({ nextStep, children }: { nextStep: number; children: ReactNode }) {
   const [state, formAction, pending] = useActionState(acceptAgreement, IDLE_FORM_STATE);

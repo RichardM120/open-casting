@@ -71,7 +71,7 @@ export default async function RoleSubmissionsPage({
           {justPosted
             ? role.session.publishedAt
               ? "Role posted. It is on the production's link now."
-              : "Role posted. Publish the production when you are ready for performers to see it."
+              : "Role posted. Publish the production when you are ready for applicants to see it."
             : "Changes saved."}
         </p>
       ) : null}
@@ -92,7 +92,7 @@ export default async function RoleSubmissionsPage({
             variant="secondary"
             size="sm"
           >
-            View as a performer
+            View as an applicant
           </ButtonLink>
           <ButtonLink href={`/dashboard/roles/${role.id}/edit`} variant="secondary" size="sm">
             Edit
@@ -142,7 +142,7 @@ export default async function RoleSubmissionsPage({
                 variant="secondary"
                 size="sm"
               >
-                View as a performer
+                View as an applicant
               </ButtonLink>
             }
           />
@@ -172,7 +172,7 @@ export default async function RoleSubmissionsPage({
               <strong className="text-text">
                 all {counts.total} {counts.total === 1 ? "submission" : "submissions"}
               </strong>{" "}
-              made to it, including the contact details performers gave. It cannot be undone.
+              made to it, including the contact details applicants gave. It cannot be undone.
               To stop new submissions without destroying anything, use{" "}
               <strong className="text-text">Close early</strong> instead.
             </p>

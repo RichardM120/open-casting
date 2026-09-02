@@ -12,6 +12,7 @@ type Row = {
   synopsis: string;
   owner_id: string | null;
   company: string;
+  client_id: string | null;
   opens_at: Date;
   closes_at: Date;
   closed_at: Date | null;
@@ -28,7 +29,7 @@ type Row = {
  * such.
  */
 export const SESSION_COLUMNS = `
-  id, slug, name, production_type, synopsis, owner_id, company,
+  id, slug, name, production_type, synopsis, owner_id, company, client_id,
   opens_at, closes_at,
   to_char(production_ends_at, 'YYYY-MM-DD') AS production_ends_at,
   closed_at, published_at, purged_at, public_token, created_at
@@ -43,6 +44,7 @@ export function toSession(row: Row): CastingSession {
     synopsis: row.synopsis,
     ownerId: row.owner_id,
     company: row.company,
+    clientId: row.client_id,
     opensAt: row.opens_at.toISOString(),
     closesAt: row.closes_at.toISOString(),
     closedAt: row.closed_at?.toISOString() ?? null,
@@ -128,7 +130,7 @@ export function shareSlug(session: CastingSession): string {
 /**
  * The one public entry point: a production, by its share link. Holding the
  * token is the authorisation. There is nothing else to check, and nothing else
- * in the app will hand a performer one.
+ * in the app will hand an applicant one.
  */
 export async function getSessionByToken(handle: string): Promise<CastingSession | null> {
   // Everything up to the last dash is the readable slug and is ignored.
@@ -181,7 +183,8 @@ export type NewSession = {
   name: string;
   productionType: ProductionType;
   synopsis: string;
-  company: string;
+  /** The client this production is for. */
+  clientId: string;
   /** ISO timestamps: the moments submissions open and close. */
   opensAt: string;
   closesAt: string;
@@ -189,15 +192,23 @@ export type NewSession = {
   productionEndsAt: string;
 };
 
+/**
+ * Opens a production.
+ *
+ * `company` is the owner's own agency and is passed in rather than typed: it is
+ * what producer visibility matches on, so letting a form set it would let one
+ * account post into another agency's view of the dashboard.
+ */
 export async function createSession(
   input: NewSession,
   ownerId: string,
+  company: string,
 ): Promise<CastingSession> {
   const rows = await query<Row>(
     `INSERT INTO sessions_casting
        (id, slug, name, production_type, synopsis, owner_id, company, opens_at,
-        closes_at, production_ends_at, public_token)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+        closes_at, production_ends_at, public_token, client_id)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
      RETURNING ${SESSION_COLUMNS}`,
     [
       `ses_${crypto.randomUUID().slice(0, 12)}`,
@@ -206,11 +217,12 @@ export async function createSession(
       input.productionType,
       input.synopsis,
       ownerId,
-      input.company,
+      company,
       input.opensAt,
       input.closesAt,
       input.productionEndsAt,
       shareToken(),
+      input.clientId,
     ],
   );
   return toSession(rows[0]);
@@ -228,16 +240,16 @@ export async function updateSession(
        slug = $${params.length + 3},
        production_type = $${params.length + 4},
        synopsis = $${params.length + 5},
-       company = $${params.length + 6},
-       opens_at = $${params.length + 7},
-       closes_at = $${params.length + 8},
-       production_ends_at = $${params.length + 9}
+       opens_at = $${params.length + 6},
+       closes_at = $${params.length + 7},
+       production_ends_at = $${params.length + 8},
+       client_id = $${params.length + 9}
      WHERE id = $${params.length + 1}${where ? ` AND ${where}` : ""}
      RETURNING ${SESSION_COLUMNS}`,
     [
       ...params, id,
       input.name, slugify(input.name), input.productionType, input.synopsis,
-      input.company, input.opensAt, input.closesAt, input.productionEndsAt,
+      input.opensAt, input.closesAt, input.productionEndsAt, input.clientId,
     ],
   );
   if (!rows[0]) return null;
@@ -248,7 +260,7 @@ export async function updateSession(
   await query(
     `UPDATE roles SET production = $2, production_type = $3, synopsis = $4, company = $5
       WHERE session_id = $1`,
-    [id, input.name, input.productionType, input.synopsis, input.company],
+    [id, input.name, input.productionType, input.synopsis, rows[0].company],
   );
 
   return toSession(rows[0]);

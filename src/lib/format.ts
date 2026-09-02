@@ -2,8 +2,8 @@
  * Dates and times, and the words that go round them.
  *
  * Opening and closing times are stored as instants and shown in UK time, which
- * is where the productions cast and where the performers reading a share link
- * are. A casting director types "18:00" and that is what the performer sees,
+ * is where the productions cast and where the applicants reading a share link
+ * are. A casting director types "18:00" and that is what the applicant sees,
  * whatever server or browser the two of them are on.
  */
 
