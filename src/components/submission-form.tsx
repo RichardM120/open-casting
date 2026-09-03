@@ -7,7 +7,7 @@ import { useActionState, useState } from "react";
 import { submitApplication } from "@/lib/actions";
 import { SUBMISSION_TERMS } from "@/content/legal";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
-import { ADULT_AGE, RESIDENCIES, type AskKey, type MediaSlot } from "@/lib/types";
+import { ADULT_AGE, RESIDENCIES, type AskKey, type MediaSlot, type SpecialKind } from "@/lib/types";
 import { formatSeconds, videoDuration } from "@/lib/video";
 
 import { useErrorFocus } from "./use-error-focus";
@@ -80,6 +80,8 @@ const LABELS: Record<string, string> = {
   height: "Height",
   residency: "Where you are resident",
   available: "Availability",
+  specialAnswer: "The question about you",
+  specialConsent: "Consent to that answer being processed",
   reelUrl: "Showreel link",
   profileUrl: "Profile link",
   photoUrl: "Profile photo",
@@ -111,6 +113,7 @@ export function SubmissionForm({
   availability,
   slots,
   tapeGuidance,
+  special,
 }: {
   roleId: string;
   roleTitle: string;
@@ -136,6 +139,8 @@ export function SubmissionForm({
   slots: MediaSlot[];
   /** How to tape, one point per line. Empty for none. */
   tapeGuidance: string;
+  /** The role's question about a protected characteristic, with the consent sentence to tick, or null. */
+  special: { kind: SpecialKind; about: string; question: string; consentText: string } | null;
 }) {
   const [state, formAction, pending] = useActionState(submitApplication, IDLE_FORM_STATE);
   const must = new Set(required);
@@ -484,6 +489,7 @@ export function SubmissionForm({
             error={errors.residency}
           >
             <Select
+              key={`residency-${attempt}`}
               id="residency"
               name="residency"
               defaultValue={values.residency ?? ""}
@@ -598,6 +604,53 @@ export function SubmissionForm({
           {errors.available ? (
             <p id="available-error" className="mt-1.5 text-xs text-danger">
               {errors.available}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {special ? (
+        <div className="mt-6 rounded-xl border border-line-strong bg-raised p-4 sm:p-6">
+          <h3 className="text-sm font-semibold">One more question</h3>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            This role is cast to a recorded occupational requirement, which is why it may ask about{" "}
+            {special.about}. Your answer is kept apart from the rest of your submission, read only by
+            the casting director who posted the role and the site administrator, and deleted 30 days
+            after casting closes.
+          </p>
+          <Field label={special.question} htmlFor="specialAnswer" error={errors.specialAnswer} className="mt-4">
+            <Input
+              id="specialAnswer"
+              name="specialAnswer"
+              defaultValue={values.specialAnswer ?? ""}
+              required
+            />
+          </Field>
+          <label
+            className={cx(
+              "mt-4 flex cursor-pointer items-start gap-2.5 text-sm leading-relaxed",
+              errors.specialConsent ? "text-danger" : "text-text",
+            )}
+          >
+            <input
+              id="specialConsent"
+              type="checkbox"
+              name="specialConsent"
+              data-must=""
+              aria-required="true"
+              defaultChecked={values.specialConsent === "on"}
+              aria-invalid={errors.specialConsent ? true : undefined}
+              aria-describedby={errors.specialConsent ? "specialConsent-error" : undefined}
+              className="mt-0.5 size-4 shrink-0 accent-accent"
+            />
+            <span>
+              {special.consentText}
+              <RequiredMark />
+            </span>
+          </label>
+          {errors.specialConsent ? (
+            <p id="specialConsent-error" className="mt-1.5 text-xs text-danger">
+              {errors.specialConsent}
             </p>
           ) : null}
         </div>

@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { sweepOrphanedMedia } from "@/lib/blob";
 import { sendEmail } from "@/lib/email";
 import { claimPurgeWarnings, purgeExpiredSubmissions } from "@/lib/retention";
+import { purgeSpecialAnswers } from "@/lib/special";
 import { allMediaUrls } from "@/lib/submissions";
 
 export const dynamic = "force-dynamic";
@@ -49,6 +50,9 @@ export async function POST(request: Request) {
   }
 
   const purged = await purgeExpiredSubmissions();
+  // Answers about a protected characteristic go sooner: their clock runs
+  // from casting closing, not the production finishing.
+  const specialAnswers = await purgeSpecialAnswers();
 
   // Files whose form never arrived. After the purge, so a file that belonged
   // to a submission just deleted is not held for another day by a stale list.
@@ -60,6 +64,7 @@ export async function POST(request: Request) {
       warned: warnings.length,
       sessions: purged.length,
       submissions: purged.reduce((total, entry) => total + entry.submissions, 0),
+      specialAnswers,
       orphanedFiles,
     },
     { headers: { "cache-control": "no-store" } },

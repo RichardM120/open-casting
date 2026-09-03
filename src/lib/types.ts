@@ -196,6 +196,44 @@ export const DEFAULT_TAPE_GUIDANCE = [
   "Keep to the length asked for. If in doubt, shorter.",
 ].join("\n");
 
+/**
+ * The protected characteristics a role may ask about, and then only under a
+ * recorded occupational requirement: heritage, faith and health are routine
+ * casting criteria, and the law allows the question where the part genuinely
+ * requires it. What is collected is special category data under UK GDPR, so
+ * it is asked with its own consent, held apart, read by fewer people and
+ * deleted sooner than the rest of a submission.
+ */
+export const SPECIAL_KINDS = [
+  { key: "ethnicity", label: "Ethnic or racial origin", about: "your ethnic or racial origin" },
+  { key: "religion", label: "Religion or belief", about: "your religion or belief" },
+  { key: "health", label: "Health or disability", about: "your health or a disability" },
+  { key: "other", label: "Another protected characteristic", about: "a protected characteristic" },
+] as const;
+
+export type SpecialKind = (typeof SPECIAL_KINDS)[number]["key"];
+
+export type SpecialQuestion = {
+  kind: SpecialKind;
+  /** As the applicant reads it. */
+  question: string;
+  /** The occupational requirement: why this role may ask. The record of the decision. */
+  justification: string;
+};
+
+/** Days an answer survives after casting closes: a shorter clock than the submission's. */
+export const SPECIAL_RETENTION_DAYS = 30;
+
+export type SpecialAnswer = {
+  submissionId: string;
+  kind: SpecialKind;
+  answer: string;
+  /** The consent sentence as it read when ticked, and its hash. */
+  consentText: string;
+  consentHash: string;
+  consentedAt: string;
+};
+
 /** The inclusive casting statement a new casting call starts with. The director may edit or clear it. */
 export const DEFAULT_INCLUSION_STATEMENT =
   "We welcome submissions from everyone. This casting is open to applicants of every background, ethnicity, faith, gender identity, sexuality and disability, and we encourage anyone who fits the brief to submit.";
@@ -234,6 +272,8 @@ export type Role = {
   hiddenFields: AskKey[];
   /** The videos asked for, each with its brief and cap. Empty means one general tape. */
   mediaSlots: MediaSlot[];
+  /** A question about a protected characteristic, with the requirement that allows it, or null. */
+  specialQuestion: SpecialQuestion | null;
   /** Set when closed ahead of the production's closing time. ISO timestamp, or null. */
   closedAt: string | null;
   /** The account that posted it. Null only for rows predating accounts. */

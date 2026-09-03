@@ -500,6 +500,10 @@ const SCHEMA = `
   -- required. Empty asks for one general tape.
   ALTER TABLE roles ADD COLUMN IF NOT EXISTS media_slots jsonb NOT NULL DEFAULT '[]'::jsonb;
 
+  -- A question about a protected characteristic, asked only under a recorded
+  -- occupational requirement: {kind, question, justification}, or null.
+  ALTER TABLE roles ADD COLUMN IF NOT EXISTS special_question jsonb;
+
   -- Closing early is recorded separately rather than by moving the deadline,
   -- so the listing still shows the date it originally advertised.
   ALTER TABLE roles ADD COLUMN IF NOT EXISTS closed_at timestamptz;
@@ -580,6 +584,21 @@ const SCHEMA = `
   ALTER TABLE submissions ADD COLUMN IF NOT EXISTS available boolean;
   -- Every video sent, against the slot it answers; video_url keeps the first.
   ALTER TABLE submissions ADD COLUMN IF NOT EXISTS videos jsonb NOT NULL DEFAULT '[]'::jsonb;
+
+  -- Answers to that question live apart from the submission: their own
+  -- consent record, a shorter clock, and a narrower set of readers.
+  CREATE TABLE IF NOT EXISTS special_answers (
+    submission_id text        PRIMARY KEY REFERENCES submissions(id) ON DELETE CASCADE,
+    role_id       text        NOT NULL,
+    session_id    text        NOT NULL,
+    kind          text        NOT NULL,
+    answer        text        NOT NULL,
+    consent_text  text        NOT NULL,
+    consent_hash  text        NOT NULL,
+    consented_at  timestamptz NOT NULL DEFAULT now()
+  );
+  CREATE INDEX IF NOT EXISTS special_answers_session_idx ON special_answers (session_id);
+  CREATE INDEX IF NOT EXISTS special_answers_role_idx ON special_answers (role_id);
 
   CREATE UNIQUE INDEX IF NOT EXISTS submissions_session_email_idx
     ON submissions (session_id, lower(email))

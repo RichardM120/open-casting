@@ -5,7 +5,7 @@ import { useActionState, useState } from "react";
 import { editRole, postRole } from "@/lib/actions";
 import { formatDateTime } from "@/lib/format";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
-import { APPLICANT_ASKS, DEFAULT_HIDDEN_FIELDS, DEFAULT_REQUIRED_FIELDS, MAX_MEDIA_SLOTS, SLOT_LENGTHS } from "@/lib/types";
+import { APPLICANT_ASKS, DEFAULT_HIDDEN_FIELDS, DEFAULT_REQUIRED_FIELDS, MAX_MEDIA_SLOTS, SLOT_LENGTHS, SPECIAL_KINDS } from "@/lib/types";
 import type { AskKey, CastingSession, MediaSlot, Role } from "@/lib/types";
 
 import { DateTimeField } from "./date-time-field";
@@ -15,6 +15,9 @@ import { formatSeconds } from "@/lib/video";
 import { SubmitButton } from "./submit-button";
 
 const LABELS: Record<string, string> = {
+  specialKind: "What the question is about",
+  specialQuestion: "The question",
+  specialJustification: "The occupational requirement",
   sessionId: "Casting call",
   title: "Role name",
   characterBrief: "Character brief",
@@ -60,6 +63,18 @@ export function RoleForm({
   const { errors, values: submitted } = state;
   const formRef = useErrorFocus(state.status, errors);
 
+  // React resets the form once the action returns. A text input takes its
+  // value back from defaultValue, but a select holds whatever the reset left,
+  // which is the option it mounted with. The selects are remounted per
+  // attempt, so a refused save keeps the characteristic and the video limits
+  // that were chosen.
+  const [seen, setSeen] = useState(state);
+  const [attempt, setAttempt] = useState(0);
+  if (seen !== state) {
+    setSeen(state);
+    setAttempt(attempt + 1);
+  }
+
   // What was just submitted wins, so a failed save does not discard the edit;
   // otherwise the role as it stands.
   const values: Record<string, string> =
@@ -77,6 +92,9 @@ export function RoleForm({
           disclaimer: role.disclaimer,
           selfTape: role.selfTape ? "on" : "",
           paid: role.paid ? "on" : "",
+          specialKind: role.specialQuestion?.kind ?? "",
+          specialQuestion: role.specialQuestion?.question ?? "",
+          specialJustification: role.specialQuestion?.justification ?? "",
         }
       : submitted;
 
@@ -95,6 +113,8 @@ export function RoleForm({
   // The video rows follow the video ask: nothing to set out for a role that
   // does not take videos.
   const [videoAsk, setVideoAsk] = useState(askValue("video"));
+  // The question's fields appear once a characteristic is chosen.
+  const [specialKind, setSpecialKind] = useState(values.specialKind ?? "");
 
   return (
     <form ref={formRef} action={formAction} className="flex flex-col gap-8">
@@ -336,10 +356,73 @@ export function RoleForm({
         ) : null}
         <MediaSlotsEditor
           initial={role?.mediaSlots ?? []}
+          attempt={attempt}
           videoAsk={videoAsk}
           errors={errors}
           submitted={state.status === "idle" ? null : submitted}
         />
+      </Fieldset>
+
+      <Fieldset
+        legend="A question about a protected characteristic"
+        description="Only where the part genuinely requires it: a role cast to an ethnicity, a faith or a disability, say. The law allows the question when there is an occupational requirement, so the requirement is recorded here with the question. The answer is held apart from the rest of a submission, seen only by you and the site administrator, and deleted 30 days after casting closes."
+      >
+        <Field
+          label="What it is about"
+          htmlFor="specialKind"
+          hint="Leave as none to ask nothing."
+          error={errors.specialKind}
+        >
+          <Select
+            key={`kind-${attempt}`}
+            id="specialKind"
+            name="specialKind"
+            defaultValue={values.specialKind ?? ""}
+            onChange={(event) => setSpecialKind(event.currentTarget.value)}
+          >
+            <option value="">None</option>
+            {SPECIAL_KINDS.map((option) => (
+              <option key={option.key} value={option.key}>
+                {option.label}
+              </option>
+            ))}
+          </Select>
+        </Field>
+        {specialKind ? (
+          <>
+            <Field
+              label="The question"
+              htmlFor="specialQuestion"
+              hint="As the applicant will read it."
+              error={errors.specialQuestion}
+              className="sm:col-span-2"
+            >
+              <Input
+                id="specialQuestion"
+                name="specialQuestion"
+                defaultValue={values.specialQuestion ?? ""}
+                placeholder="Do you have Jewish heritage?"
+                required
+              />
+            </Field>
+            <Field
+              label="The occupational requirement"
+              htmlFor="specialJustification"
+              hint="Why this role may ask: the requirement of the part, under Schedule 9 of the Equality Act 2010, that makes the characteristic essential to it. Kept as the record of the decision. Applicants are told the question is asked under a recorded requirement, not this wording."
+              error={errors.specialJustification}
+              className="sm:col-span-2"
+            >
+              <Textarea
+                id="specialJustification"
+                name="specialJustification"
+                rows={4}
+                defaultValue={values.specialJustification ?? ""}
+                placeholder="The character is written as Jewish and the story turns on that heritage; the production requires the part to be played by an actor who shares it."
+                required
+              />
+            </Field>
+          </>
+        ) : null}
       </Fieldset>
 
       <Fieldset
@@ -392,11 +475,14 @@ export function RoleForm({
  */
 function MediaSlotsEditor({
   initial,
+  attempt,
   videoAsk,
   errors,
   submitted,
 }: {
   initial: MediaSlot[];
+  /** Changes with every refused save; the selects remount on it. */
+  attempt: number;
   videoAsk: "required" | "optional" | "off";
   errors: Record<string, string>;
   /** What was just posted after a refused save, or null when showing the role as it is. */
@@ -466,7 +552,7 @@ function MediaSlotsEditor({
                 />
               </Field>
               <Field label="Longest it may run" htmlFor={`slot_${n}_max`}>
-                <Select id={`slot_${n}_max`} name={`slot_${n}_max`} defaultValue={row.maxSeconds ?? ""}>
+                <Select key={`max-${row.key}-${attempt}`} id={`slot_${n}_max`} name={`slot_${n}_max`} defaultValue={row.maxSeconds ?? ""}>
                   <option value="">No limit</option>
                   {SLOT_LENGTHS.map((seconds) => (
                     <option key={seconds} value={seconds}>

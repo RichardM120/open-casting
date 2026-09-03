@@ -202,6 +202,11 @@ export default function ApplicantFaqPage() {
               "A role with shoot dates asks you to confirm you are free for all of them before you can submit. Only tick it if you are: pulling out late is what makes casting directors stop running open calls.",
           },
           {
+            term: "A question about heritage, faith or health",
+            means:
+              "A few roles are cast to an occupational requirement, a part written for someone of a particular heritage, faith or disability, and the law allows those roles to ask. The question comes with its own consent, separate from the terms; the answer is held apart from the rest of your submission, read only by the casting director who posted the role and the site administrator, and deleted 30 days after casting closes.",
+          },
+          {
             term: "Do you have an agent?",
             means:
               "Some casting calls ask this first. If you are represented and the call is for unrepresented actors, you are pointed to your agent instead, and nothing about you is taken.",

@@ -378,6 +378,56 @@ section("16 a role sets out the videos it asks for");
   check("with videos not asked for, there is nothing to set out", (await dir.p.locator('input[name="slot_1_label"]').count()) === 0);
 }
 
+section("17 a role may ask about a protected characteristic, under a recorded requirement");
+{
+  const call = await openSession(dir.p, { name: `Heritage ${t}`, company: CO, opensAt: at(-1), closesAt: at(20, "23:59") });
+  const roleId = await postRole(dir.p, { sessionId: call, title: `Heritage role ${t}`, company: CO });
+  await dir.p.goto(`${BASE}/dashboard/roles/${roleId}/edit`, { waitUntil: "networkidle" });
+  check("no question fields until a characteristic is chosen", (await dir.p.locator("#specialQuestion").count()) === 0);
+  await dir.p.selectOption("#specialKind", "ethnicity");
+  await dir.p.fill("#specialQuestion", "Do you have Jewish heritage?");
+  await dir.p.fill("#specialJustification", "Because.");
+  await dir.p.getByRole("button", { name: "Save changes" }).click();
+  await dir.p.waitForTimeout(1500);
+  check("it cannot be saved without the occupational requirement written out", (await dir.p.locator("#specialJustification-error").count()) === 1 && !dir.p.url().includes("saved=1"));
+  await dir.p.fill("#specialJustification", "The character is written as Jewish and the story turns on that heritage; the production requires the part to be played by an actor who shares it.");
+  await dir.p.getByRole("button", { name: "Save changes" }).click();
+  await dir.p.waitForURL(/saved=1/, { timeout: 20000 });
+  await publish(dir.p, call);
+  const token = await shareToken(dir.p, call);
+
+  const applicant = await session(browser, errors);
+  const p = applicant.p;
+  await p.goto(`${BASE}/c/${token}/${roleId}`, { waitUntil: "networkidle" });
+  check("the applicant sees the question, and why it may be asked", (await p.getByText("Do you have Jewish heritage?").count()) > 0 && (await p.getByText(/recorded occupational requirement/).count()) > 0);
+  check("with its own consent, apart from the terms", (await p.locator("#specialConsent").count()) === 1 && (await p.getByText(/special category data under UK GDPR/).count()) > 0);
+  await p.selectOption("#age", "30");
+  await p.fill("#name", `Heritage Applicant ${t}`);
+  await p.fill("#email", `heritage${t}@example.com`);
+  await p.fill("#phone", "07700 900321");
+  await p.fill("#location", "Leeds");
+  await p.fill("#coverNote", "A cover note comfortably longer than the twenty character minimum.");
+  await p.fill("#specialAnswer", "Yes, on my mother's side.");
+  await p.check("#acceptSubmissionTerms");
+  if (await p.locator("#available").count()) await p.check("#available");
+  check("not ready without that consent", (await p.getByRole("button", { name: "Send submission" }).getAttribute("data-ready")) === "false");
+  await p.check("#specialConsent");
+  check("ready with it", await p.locator('button[data-ready="true"]', { hasText: "Send submission" }).waitFor({ timeout: 5000 }).then(() => true, () => false));
+  await p.getByRole("button", { name: "Send submission" }).click();
+  await p.getByText("Submission sent").waitFor({ timeout: 20000 });
+  await applicant.c.close();
+
+  await dir.p.goto(`${BASE}/dashboard/roles/${roleId}`, { waitUntil: "networkidle" });
+  const card = dir.p.locator('li:has(select[aria-label="Submission status"])').first();
+  check("the director who posted the role reads the answer", (await card.getByText("Yes, on my mother's side.").count()) === 1 && (await card.getByText(/deleted 30 days after casting closes/).count()) === 1);
+
+  // The suite's producer, under the same client as the director.
+  await prod.p.goto(`${BASE}/dashboard/roles/${roleId}`, { waitUntil: "networkidle" });
+  const theirs = prod.p.locator('li:has(select[aria-label="Submission status"])').first();
+  check("a producer under the same client sees that there is an answer", (await theirs.getByText(/Answered\. Only the account that posted the role/).count()) === 1);
+  check("but not the answer", (await theirs.getByText("Yes, on my mother's side.").count()) === 0);
+}
+
 for (const s of [dir, other, prod, admin]) await s.c.close();
 await browser.close();
 finish();

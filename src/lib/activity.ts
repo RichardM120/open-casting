@@ -141,6 +141,7 @@ const TRACKED: { key: keyof Role; label: string }[] = [
   { key: "hiddenFields", label: "what applicants are asked for" },
   { key: "paid", label: "whether it is paid" },
   { key: "mediaSlots", label: "the videos asked for" },
+  { key: "specialQuestion", label: "the question about a protected characteristic" },
   { key: "title", label: "role name" },
   { key: "characterBrief", label: "character brief" },
   { key: "requirements", label: "requirements" },
@@ -184,9 +185,10 @@ function diff<T>(before: T, after: T, tracked: { key: keyof T; label: string }[]
   for (const { key, label } of tracked) {
     const a: unknown = before[key];
     const b: unknown = after[key];
-    const same = Array.isArray(a) && Array.isArray(b)
-      ? JSON.stringify(a) === JSON.stringify(b)
-      : a === b;
+    const same =
+      (Array.isArray(a) && Array.isArray(b)) || (a && b && typeof a === "object" && typeof b === "object")
+        ? JSON.stringify(a) === JSON.stringify(b)
+        : a === b;
     if (!same) changed.add(label);
   }
 

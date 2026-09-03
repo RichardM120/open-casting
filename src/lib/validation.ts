@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { fromLocalInput, londonDate } from "./format";
 import { PRODUCTION_TYPES, SIGNUP_ROLES, TIER_KEYS, ADULT_AGE } from "./types";
-import { APPLICANT_ASKS, ASK_KEYS, DEFAULT_HIDDEN_FIELDS, DEFAULT_REQUIRED_FIELDS, MAX_MEDIA_SLOTS, RESIDENCIES, type AskKey, type MediaSlot } from "./types";
+import { APPLICANT_ASKS, ASK_KEYS, DEFAULT_HIDDEN_FIELDS, DEFAULT_REQUIRED_FIELDS, MAX_MEDIA_SLOTS, RESIDENCIES, SPECIAL_KINDS, type AskKey, type MediaSlot, type SpecialQuestion } from "./types";
 import { parseHeight } from "./height";
 
 const trimmed = z.string().trim();
@@ -62,6 +62,11 @@ export const submissionSchema = z.object({
     ),
   // Only asked when the role has shoot dates; the action decides from the role.
   available: z.coerce.boolean().optional(),
+  // Only asked when the role carries a question about a protected
+  // characteristic; the action decides from the role, and records the answer
+  // apart from the rest.
+  specialAnswer: trimmed.max(300, "Keep the answer under 300 characters").optional().default(""),
+  specialConsent: z.coerce.boolean().optional(),
   // Not posted at all when the role does not ask, so absence is an empty string.
   reelUrl: optionalUrl.optional().default(""),
   profileUrl: optionalUrl.optional().default(""),
@@ -150,6 +155,38 @@ export const roleSchema = z
         }),
       )
       .max(MAX_MEDIA_SLOTS),
+    // A question about a protected characteristic, and the requirement that
+    // allows it. Nothing unless a kind is chosen; then both are needed.
+    specialKind: trimmed
+      .optional()
+      .default("")
+      .refine(
+        (value) => value === "" || SPECIAL_KINDS.some((option) => option.key === value),
+        "Choose what the question is about",
+      ),
+    specialQuestion: trimmed.max(300, "Keep the question under 300 characters").optional().default(""),
+    specialJustification: trimmed
+      .max(2000, "Keep it under 2000 characters")
+      .optional()
+      .default(""),
+  })
+  .superRefine((value, ctx) => {
+    if (!value.specialKind) return;
+    if (value.specialQuestion.length < 10) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["specialQuestion"],
+        message: "Write the question as the applicant will read it",
+      });
+    }
+    if (value.specialJustification.length < 40) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["specialJustification"],
+        message:
+          "Record the occupational requirement: why this role may ask, in a sentence or two. A role cannot ask without it.",
+      });
+    }
   })
   .refine(
     (value) => !value.shootEndsAt || !value.shootStartsAt || value.shootEndsAt >= value.shootStartsAt,
@@ -168,6 +205,15 @@ export const roleSchema = z
   });
 
 export type RoleInput = z.infer<typeof roleSchema>;
+
+/** The question the form set out, or null when it asks nothing. */
+export function specialQuestionOf(
+  input: Pick<RoleInput, "specialKind" | "specialQuestion" | "specialJustification">,
+): SpecialQuestion | null {
+  const kind = SPECIAL_KINDS.find((option) => option.key === input.specialKind)?.key;
+  if (!kind) return null;
+  return { kind, question: input.specialQuestion, justification: input.specialJustification };
+}
 
 /**
  * The role form posts one radio per ask, `ask_phone` and so on, set to

@@ -156,6 +156,7 @@ const roles: SeedRole[] = [
     hiddenFields: DEFAULT_HIDDEN_FIELDS,
     paid: true,
     mediaSlots: [],
+    specialQuestion: null,
   },
   {
     id: "rol_saltmarsh_gethin",
@@ -182,6 +183,7 @@ const roles: SeedRole[] = [
     hiddenFields: DEFAULT_HIDDEN_FIELDS,
     paid: true,
     mediaSlots: [],
+    specialQuestion: null,
   },
   {
     id: "rol_northbank_dcelliot",
@@ -209,6 +211,7 @@ const roles: SeedRole[] = [
     hiddenFields: DEFAULT_HIDDEN_FIELDS,
     paid: true,
     mediaSlots: [],
+    specialQuestion: null,
   },
   {
     id: "rol_northbank_supporting",
@@ -232,6 +235,7 @@ const roles: SeedRole[] = [
     hiddenFields: DEFAULT_HIDDEN_FIELDS,
     paid: true,
     mediaSlots: [],
+    specialQuestion: null,
   },
   {
     id: "rol_hearth_couple",
@@ -260,6 +264,7 @@ const roles: SeedRole[] = [
     hiddenFields: DEFAULT_HIDDEN_FIELDS,
     paid: true,
     mediaSlots: [],
+    specialQuestion: null,
   },
   {
     id: "rol_glasshouse_vo",
@@ -286,6 +291,7 @@ const roles: SeedRole[] = [
     hiddenFields: DEFAULT_HIDDEN_FIELDS,
     paid: true,
     mediaSlots: [],
+    specialQuestion: null,
   },
   {
     id: "rol_lantern_ensemble",
@@ -313,6 +319,7 @@ const roles: SeedRole[] = [
     hiddenFields: DEFAULT_HIDDEN_FIELDS,
     paid: true,
     mediaSlots: [],
+    specialQuestion: null,
   },
   {
     id: "rol_kestrel_youth",
@@ -341,6 +348,7 @@ const roles: SeedRole[] = [
     hiddenFields: DEFAULT_HIDDEN_FIELDS,
     paid: true,
     mediaSlots: [],
+    specialQuestion: null,
   },
 ];
 

@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 import { ApplicantMasthead } from "@/components/applicant-masthead";
 import { InclusionStatement, YourData } from "@/components/applicant-notices";
 import { reportAddress } from "@/lib/site";
+import { aboutFor, consentTextFor } from "@/lib/special";
 import { DEFAULT_TAPE_GUIDANCE } from "@/lib/types";
 import { formatSeconds } from "@/lib/video";
 import { DeadlineBadge } from "@/components/deadline-badge";
@@ -189,6 +190,16 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
               availability={role.shootStartsAt ? shootWindow(role) : null}
               slots={slotsFor(role)}
               tapeGuidance={session.tapeGuidance ?? DEFAULT_TAPE_GUIDANCE}
+              special={
+                role.specialQuestion
+                  ? {
+                      kind: role.specialQuestion.kind,
+                      about: aboutFor(role.specialQuestion.kind),
+                      question: role.specialQuestion.question,
+                      consentText: consentTextFor(role.specialQuestion, role.company),
+                    }
+                  : null
+              }
               backTo={`/c/${token}`}
             />
           ) : (

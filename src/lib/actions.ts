@@ -12,6 +12,7 @@ import { UNIQUE_VIOLATION } from "./db";
 import { emailConfigured, sendEmail } from "./email";
 import { exportFilename, submissionsWorkbook } from "./export";
 import { purgeDate } from "./retention";
+import { consentTextFor, forgetSubmission, recordSpecialAnswer } from "./special";
 import {
   createClient,
   deleteClient,
@@ -74,6 +75,7 @@ import {
   readAsks,
   readMediaSlots,
   roleSchema,
+  specialQuestionOf,
   sessionSchema,
   submissionSchema,
   type FieldErrors,
@@ -142,6 +144,8 @@ export async function submitApplication(
     guardianConsent,
     height,
     available,
+    specialAnswer,
+    specialConsent,
     ...posted
   } = parsed.data;
 
@@ -267,6 +271,14 @@ export async function submitApplication(
     if (role.shootStartsAt && !available) {
       missing.available = "Confirm you are available for the shoot dates";
     }
+    // A question about a protected characteristic needs an answer and its own
+    // consent, given separately from the terms, before anything is kept.
+    if (role.specialQuestion) {
+      if (!specialAnswer) missing.specialAnswer = "Answer this to be considered for the role";
+      if (!specialConsent) {
+        missing.specialConsent = "Tick the box to consent to this answer being processed";
+      }
+    }
     if (Object.keys(missing).length > 0) {
       return invalid(
         missing,
@@ -287,7 +299,7 @@ export async function submitApplication(
   }
 
   try {
-    await createSubmission({
+    const created = await createSubmission({
       ...submission,
       // A child's contact is the adult responsible for them. It is also what
       // the one-submission-per-production rule keys on, so it has to be set.
@@ -309,6 +321,21 @@ export async function submitApplication(
       guardianEmail: minor ? (guardianEmail ?? null) : null,
       guardianConsentAt: minor ? new Date().toISOString() : null,
     });
+    if (role.specialQuestion && specialAnswer) {
+      try {
+        await recordSpecialAnswer({
+          submissionId: created.id,
+          roleId: role.id,
+          sessionId: role.sessionId,
+          kind: role.specialQuestion.kind,
+          answer: specialAnswer,
+          consentText: consentTextFor(role.specialQuestion, role.company),
+        });
+      } catch (error) {
+        await forgetSubmission(created.id);
+        throw error;
+      }
+    }
   } catch (error) {
     // The unique index is the authority here, so two simultaneous submissions
     // cannot both slip past a check-then-insert.
@@ -363,7 +390,11 @@ export async function postRole(
     );
   }
 
-  const { sessionId, ...fields } = parsed.data;
+  const { sessionId, specialKind, specialQuestion, specialJustification, ...rest } = parsed.data;
+  const fields = {
+    ...rest,
+    specialQuestion: specialQuestionOf({ specialKind, specialQuestion, specialJustification }),
+  };
   const session = await getVisibleSession(sessionId, user);
   if (!session) {
     return invalid(
@@ -510,7 +541,12 @@ export async function editRole(
   // does not move between productions afterwards, so `updateRole` ignores it:
   // moving one would change its dates and orphan the submissions already made
   // under it.
-  const role = await updateRole(id, parsed.data, user);
+  const { specialKind, specialQuestion, specialJustification, ...rest } = parsed.data;
+  const role = await updateRole(
+    id,
+    { ...rest, specialQuestion: specialQuestionOf({ specialKind, specialQuestion, specialJustification }) },
+    user,
+  );
   if (!role) {
     return invalid({}, "That role is no longer yours to edit.", formData);
   }

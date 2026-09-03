@@ -3,8 +3,8 @@ import "server-only";
 import type { SessionUser } from "./auth";
 import { query } from "./db";
 import { LIVE, SESSION_COLUMNS, toSession } from "./sessions";
-import { ASK_KEYS, DEFAULT_MEDIA_SLOT, DEFAULT_REQUIRED_FIELDS, MAX_MEDIA_SLOTS } from "./types";
-import type { AskKey, CastingSession, MediaSlot, ProductionType, Role } from "./types";
+import { ASK_KEYS, DEFAULT_MEDIA_SLOT, DEFAULT_REQUIRED_FIELDS, MAX_MEDIA_SLOTS, SPECIAL_KINDS } from "./types";
+import type { AskKey, CastingSession, MediaSlot, ProductionType, Role, SpecialQuestion } from "./types";
 
 /* ------------------------------------------------------------- row shape -- */
 
@@ -30,6 +30,7 @@ type RoleRow = {
   required_fields: unknown;
   hidden_fields: unknown;
   media_slots: unknown;
+  special_question: unknown;
   closed_at: Date | null;
   owner_id: string | null;
   session_id: string;
@@ -41,8 +42,8 @@ const COLUMNS = `
   requirements, location, self_tape, paid, age_min, age_max,
   to_char(shoot_starts_at, 'YYYY-MM-DD') AS shoot_starts_at,
   to_char(shoot_ends_at, 'YYYY-MM-DD') AS shoot_ends_at,
-  casting_director, company, disclaimer, required_fields, hidden_fields, media_slots, closed_at,
-  owner_id, session_id, posted_at
+  casting_director, company, disclaimer, required_fields, hidden_fields, media_slots,
+  special_question, closed_at, owner_id, session_id, posted_at
 `;
 
 function toRole(row: RoleRow): Role {
@@ -70,6 +71,7 @@ function toRole(row: RoleRow): Role {
       (key) => !readAsks(row.required_fields).includes(key),
     ),
     mediaSlots: readSlots(row.media_slots),
+    specialQuestion: readSpecial(row.special_question),
     closedAt: row.closed_at?.toISOString() ?? null,
     ownerId: row.owner_id,
     sessionId: row.session_id,
@@ -101,6 +103,19 @@ function readSlots(value: unknown): MediaSlot[] {
     if (slots.length === MAX_MEDIA_SLOTS) break;
   }
   return slots;
+}
+
+/** The stored question, or null for anything that is not one. */
+function readSpecial(value: unknown): SpecialQuestion | null {
+  if (!value || typeof value !== "object") return null;
+  const record = value as Record<string, unknown>;
+  const kind = SPECIAL_KINDS.find((option) => option.key === record.kind)?.key;
+  if (!kind || typeof record.question !== "string" || !record.question) return null;
+  return {
+    kind,
+    question: record.question,
+    justification: typeof record.justification === "string" ? record.justification : "",
+  };
 }
 
 /** The videos a role asks for: its own, or the one general tape, required when the video ask is. */
@@ -267,8 +282,8 @@ export async function createRole(
        id, slug, title, production, production_type, synopsis, character_brief,
        requirements, location, self_tape, age_min, age_max, shoot_starts_at,
        shoot_ends_at, casting_director, company, owner_id, disclaimer, session_id,
-       required_fields, hidden_fields, paid, media_slots
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
+       required_fields, hidden_fields, paid, media_slots, special_question
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)
      RETURNING ${COLUMNS}`,
     [
       `rol_${crypto.randomUUID().slice(0, 12)}`,
@@ -295,6 +310,7 @@ export async function createRole(
       JSON.stringify(input.hiddenFields),
       input.paid,
       JSON.stringify(input.mediaSlots),
+      input.specialQuestion ? JSON.stringify(input.specialQuestion) : null,
     ],
   );
   return toRole(rows[0]);
@@ -341,7 +357,8 @@ export async function updateRole(
        required_fields = $${params.length + 12},
        hidden_fields = $${params.length + 13},
        paid = $${params.length + 14},
-       media_slots = $${params.length + 15}
+       media_slots = $${params.length + 15},
+       special_question = $${params.length + 16}
      WHERE id = $${params.length + 1}${where ? ` AND ${where}` : ""}
      RETURNING ${COLUMNS}`,
     [
@@ -354,6 +371,7 @@ export async function updateRole(
       JSON.stringify(input.hiddenFields),
       input.paid,
       JSON.stringify(input.mediaSlots),
+      input.specialQuestion ? JSON.stringify(input.specialQuestion) : null,
     ],
   );
   return rows[0] ? toRole(rows[0]) : null;

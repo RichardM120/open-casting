@@ -20,13 +20,15 @@ import {
   roleWindow,
 } from "@/lib/format";
 import { formatHeight } from "@/lib/height";
+import { specialAnswersFor, submissionsWithSpecialAnswers } from "@/lib/special";
+import { SPECIAL_RETENTION_DAYS } from "@/lib/types";
 import { getVisibleRole } from "@/lib/roles";
 import { shareSlug } from "@/lib/sessions";
 import { PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
 import { ProfilePhoto } from "@/components/profile-photo";
 import { mediaSrc } from "@/lib/media";
 import { countsForRole, listSubmissions } from "@/lib/submissions";
-import type { MediaSlot, Submission } from "@/lib/types";
+import type { MediaSlot, SpecialAnswer, SpecialQuestion, Submission } from "@/lib/types";
 import { Breadcrumb } from "@/components/breadcrumb";
 
 export async function generateMetadata({
@@ -47,6 +49,10 @@ export default async function RoleSubmissionsPage({
   // A role this account may not see is a 404, not a 403: someone guessing ids
   // should not be able to tell which ones exist.
   const role = await getVisibleRole(id, user);
+  // Answers about a protected characteristic: the text for whoever may read
+  // it, and only the fact of an answer for anyone else.
+  const answers = role ? await specialAnswersFor(role, user) : new Map<string, SpecialAnswer>();
+  const answered = role?.specialQuestion ? await submissionsWithSpecialAnswers(role.id) : new Set<string>();
   if (!role) notFound();
 
   const [counts, activity, query] = await Promise.all([
@@ -140,7 +146,7 @@ export default async function RoleSubmissionsPage({
         <>
           <ul className="mt-8 flex flex-col gap-4">
             {submissions.map((submission) => (
-              <SubmissionCard slots={role.mediaSlots} key={submission.id} submission={submission} />
+              <SubmissionCard slots={role.mediaSlots} question={role.specialQuestion} special={answers.get(submission.id) ?? null} answered={answered.has(submission.id)} key={submission.id} submission={submission} />
             ))}
           </ul>
           <Pagination
@@ -228,7 +234,22 @@ function Count({
   );
 }
 
-function SubmissionCard({ submission, slots }: { submission: Submission; slots: MediaSlot[] }) {
+function SubmissionCard({
+  submission,
+  slots,
+  question,
+  special,
+  answered,
+}: {
+  submission: Submission;
+  slots: MediaSlot[];
+  /** The role's question about a protected characteristic, if it asks one. */
+  question: SpecialQuestion | null;
+  /** The answer, for a viewer allowed to read it. */
+  special: SpecialAnswer | null;
+  /** Whether an answer exists, for a viewer who may not read it. */
+  answered: boolean;
+}) {
   // Every video sent, or the one a submission from before there were slots holds.
   const videos = submission.videos.length
     ? submission.videos
@@ -278,6 +299,24 @@ function SubmissionCard({ submission, slots }: { submission: Submission; slots: 
         <p className="mt-4 max-w-prose text-sm leading-relaxed text-muted">
           {submission.coverNote}
         </p>
+      ) : null}
+
+      {question && (special || answered) ? (
+        <div className="mt-4 max-w-prose rounded-xl border border-line-strong bg-raised p-4 text-sm">
+          <p className="text-xs font-medium text-muted">{question.question}</p>
+          {special ? (
+            <p className="mt-1 text-text">{special.answer}</p>
+          ) : (
+            <p className="mt-1 text-muted">
+              Answered. Only the account that posted the role, and the site administrator, can read
+              it.
+            </p>
+          )}
+          <p className="mt-2 text-xs text-faint">
+            Special category data, held apart from the rest and deleted {SPECIAL_RETENTION_DAYS} days
+            after casting closes.
+          </p>
+        </div>
       ) : null}
 
       {videos.map((video) => (
