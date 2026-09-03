@@ -111,23 +111,6 @@ export default function ApplicantFaqPage() {
       <FieldGlossary
         items={[
           {
-            term: "Pay",
-            means:
-              "Every role on Open Casting is paid. What it pays and on what basis is agreed with the casting director, so ask before you tape if it is not spelled out, and get it in writing before the first day.",
-          },
-          {
-            term: "Buyout and usage",
-            means: (
-              <>
-                Common on commercials. Your fee pays you for the day; the{" "}
-                <em>buyout</em> pays for the right to use the footage: where, in what media, and
-                for how long. &ldquo;UK, all media, 12 months&rdquo; means exactly that, and the
-                fee should reflect it. A buyout negotiated &ldquo;separately&rdquo; is not agreed
-                until it is agreed.
-              </>
-            ),
-          },
-          {
             term: "Playing age",
             means:
               "The range they believe you could convincingly play, not your actual age. Submit if you are inside it, whatever your date of birth.",
@@ -145,7 +128,7 @@ export default function ApplicantFaqPage() {
           {
             term: "Opens and closes",
             means:
-              "The production's casting window, in UK time. The form appears at the opening time and goes at the closing time. A casting director may also close early once they have what they need, and the roles then stay up for reference without a form.",
+              "The production's casting window, in UK time. The form appears at the opening time and goes at the closing time, which is the moment a submission has to have arrived, not the moment you start it: a form or an upload still going at the closing time is refused, so give a video a few minutes. A casting director may also close early once they have what they need, and the roles then stay up for reference without a form.",
           },
         ]}
       />
@@ -178,6 +161,16 @@ export default function ApplicantFaqPage() {
               "Whether you can work as a local. Some productions cover travel and accommodation and some do not. The role should say.",
           },
           {
+            term: "Where you are resident",
+            means:
+              "Asked only when a role needs it: the country you live in, because some castings are open to residents of one country only. It is not your address.",
+          },
+          {
+            term: "Height",
+            means:
+              "Asked only when a role needs it. Give it in centimetres or in feet and inches; the casting team sees both.",
+          },
+          {
             term: "Age",
             means: (
               <>
@@ -197,6 +190,16 @@ export default function ApplicantFaqPage() {
             term: "Cover note",
             means:
               "A short paragraph on why you, for this part. Specific beats general, so refer to the brief.",
+          },
+          {
+            term: "Available for the shoot dates",
+            means:
+              "A role with shoot dates asks you to confirm you are free for all of them before you can submit. Only tick it if you are: pulling out late is what makes casting directors stop running open calls.",
+          },
+          {
+            term: "Do you have an agent?",
+            means:
+              "Some casting calls ask this first. If you are represented and the call is for unrepresented actors, you are pointed to your agent instead, and nothing about you is taken.",
           },
           {
             term: "Terms for this role",
