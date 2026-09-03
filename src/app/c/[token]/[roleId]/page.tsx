@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ApplicantMasthead } from "@/components/applicant-masthead";
@@ -21,6 +20,7 @@ import { canPreview } from "@/lib/preview";
 import { ShareLink } from "@/components/share-link";
 import { getSessionRole } from "@/lib/roles";
 import { getSessionByToken, shareSlug } from "@/lib/sessions";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -58,13 +58,10 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-      <ApplicantMasthead heroUrl={session.heroUrl} name={session.name} />
-      <Link
-        href={`/c/${token}`}
-        className="text-sm text-muted transition-colors hover:text-text"
-      >
-        &larr; All roles for {role.session.name}
-      </Link>
+      <ApplicantMasthead heroUrl={session.heroUrl} heroKind={session.heroKind} name={session.name} />
+      <Breadcrumb
+        trail={[{ href: `/c/${token}`, label: `All roles for ${role.session.name}` }, { label: role.title }]}
+      />
 
       {owner && shareUrl ? (
         <section className="mt-6 rounded-2xl border border-accent/30 bg-accent-soft p-4 sm:p-6">
@@ -72,7 +69,7 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
             <Badge tone={session.publishedAt ? "positive" : "accent"}>
               {session.publishedAt ? "Published" : "Draft"}
             </Badge>
-            <p className="text-sm text-muted">
+            <p className="text-sm text-text">
               {session.publishedAt
                 ? "This is what applicants see. Share the link below wherever you want the call to go: a post, a story, a mailout."
                 : "Only you can see this. Publish the casting call and this link starts working."}
@@ -95,11 +92,11 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
           <h1 className="mt-6 text-3xl font-semibold tracking-tight text-balance md:text-4xl">
             {role.title}
           </h1>
-          <p className="mt-2 text-lg text-muted">
+          <p className="mt-2 text-lg text-text">
             {role.production} · cast by {role.castingDirector} at {role.company}
           </p>
 
-          <p className="mt-4 max-w-prose rounded-xl border border-line bg-raised px-4 py-3 text-sm leading-relaxed text-muted">
+          <p className="mt-4 max-w-prose leading-relaxed text-text">
             Part of <strong className="text-text">{role.session.name}</strong>, which takes
             submissions from {formatDateTime(role.session.opensAt)} to{" "}
             {formatDateTime(role.session.closesAt)}
@@ -109,7 +106,7 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
             . One submission per person per casting call, whichever role you go for.
           </p>
 
-          <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 rounded-2xl border border-line bg-surface p-6 sm:grid-cols-3">
+          <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 rounded-2xl border border-line bg-surface p-5 shadow-card sm:grid-cols-3 sm:p-6">
             <Detail label="Location" value={role.location} />
             <Detail label="Playing age" value={ageRange(role.ageMin, role.ageMax)} />
             <Detail label="Shoot dates" value={shootWindow(role)} />
@@ -169,8 +166,8 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
 function Detail({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <dt className="text-xs text-faint">{label}</dt>
-      <dd className="mt-1 text-sm text-text">{value}</dd>
+      <dt className="text-xs text-muted">{label}</dt>
+      <dd className="mt-1 text-text">{value}</dd>
     </div>
   );
 }
@@ -179,7 +176,7 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   return (
     <section className="mt-10">
       <Eyebrow>{title}</Eyebrow>
-      <div className="mt-3 max-w-prose text-[15px] leading-relaxed text-muted">{children}</div>
+      <div className="mt-3 max-w-prose leading-relaxed text-text">{children}</div>
     </section>
   );
 }

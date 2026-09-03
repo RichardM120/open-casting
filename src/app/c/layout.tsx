@@ -4,7 +4,7 @@ import { Logo } from "@/components/logo";
 
 /**
  * The applicant's pages stand alone: no site navigation, no footer of links,
- * a different ground. Someone holding a share link has one casting call to
+ * a warm cream ground with the copy in charcoal. Someone holding a share link has one casting call to
  * read and one form to fill in, and nowhere else on the site to be.
  */
 export default function ApplicantLayout({ children }: { children: ReactNode }) {
@@ -19,7 +19,7 @@ export default function ApplicantLayout({ children }: { children: ReactNode }) {
       <main id="main" className="flex-1">
         {children}
       </main>
-      <p className="mx-auto flex w-full max-w-4xl items-center gap-2.5 px-4 py-8 sm:px-6 text-xs text-muted">
+      <p className="mx-auto flex w-full max-w-4xl items-center gap-2.5 px-4 py-8 text-sm text-text sm:px-6">
         <Logo tone="onLight" size="sm" />
         <span>
           Run with Open Casting. This page is the whole of the casting call; there is nothing else

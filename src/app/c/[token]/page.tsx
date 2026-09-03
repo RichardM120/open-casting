@@ -43,7 +43,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
-      <ApplicantMasthead heroUrl={session.heroUrl} name={session.name} />
+      <ApplicantMasthead heroUrl={session.heroUrl} heroKind={session.heroKind} name={session.name} />
       {preview ? (
         <p className="mb-8 rounded-xl border border-accent/40 bg-accent-soft px-4 py-3 text-sm leading-relaxed text-text">
           <strong>Draft preview.</strong> This is exactly what an applicant sees, except that the
@@ -54,7 +54,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
       <h1 className="text-3xl font-semibold tracking-tight text-balance md:text-4xl">
         {session.name}
       </h1>
-      <p className="mt-2 text-lg text-muted">{session.company}</p>
+      <p className="mt-2 text-lg text-text">{session.company}</p>
 
       <div className="mt-6 flex flex-wrap items-center gap-2">
         <DeadlineBadge session={session} />
@@ -63,9 +63,9 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
         </Badge>
       </div>
 
-      <p className="mt-6 max-w-prose leading-relaxed text-muted">{session.synopsis}</p>
+      <p className="mt-6 max-w-prose text-lg leading-relaxed text-text">{session.synopsis}</p>
 
-      <p className="mt-6 max-w-prose rounded-xl border border-line bg-raised px-4 py-3 text-sm leading-relaxed text-muted">
+      <p className="mt-6 max-w-prose leading-relaxed text-text">
         {preview
           ? "Not published. Publish it from your dashboard and this link starts working."
           : session.closedAt
@@ -83,7 +83,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
             <li key={role.id}>
               <Link
                 href={`/c/${token}/${role.slug}`}
-                className="group flex flex-col gap-3 rounded-2xl border border-line bg-surface p-6 transition-colors hover:border-line-strong"
+                className="group flex flex-col gap-3 rounded-2xl border border-line bg-surface p-5 shadow-card transition-colors hover:border-line-strong sm:p-6"
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone="accent">{role.productionType}</Badge>
@@ -94,7 +94,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
                 <h2 className="text-lg font-semibold tracking-tight transition-colors group-hover:text-brand">
                   {role.title}
                 </h2>
-                <p className="line-clamp-3 text-sm leading-relaxed text-muted">
+                <p className="line-clamp-3 leading-relaxed text-text">
                   {role.characterBrief}
                 </p>
 
@@ -108,13 +108,13 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
           ))}
         </ul>
       ) : (
-        <p className="mt-10 rounded-2xl border border-dashed border-line-strong p-7 text-sm text-muted">
+        <p className="mt-10 rounded-2xl border border-dashed border-line-strong p-6 text-text">
           The roles for this casting call have not been posted yet. Keep the link, because they
           will appear here.
         </p>
       )}
 
-      <p className="mt-12 border-t border-line pt-6 text-xs leading-relaxed text-faint">
+      <p className="mt-12 border-t border-line pt-6 text-sm leading-relaxed text-muted">
         You were sent this link by the casting call casting it. It is not listed anywhere and there
         is nothing else to browse. Open Casting is the tool they use to run this call, not a job
         board.
@@ -126,7 +126,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
 function Meta({ label, value }: { label: string; value: string }) {
   return (
     <div className="min-w-0">
-      <dt className="text-xs text-faint">{label}</dt>
+      <dt className="text-xs text-muted">{label}</dt>
       <dd className="truncate text-text" title={value}>
         {value}
       </dd>

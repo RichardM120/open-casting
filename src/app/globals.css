@@ -35,7 +35,7 @@
   --color-amber: #9A6A10;
   --color-amber-soft: #F7EBD0;
   /* The applicant's page: parchment, so it reads as a different place. */
-  --color-canvas: #E4D8C4;
+  --color-canvas: #F4F0EA;
 
   /* A size up from Tailwind's defaults: the small sizes carry most of the copy. */
   --text-xs: 0.8125rem;
