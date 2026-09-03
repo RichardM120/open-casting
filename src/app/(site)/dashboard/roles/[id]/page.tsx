@@ -229,21 +229,32 @@ function Count({
 
 function SubmissionCard({ submission }: { submission: Submission }) {
   return (
-    <li className="rounded-2xl border border-line bg-surface p-6">
-      <div className="flex flex-wrap items-start gap-4">
-        {/* The status first, where a thumb lands, so a decision is one tap away. */}
-        <SubmissionStatusControl submissionId={submission.id} status={submission.status} />
-        <ProfilePhoto url={submission.photoUrl} name={submission.name} />
-
-        <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <h2 className="font-medium">{submission.name}</h2>
-            <StatusBadge status={submission.status} />
+    <li className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
+      {/*
+        On a phone the applicant comes first, across the whole card, and the
+        status control sits on its own row beneath: beside the control and
+        the photo, the name and where they are had a third of the card and
+        broke a word to a line. From sm up the control leads the row, where
+        a thumb lands, so a decision is one tap away.
+      */}
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+        <SubmissionStatusControl
+          submissionId={submission.id}
+          status={submission.status}
+          className="order-last sm:order-none"
+        />
+        <div className="flex min-w-0 flex-1 items-start gap-3 sm:gap-4">
+          <ProfilePhoto url={submission.photoUrl} name={submission.name} />
+          <div className="min-w-0 flex-1">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+              <h2 className="font-medium">{submission.name}</h2>
+              <StatusBadge status={submission.status} />
+            </div>
+            <p className="mt-1 text-sm text-muted">
+              {submission.location} · {submission.age} · submitted{" "}
+              {formatRelative(submission.submittedAt)}
+            </p>
           </div>
-          <p className="mt-1 text-sm text-muted">
-            {submission.location} · {submission.age} · submitted{" "}
-            {formatRelative(submission.submittedAt)}
-          </p>
         </div>
       </div>
 

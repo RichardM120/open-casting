@@ -5,19 +5,21 @@ import { useFormStatus } from "react-dom";
 import { updateSubmissionStatus } from "@/lib/actions";
 import { SUBMISSION_STATUSES, type SubmissionStatus } from "@/lib/types";
 
-import { Select } from "./ui";
+import { Select, cx } from "./ui";
 
 export function SubmissionStatusControl({
   submissionId,
   status,
+  className,
 }: {
   submissionId: string;
   status: SubmissionStatus;
+  className?: string;
 }) {
   // Wide enough for "Shortlisted" in semibold and no wider: on a phone the
   // applicant's name and photo need the rest of the row.
   return (
-    <form action={updateSubmissionStatus} className="w-36 shrink-0 sm:w-40">
+    <form action={updateSubmissionStatus} className={cx("w-36 shrink-0 sm:w-40", className)}>
       <input type="hidden" name="submissionId" value={submissionId} />
       <StatusSelect key={status} status={status} />
     </form>
