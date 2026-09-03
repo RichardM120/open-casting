@@ -96,6 +96,8 @@ const token = await shareTokenForRole(dir.p, role);
   await p.screenshot({ path: `${SHOTS}/submission-terms.png`, fullPage: true });
 
   await p.check("#acceptSubmissionTerms");
+
+  if (await p.locator("#available").count()) await p.check("#available");
   await p.getByRole("button", { name: "Send submission" }).click();
   await p.getByText("Submission sent").waitFor({ timeout: 20000 });
   check("accepting lets it through", true);
@@ -123,6 +125,7 @@ section("6 a child's submission needs a parent or guardian");
   await p.fill("#phone", "07700 900901"); await p.fill("#location", "Leeds");
   await p.fill("#coverNote", "A cover note comfortably longer than the twenty character minimum.");
   await p.check("#acceptSubmissionTerms");
+  if (await p.locator("#available").count()) await p.check("#available");
   await p.getByRole("button", { name: "Send submission" }).click();
   await p.waitForTimeout(2500);
   check("without consent it is refused", (await p.getByText("Submission sent").count()) === 0);

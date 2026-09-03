@@ -69,7 +69,7 @@ import {
   clientSchema,
   fieldErrors,
   newAccountSchema,
-  readRequiredFields,
+  readAsks,
   roleSchema,
   sessionSchema,
   submissionSchema,
@@ -137,8 +137,23 @@ export async function submitApplication(
     guardianName,
     guardianEmail,
     guardianConsent,
-    ...submission
+    height,
+    available,
+    ...posted
   } = parsed.data;
+
+  // A field the role does not ask for is not kept, whatever the form sent.
+  const hidden = new Set(role.hiddenFields);
+  const submission = {
+    ...posted,
+    phone: hidden.has("phone") ? "" : posted.phone,
+    location: hidden.has("location") ? "" : posted.location,
+    coverNote: hidden.has("coverNote") ? "" : posted.coverNote,
+    reelUrl: hidden.has("reelUrl") ? "" : posted.reelUrl,
+    profileUrl: hidden.has("profileUrl") ? "" : posted.profileUrl,
+    residency: hidden.has("residency") ? "" : posted.residency,
+    heightCm: hidden.has("height") ? null : height,
+  };
 
   // The platform's own terms apply to every submission, whether or not the
   // casting director set any of their own.
@@ -210,9 +225,24 @@ export async function submitApplication(
     if (required.has("profileUrl") && !submission.profileUrl) {
       missing.profileUrl = "Add a link to your profile";
     }
+    if (required.has("residency") && !submission.residency) {
+      missing.residency = "Choose where you are resident";
+    }
+    if (required.has("height") && submission.heightCm === null) {
+      missing.height = "Enter your height";
+    }
     if (uploadsEnabled()) {
-      if (required.has("photo") && !media.photoUrl) missing.photoUrl = "Add a profile photo";
-      if (required.has("video") && !media.videoUrl) missing.videoUrl = "Add a video";
+      if (required.has("photo") && !media.photoUrl) {
+        if (!hidden.has("photo")) missing.photoUrl = "Add a profile photo";
+      }
+      if (required.has("video") && !media.videoUrl) {
+        if (!hidden.has("video")) missing.videoUrl = "Add a video";
+      }
+    }
+    // A role with shoot dates asks for a plain yes: pulling out late is what
+    // makes casting directors stop running open calls.
+    if (role.shootStartsAt && !available) {
+      missing.available = "Confirm you are available for the shoot dates";
     }
     if (Object.keys(missing).length > 0) {
       return invalid(
@@ -243,6 +273,10 @@ export async function submitApplication(
       sessionId: role.sessionId,
       // The wording is copied as it stands now, so editing the role later
       // cannot change what this person agreed to.
+      available: role.shootStartsAt ? true : null,
+      // A file the role does not ask for is not kept either.
+      photoUrl: hidden.has("photo") ? null : media.photoUrl,
+      videoUrl: hidden.has("video") ? null : media.videoUrl,
       acceptedTerms: role.disclaimer || null,
       acceptedAt: role.disclaimer ? new Date().toISOString() : null,
       // Recorded so it is possible to say afterwards exactly what was agreed.
@@ -250,8 +284,6 @@ export async function submitApplication(
       guardianName: minor ? (guardianName ?? null) : null,
       guardianEmail: minor ? (guardianEmail ?? null) : null,
       guardianConsentAt: minor ? new Date().toISOString() : null,
-      photoUrl: media.photoUrl,
-      videoUrl: media.videoUrl,
     });
   } catch (error) {
     // The unique index is the authority here, so two simultaneous submissions
@@ -294,7 +326,7 @@ export async function postRole(
   const user = await requireUser("/dashboard/roles/new");
 
   const entries = Object.fromEntries(formData);
-  const parsed = roleSchema.safeParse({ ...entries, requiredFields: readRequiredFields(entries) });
+  const parsed = roleSchema.safeParse({ ...entries, ...readAsks(entries) });
   if (!parsed.success) {
     return invalid(
       fieldErrors(parsed.error),
@@ -420,7 +452,7 @@ export async function editRole(
   const user = await requireUser(`/dashboard/roles/${id}/edit`);
 
   const entries = Object.fromEntries(formData);
-  const parsed = roleSchema.safeParse({ ...entries, requiredFields: readRequiredFields(entries) });
+  const parsed = roleSchema.safeParse({ ...entries, ...readAsks(entries) });
   if (!parsed.success) {
     return invalid(
       fieldErrors(parsed.error),

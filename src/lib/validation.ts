@@ -2,7 +2,8 @@ import { z } from "zod";
 
 import { fromLocalInput, londonDate } from "./format";
 import { PRODUCTION_TYPES, SIGNUP_ROLES, TIER_KEYS, ADULT_AGE } from "./types";
-import { APPLICANT_ASKS, ASK_KEYS, DEFAULT_REQUIRED_FIELDS, type AskKey } from "./types";
+import { APPLICANT_ASKS, ASK_KEYS, DEFAULT_HIDDEN_FIELDS, DEFAULT_REQUIRED_FIELDS, RESIDENCIES, type AskKey } from "./types";
+import { parseHeight } from "./height";
 
 const trimmed = z.string().trim();
 const optionalUrl = trimmed
@@ -25,19 +26,49 @@ export const submissionSchema = z.object({
   // The phone, where they are based and the cover note are required only
   // when the role says so, which the action checks against the role rather
   // than the form. Given, each still has to be a real one.
-  phone: trimmed.max(40).refine((value) => value === "" || value.length >= 6, "Enter a contact number"),
+  phone: trimmed
+    .max(40)
+    .optional()
+    .default("")
+    .refine((value) => value === "" || value.length >= 6, "Enter a contact number"),
   location: trimmed
     .max(80)
+    .optional()
+    .default("")
     .refine((value) => value === "" || value.length >= 2, "Where are you based?"),
   age: z.coerce
     .number({ message: "Enter your age in years" })
     .int("Enter your age in whole years")
     .min(5, "Enter an age of 5 or over")
     .max(100, "Enter an age of 100 or under"),
-  reelUrl: optionalUrl,
-  profileUrl: optionalUrl,
+  // Asked for only when the role says so. A height is read either way round
+  // and kept in centimetres; residency is one of a short list.
+  height: trimmed.max(20).optional().default("").transform((value, ctx) => {
+    if (!value) return null;
+    const cm = parseHeight(value);
+    if (cm === null) {
+      ctx.addIssue({ code: "custom", message: "Enter a height like 172 cm or 5ft 8" });
+      return z.NEVER;
+    }
+    return cm;
+  }),
+  residency: trimmed
+    .max(40)
+    .optional()
+    .default("")
+    .refine(
+      (value) => value === "" || (RESIDENCIES as readonly string[]).includes(value),
+      "Choose where you are resident",
+    ),
+  // Only asked when the role has shoot dates; the action decides from the role.
+  available: z.coerce.boolean().optional(),
+  // Not posted at all when the role does not ask, so absence is an empty string.
+  reelUrl: optionalUrl.optional().default(""),
+  profileUrl: optionalUrl.optional().default(""),
   coverNote: trimmed
     .max(1200, "Keep the cover note under 1200 characters")
+    .optional()
+    .default("")
     .refine(
       (value) => value === "" || value.length >= 20,
       "Tell the casting director a little more. Twenty characters is the minimum",
@@ -96,15 +127,17 @@ export const roleSchema = z
           .filter(Boolean),
       ),
     location: trimmed.min(2, "Where is the work based?").max(80),
-    selfTape: z.coerce.boolean(),
     ageMin: z.coerce.number({ message: "Enter a minimum age" }).int().min(5).max(100),
     ageMax: z.coerce.number({ message: "Enter a maximum age" }).int().min(5).max(100),
     shootStartsAt: optionalDate,
     shootEndsAt: optionalDate,
     sessionId: trimmed.min(1, "Choose the production this role belongs to"),
     disclaimer: trimmed.max(2000, "Keep the terms under 2000 characters"),
-    // Built by the action from the form's radios; see readRequiredFields.
+    selfTape: z.coerce.boolean(),
+    paid: z.coerce.boolean(),
+    // Built by the action from the form's radios; see readAsks.
     requiredFields: z.array(z.enum(ASK_KEYS)),
+    hiddenFields: z.array(z.enum(ASK_KEYS)),
   })
   .refine(
     (value) => !value.shootEndsAt || !value.shootStartsAt || value.shootEndsAt >= value.shootStartsAt,
@@ -126,16 +159,21 @@ export type RoleInput = z.infer<typeof roleSchema>;
 
 /**
  * The role form posts one radio per ask, `ask_phone` and so on, set to
- * "required" or "optional". A form that sent none of them gets the default,
- * which is what the form always asked for.
+ * "required", "optional" or "off". A form that sent none of them gets the
+ * defaults, which are what the form always asked for.
  */
-export function readRequiredFields(entries: Record<string, unknown>): AskKey[] {
+export function readAsks(entries: Record<string, unknown>): {
+  requiredFields: AskKey[];
+  hiddenFields: AskKey[];
+} {
   if (!APPLICANT_ASKS.some((ask) => `ask_${ask.key}` in entries)) {
-    return [...DEFAULT_REQUIRED_FIELDS];
+    return { requiredFields: [...DEFAULT_REQUIRED_FIELDS], hiddenFields: [...DEFAULT_HIDDEN_FIELDS] };
   }
-  return APPLICANT_ASKS.filter((ask) => entries[`ask_${ask.key}`] === "required").map(
-    (ask) => ask.key,
-  );
+  const setting = (key: AskKey) => entries[`ask_${key}`];
+  return {
+    requiredFields: APPLICANT_ASKS.filter((ask) => setting(ask.key) === "required").map((ask) => ask.key),
+    hiddenFields: APPLICANT_ASKS.filter((ask) => setting(ask.key) === "off").map((ask) => ask.key),
+  };
 }
 
 export type FieldErrors = Record<string, string>;
@@ -264,6 +302,11 @@ export const sessionSchema = z
     // whose folder, is not the form's to say.
     heroUrl: z.string().trim().max(600).optional().default(""),
     heroKind: z.enum(["banner", "logo"]).optional().default("banner"),
+    // What applicants are told: the inclusive casting statement (empty for
+    // none) and where represented actors go instead of the form (empty for no
+    // gate).
+    inclusionStatement: trimmed.max(600, "Keep the statement under 600 characters"),
+    agentRoute: trimmed.max(600, "Keep it under 600 characters"),
     opensAt: localDateTime("Choose when submissions open"),
     closesAt: localDateTime("Choose when submissions close"),
     productionEndsAt: trimmed.regex(

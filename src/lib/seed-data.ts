@@ -1,5 +1,5 @@
 import type { Database, SeedRole, SeedSession, Submission } from "./types";
-import { DEFAULT_REQUIRED_FIELDS } from "./types";
+import { DEFAULT_HIDDEN_FIELDS, DEFAULT_REQUIRED_FIELDS } from "./types";
 
 /**
  * Demo content. The database seeds itself from this when it is empty, so a
@@ -18,6 +18,8 @@ const sessions: SeedSession[] = [
     publicToken: "4f21c9ba7e",
     heroUrl: null,
     heroKind: "banner",
+    inclusionStatement: null,
+    agentRoute: "",
     slug: "saltmarsh",
     name: "Saltmarsh",
     productionType: "Feature Film",
@@ -34,6 +36,8 @@ const sessions: SeedSession[] = [
     publicToken: "7c03ae5d18",
     heroUrl: null,
     heroKind: "banner",
+    inclusionStatement: null,
+    agentRoute: "",
     slug: "northbank",
     name: "Northbank",
     productionType: "TV Series",
@@ -50,6 +54,8 @@ const sessions: SeedSession[] = [
     publicToken: "2b96fd40ac",
     heroUrl: null,
     heroKind: "banner",
+    inclusionStatement: null,
+    agentRoute: "",
     slug: "hearth-winter-campaign",
     name: "Hearth: Winter Campaign",
     productionType: "Commercial",
@@ -66,6 +72,8 @@ const sessions: SeedSession[] = [
     publicToken: "e81a37f65d",
     heroUrl: null,
     heroKind: "banner",
+    inclusionStatement: null,
+    agentRoute: "",
     slug: "the-glasshouse",
     name: "The Glasshouse",
     productionType: "Voice Over",
@@ -82,6 +90,8 @@ const sessions: SeedSession[] = [
     publicToken: "93cd6b02fa",
     heroUrl: null,
     heroKind: "banner",
+    inclusionStatement: null,
+    agentRoute: "",
     slug: "lantern",
     name: "Lantern",
     productionType: "Theatre",
@@ -98,6 +108,8 @@ const sessions: SeedSession[] = [
     publicToken: "6d40ba18ce",
     heroUrl: null,
     heroKind: "banner",
+    inclusionStatement: null,
+    agentRoute: "",
     slug: "kestrel",
     name: "Kestrel",
     productionType: "Short Film",
@@ -135,6 +147,8 @@ const roles: SeedRole[] = [
     closedAt: null,
     postedAt: "2026-08-24T09:15:00.000Z",
     requiredFields: DEFAULT_REQUIRED_FIELDS,
+    hiddenFields: DEFAULT_HIDDEN_FIELDS,
+    paid: true,
   },
   {
     id: "rol_saltmarsh_gethin",
@@ -158,6 +172,8 @@ const roles: SeedRole[] = [
     closedAt: null,
     postedAt: "2026-08-24T09:22:00.000Z",
     requiredFields: DEFAULT_REQUIRED_FIELDS,
+    hiddenFields: DEFAULT_HIDDEN_FIELDS,
+    paid: true,
   },
   {
     id: "rol_northbank_dcelliot",
@@ -182,6 +198,8 @@ const roles: SeedRole[] = [
     closedAt: null,
     postedAt: "2026-08-19T14:40:00.000Z",
     requiredFields: DEFAULT_REQUIRED_FIELDS,
+    hiddenFields: DEFAULT_HIDDEN_FIELDS,
+    paid: true,
   },
   {
     id: "rol_northbank_supporting",
@@ -202,6 +220,8 @@ const roles: SeedRole[] = [
     closedAt: null,
     postedAt: "2026-08-19T14:52:00.000Z",
     requiredFields: DEFAULT_REQUIRED_FIELDS,
+    hiddenFields: DEFAULT_HIDDEN_FIELDS,
+    paid: true,
   },
   {
     id: "rol_hearth_couple",
@@ -227,6 +247,8 @@ const roles: SeedRole[] = [
     closedAt: null,
     postedAt: "2026-08-27T11:05:00.000Z",
     requiredFields: DEFAULT_REQUIRED_FIELDS,
+    hiddenFields: DEFAULT_HIDDEN_FIELDS,
+    paid: true,
   },
   {
     id: "rol_glasshouse_vo",
@@ -250,6 +272,8 @@ const roles: SeedRole[] = [
     closedAt: null,
     postedAt: "2026-08-29T08:30:00.000Z",
     requiredFields: DEFAULT_REQUIRED_FIELDS,
+    hiddenFields: DEFAULT_HIDDEN_FIELDS,
+    paid: true,
   },
   {
     id: "rol_lantern_ensemble",
@@ -274,6 +298,8 @@ const roles: SeedRole[] = [
     closedAt: null,
     postedAt: "2026-08-12T16:20:00.000Z",
     requiredFields: DEFAULT_REQUIRED_FIELDS,
+    hiddenFields: DEFAULT_HIDDEN_FIELDS,
+    paid: true,
   },
   {
     id: "rol_kestrel_youth",
@@ -299,6 +325,8 @@ const roles: SeedRole[] = [
     closedAt: null,
     postedAt: "2026-08-22T13:00:00.000Z",
     requiredFields: DEFAULT_REQUIRED_FIELDS,
+    hiddenFields: DEFAULT_HIDDEN_FIELDS,
+    paid: true,
   },
 ];
 
@@ -318,6 +346,9 @@ const submissions: Omit<
     profileUrl: "https://spotlight.com/example/aoife-brennan",
     photoUrl: null,
     videoUrl: null,
+    heightCm: null,
+    residency: "",
+    available: null,
     coverNote:
       "I grew up on the Blackwater estuary and have spent more of my life in a boat than out of one. The long silences in the brief are what made me want to submit.",
     status: "Shortlisted",
@@ -337,6 +368,9 @@ const submissions: Omit<
     profileUrl: "https://spotlight.com/example/d-okonkwo",
     photoUrl: null,
     videoUrl: null,
+    heightCm: null,
+    residency: "",
+    available: null,
     coverNote:
       "Most recently on stage at the Old Vic. I can send an additional self-tape on water at short notice if useful.",
     status: "Callback",
@@ -356,6 +390,9 @@ const submissions: Omit<
     profileUrl: "",
     photoUrl: null,
     videoUrl: null,
+    heightCm: null,
+    residency: "",
+    available: null,
     coverNote:
       "First feature submission. I have three shorts on my reel, the last of which played Encounters.",
     status: "New",
@@ -375,6 +412,9 @@ const submissions: Omit<
     profileUrl: "https://spotlight.com/example/dai-llewellyn",
     photoUrl: null,
     videoUrl: null,
+    heightCm: null,
+    residency: "",
+    available: null,
     coverNote:
       "Welsh, and I have restored two wooden boats badly enough to know how it is done properly.",
     status: "Shortlisted",
@@ -394,6 +434,9 @@ const submissions: Omit<
     profileUrl: "https://spotlight.com/example/simone-achebe",
     photoUrl: null,
     videoUrl: null,
+    heightCm: null,
+    residency: "",
+    available: null,
     coverNote:
       "Two series regular credits, both northern. Free for the whole block from January.",
     status: "New",
@@ -413,6 +456,9 @@ const submissions: Omit<
     profileUrl: "https://spotlight.com/example/hannah-pryce",
     photoUrl: null,
     videoUrl: null,
+    heightCm: null,
+    residency: "",
+    available: null,
     coverNote: "Sheffield born. Tape attached, second take is the one.",
     status: "Declined",
     acceptedTerms: null,
@@ -431,6 +477,9 @@ const submissions: Omit<
     profileUrl: "",
     photoUrl: null,
     videoUrl: null,
+    heightCm: null,
+    residency: "",
+    available: null,
     coverNote:
       "Submitting as a pair, married 46 years. We have done two commercials together, both as a couple.",
     status: "Shortlisted",
@@ -451,6 +500,9 @@ const submissions: Omit<
     profileUrl: "",
     photoUrl: null,
     videoUrl: null,
+    heightCm: null,
+    residency: "",
+    available: null,
     coverNote:
       "Home booth, Source Connect if you need it. Brummie, and unapologetic about it.",
     status: "New",

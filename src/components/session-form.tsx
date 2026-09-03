@@ -7,7 +7,7 @@ import { createCastingSession, editCastingSession } from "@/lib/actions";
 import { formatDateTime, fromLocalInput, toLocalInput } from "@/lib/format";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
 import { guessImageKind, shrinkImage } from "@/lib/image";
-import { PRODUCTION_TYPES, type CastingSession, type HeroKind } from "@/lib/types";
+import { DEFAULT_INCLUSION_STATEMENT, PRODUCTION_TYPES, type CastingSession, type HeroKind } from "@/lib/types";
 
 import { DateTimeField } from "./date-time-field";
 import { useErrorFocus } from "./use-error-focus";
@@ -23,6 +23,8 @@ const LABELS: Record<string, string> = {
   closesAt: "Submissions close",
   productionEndsAt: "Production finishes",
   heroUrl: "Header image or logo",
+  inclusionStatement: "Inclusive casting statement",
+  agentRoute: "If they have an agent",
 };
 
 /**
@@ -200,6 +202,8 @@ export function SessionForm({
       ? {
           name: session.name,
           productionCompany: session.productionCompany,
+          inclusionStatement: session.inclusionStatement ?? DEFAULT_INCLUSION_STATEMENT,
+          agentRoute: session.agentRoute,
           productionType: session.productionType,
           synopsis: session.synopsis,
           opensAt: toLocalInput(session.opensAt),
@@ -371,6 +375,42 @@ export function SessionForm({
               mode="date"
               defaultValue={values.productionEndsAt ?? ""}
               required
+            />
+          </Field>
+        </div>
+      </fieldset>
+
+      <fieldset className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
+        <legend className="mb-2 text-lg font-semibold tracking-tight">What applicants are told</legend>
+        <p className="text-sm text-muted">
+          Two things every casting call says for itself on the applicant&apos;s page.
+        </p>
+        <div className="mt-6 grid gap-4">
+          <Field
+            label="Inclusive casting statement"
+            htmlFor="inclusionStatement"
+            hint="Shown on the applicant's page. Edit it to suit the production, or clear it to show none."
+            error={errors.inclusionStatement}
+          >
+            <Textarea
+              id="inclusionStatement"
+              name="inclusionStatement"
+              rows={3}
+              defaultValue={values.inclusionStatement ?? DEFAULT_INCLUSION_STATEMENT}
+            />
+          </Field>
+          <Field
+            label="If they have an agent"
+            htmlFor="agentRoute"
+            hint="Shown to anyone who says they are represented, instead of the form: where they should apply instead. Leave blank to take submissions from everyone, represented or not."
+            error={errors.agentRoute}
+          >
+            <Textarea
+              id="agentRoute"
+              name="agentRoute"
+              rows={3}
+              placeholder="Represented UK actors: please apply through your agent rather than this form."
+              defaultValue={values.agentRoute ?? ""}
             />
           </Field>
         </div>

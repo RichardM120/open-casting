@@ -19,6 +19,7 @@ import {
   isOpen,
   roleWindow,
 } from "@/lib/format";
+import { formatHeight } from "@/lib/height";
 import { getVisibleRole } from "@/lib/roles";
 import { shareSlug } from "@/lib/sessions";
 import { PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
@@ -253,6 +254,8 @@ function SubmissionCard({ submission }: { submission: Submission }) {
             <p className="mt-1 text-sm text-muted">
               {[
                 submission.location,
+                submission.residency ? `resident in ${submission.residency}` : "",
+                submission.heightCm ? formatHeight(submission.heightCm) : "",
                 String(submission.age),
                 `submitted ${formatRelative(submission.submittedAt)}`,
               ]
@@ -301,6 +304,9 @@ function SubmissionCard({ submission }: { submission: Submission }) {
           {submission.email}
         </a>
         {submission.phone ? <span className="text-muted">{submission.phone}</span> : null}
+        {submission.available ? (
+          <span className="text-positive">Available for the shoot dates</span>
+        ) : null}
         {submission.reelUrl ? (
           <ExternalLink href={submission.reelUrl}>Showreel</ExternalLink>
         ) : null}

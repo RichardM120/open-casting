@@ -71,6 +71,7 @@ const token = await shareTokenForRole(dir.p, id);
   await p.fill("#phone", "07700 900666"); await p.fill("#location", "Leeds"); await p.selectOption("#age", "29");
   await p.fill("#coverNote", "A cover note comfortably longer than the twenty character minimum.");
   await p.check("#acceptSubmissionTerms");
+  if (await p.locator("#available").count()) await p.check("#available");
   await p.getByRole("button", { name: "Send submission" }).click();
   await p.getByText("Submission sent").waitFor({ timeout: 20000 });
   await c.close();

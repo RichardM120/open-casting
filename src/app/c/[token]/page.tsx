@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { ApplicantMasthead } from "@/components/applicant-masthead";
+import { InclusionStatement, YourData } from "@/components/applicant-notices";
+import { reportAddress } from "@/lib/site";
 import { DeadlineBadge } from "@/components/deadline-badge";
 import { Badge } from "@/components/ui";
 import { ageRange, formatDateTime, isOpen, notYetOpen, roleWindow, shootWindow } from "@/lib/format";
@@ -87,6 +89,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone="accent">{role.productionType}</Badge>
+                  <Badge tone={role.paid ? "positive" : "amber"}>{role.paid ? "Paid" : "Unpaid"}</Badge>
                   {role.selfTape ? <Badge tone="outline">Self-tape</Badge> : null}
                   <DeadlineBadge session={roleWindow(role)} />
                 </div>
@@ -113,6 +116,9 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
           will appear here.
         </p>
       )}
+
+      <InclusionStatement session={session} />
+      <YourData session={session} reportTo={reportAddress()} />
 
       <p className="mt-12 border-t border-line pt-6 text-sm leading-relaxed text-muted">
         You were sent this link by the casting call casting it. It is not listed anywhere and there

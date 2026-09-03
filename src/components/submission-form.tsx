@@ -7,10 +7,10 @@ import { useActionState, useState } from "react";
 import { submitApplication } from "@/lib/actions";
 import { SUBMISSION_TERMS } from "@/content/legal";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
-import { ADULT_AGE, type AskKey } from "@/lib/types";
+import { ADULT_AGE, RESIDENCIES, type AskKey } from "@/lib/types";
 
 import { useErrorFocus } from "./use-error-focus";
-import { cx, ButtonLink, ErrorSummary, Field, Input, RequiredKey, RequiredMark, Select, Textarea } from "./ui";
+import { cx, Button, ButtonLink, ErrorSummary, Field, Input, RequiredKey, RequiredMark, Select, Textarea } from "./ui";
 import { SubmitButton } from "./submit-button";
 
 type MediaKind = "photo" | "video";
@@ -32,6 +32,9 @@ const LABELS: Record<string, string> = {
   phone: "Phone",
   location: "Based in",
   age: "Age",
+  height: "Height",
+  residency: "Where you are resident",
+  available: "Availability",
   reelUrl: "Showreel link",
   profileUrl: "Profile link",
   photoUrl: "Profile photo",
@@ -58,6 +61,9 @@ export function SubmissionForm({
   token,
   sessionId,
   required,
+  hidden,
+  agentRoute,
+  availability,
 }: {
   roleId: string;
   roleTitle: string;
@@ -73,9 +79,19 @@ export function SubmissionForm({
   sessionId: string;
   /** The fields this role's director made mandatory. Name, email, age and the terms always are. */
   required: AskKey[];
+  /** The fields this role does not ask for at all. */
+  hidden: AskKey[];
+  /** What a represented applicant is told instead of the form. Empty for no gate. */
+  agentRoute: string;
+  /** The shoot dates to confirm availability for, in words, or null when the role has none. */
+  availability: string | null;
 }) {
   const [state, formAction, pending] = useActionState(submitApplication, IDLE_FORM_STATE);
   const must = new Set(required);
+  const asked = (key: AskKey) => !hidden.includes(key);
+  // Whether they have an agent, asked before anything else is: a represented
+  // actor is sent where the director says, and no detail of theirs is taken.
+  const [represented, setRepresented] = useState<"yes" | "no" | null>(null);
   const [progress, setProgress] = useState<{ kind: string; percent: number } | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   // What has already gone to the store. Kept across a refused submission, and
@@ -162,6 +178,40 @@ export function SubmissionForm({
   }
 
   const { errors, values } = state;
+
+  if (agentRoute && represented !== "no") {
+    return (
+      <div className="rounded-2xl border border-line bg-surface p-7">
+        <h2 className="text-xl font-semibold tracking-tight">Before you start</h2>
+        {represented === "yes" ? (
+          <>
+            <p className="mt-3 text-sm leading-relaxed whitespace-pre-line text-text">{agentRoute}</p>
+            <button
+              type="button"
+              onClick={() => setRepresented("no")}
+              className="mt-4 text-sm text-brand underline-offset-4 hover:underline"
+            >
+              I am not represented after all
+            </button>
+          </>
+        ) : (
+          <>
+            <p className="mt-2 text-sm text-muted">
+              This casting call asks one thing first. Do you have an agent?
+            </p>
+            <div className="mt-5 flex flex-wrap gap-3">
+              <Button type="button" variant="secondary" onClick={() => setRepresented("yes")}>
+                Yes, I have an agent
+              </Button>
+              <Button type="button" onClick={() => setRepresented("no")}>
+                No, I am not represented
+              </Button>
+            </div>
+          </>
+        )}
+      </div>
+    );
+  }
 
   return (
     <form
@@ -316,25 +366,69 @@ export function SubmissionForm({
             />
           </Field>
         )}
-        <Field label="Phone" htmlFor="phone" error={errors.phone}>
-          <Input
-            id="phone"
-            name="phone"
-            type="tel"
-            autoComplete="tel"
-            defaultValue={values.phone ?? ""}
-            required={must.has("phone")}
-          />
-        </Field>
-        <Field label="Based in" htmlFor="location" error={errors.location}>
-          <Input
-            id="location"
-            name="location"
-            placeholder="City, country"
-            defaultValue={values.location ?? ""}
-            required={must.has("location")}
-          />
-        </Field>
+        {asked("phone") ? (
+          <Field label="Phone" htmlFor="phone" error={errors.phone}>
+            <Input
+              id="phone"
+              name="phone"
+              type="tel"
+              autoComplete="tel"
+              defaultValue={values.phone ?? ""}
+              required={must.has("phone")}
+            />
+          </Field>
+        ) : null}
+        {asked("location") ? (
+          <Field label="Based in" htmlFor="location" error={errors.location}>
+            <Input
+              id="location"
+              name="location"
+              placeholder="City, country"
+              defaultValue={values.location ?? ""}
+              required={must.has("location")}
+            />
+          </Field>
+        ) : null}
+        {asked("residency") ? (
+          <Field
+            label="Where you are resident"
+            htmlFor="residency"
+            hint="The country you live in. Some roles are open to residents of one country only."
+            error={errors.residency}
+          >
+            <Select
+              id="residency"
+              name="residency"
+              defaultValue={values.residency ?? ""}
+              required={must.has("residency")}
+            >
+              <option value="">Choose</option>
+              {RESIDENCIES.map((place) => (
+                <option key={place} value={place}>
+                  {place}
+                </option>
+              ))}
+            </Select>
+          </Field>
+        ) : null}
+        {asked("height") ? (
+          <Field
+            label="Height"
+            htmlFor="height"
+            hint="In centimetres or in feet and inches: 172 cm, or 5ft 8."
+            error={errors.height}
+          >
+            <Input
+              id="height"
+              name="height"
+              inputMode="text"
+              placeholder="172 cm"
+              defaultValue={values.height ?? ""}
+              required={must.has("height")}
+            />
+          </Field>
+        ) : null}
+        {asked("reelUrl") ? (
         <Field
           label="Showreel link"
           htmlFor="reelUrl"
@@ -351,6 +445,8 @@ export function SubmissionForm({
             required={must.has("reelUrl")}
           />
         </Field>
+        ) : null}
+        {asked("profileUrl") ? (
         <Field
           label="Profile link"
           htmlFor="profileUrl"
@@ -367,6 +463,8 @@ export function SubmissionForm({
             required={must.has("profileUrl")}
           />
         </Field>
+        ) : null}
+        {asked("coverNote") ? (
         <Field
           label="Cover note"
           htmlFor="coverNote"
@@ -382,7 +480,41 @@ export function SubmissionForm({
             required={must.has("coverNote")}
           />
         </Field>
+        ) : null}
       </div>
+
+      {availability ? (
+        <div className="mt-6">
+          <label
+            className={cx(
+              "flex cursor-pointer items-start gap-2.5 text-sm leading-relaxed",
+              errors.available ? "text-danger" : "text-text",
+            )}
+          >
+            <input
+              id="available"
+              type="checkbox"
+              name="available"
+              data-must=""
+              aria-required="true"
+              defaultChecked={values.available === "on"}
+              aria-invalid={errors.available ? true : undefined}
+              aria-describedby={errors.available ? "available-error" : undefined}
+              className="mt-0.5 size-4 shrink-0 accent-accent"
+            />
+            <span>
+              I am available for the shoot dates, {availability}, and will not take on work that
+              clashes with them.
+              <RequiredMark />
+            </span>
+          </label>
+          {errors.available ? (
+            <p id="available-error" className="mt-1.5 text-xs text-danger">
+              {errors.available}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
 
       {disclaimer ? (
         <div className="mt-6 rounded-xl border border-line-strong bg-raised p-4 sm:p-6">
@@ -420,9 +552,11 @@ export function SubmissionForm({
         </div>
       ) : null}
 
-      {uploads ? (
+      {uploads && (asked("photo") || asked("video")) ? (
         <div className="mt-6 rounded-xl border border-line bg-raised p-4 sm:p-6">
-          <h3 className="text-sm font-semibold tracking-tight">Photo and video</h3>
+          <h3 className="text-sm font-semibold tracking-tight">
+            {asked("photo") && asked("video") ? "Photo and video" : asked("photo") ? "Photo" : "Video"}
+          </h3>
           <p className="mt-2 text-sm leading-relaxed text-muted">
             A recent photo of you, and a self-tape or showreel. Both are seen only by the casting
             team and are deleted with your submission.
@@ -430,18 +564,22 @@ export function SubmissionForm({
           <input type="hidden" name="photoUrl" value={uploaded.photo?.url ?? ""} />
           <input type="hidden" name="videoUrl" value={uploaded.video?.url ?? ""} />
           <div className="mt-4 grid gap-6 sm:grid-cols-2">
+            {asked("photo") ? (
             <div>
               <Field label="Profile photo" htmlFor="photo" hint="JPEG, PNG or WebP, up to 5 MB." error={errors.photoUrl}>
                 <Input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" required={must.has("photo") && !uploaded.photo} />
               </Field>
               <UploadedNote file={uploaded.photo} />
             </div>
+            ) : null}
+            {asked("video") ? (
             <div>
               <Field label="Video" htmlFor="video" hint="MP4, MOV or WebM, up to 200 MB." error={errors.videoUrl}>
                 <Input id="video" name="video" type="file" accept="video/mp4,video/quicktime,video/webm,video/x-m4v" required={must.has("video") && !uploaded.video} />
               </Field>
               <UploadedNote file={uploaded.video} />
             </div>
+            ) : null}
           </div>
           {progress ? (
             <p className="mt-3 text-sm text-muted" aria-live="polite">

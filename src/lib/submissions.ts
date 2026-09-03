@@ -32,6 +32,9 @@ type SubmissionRow = {
   phone: string;
   location: string;
   age: number;
+  height_cm: number | null;
+  residency: string;
+  available: boolean | null;
   reel_url: string;
   profile_url: string;
   cover_note: string;
@@ -50,7 +53,8 @@ type SubmissionRow = {
 const COLUMNS = `
   id, role_id, session_id, name, email, phone, location, age, reel_url,
   profile_url, cover_note, status, accepted_terms, accepted_at, terms_version,
-  guardian_name, guardian_email, guardian_consent_at, photo_url, video_url, submitted_at
+  guardian_name, guardian_email, guardian_consent_at, photo_url, video_url,
+  height_cm, residency, available, submitted_at
 `;
 
 function toSubmission(row: SubmissionRow): Submission {
@@ -63,6 +67,9 @@ function toSubmission(row: SubmissionRow): Submission {
     phone: row.phone,
     location: row.location,
     age: row.age,
+    heightCm: row.height_cm,
+    residency: row.residency,
+    available: row.available,
     reelUrl: row.reel_url,
     profileUrl: row.profile_url,
     coverNote: row.cover_note,
@@ -259,8 +266,9 @@ export async function createSubmission(input: NewSubmission): Promise<Submission
       `INSERT INTO submissions (
          id, role_id, session_id, name, email, phone, location, age, reel_url,
          profile_url, cover_note, accepted_terms, accepted_at, terms_version,
-         guardian_name, guardian_email, guardian_consent_at, photo_url, video_url
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+         guardian_name, guardian_email, guardian_consent_at, photo_url, video_url,
+         height_cm, residency, available
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
        RETURNING ${COLUMNS}`,
       [
         `sub_${crypto.randomUUID().slice(0, 12)}`,
@@ -282,6 +290,9 @@ export async function createSubmission(input: NewSubmission): Promise<Submission
         input.guardianConsentAt,
         input.photoUrl,
         input.videoUrl,
+        input.heightCm,
+        input.residency,
+        input.available,
       ],
     );
     return toSubmission(rows[0]);

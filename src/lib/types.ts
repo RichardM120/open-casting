@@ -72,6 +72,17 @@ export type CastingSession = {
   /** How that image is shown: across the top as a banner, or centred as a logo. */
   heroKind: HeroKind;
   /**
+   * The inclusive casting statement shown to applicants. Null on a casting
+   * call from before there was one, which shows the default; empty when the
+   * director has cleared it.
+   */
+  inclusionStatement: string | null;
+  /**
+   * Shown to an applicant who says they have an agent, in place of the form:
+   * where represented actors should go instead. Empty means no gate.
+   */
+  agentRoute: string;
+  /**
    * ISO timestamps. Submissions are accepted from opensAt up to closesAt. The
    * casting director enters both in UK time; they are stored as instants.
    */
@@ -110,6 +121,8 @@ export type CastingSession = {
 export const APPLICANT_ASKS = [
   { key: "phone", label: "Phone number" },
   { key: "location", label: "Where they are based" },
+  { key: "residency", label: "Where they are resident" },
+  { key: "height", label: "Height" },
   { key: "coverNote", label: "Cover note" },
   { key: "reelUrl", label: "Showreel link" },
   { key: "profileUrl", label: "Profile link" },
@@ -123,6 +136,21 @@ export const ASK_KEYS = APPLICANT_ASKS.map((ask) => ask.key) as [AskKey, ...AskK
 
 /** What a role asks for unless the director says otherwise: what the form always asked. */
 export const DEFAULT_REQUIRED_FIELDS: AskKey[] = ["phone", "location", "coverNote"];
+
+/** What a role leaves out unless the director asks for it. */
+export const DEFAULT_HIDDEN_FIELDS: AskKey[] = ["residency", "height"];
+
+/** The one thing an applicant can say about where they are resident. */
+export const RESIDENCIES = [
+  "United Kingdom",
+  "Ireland",
+  "Elsewhere in Europe",
+  "Outside Europe",
+] as const;
+
+/** The inclusive casting statement a new casting call starts with. The director may edit or clear it. */
+export const DEFAULT_INCLUSION_STATEMENT =
+  "We welcome submissions from everyone. This casting is open to applicants of every background, ethnicity, faith, gender identity, sexuality and disability, and we encourage anyone who fits the brief to submit.";
 
 export type Role = {
   id: string;
@@ -141,6 +169,8 @@ export type Role = {
   requirements: string[];
   location: string;
   selfTape: boolean;
+  /** Whether the role is paid. Shown on the listing. */
+  paid: boolean;
   ageMin: number;
   ageMax: number;
   /** yyyy-mm-dd. When it shoots, once known: null until the dates are fixed; the end is null for a single day. */
@@ -152,6 +182,8 @@ export type Role = {
   disclaimer: string;
   /** Which of the applicant's fields have to be filled in for this role. */
   requiredFields: AskKey[];
+  /** Which are not asked for at all. Never a field that is required. */
+  hiddenFields: AskKey[];
   /** Set when closed ahead of the production's closing time. ISO timestamp, or null. */
   closedAt: string | null;
   /** The account that posted it. Null only for rows predating accounts. */
@@ -175,6 +207,12 @@ export type Submission = {
   phone: string;
   location: string;
   age: number;
+  /** In centimetres, when the role asked and the applicant said. */
+  heightCm: number | null;
+  /** One of RESIDENCIES, or empty when not asked or not said. */
+  residency: string;
+  /** Whether they confirmed they are free for the shoot dates. Null when the role had none to confirm. */
+  available: boolean | null;
   reelUrl: string;
   profileUrl: string;
   /** Uploaded with the submission, held privately, deleted with it. */

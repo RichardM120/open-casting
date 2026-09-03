@@ -493,6 +493,9 @@ const SCHEMA = `
   -- default is what the form always asked for.
   ALTER TABLE roles ADD COLUMN IF NOT EXISTS required_fields jsonb NOT NULL
     DEFAULT '["phone","location","coverNote"]'::jsonb;
+  ALTER TABLE roles ADD COLUMN IF NOT EXISTS hidden_fields jsonb NOT NULL
+    DEFAULT '["residency","height"]'::jsonb;
+  ALTER TABLE roles ADD COLUMN IF NOT EXISTS paid boolean NOT NULL DEFAULT true;
 
   -- Closing early is recorded separately rather than by moving the deadline,
   -- so the listing still shows the date it originally advertised.
@@ -567,6 +570,12 @@ const SCHEMA = `
   ALTER TABLE submissions ADD COLUMN IF NOT EXISTS photo_url text;
   ALTER TABLE submissions ADD COLUMN IF NOT EXISTS video_url text;
 
+  -- Asked for only when the role says so: height in centimetres, where they
+  -- are resident, and whether they confirmed the shoot dates.
+  ALTER TABLE submissions ADD COLUMN IF NOT EXISTS height_cm integer;
+  ALTER TABLE submissions ADD COLUMN IF NOT EXISTS residency text NOT NULL DEFAULT '';
+  ALTER TABLE submissions ADD COLUMN IF NOT EXISTS available boolean;
+
   CREATE UNIQUE INDEX IF NOT EXISTS submissions_session_email_idx
     ON submissions (session_id, lower(email))
     WHERE session_id IS NOT NULL;
@@ -630,6 +639,11 @@ const SCHEMA = `
   ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS hero_url text;
   -- Shown across the top as a banner, or centred as a logo.
   ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS hero_kind text NOT NULL DEFAULT 'banner';
+
+  -- What applicants are told: an inclusive casting statement (null shows the
+  -- default wording, empty none) and where represented actors go instead.
+  ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS inclusion_statement text;
+  ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS agent_route text NOT NULL DEFAULT '';
 
   DO $$
   BEGIN

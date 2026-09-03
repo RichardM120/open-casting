@@ -18,6 +18,7 @@ import {
   shareTokenForRole,
   submit,
   shareToken,
+  day,
 } from "./_helpers.mjs";
 
 const { check, section, finish, errors } = reporter();
@@ -265,7 +266,8 @@ section("14 the director chooses what applicants must send");
 {
   const call = await openSession(dir.p, { name: `Asks ${t}`, company: CO, opensAt: at(-1), closesAt: at(20, "23:59") });
   await dir.p.goto(`${BASE}/dashboard/roles/new?session=${call}`, { waitUntil: "networkidle" });
-  check("each ask offers required or optional", (await dir.p.locator('input[name="ask_phone"]').count()) === 2);
+  check("each ask offers required, optional or not asked", (await dir.p.locator('input[name="ask_phone"]').count()) === 3);
+  check("height and residency start not asked", await dir.p.locator('input[name="ask_height"][value="off"]').isChecked() && await dir.p.locator('input[name="ask_residency"][value="off"]').isChecked());
   check("phone starts required", await dir.p.locator('input[name="ask_phone"][value="required"]').isChecked());
   check("the showreel starts optional", await dir.p.locator('input[name="ask_reelUrl"][value="optional"]').isChecked());
   check("no photo or video to ask for without a store", (await dir.p.locator('input[name="ask_photo"]').count()) === 0);
@@ -274,32 +276,43 @@ section("14 the director chooses what applicants must send");
   await dir.p.fill("#title", `Asks role ${t}`);
   await dir.p.fill("#characterBrief", "A character brief comfortably long enough to pass validation.");
   await dir.p.fill("#location", "Leeds, UK");
+  await dir.p.fill("#shootStartsAt", day(120));
   check("and lights up once it is", await dir.p.locator('button[data-ready="true"]', { hasText: "Post the role" }).waitFor({ timeout: 5000 }).then(() => true, () => false));
-  await dir.p.locator('label:has(input[name="ask_phone"][value="optional"])').click();
+  await dir.p.locator('label:has(input[name="ask_phone"][value="off"])').click();
   await dir.p.locator('label:has(input[name="ask_coverNote"][value="optional"])').click();
   await dir.p.locator('label:has(input[name="ask_reelUrl"][value="required"])').click();
+  await dir.p.locator('label:has(input[name="ask_height"][value="required"])').click();
+  await dir.p.locator('label:has(input[name="ask_residency"][value="optional"])').click();
   await dir.p.getByRole("button", { name: "Post the role" }).click();
   await dir.p.waitForURL(/\/dashboard\/roles\/rol_/, { timeout: 20000 });
   const roleId = dir.p.url().match(/roles\/(rol_[^?]+)/)[1];
   await dir.p.goto(`${BASE}/dashboard/roles/${roleId}/edit`, { waitUntil: "networkidle" });
-  check("the choice is kept on the role", await dir.p.locator('input[name="ask_phone"][value="optional"]').isChecked() && await dir.p.locator('input[name="ask_reelUrl"][value="required"]').isChecked());
+  check("the choice is kept on the role", await dir.p.locator('input[name="ask_phone"][value="off"]').isChecked() && await dir.p.locator('input[name="ask_reelUrl"][value="required"]').isChecked() && await dir.p.locator('input[name="ask_height"][value="required"]').isChecked());
+  check("the role is paid unless said otherwise", await dir.p.locator('input[name="paid"]').isChecked());
   await publish(dir.p, call);
   const token = await shareToken(dir.p, call);
 
   const applicant = await session(browser, errors);
   const p = applicant.p;
   await p.goto(`${BASE}/c/${token}/${roleId}`, { waitUntil: "networkidle" });
-  check("phone is now marked optional", (await p.locator('label[for="phone"]').innerText()).toLowerCase().includes("optional"));
-  check("the cover note too", (await p.locator('label[for="coverNote"]').innerText()).toLowerCase().includes("optional"));
+  check("no phone field: the role does not ask", (await p.locator("#phone").count()) === 0);
+  check("the cover note is marked optional", (await p.locator('label[for="coverNote"]').innerText()).toLowerCase().includes("optional"));
   check("the showreel link is now marked required", (await p.locator('label[for="reelUrl"]').innerText()).includes("*"));
+  check("height is asked for, and required", (await p.locator('label[for="height"]').innerText()).includes("*"));
+  check("residency is asked for, optional", (await p.locator('label[for="residency"]').innerText()).toLowerCase().includes("optional"));
+  check("the shoot dates ask for a yes", (await p.locator("#available").count()) === 1);
   await p.selectOption("#age", "30");
   await p.fill("#name", `Asks Applicant ${t}`);
   await p.fill("#email", `asks${t}@example.com`);
   await p.fill("#location", "Leeds");
+  await p.fill("#height", "5ft 8");
+  await p.selectOption("#residency", "United Kingdom");
   await p.check("#acceptSubmissionTerms");
   check("not ready without the showreel it requires", (await p.getByRole("button", { name: "Send submission" }).getAttribute("data-ready")) === "false");
   await p.fill("#reelUrl", "https://vimeo.com/123456");
-  check("ready once it has one", await p.locator('button[data-ready="true"]', { hasText: "Send submission" }).waitFor({ timeout: 5000 }).then(() => true, () => false));
+  check("nor without the yes to the dates", (await p.getByRole("button", { name: "Send submission" }).getAttribute("data-ready")) === "false");
+  await p.check("#available");
+  check("ready once it has both", await p.locator('button[data-ready="true"]', { hasText: "Send submission" }).waitFor({ timeout: 5000 }).then(() => true, () => false));
   await p.getByRole("button", { name: "Send submission" }).click();
   await p.getByText("Submission sent").waitFor({ timeout: 20000 });
   check("accepted without a phone number or a cover note", (await p.getByText("Submission sent").count()) > 0);
@@ -307,7 +320,35 @@ section("14 the director chooses what applicants must send");
 
   await dir.p.goto(`${BASE}/dashboard/roles/${roleId}`, { waitUntil: "networkidle" });
   const card = dir.p.locator('li:has(select[aria-label="Submission status"])').first();
-  check("the card reads without them", (await card.innerText()).includes("Leeds · 30 · submitted") && (await card.locator("a[href^='mailto:']").count()) === 1);
+  const text = await card.innerText();
+  check("the card reads without them, with the height both ways", text.includes("Leeds · resident in United Kingdom · 173 cm (5ft 8) · 30 · submitted") && (await card.locator("a[href^='mailto:']").count()) === 1, text.split("\n").slice(0, 4).join(" | "));
+  check("and says they are free for the dates", text.includes("Available for the shoot dates"));
+}
+
+section("15 a casting call can send represented actors elsewhere");
+{
+  const call = await openSession(dir.p, { name: `Agents ${t}`, company: CO, opensAt: at(-1), closesAt: at(20, "23:59") });
+  const roleId = await postRole(dir.p, { sessionId: call, title: `Agents role ${t}`, company: CO });
+  await dir.p.goto(`${BASE}/dashboard/sessions/${call}/edit`, { waitUntil: "networkidle" });
+  check("the inclusive statement starts with the default wording", (await dir.p.inputValue("#inclusionStatement")).includes("open to applicants of every background"));
+  await dir.p.fill("#inclusionStatement", "We are casting inclusively and welcome everyone who fits the brief.");
+  await dir.p.fill("#agentRoute", "Represented UK actors: please apply through your agent rather than this form.");
+  await dir.p.getByRole("button", { name: "Save changes" }).click();
+  await dir.p.waitForURL(/saved=1/, { timeout: 20000 });
+  await publish(dir.p, call);
+  const token = await shareToken(dir.p, call);
+
+  const applicant = await session(browser, errors);
+  const p = applicant.p;
+  await p.goto(`${BASE}/c/${token}`, { waitUntil: "networkidle" });
+  check("the edited statement is what applicants read", (await p.getByText("We are casting inclusively and welcome everyone who fits the brief.").count()) > 0);
+  await p.goto(`${BASE}/c/${token}/${roleId}`, { waitUntil: "networkidle" });
+  check("the form is behind one question", (await p.getByText("Do you have an agent?").count()) > 0 && (await p.locator("#name").count()) === 0);
+  await p.getByRole("button", { name: "Yes, I have an agent" }).click();
+  check("a represented actor is sent to their agent, with nothing taken", (await p.getByText("apply through your agent").count()) > 0 && (await p.locator("#name").count()) === 0);
+  await p.getByRole("button", { name: "I am not represented after all" }).click();
+  check("and can come back to the form", (await p.locator("#name").count()) === 1);
+  await applicant.c.close();
 }
 
 for (const s of [dir, other, prod, admin]) await s.c.close();

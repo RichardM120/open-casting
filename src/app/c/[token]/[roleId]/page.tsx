@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { ApplicantMasthead } from "@/components/applicant-masthead";
+import { InclusionStatement, YourData } from "@/components/applicant-notices";
+import { reportAddress } from "@/lib/site";
 import { DeadlineBadge } from "@/components/deadline-badge";
 import { SubmissionForm, SubmissionsClosed } from "@/components/submission-form";
 import { Badge, Eyebrow } from "@/components/ui";
@@ -85,6 +87,7 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone="accent">{role.productionType}</Badge>
+            <Badge tone={role.paid ? "positive" : "amber"}>{role.paid ? "Paid" : "Unpaid"}</Badge>
             {role.selfTape ? <Badge tone="outline">Self-tape accepted</Badge> : null}
             <DeadlineBadge session={window} />
           </div>
@@ -135,6 +138,9 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
               </ul>
             </Section>
           ) : null}
+
+          <InclusionStatement session={session} />
+          <YourData session={session} reportTo={reportAddress()} />
         </div>
 
         <div className="lg:sticky lg:top-24 lg:self-start">
@@ -149,6 +155,9 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
               closesOn={formatDateTime(role.session.closesAt)}
               disclaimer={role.disclaimer}
               required={role.requiredFields}
+              hidden={role.hiddenFields}
+              agentRoute={session.agentRoute}
+              availability={role.shootStartsAt ? shootWindow(role) : null}
               backTo={`/c/${token}`}
             />
           ) : (

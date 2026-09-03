@@ -120,7 +120,7 @@ sheet.eachRow((row, n) => { if (n > 1) rows.push({ role: String(row.getCell(1).v
 check("every submission is a row", ["Ada", "Ben", "Cal"].every((who) => rows.some((row) => row.name === `${who} ${t}`)), JSON.stringify(rows));
 check("with the role", rows.some((row) => row.name === `Cal ${t}` && row.role === "Support"));
 check("and the status", rows.some((row) => row.name === `Ada ${t}` && row.status === "Shortlisted"));
-check("the headings are in place", String(sheet.getRow(1).getCell(3).value) === "Status" && String(sheet.getRow(1).getCell(16).value) === "Cover note");
+check("the headings are in place", String(sheet.getRow(1).getCell(3).value) === "Status" && String(sheet.getRow(1).getCell(19).value) === "Cover note");
 check("and the call is described on its own sheet", workbook.getWorksheet("Casting call") !== undefined);
 {
   const other = await provision(browser, errors, admin.p, { name: "Ned Nosy", company: `Nosy ${t}`, email: `nn${t}@example.com`, role: "director" });

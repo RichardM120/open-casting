@@ -138,6 +138,8 @@ export async function listActivity(
  */
 const TRACKED: { key: keyof Role; label: string }[] = [
   { key: "requiredFields", label: "what applicants must send" },
+  { key: "hiddenFields", label: "what applicants are asked for" },
+  { key: "paid", label: "whether it is paid" },
   { key: "title", label: "role name" },
   { key: "characterBrief", label: "character brief" },
   { key: "requirements", label: "requirements" },
@@ -163,6 +165,8 @@ const TRACKED_SESSION: { key: keyof CastingSession; label: string }[] = [
   { key: "opensAt", label: "opening time" },
   { key: "closesAt", label: "closing time" },
   { key: "productionEndsAt", label: "production end" },
+  { key: "inclusionStatement", label: "inclusive casting statement" },
+  { key: "agentRoute", label: "the route for represented actors" },
 ];
 
 export function describeSessionChanges(

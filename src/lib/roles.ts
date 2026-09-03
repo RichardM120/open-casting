@@ -19,6 +19,7 @@ type RoleRow = {
   requirements: string[];
   location: string;
   self_tape: boolean;
+  paid: boolean;
   age_min: number;
   age_max: number;
   shoot_starts_at: string | null;
@@ -27,6 +28,7 @@ type RoleRow = {
   company: string;
   disclaimer: string;
   required_fields: unknown;
+  hidden_fields: unknown;
   closed_at: Date | null;
   owner_id: string | null;
   session_id: string;
@@ -35,10 +37,11 @@ type RoleRow = {
 
 const COLUMNS = `
   id, slug, title, production, production_type, synopsis, character_brief,
-  requirements, location, self_tape, age_min, age_max,
+  requirements, location, self_tape, paid, age_min, age_max,
   to_char(shoot_starts_at, 'YYYY-MM-DD') AS shoot_starts_at,
   to_char(shoot_ends_at, 'YYYY-MM-DD') AS shoot_ends_at,
-  casting_director, company, disclaimer, required_fields, closed_at, owner_id, session_id, posted_at
+  casting_director, company, disclaimer, required_fields, hidden_fields, closed_at, owner_id,
+  session_id, posted_at
 `;
 
 function toRole(row: RoleRow): Role {
@@ -53,6 +56,7 @@ function toRole(row: RoleRow): Role {
     requirements: row.requirements,
     location: row.location,
     selfTape: row.self_tape,
+    paid: row.paid,
     ageMin: row.age_min,
     ageMax: row.age_max,
     shootStartsAt: row.shoot_starts_at,
@@ -61,6 +65,9 @@ function toRole(row: RoleRow): Role {
     company: row.company,
     disclaimer: row.disclaimer,
     requiredFields: readAsks(row.required_fields),
+    hiddenFields: readAsks(row.hidden_fields).filter(
+      (key) => !readAsks(row.required_fields).includes(key),
+    ),
     closedAt: row.closed_at?.toISOString() ?? null,
     ownerId: row.owner_id,
     sessionId: row.session_id,
@@ -232,8 +239,8 @@ export async function createRole(
        id, slug, title, production, production_type, synopsis, character_brief,
        requirements, location, self_tape, age_min, age_max, shoot_starts_at,
        shoot_ends_at, casting_director, company, owner_id, disclaimer, session_id,
-       required_fields
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
+       required_fields, hidden_fields, paid
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
      RETURNING ${COLUMNS}`,
     [
       `rol_${crypto.randomUUID().slice(0, 12)}`,
@@ -257,6 +264,8 @@ export async function createRole(
       input.disclaimer,
       session.id,
       JSON.stringify(input.requiredFields),
+      JSON.stringify(input.hiddenFields),
+      input.paid,
     ],
   );
   return toRole(rows[0]);
@@ -300,7 +309,9 @@ export async function updateRole(
        shoot_starts_at = $${params.length + 9},
        shoot_ends_at = $${params.length + 10},
        disclaimer = $${params.length + 11},
-       required_fields = $${params.length + 12}
+       required_fields = $${params.length + 12},
+       hidden_fields = $${params.length + 13},
+       paid = $${params.length + 14}
      WHERE id = $${params.length + 1}${where ? ` AND ${where}` : ""}
      RETURNING ${COLUMNS}`,
     [
@@ -310,6 +321,8 @@ export async function updateRole(
       input.shootEndsAt,
       input.disclaimer,
       JSON.stringify(input.requiredFields),
+      JSON.stringify(input.hiddenFields),
+      input.paid,
     ],
   );
   return rows[0] ? toRole(rows[0]) : null;

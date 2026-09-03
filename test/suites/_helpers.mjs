@@ -317,5 +317,6 @@ export async function submit(page, token, roleId, applicant, { acceptTerms = fal
   );
   if (acceptTerms) await page.check("#acceptTerms");
   await page.check("#acceptSubmissionTerms");
+  if (await page.locator("#available").count()) await page.check("#available");
   await page.getByRole("button", { name: "Send submission" }).click();
 }

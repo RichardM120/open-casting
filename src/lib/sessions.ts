@@ -15,6 +15,8 @@ type Row = {
   production_company: string;
   hero_url: string | null;
   hero_kind: string;
+  inclusion_statement: string | null;
+  agent_route: string;
   opens_at: Date;
   closes_at: Date;
   closed_at: Date | null;
@@ -32,7 +34,7 @@ type Row = {
  */
 export const SESSION_COLUMNS = `
   id, slug, name, production_type, synopsis, owner_id, company, production_company, hero_url,
-  hero_kind, opens_at, closes_at,
+  hero_kind, inclusion_statement, agent_route, opens_at, closes_at,
   to_char(production_ends_at, 'YYYY-MM-DD') AS production_ends_at,
   closed_at, published_at, purged_at, public_token, created_at
 `;
@@ -49,6 +51,8 @@ export function toSession(row: Row): CastingSession {
     productionCompany: row.production_company,
     heroUrl: row.hero_url,
     heroKind: row.hero_kind === "logo" ? "logo" : "banner",
+    inclusionStatement: row.inclusion_statement,
+    agentRoute: row.agent_route,
     opensAt: row.opens_at.toISOString(),
     closesAt: row.closes_at.toISOString(),
     closedAt: row.closed_at?.toISOString() ?? null,
@@ -193,6 +197,10 @@ export type NewSession = {
   heroUrl: string | null;
   /** Shown as a banner across the top, or centred as a logo. Banner when unsaid. */
   heroKind?: HeroKind;
+  /** The inclusive casting statement for applicants. Empty for none. */
+  inclusionStatement: string;
+  /** Where represented actors go instead of the form. Empty for no gate. */
+  agentRoute: string;
   /** ISO timestamps: the moments submissions open and close. */
   opensAt: string;
   closesAt: string;
@@ -218,8 +226,8 @@ export async function createSession(
     `INSERT INTO sessions_casting
        (id, slug, name, production_type, synopsis, owner_id, company, opens_at,
         closes_at, production_ends_at, public_token, production_company, client_id, hero_url,
-        hero_kind)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
+        hero_kind, inclusion_statement, agent_route)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
      RETURNING ${SESSION_COLUMNS}`,
     [
       `ses_${crypto.randomUUID().slice(0, 12)}`,
@@ -237,6 +245,8 @@ export async function createSession(
       clientId,
       input.heroUrl,
       input.heroKind ?? "banner",
+      input.inclusionStatement,
+      input.agentRoute,
     ],
   );
   return toSession(rows[0]);
@@ -259,7 +269,9 @@ export async function updateSession(
        production_ends_at = $${params.length + 8},
        production_company = $${params.length + 9},
        hero_url = $${params.length + 10},
-       hero_kind = $${params.length + 11}
+       hero_kind = $${params.length + 11},
+       inclusion_statement = $${params.length + 12},
+       agent_route = $${params.length + 13}
      WHERE id = $${params.length + 1}${where ? ` AND ${where}` : ""}
      RETURNING ${SESSION_COLUMNS}`,
     [
@@ -267,6 +279,7 @@ export async function updateSession(
       input.name, slugify(input.name), input.productionType, input.synopsis,
       input.opensAt, input.closesAt, input.productionEndsAt, input.productionCompany,
       input.heroUrl, input.heroKind ?? "banner",
+      input.inclusionStatement, input.agentRoute,
     ],
   );
   if (!rows[0]) return null;

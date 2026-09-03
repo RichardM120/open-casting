@@ -138,7 +138,7 @@ let photos = 0;
 sheet.eachRow((row, n) => {
   if (n === 1) return;
   rows += 1;
-  if (String(row.getCell(11).value) === "Yes") photos += 1;
+  if (String(row.getCell(14).value) === "Yes") photos += 1;
 });
 check("two hundred rows in the spreadsheet", rows === 200, String(rows));
 check("fifty of them marked as having a photo", photos === 50, String(photos));

@@ -5,7 +5,7 @@ import { useActionState } from "react";
 import { editRole, postRole } from "@/lib/actions";
 import { formatDateTime } from "@/lib/format";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
-import { APPLICANT_ASKS, DEFAULT_REQUIRED_FIELDS } from "@/lib/types";
+import { APPLICANT_ASKS, DEFAULT_HIDDEN_FIELDS, DEFAULT_REQUIRED_FIELDS } from "@/lib/types";
 import type { AskKey, CastingSession, Role } from "@/lib/types";
 
 import { DateTimeField } from "./date-time-field";
@@ -32,10 +32,11 @@ const LABELS: Record<string, string> = {
  * Nothing about the casting call is asked for here: a role takes its casting call's
  * name, type, synopsis, company and dates from the casting call it is posted into.
  */
-/** The two settings a director can give each of the applicant's fields. */
+/** The three settings a director can give each of the applicant's fields. */
 const ASK_OPTIONS = [
   { value: "required", label: "Required" },
   { value: "optional", label: "Optional" },
+  { value: "off", label: "Not asked" },
 ] as const;
 
 export function RoleForm({
@@ -74,20 +75,21 @@ export function RoleForm({
           sessionId: role.sessionId,
           disclaimer: role.disclaimer,
           selfTape: role.selfTape ? "on" : "",
+          paid: role.paid ? "on" : "",
         }
       : submitted;
 
   // Which of the applicant's fields this role requires: as the role has them,
   // the default for a new one, or what was just posted after a refused save.
   const requiredNow = new Set<AskKey>(role ? role.requiredFields : DEFAULT_REQUIRED_FIELDS);
-  const askValue = (key: AskKey): (typeof ASK_OPTIONS)[number]["value"] =>
-    state.status === "idle"
-      ? requiredNow.has(key)
-        ? "required"
-        : "optional"
-      : submitted[`ask_${key}`] === "required"
-        ? "required"
-        : "optional";
+  const hiddenNow = new Set<AskKey>(role ? role.hiddenFields : DEFAULT_HIDDEN_FIELDS);
+  const askValue = (key: AskKey): (typeof ASK_OPTIONS)[number]["value"] => {
+    if (state.status !== "idle") {
+      const sent = submitted[`ask_${key}`];
+      return sent === "required" || sent === "off" ? sent : "optional";
+    }
+    return requiredNow.has(key) ? "required" : hiddenNow.has(key) ? "off" : "optional";
+  };
   const asks = APPLICANT_ASKS.filter(
     (ask) => uploads || (ask.key !== "photo" && ask.key !== "video"),
   );
@@ -270,18 +272,23 @@ export function RoleForm({
             align="end"
           />
         </Field>
-        <div className="sm:col-span-2">
+        <div className="flex flex-col gap-3 sm:col-span-2">
           <Checkbox
             name="selfTape"
             label="Self-tapes accepted"
             defaultChecked={role ? role.selfTape : state.status === "idle" || values.selfTape === "on"}
+          />
+          <Checkbox
+            name="paid"
+            label="This role is paid"
+            defaultChecked={role ? role.paid : state.status === "idle" || values.paid === "on"}
           />
         </div>
       </Fieldset>
 
       <Fieldset
         legend="What applicants must send"
-        description="Their name, email and age are always asked for, and every submission accepts the terms. Choose what else has to be there before a submission goes through. Anything optional is still offered, and can be left blank."
+        description="Their name, email and age are always asked for, and every submission accepts the terms. Choose what else has to be there before a submission goes through, what is offered but can be left blank, and what is not asked for at all: the less you ask for, the less you hold."
       >
         <div className="divide-y divide-line sm:col-span-2">
           {asks.map((ask) => (

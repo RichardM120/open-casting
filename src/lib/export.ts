@@ -3,6 +3,7 @@ import "server-only";
 import ExcelJS from "exceljs";
 
 import { formatDate, formatDateTime } from "./format";
+import { formatHeight } from "./height";
 import type { SessionSubmission } from "./submissions";
 import type { CastingSession } from "./types";
 
@@ -43,6 +44,9 @@ export async function submissionsWorkbook(
     { header: "Status", key: "status", width: 14 },
     { header: "Age", key: "age", width: 6 },
     { header: "Location", key: "location", width: 22 },
+    { header: "Resident in", key: "residency", width: 18 },
+    { header: "Height", key: "height", width: 14 },
+    { header: "Available", key: "available", width: 10 },
     { header: "Email", key: "email", width: 30 },
     { header: "Phone", key: "phone", width: 16 },
     { header: "Submitted", key: "submittedAt", width: 20 },
@@ -64,6 +68,9 @@ export async function submissionsWorkbook(
       status: submission.status,
       age: submission.age,
       location: submission.location,
+      residency: submission.residency,
+      height: submission.heightCm ? formatHeight(submission.heightCm) : "",
+      available: submission.available === null ? "" : submission.available ? "Yes" : "No",
       email: submission.email,
       phone: submission.phone,
       submittedAt: formatDateTime(submission.submittedAt),
@@ -79,7 +86,7 @@ export async function submissionsWorkbook(
       coverNote: submission.coverNote,
     });
   }
-  sheet.autoFilter = { from: "A1", to: `P${submissions.length + 1}` };
+  sheet.autoFilter = { from: "A1", to: `S${submissions.length + 1}` };
 
   const about = workbook.addWorksheet("Casting call");
   about.columns = [
