@@ -28,13 +28,15 @@ export const MEDIA_KINDS = {
 export type MediaKind = keyof typeof MEDIA_KINDS;
 
 /**
- * The image across the top of a casting call's applicant page. Public, since
- * the page it sits on is open to anyone holding the link; sized for a banner.
+ * The image on a casting call's applicant page, a banner or a logo. Public,
+ * since the page it sits on is open to anyone holding the link. The browser
+ * shrinks a picture to 1600px and WebP before it is sent, so the limit here
+ * is a backstop for a browser that could not; SVG is small and scales itself.
  */
 export const HERO = {
-  label: "Header image",
-  maxBytes: 8 * 1024 * 1024,
-  contentTypes: ["image/jpeg", "image/png", "image/webp"],
+  label: "Header image or logo",
+  maxBytes: 4 * 1024 * 1024,
+  contentTypes: ["image/jpeg", "image/png", "image/webp", "image/svg+xml"],
 } as const;
 
 /** Where an account's header images live. The upload route checks the prefix. */

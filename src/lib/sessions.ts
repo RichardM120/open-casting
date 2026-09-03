@@ -2,7 +2,7 @@ import "server-only";
 
 import type { SessionUser } from "./auth";
 import { query, shareToken } from "./db";
-import type { CastingSession, ProductionType } from "./types";
+import type { CastingSession, HeroKind, ProductionType } from "./types";
 
 type Row = {
   id: string;
@@ -14,6 +14,7 @@ type Row = {
   company: string;
   production_company: string;
   hero_url: string | null;
+  hero_kind: string;
   opens_at: Date;
   closes_at: Date;
   closed_at: Date | null;
@@ -31,7 +32,7 @@ type Row = {
  */
 export const SESSION_COLUMNS = `
   id, slug, name, production_type, synopsis, owner_id, company, production_company, hero_url,
-  opens_at, closes_at,
+  hero_kind, opens_at, closes_at,
   to_char(production_ends_at, 'YYYY-MM-DD') AS production_ends_at,
   closed_at, published_at, purged_at, public_token, created_at
 `;
@@ -47,6 +48,7 @@ export function toSession(row: Row): CastingSession {
     company: row.company,
     productionCompany: row.production_company,
     heroUrl: row.hero_url,
+    heroKind: row.hero_kind === "logo" ? "logo" : "banner",
     opensAt: row.opens_at.toISOString(),
     closesAt: row.closes_at.toISOString(),
     closedAt: row.closed_at?.toISOString() ?? null,
@@ -187,8 +189,10 @@ export type NewSession = {
   synopsis: string;
   /** Who is making it. Free text, and internal. */
   productionCompany: string;
-  /** The header image on the applicant's page, or null for none. */
+  /** The image on the applicant's page, or null for none. */
   heroUrl: string | null;
+  /** Shown as a banner across the top, or centred as a logo. Banner when unsaid. */
+  heroKind?: HeroKind;
   /** ISO timestamps: the moments submissions open and close. */
   opensAt: string;
   closesAt: string;
@@ -213,8 +217,9 @@ export async function createSession(
   const rows = await query<Row>(
     `INSERT INTO sessions_casting
        (id, slug, name, production_type, synopsis, owner_id, company, opens_at,
-        closes_at, production_ends_at, public_token, production_company, client_id, hero_url)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+        closes_at, production_ends_at, public_token, production_company, client_id, hero_url,
+        hero_kind)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
      RETURNING ${SESSION_COLUMNS}`,
     [
       `ses_${crypto.randomUUID().slice(0, 12)}`,
@@ -231,6 +236,7 @@ export async function createSession(
       input.productionCompany,
       clientId,
       input.heroUrl,
+      input.heroKind ?? "banner",
     ],
   );
   return toSession(rows[0]);
@@ -252,14 +258,15 @@ export async function updateSession(
        closes_at = $${params.length + 7},
        production_ends_at = $${params.length + 8},
        production_company = $${params.length + 9},
-       hero_url = $${params.length + 10}
+       hero_url = $${params.length + 10},
+       hero_kind = $${params.length + 11}
      WHERE id = $${params.length + 1}${where ? ` AND ${where}` : ""}
      RETURNING ${SESSION_COLUMNS}`,
     [
       ...params, id,
       input.name, slugify(input.name), input.productionType, input.synopsis,
       input.opensAt, input.closesAt, input.productionEndsAt, input.productionCompany,
-      input.heroUrl,
+      input.heroUrl, input.heroKind ?? "banner",
     ],
   );
   if (!rows[0]) return null;

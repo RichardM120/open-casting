@@ -6,7 +6,8 @@ import { useActionState, useState } from "react";
 import { createCastingSession, editCastingSession } from "@/lib/actions";
 import { formatDateTime, fromLocalInput, toLocalInput } from "@/lib/format";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
-import { PRODUCTION_TYPES, type CastingSession } from "@/lib/types";
+import { guessImageKind, shrinkImage } from "@/lib/image";
+import { PRODUCTION_TYPES, type CastingSession, type HeroKind } from "@/lib/types";
 
 import { DateTimeField } from "./date-time-field";
 import { useErrorFocus } from "./use-error-focus";
@@ -20,7 +21,7 @@ const LABELS: Record<string, string> = {
   opensAt: "Submissions open",
   closesAt: "Submissions close",
   productionEndsAt: "Production finishes",
-  heroUrl: "Header image",
+  heroUrl: "Header image or logo",
 };
 
 /**
@@ -40,35 +41,55 @@ function Picked({ value }: { value: string }) {
   );
 }
 
+/** "2.4 MB" or "180 KB", for saying what the shrinking did. */
+function kb(bytes: number): string {
+  return bytes >= 1024 * 1024 ? `${(bytes / (1024 * 1024)).toFixed(1)} MB` : `${Math.round(bytes / 1024)} KB`;
+}
+
 /**
- * The optional image across the top of the applicant's page. It goes straight
- * to the store from the browser, like an applicant's tape, and only its URL
- * travels with the form. Offered only when a store is connected.
+ * The optional image on the applicant's page: a banner across the top, or a
+ * logo centred under it. It is shrunk in the browser first, to 1600px and
+ * WebP, so a photograph off a camera costs a fraction to store and to load,
+ * then goes straight to the store like an applicant's tape; only its URL and
+ * how to show it travel with the form. Offered only when a store is connected.
  */
 function HeroUpload({
   userId,
   current,
+  currentKind,
   error,
 }: {
   userId: string;
   current: string | null;
+  currentKind: HeroKind;
   error?: string;
 }) {
   const [url, setUrl] = useState<string>(current ?? "");
+  const [kind, setKind] = useState<HeroKind>(currentKind);
   const [progress, setProgress] = useState<number | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
+  const [note, setNote] = useState<string | null>(null);
 
-  async function send(file: File) {
+  async function send(source: File) {
     setProblem(null);
+    setNote(null);
     setProgress(0);
     try {
-      const result = await upload(`calls/${userId}/hero/${file.name}`, file, {
+      const shrunk = await shrinkImage(source);
+      // The shape of the picture decides how it is shown, until the director says otherwise.
+      if (shrunk.width && shrunk.height) setKind(guessImageKind(shrunk.width, shrunk.height));
+      const result = await upload(`calls/${userId}/hero/${shrunk.file.name}`, shrunk.file, {
         access: "public",
         handleUploadUrl: "/api/blob/upload",
         clientPayload: JSON.stringify({ kind: "hero" }),
         onUploadProgress: ({ percentage }) => setProgress(percentage),
       });
       setUrl(result.url);
+      if (shrunk.after < shrunk.before) {
+        setNote(
+          `Resized to ${shrunk.width} by ${shrunk.height} pixels and ${kb(shrunk.after)}, down from ${kb(shrunk.before)}.`,
+        );
+      }
     } catch (caught) {
       setProblem(
         caught instanceof Error && caught.message
@@ -83,21 +104,29 @@ function HeroUpload({
   return (
     <div className="flex flex-col gap-3">
       <input type="hidden" name="heroUrl" value={url} />
+      <input type="hidden" name="heroKind" value={kind} />
       {url ? (
-        // eslint-disable-next-line @next/next/no-img-element -- a public blob the director just chose
-        <img src={url} alt="" className="max-h-48 w-full rounded-xl border border-line object-cover" />
+        kind === "logo" ? (
+          <div className="flex justify-center rounded-xl border border-line bg-surface p-5">
+            {/* eslint-disable-next-line @next/next/no-img-element -- a public blob the director just chose */}
+            <img src={url} alt="" className="h-auto max-h-32 w-auto max-w-full" />
+          </div>
+        ) : (
+          // eslint-disable-next-line @next/next/no-img-element -- a public blob the director just chose
+          <img src={url} alt="" className="max-h-48 w-full rounded-xl border border-line object-cover" />
+        )
       ) : null}
       <Field
-        label="Header image"
+        label="Header image or logo"
         htmlFor="hero"
-        hint="Optional. Shown across the top of the page applicants see. JPEG, PNG or WebP, up to 8 MB; wide images work best."
+        hint="Optional. A wide picture runs across the top of the page applicants see; a squarer one, or a logo, sits centred. JPEG, PNG, WebP or SVG. Pictures are shrunk to 1600 pixels and compressed before they are sent, so they cost little to keep and load fast on a phone."
         error={error ?? problem ?? undefined}
       >
         <Input
           id="hero"
           name="hero"
           type="file"
-          accept="image/jpeg,image/png,image/webp"
+          accept="image/jpeg,image/png,image/webp,image/svg+xml"
           onChange={(event) => {
             const file = event.target.files?.[0];
             if (file) void send(file);
@@ -109,8 +138,29 @@ function HeroUpload({
           Uploading: {progress}%
         </p>
       ) : null}
+      {note ? (
+        <p className="text-sm text-muted" aria-live="polite">
+          {note}
+        </p>
+      ) : null}
       {url ? (
-        <div>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
+          <fieldset className="flex flex-wrap items-center gap-x-4 gap-y-2">
+            <legend className="mb-1 text-sm font-medium">Show it as</legend>
+            {(["banner", "logo"] as const).map((option) => (
+              <label key={option} className="flex min-h-10 items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="heroKindChoice"
+                  value={option}
+                  checked={kind === option}
+                  onChange={() => setKind(option)}
+                  className="size-4 accent-brand"
+                />
+                {option === "banner" ? "A banner across the top" : "A logo, centred"}
+              </label>
+            ))}
+          </fieldset>
           <Button type="button" variant="ghost" size="sm" onClick={() => setUrl("")}>
             Remove the image
           </Button>
@@ -233,10 +283,18 @@ export function SessionForm({
           </Field>
           {uploads ? (
             <div className="sm:col-span-2">
-              <HeroUpload userId={userId} current={session?.heroUrl ?? null} error={errors.heroUrl} />
+              <HeroUpload
+                userId={userId}
+                current={session?.heroUrl ?? null}
+                currentKind={session?.heroKind ?? "banner"}
+                error={errors.heroUrl}
+              />
             </div>
           ) : (
-            <input type="hidden" name="heroUrl" value={session?.heroUrl ?? ""} />
+            <>
+              <input type="hidden" name="heroUrl" value={session?.heroUrl ?? ""} />
+              <input type="hidden" name="heroKind" value={session?.heroKind ?? "banner"} />
+            </>
           )}
         </div>
       </fieldset>

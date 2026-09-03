@@ -623,6 +623,8 @@ const SCHEMA = `
   -- An optional image across the top of the applicant's page. A public
   -- blob: it is on a page anyone with the link can open.
   ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS hero_url text;
+  -- Shown across the top as a banner, or centred as a logo.
+  ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS hero_kind text NOT NULL DEFAULT 'banner';
 
   DO $$
   BEGIN

@@ -238,6 +238,7 @@ export const sessionSchema = z
     // Checked against the store in the action, not here: which store, and
     // whose folder, is not the form's to say.
     heroUrl: z.string().trim().max(600).optional().default(""),
+    heroKind: z.enum(["banner", "logo"]).optional().default("banner"),
     opensAt: localDateTime("Choose when submissions open"),
     closesAt: localDateTime("Choose when submissions close"),
     productionEndsAt: trimmed.regex(
