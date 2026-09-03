@@ -241,7 +241,8 @@ section("13 a draft can be left and picked up again");
   check("back on the draft, still unpublished", (await dir.p.locator("main").getByText("Not published yet").count()) > 0);
   check("with the wizard where it was left", (await dir.p.locator('[aria-current="step"]').innerText()).includes("Post the roles"));
   check("and the step numbered", (await dir.p.locator('[aria-current="step"]').innerText()).includes("2"));
-  check("the steps link to their pages", (await dir.p.locator('nav[aria-label="Setting up the casting call"] a').count()) === 4);
+  check("the steps link to their pages", (await dir.p.locator('nav[aria-label="Setting up the casting call"] ol a').count()) === 4);
+  check("and the way on is a link", (await dir.p.locator('nav[aria-label="Setting up the casting call"] a', { hasText: "Next: Publish" }).count()) === 1);
   check("marked in progress", (await dir.p.locator("main").getByText("In progress").count()) > 0);
 
   // The list is a traffic light: a live call in green comes first, and a call

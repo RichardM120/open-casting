@@ -17,10 +17,16 @@ export const SETUP_STEPS = [
 
 export type SetupStage = 1 | 2 | 3 | 4;
 
+type StepKey = (typeof SETUP_STEPS)[number]["key"];
+
 /**
- * Numbered steps, shown under the navigation on every casting-call screen so a
- * director always knows where they are in setting one up, and what comes next.
- * `href` on a step makes it a link back to that step's page.
+ * One bar in four segments, under the navigation on every casting-call screen,
+ * coloured by where the director is: terracotta for what is done, gold for
+ * the step they are on, the line colour for what is still to come. Under it
+ * the step's name and what it is for, and the way on to the next one. A
+ * segment with a page to go to is a link back to that step; on a wide screen
+ * the four names stand under their segments, on a phone the caption carries
+ * the current one. `hrefs` overrides where a segment leads.
  */
 export function SetupProgress({
   stage,
@@ -30,9 +36,9 @@ export function SetupProgress({
   stage: SetupStage;
   /** The casting call being set up, once it exists: every step then links to its page. */
   sessionId?: string;
-  hrefs?: Partial<Record<(typeof SETUP_STEPS)[number]["key"], string>>;
+  hrefs?: Partial<Record<StepKey, string>>;
 }) {
-  const hrefs: Partial<Record<(typeof SETUP_STEPS)[number]["key"], string>> = sessionId
+  const hrefs: Partial<Record<StepKey, string>> = sessionId
     ? {
         open: `/dashboard/sessions/${sessionId}/edit`,
         roles: `/dashboard/roles/new?session=${sessionId}`,
@@ -41,70 +47,90 @@ export function SetupProgress({
         ...given,
       }
     : given;
+  const current = SETUP_STEPS[stage - 1];
+  const next = SETUP_STEPS.at(stage);
+  const nextHref = next ? hrefs[next.key] : undefined;
 
   return (
-    <nav aria-label="Setting up the casting call" className="-mt-4 mb-8 border-b border-line">
-      <ol className="flex flex-wrap items-start gap-x-3 gap-y-3 py-4 sm:gap-x-5">
+    <nav aria-label="Setting up the casting call" className="-mt-2 mb-8 border-b border-line pb-4">
+      <ol className="grid grid-cols-4 gap-1">
         {SETUP_STEPS.map((step, index) => {
           const n = (index + 1) as SetupStage;
           const done = n < stage;
-          const current = n === stage;
+          const here = n === stage;
+          const href = hrefs[step.key];
           const body = (
             <>
-              <span
-                aria-hidden="true"
-                className={cx(
-                  "flex size-8 shrink-0 items-center justify-center rounded-full border text-sm font-semibold tabular-nums transition-colors",
-                  done
-                    ? "border-brand bg-brand text-brand-ink"
-                    : current
-                      ? "border-brand bg-brand-soft text-brand ring-4 ring-brand/15"
-                      : "border-line-strong bg-surface text-muted",
-                )}
-              >
-                {n}
-              </span>
-              <span className="hidden min-w-0 flex-col sm:flex">
+              {/* The segment sits in a row of fixed height, so its lift on hover moves nothing else. */}
+              <span aria-hidden="true" className="flex h-2 items-center">
                 <span
                   className={cx(
-                    "text-sm whitespace-nowrap",
-                    current ? "font-semibold text-text" : done ? "font-medium text-text" : "text-muted",
+                    "block h-1.5 w-full rounded-full transition-all",
+                    done ? "bg-brand" : here ? "bg-accent" : "bg-line",
+                    href ? "group-hover:h-2" : null,
                   )}
-                >
-                  {step.label}
-                </span>
-                <span className="hidden text-xs whitespace-nowrap text-muted lg:block">{step.point}</span>
+                />
+              </span>
+              <span
+                className={cx(
+                  "mt-2 block truncate text-xs max-sm:sr-only",
+                  here ? "font-semibold text-text" : done ? "text-text" : "text-muted",
+                )}
+              >
+                <span className="sr-only">Step {n}: </span>
+                {step.label}
               </span>
             </>
           );
-          const href = hrefs[step.key];
           return (
-            <li
-              key={step.key}
-              aria-current={current ? "step" : undefined}
-              className="flex items-start gap-3 sm:gap-6"
-            >
+            <li key={step.key} aria-current={here ? "step" : undefined} className="relative min-w-0">
               {href ? (
                 <Link
                   href={href}
-                  aria-label={`Step ${n}: ${step.label}`}
                   title={`${step.label}: ${step.point}`}
-                  className="flex items-center gap-3 rounded-full transition-colors hover:text-text"
+                  className="group block rounded-sm"
                 >
                   {body}
                 </Link>
               ) : (
-                <span aria-label={`Step ${n}: ${step.label}`} className="flex items-center gap-3">
-                  {body}
-                </span>
+                <span className="block">{body}</span>
               )}
-              {index < SETUP_STEPS.length - 1 ? (
-                <span aria-hidden="true" className="mt-4 h-px w-4 shrink-0 bg-line sm:w-6" />
-              ) : null}
             </li>
           );
         })}
       </ol>
+
+      <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <p className="min-w-0 text-sm text-muted">
+          Step {stage} of {SETUP_STEPS.length} ·{" "}
+          <strong className="font-semibold text-text">{current.label}</strong>
+          <span className="hidden sm:inline"> · {current.point}</span>
+        </p>
+        {next ? (
+          nextHref ? (
+            <Link
+              href={nextHref}
+              className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-brand underline-offset-4 hover:underline"
+            >
+              Next: {next.label}
+              <svg
+                aria-hidden="true"
+                viewBox="0 0 16 16"
+                className="size-3.5"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1.75"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="m6 3 5 5-5 5" />
+              </svg>
+            </Link>
+          ) : (
+            <span className="shrink-0 text-sm text-muted">Next: {next.label}</span>
+          )
+        ) : null}
+      </div>
     </nav>
   );
 }
