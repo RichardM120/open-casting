@@ -3,7 +3,6 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { HowItWorks } from "@/components/how-it-works";
-import { ButtonLink, Eyebrow } from "@/components/ui";
 import { currentUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -18,32 +17,15 @@ export const metadata: Metadata = {
  * The way in, and nothing else. Open Casting is not a public board: there is no
  * listing to browse and no way to register. Someone either has an account, made
  * for them by the administrator, or they were sent a link to one casting call.
+ * The page leads with the five steps and ends on the way in, as the design
+ * canvas has it; there is no hero above them.
  */
 export default async function HomePage() {
   // Already signed in, so the sign-in page is not what they wanted.
   if (await currentUser()) redirect("/dashboard");
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 md:py-28">
-      <Eyebrow>Open Casting</Eyebrow>
-      <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-balance md:text-5xl">
-        Sign in to run your casting.
-      </h1>
-      <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted">
-        Set up a casting call, post its roles, and read every submission in one place. Accounts are
-        created by the administrator, so there is nothing to register for.
-      </p>
-
-      <div className="mt-10">
-        <ButtonLink href="/login">Sign in</ButtonLink>
-      </div>
-
-      <p className="mt-6 max-w-xl text-sm leading-relaxed text-muted">
-        One sign-in for everyone on the casting side. What you can see follows from your
-        account, not from which door you came through: an administrator lands on every
-        casting call on the system, a casting director on their own.
-      </p>
-
+    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 md:py-16">
       <HowItWorks />
 
       <div className="mt-16 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">

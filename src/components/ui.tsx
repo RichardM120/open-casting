@@ -7,8 +7,8 @@ export function cx(...values: Array<string | false | null | undefined>): string 
 
 /* -------------------------------------------------------------- buttons -- */
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "danger";
-type ButtonSize = "sm" | "md";
+type ButtonVariant = "primary" | "secondary" | "ghost" | "danger" | "signup";
+type ButtonSize = "sm" | "md" | "lg";
 
 const BUTTON_BASE =
   "inline-flex items-center justify-center gap-2 rounded-full font-medium " +
@@ -19,12 +19,15 @@ const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   secondary: "border border-line-strong bg-raised text-text hover:border-accent hover:text-brand",
   ghost: "text-muted hover:text-text",
   danger: "border border-line-strong text-danger hover:bg-danger-soft",
+  /* The homepage's way in, as the design canvas has it: teal and bold. */
+  signup: "bg-teal font-bold text-accent-ink hover:bg-teal-hover",
 };
 
 // Both sizes clear a comfortable touch target; the app gets used on phones.
 const BUTTON_SIZES: Record<ButtonSize, string> = {
   sm: "min-h-10 px-4 py-2 text-sm",
   md: "min-h-11 px-6 py-2 text-sm",
+  lg: "min-h-12 px-7 py-2 text-lg",
 };
 
 export function buttonStyles(

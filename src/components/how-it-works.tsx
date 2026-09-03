@@ -8,7 +8,7 @@ import { ButtonLink, Eyebrow, cx } from "./ui";
  * The five moves from a brief to a shortlist, each with a line drawing. From a
  * wide screen up they stand in a row of five cards with a closing note. On a
  * phone they are a carousel: one card in view with the next peeking, swiped
- * through to a last slide that is the way in. The drawings share one grid,
+ * through to a last slide that is the way in: the sign-up button. The drawings share one grid,
  * one stroke and one accent, so the row reads as a set.
  */
 const STEPS: { key: StepKey; title: string; body: string }[] = [
@@ -93,11 +93,11 @@ export function HowItWorks() {
     "relative flex shrink-0 snap-center flex-col gap-3 rounded-2xl border border-line bg-surface p-5 shadow-card lg:shrink lg:snap-align-none";
 
   return (
-    <section aria-labelledby="how-it-works" className="mt-24">
+    <section aria-labelledby="how-it-works">
       <Eyebrow>How it works</Eyebrow>
-      <h2 id="how-it-works" className="mt-3 text-2xl font-semibold tracking-tight md:text-3xl">
+      <h1 id="how-it-works" className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
         Five steps from a brief to a shortlist.
-      </h2>
+      </h1>
       <p className="mt-4 max-w-2xl text-muted">
         There is nothing to browse and nothing to register for. A casting director sets a call up
         once; applicants open one link.
@@ -155,9 +155,13 @@ export function HowItWorks() {
               Everything applicants send is deleted 30 days after the production finishes. The
               casting call and its roles are kept, so the record of what you ran stays with you.
             </p>
+            <p className="text-sm leading-relaxed text-muted">
+              One sign-in for everyone on the casting side. What you can see follows from your
+              account, not from which door you came through.
+            </p>
           </div>
-          <ButtonLink href="/login" className="self-start">
-            Sign in
+          <ButtonLink href="/login" variant="signup" className="self-start">
+            Sign up
           </ButtonLink>
         </li>
       </ol>
@@ -179,7 +183,7 @@ export function HowItWorks() {
               key={i}
               type="button"
               onClick={() => go(i)}
-              aria-label={i < STEPS.length ? `Step ${i + 1}` : "Sign in"}
+              aria-label={i < STEPS.length ? `Step ${i + 1}` : "Sign up"}
               aria-current={index === i ? "true" : undefined}
               className="flex size-6 items-center justify-center rounded-full"
             >
@@ -204,12 +208,19 @@ export function HowItWorks() {
       </div>
 
       <div className="mt-8 hidden flex-col gap-4 rounded-2xl border border-line bg-raised p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:p-6 lg:flex">
-        <p className="max-w-2xl text-sm leading-relaxed text-muted">
-          Everything applicants send is deleted 30 days after the production finishes. The casting
-          call and its roles are kept, so the record of what you ran stays with you.
-        </p>
-        <ButtonLink href="/login" className="self-start sm:self-auto">
-          Sign in
+        <div className="flex max-w-2xl flex-col gap-2 text-sm leading-relaxed text-muted">
+          <p>
+            Everything applicants send is deleted 30 days after the production finishes. The
+            casting call and its roles are kept, so the record of what you ran stays with you.
+          </p>
+          <p>
+            One sign-in for everyone on the casting side. What you can see follows from your
+            account, not from which door you came through: an administrator lands on every casting
+            call on the system, a casting director on their own.
+          </p>
+        </div>
+        <ButtonLink href="/login" variant="signup" size="lg" className="shrink-0 self-start sm:self-auto">
+          Sign up
         </ButtonLink>
       </div>
     </section>
