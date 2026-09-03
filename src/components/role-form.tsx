@@ -12,6 +12,7 @@ import { DateTimeField } from "./date-time-field";
 import { useErrorFocus } from "./use-error-focus";
 import { Button, ButtonLink, Checkbox, ErrorSummary, Field, Input, RequiredKey, Select, Textarea } from "./ui";
 import { formatSeconds } from "@/lib/video";
+import { BriefLint } from "./brief-lint";
 import { SubmitButton } from "./submit-button";
 
 const LABELS: Record<string, string> = {
@@ -449,6 +450,8 @@ export function RoleForm({
           />
         </Field>
       </Fieldset>
+
+      <BriefLint />
 
       <div className="flex flex-wrap items-center gap-4 border-t border-line pt-6">
         <SubmitButton disabled={pending}>

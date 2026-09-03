@@ -423,9 +423,30 @@ export async function postRole(
     role,
     ownerId: role.ownerId,
     company: role.company,
+    detail: briefWarningsNote(formData),
   });
   revalidateEverything();
   redirect(`/dashboard/roles/${role.id}?posted=1`);
+}
+
+/**
+ * What the brief lint was showing when the role was posted: advisory, so the
+ * role goes through, and the override is recorded rather than lost.
+ */
+function briefWarningsNote(formData: FormData): string {
+  const keys = String(formData.get("briefWarnings") ?? "")
+    .split(",")
+    .map((key) => key.trim())
+    .filter(Boolean);
+  if (keys.length === 0) return "";
+  const names: Record<string, string> = {
+    location: "where they live",
+    school: "their school",
+    birth: "their date of birth",
+    relationships: "family, friends or pets",
+    contact: "contact details",
+  };
+  return `posted with brief warnings acknowledged: ${keys.map((key) => names[key] ?? key).join(", ")}`;
 }
 
 /** The name a file was uploaded under, from the end of its stored path. */
@@ -558,7 +579,9 @@ export async function editRole(
     role,
     ownerId: role.ownerId,
     company: role.company,
-    detail: before ? describeChanges(before, role) : "",
+    detail: [before ? describeChanges(before, role) : "", briefWarningsNote(formData)]
+      .filter(Boolean)
+      .join("; "),
   });
 
   revalidateEverything();

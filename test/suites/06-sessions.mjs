@@ -428,6 +428,30 @@ section("17 a role may ask about a protected characteristic, under a recorded re
   check("but not the answer", (await theirs.getByText("Yes, on my mother's side.").count()) === 0);
 }
 
+section("18 a brief for a child's role is read before it is posted");
+{
+  const call = await openSession(dir.p, { name: `Minors ${t}`, company: CO, opensAt: at(-1), closesAt: at(20, "23:59") });
+  await dir.p.goto(`${BASE}/dashboard/roles/new?session=${call}`, { waitUntil: "networkidle" });
+  await dir.p.selectOption("#sessionId", call);
+  await dir.p.fill("#title", `Child role ${t}`);
+  await dir.p.fill("#ageMin", "10");
+  await dir.p.fill("#ageMax", "12");
+  await dir.p.fill("#characterBrief", "A short piece about yourself: tell us where you live and describe your best friend or a pet.");
+  await dir.p.fill("#location", "Leeds, UK");
+  await dir.p.waitForTimeout(300);
+  check("the brief is warned where it asks for a child's area and circle", (await dir.p.locator("[data-brief-warning='location']").count()) === 1 && (await dir.p.locator("[data-brief-warning='relationships']").count()) === 1);
+  await dir.p.fill("#ageMin", "25");
+  await dir.p.waitForTimeout(300);
+  check("and not for a role cast to adults", (await dir.p.locator("[data-brief-warning]").count()) === 0);
+  await dir.p.fill("#ageMin", "10");
+  await dir.p.waitForTimeout(300);
+  await dir.p.getByRole("button", { name: "Post the role" }).click();
+  await dir.p.waitForURL(/\/dashboard\/roles\/rol_/, { timeout: 20000 });
+  check("it can still be posted", dir.p.url().includes("posted=1"));
+  await dir.p.goto(`${BASE}/dashboard/activity`, { waitUntil: "networkidle" });
+  check("and the override is on the record", (await dir.p.getByText(/brief warnings acknowledged: where they live, family, friends or pets/).count()) > 0);
+}
+
 for (const s of [dir, other, prod, admin]) await s.c.close();
 await browser.close();
 finish();
