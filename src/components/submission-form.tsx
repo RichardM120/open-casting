@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { upload } from "@vercel/blob/client";
+import { uploadPresigned } from "@vercel/blob/client";
 import { useActionState, useState } from "react";
 
 import { submitApplication } from "@/lib/actions";
@@ -188,7 +188,7 @@ export function SubmissionForm({
         }
       }
       try {
-        const result = await upload(`${path}/${file.name}`, file, {
+        const result = await uploadPresigned(`${path}/${file.name}`, file, {
           access: "private",
           handleUploadUrl: "/api/blob/upload",
           clientPayload: JSON.stringify({ token, roleId, kind }),

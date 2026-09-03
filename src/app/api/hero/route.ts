@@ -1,7 +1,7 @@
 import { get } from "@vercel/blob";
 import { NextResponse } from "next/server";
 
-import { blobToken, isStoredHeroUrl, uploadsEnabled } from "@/lib/blob";
+import { isStoredHeroUrl, storeAuth, uploadsEnabled } from "@/lib/blob";
 
 export const dynamic = "force-dynamic";
 
@@ -28,7 +28,7 @@ export async function GET(request: Request) {
 
   let file: Awaited<ReturnType<typeof get>>;
   try {
-    file = await get(url, { access: "private", token: blobToken() });
+    file = await get(url, { ...storeAuth(), access: "private" });
   } catch {
     return new NextResponse(null, { status: 404 });
   }

@@ -1,6 +1,6 @@
 "use client";
 
-import { upload } from "@vercel/blob/client";
+import { uploadPresigned } from "@vercel/blob/client";
 import { useActionState, useState } from "react";
 
 import { createCastingSession, editCastingSession } from "@/lib/actions";
@@ -83,7 +83,7 @@ function HeroUpload({
       const shrunk = await shrinkImage(source);
       // The shape of the picture decides how it is shown, until the director says otherwise.
       if (shrunk.width && shrunk.height) setKind(guessImageKind(shrunk.width, shrunk.height));
-      const result = await upload(`calls/${userId}/hero/${shrunk.file.name}`, shrunk.file, {
+      const result = await uploadPresigned(`calls/${userId}/hero/${shrunk.file.name}`, shrunk.file, {
         access: "private",
         handleUploadUrl: "/api/blob/upload",
         clientPayload: JSON.stringify({ kind: "hero" }),

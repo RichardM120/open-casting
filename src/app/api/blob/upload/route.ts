@@ -1,13 +1,14 @@
-import { handleUpload, type HandleUploadBody } from "@vercel/blob/client";
+import { issueSignedToken } from "@vercel/blob";
+import { handleUploadPresigned, type HandleUploadPresignedBody } from "@vercel/blob/client";
 import { NextResponse } from "next/server";
 
 import { currentUser } from "@/lib/auth";
 import {
   HERO,
   MEDIA_KINDS,
-  blobToken,
   heroPrefix,
   mediaPrefix,
+  storeAuth,
   uploadsEnabled,
   type MediaKind,
 } from "@/lib/blob";
@@ -17,8 +18,18 @@ import { getSessionByToken } from "@/lib/sessions";
 
 export const dynamic = "force-dynamic";
 
+/** How long a browser has to finish sending a file once it has been allowed to. A tape over a phone connection takes a while. */
+const UPLOAD_WINDOW_MS = 60 * 60 * 1000;
+
 /**
- * Mints the short-lived token the browser needs to put a file straight into
+ * No upload here finishes with a callback from the store, so there is never a
+ * callback signature to verify; the helper still wants a key to verify one
+ * with, and a forged callback fails against this as it should.
+ */
+const NO_CALLBACKS = "no callbacks are configured";
+
+/**
+ * Signs the short-lived address the browser needs to put a file straight into
  * the store. The file never passes through here, only the permission to send
  * it, so the size limit is the store's and not a function body's.
  *
@@ -26,61 +37,45 @@ export const dynamic = "force-dynamic";
  * the same one that lets them see the form: a share link for a casting call
  * that is open now, naming a role in it. A casting director sending a header
  * image is a signed-in account, and may only write under its own folder. Each
- * token is scoped to a pathname, the content types and the size for its kind,
- * and nothing else can be uploaded with it.
+ * address is good for one pathname, the content types and the size for its
+ * kind, and an hour, and nothing else can be uploaded with it. The store adds
+ * a random suffix to the name, so a second file never overwrites a first.
  */
 export async function POST(request: Request) {
   if (!uploadsEnabled()) {
     return NextResponse.json({ error: "Uploads are not configured." }, { status: 503 });
   }
 
-  const body = (await request.json()) as HandleUploadBody;
+  const body = (await request.json()) as HandleUploadPresignedBody;
+  if (body.type !== "blob.generate-presigned-url") {
+    return NextResponse.json({ error: "Unexpected request" }, { status: 400 });
+  }
 
   try {
-    const json = await handleUpload({
+    const json = await handleUploadPresigned({
       body,
       request,
-      token: blobToken(),
-      onBeforeGenerateToken: async (pathname, clientPayload) => {
-        const payload = parsePayload(clientPayload);
-        if (!payload) throw new Error("Missing upload details");
-
-        if (payload.kind === "hero") {
-          const user = await currentUser();
-          if (!user) throw new Error("Sign in to add a header image");
-          if (!pathname.startsWith(heroPrefix(user.id))) {
-            throw new Error("That file is not going where it should");
-          }
-          return {
-            allowedContentTypes: [...HERO.contentTypes],
-            maximumSizeInBytes: HERO.maxBytes,
-            addRandomSuffix: true,
-            tokenPayload: JSON.stringify({ userId: user.id, kind: "hero" }),
-          };
-        }
-
-        const { token, roleId, kind } = payload;
-        const session = await getSessionByToken(token);
-        const role = session ? await getSessionRole(session.id, roleId) : null;
-        if (!session || !role) throw new Error("That casting call is not open to submissions");
-        if (session.publishedAt === null || !isOpen(roleWindow(role))) {
-          throw new Error("That casting call is not taking submissions right now");
-        }
-
-        const prefix = mediaPrefix(session.id, role.id, kind);
-        if (!pathname.startsWith(prefix)) throw new Error("That file is not going where it should");
-
-        const rules = MEDIA_KINDS[kind];
+      webhookPublicKey: process.env.BLOB_WEBHOOK_PUBLIC_KEY?.trim() || NO_CALLBACKS,
+      getSignedToken: async (pathname, clientPayload) => {
+        const rules = await allow(pathname, clientPayload);
+        const validUntil = Date.now() + UPLOAD_WINDOW_MS;
         return {
-          allowedContentTypes: [...rules.contentTypes],
-          maximumSizeInBytes: rules.maxBytes,
-          addRandomSuffix: true,
-          tokenPayload: JSON.stringify({ sessionId: session.id, roleId: role.id, kind }),
+          token: await issueSignedToken({
+            ...storeAuth(),
+            pathname,
+            operations: ["put"],
+            allowedContentTypes: [...rules.contentTypes],
+            maximumSizeInBytes: rules.maxBytes,
+            validUntil,
+          }),
+          urlOptions: {
+            allowedContentTypes: [...rules.contentTypes],
+            maximumSizeInBytes: rules.maxBytes,
+            addRandomSuffix: true,
+            allowOverwrite: false,
+            validUntil,
+          },
         };
-      },
-      onUploadCompleted: async () => {
-        // The URL is posted back with the rest of the form and checked there
-        // against the prefix, so there is nothing to record at this point.
       },
     });
     return NextResponse.json(json);
@@ -88,6 +83,36 @@ export async function POST(request: Request) {
     const message = error instanceof Error ? error.message : "Upload refused";
     return NextResponse.json({ error: message }, { status: 400 });
   }
+}
+
+type Rules = { contentTypes: readonly string[]; maxBytes: number };
+
+/** What may be sent to this pathname by this sender, or an error saying why nothing may. */
+async function allow(pathname: string, clientPayload: string | null): Promise<Rules> {
+  const payload = parsePayload(clientPayload);
+  if (!payload) throw new Error("Missing upload details");
+
+  if (payload.kind === "hero") {
+    const user = await currentUser();
+    if (!user) throw new Error("Sign in to add a header image");
+    if (!pathname.startsWith(heroPrefix(user.id))) {
+      throw new Error("That file is not going where it should");
+    }
+    return HERO;
+  }
+
+  const { token, roleId, kind } = payload;
+  const session = await getSessionByToken(token);
+  const role = session ? await getSessionRole(session.id, roleId) : null;
+  if (!session || !role) throw new Error("That casting call is not open to submissions");
+  if (session.publishedAt === null || !isOpen(roleWindow(role))) {
+    throw new Error("That casting call is not taking submissions right now");
+  }
+
+  const prefix = mediaPrefix(session.id, role.id, kind);
+  if (!pathname.startsWith(prefix)) throw new Error("That file is not going where it should");
+
+  return MEDIA_KINDS[kind];
 }
 
 type Payload =

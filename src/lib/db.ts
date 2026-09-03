@@ -4,7 +4,7 @@ import { randomBytes } from "node:crypto";
 
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
 
-import { uploadsEnabled } from "./blob";
+import { describeStore, uploadsEnabled } from "./blob";
 import { hashPassword, unusablePassword } from "./password";
 import { seedDatabase } from "./seed-data";
 
@@ -1019,6 +1019,8 @@ export async function databaseStatus(): Promise<{
   email: "configured" | "missing";
   /** Whether a file store is set, so applicants can attach a photo and a video. */
   uploads: "ready" | "off";
+  /** Which way into the store was found, by variable name and never value, or what is missing. */
+  store: string;
   /** Pre-launch switches. Both must read "off" before this is a live service. */
   site: "walled off: passcode, and sign-in checks nothing" | "open to the public";
   schema: "ready" | "unavailable";
@@ -1037,6 +1039,7 @@ export async function databaseStatus(): Promise<{
   // Without a store the form simply offers no uploads; nothing breaks, but it
   // is the difference between "it works" and "nobody could send a tape".
   const uploads: "ready" | "off" = uploadsEnabled() ? "ready" : "off";
+  const store = describeStore();
   const site: "walled off: passcode, and sign-in checks nothing" | "open to the public" =
     process.env.SITE_PASSCODE?.trim()
       ? "walled off: passcode, and sign-in checks nothing"
@@ -1048,6 +1051,7 @@ export async function databaseStatus(): Promise<{
       authSecret,
       email,
       uploads,
+      store,
       site,
       schema: "unavailable",
       error:
@@ -1066,6 +1070,7 @@ export async function databaseStatus(): Promise<{
       authSecret,
       email,
       uploads,
+      store,
       site,
       schema: "ready",
       roles: Number(roles[0]?.count ?? 0),
@@ -1080,6 +1085,7 @@ export async function databaseStatus(): Promise<{
       authSecret,
       email,
       uploads,
+      store,
       site,
       schema: "unavailable",
       error: error instanceof Error ? error.message : String(error),

@@ -461,11 +461,11 @@ words, in UK time, which is how the server stores it.
 
 An applicant can attach a profile photo (up to 5 MB) and a video (up to
 200 MB) to a submission. The file goes straight from the browser into Vercel
-Blob; only its URL travels with the form. `/api/blob/upload` mints the token
-for that, and it checks what the form itself would: a share link for a casting
-call that is open now, naming a role in it. The token is scoped to one kind of
-file under that role, its content types and its size, so nothing else can be
-sent with it.
+Blob; only its URL travels with the form. `/api/blob/upload` signs the short-lived
+address for that, and it checks what the form itself would: a share link for a
+casting call that is open now, naming a role in it. The address is good for one
+kind of file under that role, its content types and its size, and an hour, so
+nothing else can be sent with it.
 
 Blobs are **private**. A casting tape is personal data, sometimes of a child,
 and an unguessable public URL is still a URL. The dashboard reads a file back
@@ -497,11 +497,18 @@ says whether that worked from this deployment. The suite never touches the
 store, so that test is the check to run after connecting one.
 
 Create the store as **private**: the app writes nothing public, and a public
-store would serve a tape to anyone holding its address. Connecting the store
-to the project in the Vercel dashboard puts the token into the project's
-settings, and settings reach a deployment only when it is built, so a
-deployment made before the store was connected keeps reporting `uploads: off`
-until it is redeployed. Connect, redeploy, then run the test.
+store would serve a tape to anyone holding its address. Connect it to the
+project in the Vercel dashboard, then redeploy: settings reach a deployment
+only when it is built, so a deployment made before the store was connected
+keeps reporting `uploads: off` until then. The dashboard connects a store in
+one of two ways, and the app takes either. The older puts a read-write token
+in the environment as `BLOB_READ_WRITE_TOKEN` (or `PREFIX_READ_WRITE_TOKEN`
+when a prefix was chosen). The current one puts only the store's id there, as
+`BLOB_STORE_ID`, and the deployment signs in as itself with the identity token
+Vercel gives every request, which needs OIDC federation on under the project's
+security settings (it is, for a new project). `/api/health` names which it
+found under `store`, and the Admin overview says the same in words. Connect,
+redeploy, then run the test.
 
 ## Two sections, and four words
 

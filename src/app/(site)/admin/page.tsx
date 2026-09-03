@@ -7,7 +7,7 @@ import { Button, ButtonLink, Eyebrow } from "@/components/ui";
 import { testFileStore } from "@/lib/actions";
 import { listActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
-import { uploadsEnabled } from "@/lib/blob";
+import { describeStore, uploadsEnabled } from "@/lib/blob";
 import { clientUsage, listClients } from "@/lib/clients";
 import { listAccounts } from "@/lib/users";
 
@@ -85,8 +85,10 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
             <h2 className="text-lg font-semibold tracking-tight">File store</h2>
             <p className="mt-1 max-w-prose text-sm leading-relaxed text-muted">
               {store
-                ? "Connected. Applicants can attach a photo and a video to a submission. Files are private, read back only through the dashboard, and go with the submission."
-                : "Not connected. The form offers no uploads until a Vercel Blob store is connected to this project's Production environment and the site is redeployed."}
+                ? `Connected through a ${describeStore()}. Applicants can attach a photo and a video to a submission. Files are private, read back only through the dashboard, and go with the submission.`
+                : describeStore() === "not connected"
+                  ? "Not connected. The form offers no uploads until a Vercel Blob store is connected to this project's Production environment and the site is redeployed."
+                  : `Not connected: ${describeStore()}.`}
             </p>
           </div>
           {store ? (

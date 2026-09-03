@@ -1,6 +1,7 @@
 import "server-only";
 
 import { del, get, list, put } from "@vercel/blob";
+import { getVercelOidcTokenSync } from "@vercel/oidc";
 
 /**
  * Applicant media: a profile photo and a video, uploaded straight from the
@@ -71,26 +72,85 @@ export function isStoredHeroUrl(url: string): boolean {
 }
 
 /**
- * The store's token. Vercel calls it BLOB_READ_WRITE_TOKEN unless a prefix was
- * chosen when the store was connected to the project, in which case it is
- * SOMETHING_READ_WRITE_TOKEN with the same shape of value. Either will do;
- * the SDK is told which explicitly rather than left to look for the default.
+ * How this deployment reaches the store. Vercel connects a store to a project
+ * in one of two ways, and either will do. The older puts a read-write token in
+ * the environment, BLOB_READ_WRITE_TOKEN, or PREFIX_READ_WRITE_TOKEN when a
+ * prefix was chosen on connecting. The current one puts only the store's id
+ * there, BLOB_STORE_ID, and the deployment signs in as itself, with the
+ * identity token Vercel gives every request once OIDC federation is on for
+ * the project. The SDK is told which explicitly rather than left to look for
+ * defaults a prefix would hide.
  */
-export function blobToken(): string | undefined {
-  const direct = process.env.BLOB_READ_WRITE_TOKEN?.trim();
-  if (direct) return direct;
-  for (const [key, value] of Object.entries(process.env)) {
-    const candidate = value?.trim();
-    if (key.endsWith("_READ_WRITE_TOKEN") && candidate?.startsWith("vercel_blob_rw_")) {
-      return candidate;
-    }
+export type StoreAccess =
+  | { kind: "token"; variable: string; token: string }
+  | { kind: "identity"; variable: string; storeId: string };
+
+/** The first variable named exactly `name`, or ending in `suffix` with a value of the right shape. */
+function variable(
+  name: string,
+  suffix: string,
+  shaped: (value: string) => boolean,
+): { name: string; value: string } | null {
+  const direct = process.env[name]?.trim();
+  if (direct) return { name, value: direct };
+  for (const [key, raw] of Object.entries(process.env)) {
+    const value = raw?.trim();
+    if (key.endsWith(suffix) && value && shaped(value)) return { name: key, value };
   }
-  return undefined;
+  return null;
+}
+
+/** Whether Vercel handed this request an identity token to sign in to the store with. */
+function identityAvailable(): boolean {
+  try {
+    return getVercelOidcTokenSync().length > 0;
+  } catch {
+    return false;
+  }
+}
+
+function storeIdVariable() {
+  return variable("BLOB_STORE_ID", "_STORE_ID", (value) => value.startsWith("store_"));
+}
+
+export function storeAccess(): StoreAccess | null {
+  const token = variable("BLOB_READ_WRITE_TOKEN", "_READ_WRITE_TOKEN", (value) =>
+    value.startsWith("vercel_blob_rw_"),
+  );
+  if (token) return { kind: "token", variable: token.name, token: token.value };
+  const id = storeIdVariable();
+  if (id && identityAvailable()) return { kind: "identity", variable: id.name, storeId: id.value };
+  return null;
+}
+
+/** The credentials to spread into every SDK call. */
+export function storeAuth(): { token: string } | { storeId: string } | undefined {
+  const access = storeAccess();
+  if (!access) return undefined;
+  return access.kind === "token" ? { token: access.token } : { storeId: access.storeId };
 }
 
 /** Whether a store is configured. Without one the form simply does not offer uploads. */
 export function uploadsEnabled(): boolean {
-  return Boolean(blobToken());
+  return storeAccess() !== null;
+}
+
+/**
+ * The store's state in words, for /api/health and the Admin overview: which
+ * way in was found, or, when a store id is set but no identity reached this
+ * deployment, what to turn on.
+ */
+export function describeStore(): string {
+  const access = storeAccess();
+  if (access?.kind === "token") return `read-write token in ${access.variable}`;
+  if (access?.kind === "identity") {
+    return `store ${access.variable}, reached with the deployment's own identity`;
+  }
+  const id = storeIdVariable();
+  if (id) {
+    return `${id.name} is set, but no identity token reached this deployment, so it cannot sign in to the store: turn on OIDC federation under the project's security settings, or add a read-write token as BLOB_READ_WRITE_TOKEN, then redeploy`;
+  }
+  return "not connected";
 }
 
 /** Everything applicants upload lives under here. */
@@ -128,19 +188,19 @@ export type StoreCheck = { ok: true; pathname: string; ms: number } | { ok: fals
  */
 export async function checkStore(): Promise<StoreCheck> {
   if (!uploadsEnabled()) {
-    return { ok: false, error: "No store is connected: BLOB_READ_WRITE_TOKEN is not set." };
+    return { ok: false, error: `No store is connected: ${describeStore()}.` };
   }
   const started = Date.now();
-  const token = blobToken();
+  const auth = storeAuth();
   try {
     const blob = await put(`checks/${started}.txt`, "Hello World!", {
+      ...auth,
       access: "private",
       addRandomSuffix: true,
       contentType: "text/plain",
-      token,
     });
     try {
-      const read = await get(blob.url, { access: "private", token, useCache: false });
+      const read = await get(blob.url, { ...auth, access: "private", useCache: false });
       const text = read?.stream ? await new Response(read.stream).text() : null;
       if (text !== "Hello World!") {
         return {
@@ -149,7 +209,7 @@ export async function checkStore(): Promise<StoreCheck> {
         };
       }
     } finally {
-      await del(blob.url, { token });
+      await del(blob.url, { ...auth });
     }
     return { ok: true, pathname: blob.pathname, ms: Date.now() - started };
   } catch (error) {
@@ -169,7 +229,7 @@ export async function deleteMedia(urls: Array<string | null | undefined>): Promi
   if (real.length === 0 || !uploadsEnabled()) return;
   try {
     for (let start = 0; start < real.length; start += DELETE_BATCH) {
-      await del(real.slice(start, start + DELETE_BATCH), { token: blobToken() });
+      await del(real.slice(start, start + DELETE_BATCH), { ...storeAuth() });
     }
   } catch (error) {
     // The rows are gone either way; a file left behind is a cost, not a leak,
@@ -208,7 +268,7 @@ export async function sweepOrphanedMedia(referencedUrls: Iterable<string>): Prom
   try {
     let cursor: string | undefined;
     do {
-      const page = await list({ prefix: MEDIA_ROOT, cursor, limit: 1000, token: blobToken() });
+      const page = await list({ ...storeAuth(), prefix: MEDIA_ROOT, cursor, limit: 1000 });
       for (const blob of page.blobs) {
         if (referenced.has(blob.pathname)) continue;
         if (blob.uploadedAt.getTime() > cutoff) continue;
