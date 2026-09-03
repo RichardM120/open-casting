@@ -89,6 +89,9 @@ export function DateTimeField({
   "aria-describedby"?: string;
 }) {
   const [value, setValue] = useState(defaultValue);
+  // Whether the person has changed the date on this visit, by typing or from
+  // the picker: the stylesheet colours a field done only once they have.
+  const [touched, setTouched] = useState(false);
   const [open, setOpen] = useState(false);
   const [picked, setPicked] = useState<Day | null>(null);
   const [view, setView] = useState(() => {
@@ -109,6 +112,7 @@ export function DateTimeField({
 
   function commit(next: string) {
     setValue(next);
+    setTouched(true);
     onChange?.(next);
   }
 
@@ -214,6 +218,7 @@ export function DateTimeField({
           onChange={(event) => commit(event.target.value)}
           required={required}
           data-filled={value ? "true" : "false"}
+          data-touched={touched ? "true" : "false"}
           className="date-field min-w-0 flex-1"
           {...aria}
         />

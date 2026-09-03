@@ -408,10 +408,12 @@ the one primary action on a screen. Every colour used for text reaches 4.5:1
 on what it sits on; gold is a fill, never a colour for words, which is why
 the accent text of the old dark theme became terracotta. Focus rings are
 terracotta too, controls are at least 44px tall, and the submission form's
-send button stays in reach on a phone. A field is a white box until it is
-filled in, with a charcoal edge where it has to be and a grey one where it can
-be left, and pale green with a tick once it is: no field shares the ground's
-cream, and what is still to do stands apart from what is done.
+send button stays in reach on a phone. A field is a white box until the person
+fills it in, with a charcoal edge where it has to be and a grey one where it
+can be left, and pale green with a tick once they have: no field shares the
+ground's cream, and what is still to do stands apart from what is done. A value
+that was already there when the page opened, a default or a saved one, stays
+white until they change it.
 
 The applicant's pages under `/c/` stand alone: no site navigation, no footer
 of links, a parchment ground, and an optional header image across the top

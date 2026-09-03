@@ -120,15 +120,19 @@
   /*
    * A field says at a glance whether it is done. Until something is in it, it
    * is a white box, with a charcoal edge where it has to be filled in and a
-   * quieter grey edge where it can be left; once it holds a value it turns
-   * pale green, with a tick in a text field. White is not the ground's cream,
-   * so a field never disappears into the page, and green is not white, so
-   * what is still to do stands apart from what is done.
+   * quieter grey edge where it can be left; once the person has filled it in
+   * it turns pale green, with a tick in a text field. White is not the
+   * ground's cream, so a field never disappears into the page, and green is
+   * not white, so what is still to do stands apart from what is done.
    *
-   * An empty text field is told from a filled one by its placeholder, which
-   * every field has, if only a space; a select by which option is chosen; a
-   * date by the flag its own component sets, since a date field never shows
-   * a placeholder and a file field never holds a value the stylesheet can see.
+   * Green is for what the person did on this visit. A value that was already
+   * there when the page opened, a default or a saved one, stays white until
+   * they change it: :user-valid matches only once they have completed the
+   * field and what they put is acceptable. An empty text field is told from a
+   * filled one by its placeholder, which every field has, if only a space; a
+   * select by which option is chosen; a date by the flags its own component
+   * sets, since a date field never shows a placeholder and its picker writes
+   * the value itself; a file field never holds a value the stylesheet can see.
    */
   .control {
     background-color: var(--color-surface);
@@ -139,14 +143,14 @@
   .control[data-filled="false"]:is(:required, [aria-required="true"]) {
     border-color: var(--color-text);
   }
-  .control:not(select):not([type="file"]):not([data-filled]):not(:placeholder-shown),
-  select.control:has(option:checked:not([value=""])),
-  .control[data-filled="true"] {
+  .control:user-valid:not(select):not([type="file"]):not([data-filled]):not(:placeholder-shown),
+  select.control:user-valid:has(option:checked:not([value=""])),
+  .control[data-filled="true"][data-touched="true"] {
     background-color: var(--color-positive-soft);
     border-color: var(--color-positive-line);
   }
-  input.control:not([type="file"]):not([data-filled]):not(:placeholder-shown),
-  input.control[data-filled="true"] {
+  input.control:user-valid:not([type="file"]):not([data-filled]):not(:placeholder-shown),
+  input.control[data-filled="true"][data-touched="true"] {
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%231E7A4A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3.5 8.5 3 3 6-7'/%3E%3C/svg%3E");
     background-repeat: no-repeat;
     background-position: right 0.75rem center;
