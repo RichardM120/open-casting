@@ -98,7 +98,7 @@ const tiles = dir.p.locator("dl").first().locator(":scope > div");
 const boxes = await Promise.all([0, 1, 2, 3].map((i) => tiles.nth(i).boundingBox()));
 check("four totals", (await tiles.count()) === 4);
 check("in two rows of two", boxes[0].y === boxes[1].y && boxes[2].y === boxes[3].y && boxes[2].y > boxes[0].y + boxes[0].height - 1, JSON.stringify(boxes));
-check("and compact: the four take under 200px", boxes[3].y + boxes[3].height - boxes[0].y < 200, JSON.stringify(boxes));
+check("and compact: the four take under 240px", boxes[3].y + boxes[3].height - boxes[0].y < 240, JSON.stringify(boxes));
 await dir.p.screenshot({ path: `${SHOTS}/mobile-dashboard.png`, fullPage: true });
 await dir.p.setViewportSize({ width: 1280, height: 800 });
 

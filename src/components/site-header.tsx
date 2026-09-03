@@ -133,22 +133,11 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
               </form>
             </>
           ) : (
-            <>
-              {/* Signed out there is one link, so on a phone it sits here rather than in a bar of its own. */}
-              {PUBLIC_NAV.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-current={current === item.href ? "page" : undefined}
-                  className={cx(linkClass(item), "sm:hidden")}
-                >
-                  {item.label}
-                </Link>
-              ))}
-              <ButtonLink href="/login" size="sm">
-                Sign in
-              </ButtonLink>
-            </>
+            // Signed out, a phone shows only the way in up here; the one other
+            // link, FAQ, is in the footer's Help column and on the home page.
+            <ButtonLink href="/login" size="sm" className="whitespace-nowrap">
+              Sign in
+            </ButtonLink>
           )}
         </div>
       </div>
