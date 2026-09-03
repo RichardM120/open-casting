@@ -302,8 +302,8 @@ function Fieldset({
   children: React.ReactNode;
 }) {
   return (
-    <fieldset className="rounded-2xl border border-line bg-surface p-6 md:p-7">
-      <legend className="px-2 text-sm font-semibold tracking-tight">{legend}</legend>
+    <fieldset className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
+      <legend className="mb-2 text-lg font-semibold tracking-tight">{legend}</legend>
       <p className="text-sm text-muted">{description}</p>
       <div className="mt-6 grid gap-4 sm:grid-cols-2">{children}</div>
     </fieldset>

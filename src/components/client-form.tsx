@@ -70,8 +70,8 @@ export function ClientForm({ client }: { client?: Client }) {
         </>
       ) : null}
 
-      <fieldset className="rounded-2xl border border-line bg-surface p-6 md:p-7">
-        <legend className="px-2 text-sm font-semibold tracking-tight">The company</legend>
+      <fieldset className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
+        <legend className="mb-2 text-lg font-semibold tracking-tight">The company</legend>
         <p className="text-sm text-muted">
           The name their accounts sign in under. Changing it renames every account with them.
         </p>
@@ -105,8 +105,8 @@ export function ClientForm({ client }: { client?: Client }) {
         </div>
       </fieldset>
 
-      <fieldset className="rounded-2xl border border-line bg-surface p-6 md:p-7">
-        <legend className="px-2 text-sm font-semibold tracking-tight">Billing</legend>
+      <fieldset className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
+        <legend className="mb-2 text-lg font-semibold tracking-tight">Billing</legend>
         <p className="text-sm text-muted">
           Where invoices go, and whatever reference they need on them.
         </p>
@@ -134,8 +134,8 @@ export function ClientForm({ client }: { client?: Client }) {
         </div>
       </fieldset>
 
-      <fieldset className="rounded-2xl border border-line bg-surface p-6 md:p-7">
-        <legend className="px-2 text-sm font-semibold tracking-tight">What they bought</legend>
+      <fieldset className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
+        <legend className="mb-2 text-lg font-semibold tracking-tight">What they bought</legend>
         <p className="max-w-prose text-sm text-muted">
           Every account under this client inherits these. Leave a ceiling blank for no limit,
           and the date blank for no end.

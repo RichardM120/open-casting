@@ -174,8 +174,8 @@ export function SessionForm({
         </>
       ) : null}
 
-      <fieldset className="rounded-2xl border border-line bg-surface p-6 md:p-7">
-        <legend className="px-2 text-sm font-semibold tracking-tight">The casting call</legend>
+      <fieldset className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
+        <legend className="mb-2 text-lg font-semibold tracking-tight">The casting call</legend>
         <p className="text-sm text-muted">
           What applicants see above every role you post into it.
         </p>
@@ -241,8 +241,8 @@ export function SessionForm({
         </div>
       </fieldset>
 
-      <fieldset className="rounded-2xl border border-line bg-surface p-6 md:p-7">
-        <legend className="px-2 text-sm font-semibold tracking-tight">The casting window</legend>
+      <fieldset className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
+        <legend className="mb-2 text-lg font-semibold tracking-tight">The casting window</legend>
         <p className="text-sm text-muted">
           Every role in this casting call takes submissions from the opening time until the
           closing time, and at no other time. Times are UK time.
@@ -288,8 +288,8 @@ export function SessionForm({
         </div>
       </fieldset>
 
-      <fieldset className="rounded-2xl border border-line bg-surface p-6 md:p-7">
-        <legend className="px-2 text-sm font-semibold tracking-tight">
+      <fieldset className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
+        <legend className="mb-2 text-lg font-semibold tracking-tight">
           When the production finishes
         </legend>
         <p className="max-w-prose text-sm text-muted">

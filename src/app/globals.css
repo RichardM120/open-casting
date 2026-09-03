@@ -68,6 +68,20 @@
     color: var(--color-accent-ink);
   }
 
+  /*
+   * A legend is drawn on a fieldset's border unless it floats, in which case
+   * the browser lays it out as an ordinary block inside the padding: a
+   * heading at the top of the card, not a label cut into its edge.
+   */
+  fieldset > legend {
+    float: left;
+    width: 100%;
+    padding: 0;
+  }
+  fieldset > legend + * {
+    clear: both;
+  }
+
   :focus-visible {
     outline: 2px solid var(--color-brand);
     outline-offset: 2px;
