@@ -26,6 +26,7 @@ import { RETENTION_DAYS, daysUntilPurge, purgeDate } from "@/lib/retention";
 import { getVisibleSession, shareSlug } from "@/lib/sessions";
 import { countsByRole, countsForSession, listSessionSubmissions } from "@/lib/submissions";
 import { SUBMISSION_STATUSES, type SubmissionStatus } from "@/lib/types";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 export async function generateMetadata({
   params,
@@ -305,15 +306,13 @@ export default async function SessionPage({
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+      <Breadcrumb trail={[{ href: "/dashboard", label: "Casting calls" }, { label: session.name }]} />
       <SetupProgress stage={draft ? (roles.length === 0 ? 2 : 3) : 4} sessionId={session.id} />
       <HelpNote title="What to do on this screen" faq="/faq/casting-directors">
         <p dangerouslySetInnerHTML={{ __html: '<strong>Post the roles</strong> first. Then <strong>publish</strong>: that is the moment the share link starts working, and it cannot be undone.' }} />
         <p dangerouslySetInnerHTML={{ __html: "Send the link wherever you want the call to go. To stop a call, close it early; removing it deletes the applicants' details." }} />
         <p dangerouslySetInnerHTML={{ __html: 'Once published, every submission across the roles is listed here with its status. Download the list as a spreadsheet, or have it emailed to you.' }} />
       </HelpNote>
-      <Link href="/dashboard" className="text-sm text-muted transition-colors hover:text-text">
-        &larr; Casting calls
-      </Link>
 
       {flash ? (
         <p

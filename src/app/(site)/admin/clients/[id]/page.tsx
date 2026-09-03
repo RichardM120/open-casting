@@ -11,6 +11,7 @@ import { clientUsage, getClient } from "@/lib/clients";
 import { formatDate } from "@/lib/format";
 import { ROLE_LABELS, TIERS } from "@/lib/types";
 import { listAccounts } from "@/lib/users";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -55,16 +56,11 @@ export default async function ClientPage({
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
+      <Breadcrumb trail={[{ href: "/admin", label: "Admin" }, { href: "/admin/clients", label: "Clients" }, { label: client.name }]} />
       <HelpNote title="What to do on this screen">
         <p dangerouslySetInnerHTML={{ __html: 'Change what this client is on here: the plan, the ceilings and the access date. Every account under them inherits it, so there is nothing to set per account.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'Suspending locks every account out at once and is reversible. Removing is only possible once nothing is left under the client.' }} />
       </HelpNote>
-      <Link
-        href="/admin/clients"
-        className="text-sm text-muted transition-colors hover:text-text"
-      >
-        &larr; Clients
-      </Link>
 
       {notice ? (
         <p

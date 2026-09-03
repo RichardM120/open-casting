@@ -10,6 +10,7 @@ import { requireUser } from "@/lib/auth";
 import { listClients } from "@/lib/clients";
 import { ROLE_LABELS, TIERS, type Tier } from "@/lib/types";
 import { listAccounts } from "@/lib/users";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 export const metadata: Metadata = { title: "Accounts" };
 
@@ -24,13 +25,11 @@ export default async function AccountsPage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+      <Breadcrumb trail={[{ href: "/admin", label: "Admin" }, { label: "Accounts" }]} />
       <HelpNote title="What this screen is for">
         <p dangerouslySetInnerHTML={{ __html: 'Accounts belong to a client and inherit its plan. The password is generated and shown once, so hand it over straight away; it cannot be retrieved afterwards.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'A director sees only the casting calls they open. A producer sees every call under their client.' }} />
       </HelpNote>
-      <Link href="/dashboard" className="text-sm text-muted transition-colors hover:text-text">
-        &larr; Casting calls
-      </Link>
 
       <div className="mt-6">
         <Eyebrow>Admin</Eyebrow>

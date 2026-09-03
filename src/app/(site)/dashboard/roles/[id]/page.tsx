@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { HelpNote } from "@/components/help-note";
 import { SetupProgress } from "@/components/setup-progress";
 import { notFound } from "next/navigation";
@@ -27,6 +26,7 @@ import { ProfilePhoto } from "@/components/profile-photo";
 import { mediaSrc } from "@/lib/media";
 import { countsForRole, listSubmissions } from "@/lib/submissions";
 import type { Submission } from "@/lib/types";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 export async function generateMetadata({
   params,
@@ -66,17 +66,12 @@ export default async function RoleSubmissionsPage({
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+      <Breadcrumb trail={[{ href: "/dashboard", label: "Casting calls" }, { href: `/dashboard/sessions/${role.sessionId}`, label: role.production }, { label: role.title }]} />
       <SetupProgress stage={role.session.publishedAt ? 4 : 3} sessionId={role.sessionId} />
       <HelpNote title="What to do on this screen" faq="/faq/casting-directors">
         <p dangerouslySetInnerHTML={{ __html: 'Submissions to this role arrive here. Move people through <strong>New</strong>, <strong>Shortlisted</strong>, <strong>Callback</strong> and <strong>Declined</strong> as you work; nothing is emailed to them automatically.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'Their details are deleted thirty days after the production finishes. Export anything you need before then.' }} />
       </HelpNote>
-      <Link
-        href={`/dashboard/sessions/${role.sessionId}`}
-        className="text-sm text-muted transition-colors hover:text-text"
-      >
-        &larr; {role.production}
-      </Link>
 
       {justPosted || justSaved ? (
         <p

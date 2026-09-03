@@ -8,6 +8,7 @@ import { requireUser } from "@/lib/auth";
 import { clientUsage, listClients } from "@/lib/clients";
 import { formatDate } from "@/lib/format";
 import { TIERS } from "@/lib/types";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -35,13 +36,11 @@ export default async function ClientsPage({ searchParams }: PageProps<"/admin/cl
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+      <Breadcrumb trail={[{ href: "/admin", label: "Admin" }, { label: "Clients" }]} />
       <HelpNote title="What this screen is for">
         <p dangerouslySetInnerHTML={{ __html: 'One row per company paying for Open Casting. Open a client to see its accounts, what it is using against what it bought, and to suspend or restore it.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'Take on a new client before making its accounts; an account cannot exist without one.' }} />
       </HelpNote>
-      <Link href="/dashboard" className="text-sm text-muted transition-colors hover:text-text">
-        &larr; Casting calls
-      </Link>
 
       {params.removed ? (
         <p

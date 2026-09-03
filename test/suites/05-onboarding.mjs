@@ -118,11 +118,15 @@ section("6b the two sections each carry their own navigation");
   check("and the page itself still refuses",
     (await half.p.goto(`${BASE}/admin/accounts`, { waitUntil: "networkidle" })).status() === 404);
 
-  // A back-link that names a destination differently from the nav is a bug.
+  // The breadcrumb at the top of the screen names its steps as the nav does;
+  // a trail that calls a destination something else is a bug.
   await admin.p.goto(`${BASE}/dashboard/activity`, { waitUntil: "networkidle" });
-  check("back-links use the nav's names", (await admin.p.getByText("← Casting calls").count()) > 0);
+  const crumbs = () => admin.p.locator("nav[aria-label='Breadcrumb']").first();
+  check("the breadcrumb is the first thing in the page", (await admin.p.locator("main > div > *").first().evaluate((el) => el.getAttribute("aria-label"))) === "Breadcrumb");
+  check("breadcrumbs use the nav's names", (await crumbs().getByRole("link", { name: "Casting calls" }).count()) === 1);
+  check("and end on the page itself", (await crumbs().locator("[aria-current='page']").innerText()) === "Activity");
   await admin.p.goto(`${BASE}/dashboard/sessions/new`, { waitUntil: "networkidle" });
-  check("and so does the new-casting call page", (await admin.p.getByText("← Casting calls").count()) > 0);
+  check("and so does the new-casting call page", (await crumbs().getByRole("link", { name: "Casting calls" }).count()) === 1);
 }
 
 section("7 navigation fixes");

@@ -8,6 +8,7 @@ import { RoleForm } from "@/components/role-form";
 import { ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { listVisibleSessions } from "@/lib/sessions";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 export const metadata: Metadata = {
   title: "Post a role",
@@ -23,14 +24,12 @@ export default async function NewRolePage({ searchParams }: PageProps<"/dashboar
   if (sessions.length === 0) {
     return (
       <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+        <Breadcrumb trail={[{ href: "/dashboard", label: "Casting calls" }, { label: "New role" }]} />
         <SetupProgress stage={2} />
         <HelpNote title="What this screen is for" faq="/faq/casting-directors">
           <p dangerouslySetInnerHTML={{ __html: 'A role is the brief and the practicalities: who you are looking for, where it shoots and when. The dates it takes submissions between come from the casting call, not from here.' }} />
           <p dangerouslySetInnerHTML={{ __html: 'Terms you set here must be accepted by everyone who submits to this role.' }} />
         </HelpNote>
-        <Link href="/dashboard" className="text-sm text-muted hover:text-text">
-          &larr; Casting calls
-        </Link>
         <h1 className="mt-6 text-3xl font-semibold tracking-tight md:text-4xl">Post a role</h1>
         <div className="mt-10">
           <EmptyState
@@ -51,17 +50,12 @@ export default async function NewRolePage({ searchParams }: PageProps<"/dashboar
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+      <Breadcrumb trail={[{ href: "/dashboard", label: "Casting calls" }, { href: `/dashboard/sessions/${production.id}`, label: production.name }, { label: "New role" }]} />
       <SetupProgress stage={2} sessionId={requested} />
       <HelpNote title="What this screen is for" faq="/faq/casting-directors">
         <p dangerouslySetInnerHTML={{ __html: 'A role is the brief and the practicalities: who you are looking for, where it shoots and when. The dates it takes submissions between come from the casting call, not from here.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'Terms you set here must be accepted by everyone who submits to this role.' }} />
       </HelpNote>
-      <Link
-        href={`/dashboard/sessions/${production.id}`}
-        className="text-sm text-muted hover:text-text"
-      >
-        &larr; {production.name}
-      </Link>
       <Eyebrow className="mt-6">New role</Eyebrow>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Post a role</h1>
       <p className="mt-3 max-w-2xl text-muted">

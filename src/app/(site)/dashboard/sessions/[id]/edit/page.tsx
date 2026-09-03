@@ -1,5 +1,4 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { HelpNote } from "@/components/help-note";
 import { SetupProgress } from "@/components/setup-progress";
 import { notFound } from "next/navigation";
@@ -10,6 +9,7 @@ import { currentUser, requireUser } from "@/lib/auth";
 import { uploadsEnabled } from "@/lib/blob";
 import { listSessionRoles } from "@/lib/roles";
 import { getVisibleSession } from "@/lib/sessions";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 export async function generateMetadata({
   params,
@@ -32,16 +32,11 @@ export default async function EditSessionPage({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+      <Breadcrumb trail={[{ href: "/dashboard", label: "Casting calls" }, { href: `/dashboard/sessions/${session.id}`, label: session.name }, { label: "Edit" }]} />
       <SetupProgress stage={1} sessionId={session.id} />
       <HelpNote title="What this screen is for" faq="/faq/casting-directors">
         <p dangerouslySetInnerHTML={{ __html: 'Changes go live straight away, and moving the times moves every role in the call with them. Shortening the window drops anyone mid-submission.' }} />
       </HelpNote>
-      <Link
-        href={`/dashboard/sessions/${session.id}`}
-        className="text-sm text-muted transition-colors hover:text-text"
-      >
-        &larr; {session.name}
-      </Link>
 
       <div className="mt-6">
         <Eyebrow>Casting call</Eyebrow>

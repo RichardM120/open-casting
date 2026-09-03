@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { HelpNote } from "@/components/help-note";
 
 import { ActivityList } from "@/components/activity-list";
 import { Eyebrow } from "@/components/ui";
 import { listActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 export const dynamic = "force-dynamic";
 
@@ -22,12 +22,10 @@ export default async function AdminActivityPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+      <Breadcrumb trail={[{ href: "/admin", label: "Admin" }, { label: "Activity" }]} />
       <HelpNote title="What this screen is for">
         <p dangerouslySetInnerHTML={{ __html: 'Everything on the site, across every client, including account changes. It is the record, and it is not editable.' }} />
       </HelpNote>
-      <Link href="/admin" className="text-sm text-muted transition-colors hover:text-text">
-        &larr; Admin
-      </Link>
 
       <div className="mt-6">
         <Eyebrow>History</Eyebrow>

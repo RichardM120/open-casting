@@ -3,6 +3,7 @@ import Link from "next/link";
 
 import { FaqItem, FaqSection, FieldGlossary, NotLegalAdvice } from "@/components/faq";
 import { ButtonLink, Eyebrow } from "@/components/ui";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 export const metadata: Metadata = {
   title: "FAQ for applicants",
@@ -13,9 +14,7 @@ export const metadata: Metadata = {
 export default function ApplicantFaqPage() {
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <Link href="/faq" className="text-sm text-muted transition-colors hover:text-text">
-        &larr; All FAQs
-      </Link>
+      <Breadcrumb trail={[{ href: "/faq", label: "All FAQs" }, { label: "For applicants" }]} />
 
       <div className="mt-6">
         <Eyebrow>For applicants</Eyebrow>

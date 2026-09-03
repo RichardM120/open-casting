@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { HelpNote } from "@/components/help-note";
 import { notFound } from "next/navigation";
 
 import { ClientForm } from "@/components/client-form";
 import { Eyebrow } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
+import { Breadcrumb } from "@/components/breadcrumb";
 
 export const metadata: Metadata = {
   title: "New client",
@@ -18,15 +18,10 @@ export default async function NewClientPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+      <Breadcrumb trail={[{ href: "/admin", label: "Admin" }, { href: "/admin/clients", label: "Clients" }, { label: "New client" }]} />
       <HelpNote title="What this screen is for">
         <p dangerouslySetInnerHTML={{ __html: 'The company, who to talk to, where the invoice goes, and what they bought. Their accounts come next and inherit all of it.' }} />
       </HelpNote>
-      <Link
-        href="/admin/clients"
-        className="text-sm text-muted transition-colors hover:text-text"
-      >
-        &larr; Clients
-      </Link>
 
       <div className="mt-6">
         <Eyebrow>New client</Eyebrow>
