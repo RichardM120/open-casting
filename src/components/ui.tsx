@@ -149,6 +149,7 @@ export function Field({
   htmlFor,
   hint,
   error,
+  required,
   children,
   className,
 }: {
@@ -156,10 +157,22 @@ export function Field({
   htmlFor: string;
   hint?: string;
   error?: string;
+  /** Marks the label. Read from the control's own `required` unless given. */
+  required?: boolean;
   children: ReactNode;
   className?: string;
 }) {
   const describedBy = error ? `${htmlFor}-error` : hint ? `${htmlFor}-hint` : undefined;
+
+  // Every label says which it is: a star for a field that has to be filled
+  // in, "(optional)" for one that can be left. The control's own `required`
+  // is the source, so the mark and the browser's check cannot disagree.
+  const mandatory =
+    required ??
+    Children.toArray(children).some(
+      (child) =>
+        isValidElement<{ required?: boolean }>(child) && Boolean(child.props.required),
+    );
 
   // The control is wired up here rather than at every call site, so no field can
   // show an error a screen reader never announces or a red border it cannot
@@ -177,6 +190,7 @@ export function Field({
     <div className={cx("flex flex-col gap-1.5", className)}>
       <label htmlFor={htmlFor} className="text-sm font-medium text-text">
         {label}
+        {mandatory ? <RequiredMark /> : <OptionalMark />}
       </label>
       {control}
       {error ? (
@@ -203,6 +217,32 @@ export function Field({
         </p>
       ) : null}
     </div>
+  );
+}
+
+/** The star after a label: this has to be filled in. */
+export function RequiredMark() {
+  return (
+    <span aria-hidden="true" className="ml-0.5 font-semibold text-brand">
+      *
+    </span>
+  );
+}
+
+/** The word after a label that can be left blank. */
+export function OptionalMark() {
+  return <span className="ml-1.5 text-xs font-normal text-faint">(optional)</span>;
+}
+
+/** The key to the marks, once, at the top of a form. */
+export function RequiredKey({ className }: { className?: string }) {
+  return (
+    <p className={cx("text-xs text-muted", className)}>
+      <span aria-hidden="true" className="font-semibold text-brand">
+        *
+      </span>{" "}
+      Required. Anything marked optional can be left blank.
+    </p>
   );
 }
 
@@ -276,7 +316,10 @@ export function Checkbox({
         {...props}
         className="size-4 accent-accent"
       />
-      {label}
+      <span>
+        {label}
+        {props.required ? <RequiredMark /> : null}
+      </span>
     </label>
   );
 }

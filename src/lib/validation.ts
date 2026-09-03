@@ -2,6 +2,7 @@ import { z } from "zod";
 
 import { fromLocalInput, londonDate } from "./format";
 import { PRODUCTION_TYPES, SIGNUP_ROLES, TIER_KEYS, ADULT_AGE } from "./types";
+import { APPLICANT_ASKS, ASK_KEYS, DEFAULT_REQUIRED_FIELDS, type AskKey } from "./types";
 
 const trimmed = z.string().trim();
 const optionalUrl = trimmed
@@ -21,8 +22,13 @@ export const submissionSchema = z.object({
       (value) => value === "" || z.email().safeParse(value).success,
       "Enter a valid email address",
     ),
-  phone: trimmed.min(6, "Enter a contact number").max(40),
-  location: trimmed.min(2, "Where are you based?").max(80),
+  // The phone, where they are based and the cover note are required only
+  // when the role says so, which the action checks against the role rather
+  // than the form. Given, each still has to be a real one.
+  phone: trimmed.max(40).refine((value) => value === "" || value.length >= 6, "Enter a contact number"),
+  location: trimmed
+    .max(80)
+    .refine((value) => value === "" || value.length >= 2, "Where are you based?"),
   age: z.coerce
     .number({ message: "Enter your age in years" })
     .int("Enter your age in whole years")
@@ -31,8 +37,11 @@ export const submissionSchema = z.object({
   reelUrl: optionalUrl,
   profileUrl: optionalUrl,
   coverNote: trimmed
-    .min(20, "Tell the casting director a little more. Twenty characters is the minimum")
-    .max(1200, "Keep the cover note under 1200 characters"),
+    .max(1200, "Keep the cover note under 1200 characters")
+    .refine(
+      (value) => value === "" || value.length >= 20,
+      "Tell the casting director a little more. Twenty characters is the minimum",
+    ),
   // Only present, and only required, when the role carries terms. The action
   // checks it against the role rather than trusting the form.
   acceptTerms: z.coerce.boolean().optional(),
@@ -94,6 +103,8 @@ export const roleSchema = z
     shootEndsAt: optionalDate,
     sessionId: trimmed.min(1, "Choose the production this role belongs to"),
     disclaimer: trimmed.max(2000, "Keep the terms under 2000 characters"),
+    // Built by the action from the form's radios; see readRequiredFields.
+    requiredFields: z.array(z.enum(ASK_KEYS)),
   })
   .refine(
     (value) => !value.shootEndsAt || !value.shootStartsAt || value.shootEndsAt >= value.shootStartsAt,
@@ -112,6 +123,20 @@ export const roleSchema = z
   });
 
 export type RoleInput = z.infer<typeof roleSchema>;
+
+/**
+ * The role form posts one radio per ask, `ask_phone` and so on, set to
+ * "required" or "optional". A form that sent none of them gets the default,
+ * which is what the form always asked for.
+ */
+export function readRequiredFields(entries: Record<string, unknown>): AskKey[] {
+  if (!APPLICANT_ASKS.some((ask) => `ask_${ask.key}` in entries)) {
+    return [...DEFAULT_REQUIRED_FIELDS];
+  }
+  return APPLICANT_ASKS.filter((ask) => entries[`ask_${ask.key}`] === "required").map(
+    (ask) => ask.key,
+  );
+}
 
 export type FieldErrors = Record<string, string>;
 

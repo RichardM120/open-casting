@@ -5,6 +5,7 @@ import { HelpNote } from "@/components/help-note";
 import { SetupProgress } from "@/components/setup-progress";
 
 import { RoleForm } from "@/components/role-form";
+import { uploadsEnabled } from "@/lib/blob";
 import { ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { listVisibleSessions } from "@/lib/sessions";
@@ -70,7 +71,7 @@ export default async function NewRolePage({ searchParams }: PageProps<"/dashboar
       </p>
 
       <div className="mt-10">
-        <RoleForm sessions={sessions} defaultSessionId={defaultSessionId} />
+        <RoleForm sessions={sessions} defaultSessionId={defaultSessionId} uploads={uploadsEnabled()} />
       </div>
     </div>
   );

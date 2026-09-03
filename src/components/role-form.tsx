@@ -5,11 +5,13 @@ import { useActionState } from "react";
 import { editRole, postRole } from "@/lib/actions";
 import { formatDateTime } from "@/lib/format";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
-import type { CastingSession, Role } from "@/lib/types";
+import { APPLICANT_ASKS, DEFAULT_REQUIRED_FIELDS } from "@/lib/types";
+import type { AskKey, CastingSession, Role } from "@/lib/types";
 
 import { DateTimeField } from "./date-time-field";
 import { useErrorFocus } from "./use-error-focus";
-import { Button, ButtonLink, Checkbox, ErrorSummary, Field, Input, Select, Textarea } from "./ui";
+import { ButtonLink, Checkbox, ErrorSummary, Field, Input, RequiredKey, Select, Textarea } from "./ui";
+import { SubmitButton } from "./submit-button";
 
 const LABELS: Record<string, string> = {
   sessionId: "Casting call",
@@ -30,15 +32,24 @@ const LABELS: Record<string, string> = {
  * Nothing about the casting call is asked for here: a role takes its casting call's
  * name, type, synopsis, company and dates from the casting call it is posted into.
  */
+/** The two settings a director can give each of the applicant's fields. */
+const ASK_OPTIONS = [
+  { value: "required", label: "Required" },
+  { value: "optional", label: "Optional" },
+] as const;
+
 export function RoleForm({
   role,
   sessions,
   defaultSessionId,
+  uploads,
 }: {
   role?: Role;
   /** The casting calls this account may post into. Empty is handled by the page. */
   sessions: CastingSession[];
   defaultSessionId?: string;
+  /** Whether a file store is configured. Without one a photo or video cannot be asked for. */
+  uploads: boolean;
 }) {
   const [state, formAction, pending] = useActionState(
     role ? editRole : postRole,
@@ -66,6 +77,21 @@ export function RoleForm({
         }
       : submitted;
 
+  // Which of the applicant's fields this role requires: as the role has them,
+  // the default for a new one, or what was just posted after a refused save.
+  const requiredNow = new Set<AskKey>(role ? role.requiredFields : DEFAULT_REQUIRED_FIELDS);
+  const askValue = (key: AskKey): (typeof ASK_OPTIONS)[number]["value"] =>
+    state.status === "idle"
+      ? requiredNow.has(key)
+        ? "required"
+        : "optional"
+      : submitted[`ask_${key}`] === "required"
+        ? "required"
+        : "optional";
+  const asks = APPLICANT_ASKS.filter(
+    (ask) => uploads || (ask.key !== "photo" && ask.key !== "video"),
+  );
+
   return (
     <form ref={formRef} action={formAction} className="flex flex-col gap-8">
       {role ? <input type="hidden" name="roleId" value={role.id} /> : null}
@@ -82,6 +108,8 @@ export function RoleForm({
           <ErrorSummary errors={errors} labels={LABELS} />
         </>
       ) : null}
+
+      <RequiredKey />
 
       <Fieldset
         legend="Casting call"
@@ -252,6 +280,45 @@ export function RoleForm({
       </Fieldset>
 
       <Fieldset
+        legend="What applicants must send"
+        description="Their name, email and age are always asked for, and every submission accepts the terms. Choose what else has to be there before a submission goes through. Anything optional is still offered, and can be left blank."
+      >
+        <div className="divide-y divide-line sm:col-span-2">
+          {asks.map((ask) => (
+            <div
+              key={ask.key}
+              className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-3"
+            >
+              <span id={`ask-${ask.key}`} className="text-sm font-medium text-text">
+                {ask.label}
+              </span>
+              <span
+                role="radiogroup"
+                aria-labelledby={`ask-${ask.key}`}
+                className="inline-flex rounded-full border border-line-strong bg-raised p-0.5"
+              >
+                {ASK_OPTIONS.map((option) => (
+                  <label
+                    key={option.value}
+                    className="cursor-pointer rounded-full px-3.5 py-1.5 text-sm text-muted transition-colors has-checked:bg-accent has-checked:font-semibold has-checked:text-accent-ink has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand"
+                  >
+                    <input
+                      type="radio"
+                      name={`ask_${ask.key}`}
+                      value={option.value}
+                      defaultChecked={askValue(ask.key) === option.value}
+                      className="sr-only"
+                    />
+                    {option.label}
+                  </label>
+                ))}
+              </span>
+            </div>
+          ))}
+        </div>
+      </Fieldset>
+
+      <Fieldset
         legend="Terms for applicants"
         description={
           role
@@ -277,9 +344,9 @@ export function RoleForm({
       </Fieldset>
 
       <div className="flex flex-wrap items-center gap-4 border-t border-line pt-6">
-        <Button type="submit" disabled={pending}>
+        <SubmitButton disabled={pending}>
           {pending ? (role ? "Saving" : "Posting") : role ? "Save changes" : "Post the role"}
-        </Button>
+        </SubmitButton>
         <ButtonLink
           href={role ? `/dashboard/roles/${role.id}` : `/dashboard/sessions/${defaultSessionId ?? ""}`}
           variant="ghost"

@@ -5,7 +5,8 @@ import { useActionState } from "react";
 import { signIn } from "@/lib/auth-actions";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
 
-import { Button, Field, Input } from "./ui";
+import { Field, Input } from "./ui";
+import { SubmitButton } from "./submit-button";
 
 function GoogleButton({ next, label }: { next: string; label: string }) {
   return (
@@ -98,9 +99,9 @@ export function SignInForm({
         />
       </Field>
 
-      <Button type="submit" disabled={pending} className="mt-2 w-full">
+      <SubmitButton disabled={pending} className="mt-2 w-full">
         {pending ? "Signing in…" : "Sign in"}
-      </Button>
+      </SubmitButton>
 
       {state.status === "error" ? (
         <p className="text-sm text-danger" role="alert">

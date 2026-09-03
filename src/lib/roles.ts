@@ -3,7 +3,8 @@ import "server-only";
 import type { SessionUser } from "./auth";
 import { query } from "./db";
 import { LIVE, SESSION_COLUMNS, toSession } from "./sessions";
-import type { CastingSession, ProductionType, Role } from "./types";
+import { ASK_KEYS, DEFAULT_REQUIRED_FIELDS } from "./types";
+import type { AskKey, CastingSession, ProductionType, Role } from "./types";
 
 /* ------------------------------------------------------------- row shape -- */
 
@@ -25,6 +26,7 @@ type RoleRow = {
   casting_director: string;
   company: string;
   disclaimer: string;
+  required_fields: unknown;
   closed_at: Date | null;
   owner_id: string | null;
   session_id: string;
@@ -36,7 +38,7 @@ const COLUMNS = `
   requirements, location, self_tape, age_min, age_max,
   to_char(shoot_starts_at, 'YYYY-MM-DD') AS shoot_starts_at,
   to_char(shoot_ends_at, 'YYYY-MM-DD') AS shoot_ends_at,
-  casting_director, company, disclaimer, closed_at, owner_id, session_id, posted_at
+  casting_director, company, disclaimer, required_fields, closed_at, owner_id, session_id, posted_at
 `;
 
 function toRole(row: RoleRow): Role {
@@ -58,11 +60,18 @@ function toRole(row: RoleRow): Role {
     castingDirector: row.casting_director,
     company: row.company,
     disclaimer: row.disclaimer,
+    requiredFields: readAsks(row.required_fields),
     closedAt: row.closed_at?.toISOString() ?? null,
     ownerId: row.owner_id,
     sessionId: row.session_id,
     postedAt: row.posted_at.toISOString(),
   };
+}
+
+/** The stored list, kept to keys the app knows: a row from before a key was retired is not an error. */
+function readAsks(value: unknown): AskKey[] {
+  if (!Array.isArray(value)) return [...DEFAULT_REQUIRED_FIELDS];
+  return ASK_KEYS.filter((key) => value.includes(key));
 }
 
 export type ListedRole = Role & { session: CastingSession };
@@ -222,8 +231,9 @@ export async function createRole(
     `INSERT INTO roles (
        id, slug, title, production, production_type, synopsis, character_brief,
        requirements, location, self_tape, age_min, age_max, shoot_starts_at,
-       shoot_ends_at, casting_director, company, owner_id, disclaimer, session_id
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19)
+       shoot_ends_at, casting_director, company, owner_id, disclaimer, session_id,
+       required_fields
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20)
      RETURNING ${COLUMNS}`,
     [
       `rol_${crypto.randomUUID().slice(0, 12)}`,
@@ -246,6 +256,7 @@ export async function createRole(
       poster.id,
       input.disclaimer,
       session.id,
+      JSON.stringify(input.requiredFields),
     ],
   );
   return toRole(rows[0]);
@@ -288,7 +299,8 @@ export async function updateRole(
        age_max = $${params.length + 8},
        shoot_starts_at = $${params.length + 9},
        shoot_ends_at = $${params.length + 10},
-       disclaimer = $${params.length + 11}
+       disclaimer = $${params.length + 11},
+       required_fields = $${params.length + 12}
      WHERE id = $${params.length + 1}${where ? ` AND ${where}` : ""}
      RETURNING ${COLUMNS}`,
     [
@@ -297,6 +309,7 @@ export async function updateRole(
       input.selfTape, input.ageMin, input.ageMax, input.shootStartsAt,
       input.shootEndsAt,
       input.disclaimer,
+      JSON.stringify(input.requiredFields),
     ],
   );
   return rows[0] ? toRole(rows[0]) : null;

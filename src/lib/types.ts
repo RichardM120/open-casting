@@ -102,6 +102,28 @@ export type CastingSession = {
   createdAt: string;
 };
 
+/**
+ * What an applicant can be asked for beyond their name, email and age, which
+ * every role needs, and the terms, which every submission accepts. The casting
+ * director decides per role which of these a submission has to carry.
+ */
+export const APPLICANT_ASKS = [
+  { key: "phone", label: "Phone number" },
+  { key: "location", label: "Where they are based" },
+  { key: "coverNote", label: "Cover note" },
+  { key: "reelUrl", label: "Showreel link" },
+  { key: "profileUrl", label: "Profile link" },
+  { key: "photo", label: "Profile photo" },
+  { key: "video", label: "Self-tape or showreel video" },
+] as const;
+
+export type AskKey = (typeof APPLICANT_ASKS)[number]["key"];
+
+export const ASK_KEYS = APPLICANT_ASKS.map((ask) => ask.key) as [AskKey, ...AskKey[]];
+
+/** What a role asks for unless the director says otherwise: what the form always asked. */
+export const DEFAULT_REQUIRED_FIELDS: AskKey[] = ["phone", "location", "coverNote"];
+
 export type Role = {
   id: string;
   slug: string;
@@ -128,6 +150,8 @@ export type Role = {
   castingDirector: string;
   /** Terms the applicant must accept to submit. Empty when none are set. */
   disclaimer: string;
+  /** Which of the applicant's fields have to be filled in for this role. */
+  requiredFields: AskKey[];
   /** Set when closed ahead of the production's closing time. ISO timestamp, or null. */
   closedAt: string | null;
   /** The account that posted it. Null only for rows predating accounts. */

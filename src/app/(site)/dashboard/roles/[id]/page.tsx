@@ -251,16 +251,23 @@ function SubmissionCard({ submission }: { submission: Submission }) {
               <StatusBadge status={submission.status} />
             </div>
             <p className="mt-1 text-sm text-muted">
-              {submission.location} · {submission.age} · submitted{" "}
-              {formatRelative(submission.submittedAt)}
+              {[
+                submission.location,
+                String(submission.age),
+                `submitted ${formatRelative(submission.submittedAt)}`,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
             </p>
           </div>
         </div>
       </div>
 
-      <p className="mt-4 max-w-prose text-sm leading-relaxed text-muted">
-        {submission.coverNote}
-      </p>
+      {submission.coverNote ? (
+        <p className="mt-4 max-w-prose text-sm leading-relaxed text-muted">
+          {submission.coverNote}
+        </p>
+      ) : null}
 
       {submission.videoUrl ? (
         // Nothing is fetched until the director presses play: a long list of
@@ -293,7 +300,7 @@ function SubmissionCard({ submission }: { submission: Submission }) {
         >
           {submission.email}
         </a>
-        <span className="text-muted">{submission.phone}</span>
+        {submission.phone ? <span className="text-muted">{submission.phone}</span> : null}
         {submission.reelUrl ? (
           <ExternalLink href={submission.reelUrl}>Showreel</ExternalLink>
         ) : null}

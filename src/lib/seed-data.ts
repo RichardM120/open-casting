@@ -1,4 +1,5 @@
 import type { Database, SeedRole, SeedSession, Submission } from "./types";
+import { DEFAULT_REQUIRED_FIELDS } from "./types";
 
 /**
  * Demo content. The database seeds itself from this when it is empty, so a
@@ -133,6 +134,7 @@ const roles: SeedRole[] = [
     disclaimer: "",
     closedAt: null,
     postedAt: "2026-08-24T09:15:00.000Z",
+    requiredFields: DEFAULT_REQUIRED_FIELDS,
   },
   {
     id: "rol_saltmarsh_gethin",
@@ -155,6 +157,7 @@ const roles: SeedRole[] = [
     disclaimer: "",
     closedAt: null,
     postedAt: "2026-08-24T09:22:00.000Z",
+    requiredFields: DEFAULT_REQUIRED_FIELDS,
   },
   {
     id: "rol_northbank_dcelliot",
@@ -178,6 +181,7 @@ const roles: SeedRole[] = [
     disclaimer: "",
     closedAt: null,
     postedAt: "2026-08-19T14:40:00.000Z",
+    requiredFields: DEFAULT_REQUIRED_FIELDS,
   },
   {
     id: "rol_northbank_supporting",
@@ -197,6 +201,7 @@ const roles: SeedRole[] = [
     disclaimer: "",
     closedAt: null,
     postedAt: "2026-08-19T14:52:00.000Z",
+    requiredFields: DEFAULT_REQUIRED_FIELDS,
   },
   {
     id: "rol_hearth_couple",
@@ -221,6 +226,7 @@ const roles: SeedRole[] = [
       "Usage is UK, all media, 12 months from first air date. The day rate does not include the buyout, which is negotiated separately once you are cast. Submitting does not create any engagement, and we cannot pay for self-tapes. We keep your details for the duration of this casting and delete them within 6 months of it closing.",
     closedAt: null,
     postedAt: "2026-08-27T11:05:00.000Z",
+    requiredFields: DEFAULT_REQUIRED_FIELDS,
   },
   {
     id: "rol_glasshouse_vo",
@@ -243,6 +249,7 @@ const roles: SeedRole[] = [
     disclaimer: "",
     closedAt: null,
     postedAt: "2026-08-29T08:30:00.000Z",
+    requiredFields: DEFAULT_REQUIRED_FIELDS,
   },
   {
     id: "rol_lantern_ensemble",
@@ -266,6 +273,7 @@ const roles: SeedRole[] = [
     disclaimer: "",
     closedAt: null,
     postedAt: "2026-08-12T16:20:00.000Z",
+    requiredFields: DEFAULT_REQUIRED_FIELDS,
   },
   {
     id: "rol_kestrel_youth",
@@ -290,6 +298,7 @@ const roles: SeedRole[] = [
       "This role is for an applicant under 16. A parent or guardian must submit on their behalf and must be present for every day of the shoot. A licence from the local authority is required before filming and we will apply for it once the role is cast.",
     closedAt: null,
     postedAt: "2026-08-22T13:00:00.000Z",
+    requiredFields: DEFAULT_REQUIRED_FIELDS,
   },
 ];
 

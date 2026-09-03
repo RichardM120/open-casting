@@ -7,10 +7,11 @@ import { useActionState, useState } from "react";
 import { submitApplication } from "@/lib/actions";
 import { SUBMISSION_TERMS } from "@/content/legal";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
-import { ADULT_AGE } from "@/lib/types";
+import { ADULT_AGE, type AskKey } from "@/lib/types";
 
 import { useErrorFocus } from "./use-error-focus";
-import { Button, ButtonLink, ErrorSummary, Field, Input, Select, Textarea, cx } from "./ui";
+import { cx, ButtonLink, ErrorSummary, Field, Input, RequiredKey, RequiredMark, Select, Textarea } from "./ui";
+import { SubmitButton } from "./submit-button";
 
 type MediaKind = "photo" | "video";
 type Uploaded = { url: string; name: string };
@@ -56,6 +57,7 @@ export function SubmissionForm({
   uploads,
   token,
   sessionId,
+  required,
 }: {
   roleId: string;
   roleTitle: string;
@@ -69,8 +71,11 @@ export function SubmissionForm({
   uploads: boolean;
   token: string;
   sessionId: string;
+  /** The fields this role's director made mandatory. Name, email, age and the terms always are. */
+  required: AskKey[];
 }) {
   const [state, formAction, pending] = useActionState(submitApplication, IDLE_FORM_STATE);
+  const must = new Set(required);
   const [progress, setProgress] = useState<{ kind: string; percent: number } | null>(null);
   const [uploadError, setUploadError] = useState<string | null>(null);
   // What has already gone to the store. Kept across a refused submission, and
@@ -183,6 +188,8 @@ export function SubmissionForm({
         </Link>
       </p>
 
+      <RequiredKey className="mt-4" />
+
       <input type="hidden" name="roleId" value={roleId} />
 
       {state.status === "error" ? (
@@ -231,12 +238,15 @@ export function SubmissionForm({
               label="Parent or guardian's name"
               htmlFor="guardianName"
               error={errors.guardianName}
+              required
             >
               <Input
                 id="guardianName"
                 name="guardianName"
                 autoComplete="name"
                 defaultValue={values.guardianName ?? ""}
+                data-must=""
+                aria-required="true"
               />
             </Field>
             <Field
@@ -244,6 +254,7 @@ export function SubmissionForm({
               htmlFor="guardianEmail"
               hint="Where the casting director will reply."
               error={errors.guardianEmail}
+              required
             >
               <Input
                 id="guardianEmail"
@@ -251,6 +262,8 @@ export function SubmissionForm({
                 type="email"
                 autoComplete="email"
                 defaultValue={values.guardianEmail ?? ""}
+                data-must=""
+                aria-required="true"
               />
             </Field>
           </div>
@@ -264,15 +277,20 @@ export function SubmissionForm({
             <input
               id="guardianConsent"
               type="checkbox"
+              data-must=""
+              aria-required="true"
               name="guardianConsent"
               defaultChecked={values.guardianConsent === "on"}
               aria-invalid={errors.guardianConsent ? true : undefined}
               aria-describedby={errors.guardianConsent ? "guardianConsent-error" : undefined}
               className="mt-0.5 size-4 shrink-0 accent-accent"
             />
-            I am the parent or legal guardian of this applicant, and I consent to their name, age,
-            contact details and any material submitted being processed solely for casting
-            consideration on this project.
+            <span>
+              I am the parent or legal guardian of this applicant, and I consent to their name, age,
+              contact details and any material submitted being processed solely for casting
+              consideration on this project.
+              <RequiredMark />
+            </span>
           </label>
           {errors.guardianConsent ? (
             <p id="guardianConsent-error" className="mt-1.5 text-xs text-danger">
@@ -305,7 +323,7 @@ export function SubmissionForm({
             type="tel"
             autoComplete="tel"
             defaultValue={values.phone ?? ""}
-            required
+            required={must.has("phone")}
           />
         </Field>
         <Field label="Based in" htmlFor="location" error={errors.location}>
@@ -314,13 +332,13 @@ export function SubmissionForm({
             name="location"
             placeholder="City, country"
             defaultValue={values.location ?? ""}
-            required
+            required={must.has("location")}
           />
         </Field>
         <Field
           label="Showreel link"
           htmlFor="reelUrl"
-          hint="Optional. Vimeo, YouTube or anywhere else."
+          hint="Vimeo, YouTube or anywhere else."
           error={errors.reelUrl}
           className="sm:col-span-2"
         >
@@ -330,12 +348,13 @@ export function SubmissionForm({
             type="url"
             placeholder="https://"
             defaultValue={values.reelUrl ?? ""}
+            required={must.has("reelUrl")}
           />
         </Field>
         <Field
           label="Profile link"
           htmlFor="profileUrl"
-          hint="Optional. Spotlight, Backstage, your own site."
+          hint="Spotlight, Backstage, your own site."
           error={errors.profileUrl}
           className="sm:col-span-2"
         >
@@ -345,6 +364,7 @@ export function SubmissionForm({
             type="url"
             placeholder="https://"
             defaultValue={values.profileUrl ?? ""}
+            required={must.has("profileUrl")}
           />
         </Field>
         <Field
@@ -359,7 +379,7 @@ export function SubmissionForm({
             name="coverNote"
             rows={5}
             defaultValue={values.coverNote ?? ""}
-            required
+            required={must.has("coverNote")}
           />
         </Field>
       </div>
@@ -379,13 +399,18 @@ export function SubmissionForm({
             <input
               id="acceptTerms"
               type="checkbox"
+              data-must=""
+              aria-required="true"
               name="acceptTerms"
               defaultChecked={values.acceptTerms === "on"}
               aria-invalid={errors.acceptTerms ? true : undefined}
               aria-describedby={errors.acceptTerms ? "acceptTerms-error" : undefined}
               className="mt-0.5 size-4 shrink-0 accent-accent"
             />
-            I have read these terms and accept them.
+            <span>
+              I have read these terms and accept them.
+              <RequiredMark />
+            </span>
           </label>
           {errors.acceptTerms ? (
             <p id="acceptTerms-error" className="mt-1.5 text-xs text-danger">
@@ -399,21 +424,21 @@ export function SubmissionForm({
         <div className="mt-6 rounded-xl border border-line bg-raised p-4 sm:p-6">
           <h3 className="text-sm font-semibold tracking-tight">Photo and video</h3>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            Optional. A recent photo of you, and a self-tape or showreel if you have one. Both are
-            seen only by the casting team and are deleted with your submission.
+            A recent photo of you, and a self-tape or showreel. Both are seen only by the casting
+            team and are deleted with your submission.
           </p>
           <input type="hidden" name="photoUrl" value={uploaded.photo?.url ?? ""} />
           <input type="hidden" name="videoUrl" value={uploaded.video?.url ?? ""} />
           <div className="mt-4 grid gap-6 sm:grid-cols-2">
             <div>
               <Field label="Profile photo" htmlFor="photo" hint="JPEG, PNG or WebP, up to 5 MB." error={errors.photoUrl}>
-                <Input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" />
+                <Input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" required={must.has("photo") && !uploaded.photo} />
               </Field>
               <UploadedNote file={uploaded.photo} />
             </div>
             <div>
               <Field label="Video" htmlFor="video" hint="MP4, MOV or WebM, up to 200 MB." error={errors.videoUrl}>
-                <Input id="video" name="video" type="file" accept="video/mp4,video/quicktime,video/webm,video/x-m4v" />
+                <Input id="video" name="video" type="file" accept="video/mp4,video/quicktime,video/webm,video/x-m4v" required={must.has("video") && !uploaded.video} />
               </Field>
               <UploadedNote file={uploaded.video} />
             </div>
@@ -459,6 +484,8 @@ export function SubmissionForm({
           <input
             id="acceptSubmissionTerms"
             type="checkbox"
+            data-must=""
+            aria-required="true"
             name="acceptSubmissionTerms"
             defaultChecked={values.acceptSubmissionTerms === "on"}
             aria-invalid={errors.acceptSubmissionTerms ? true : undefined}
@@ -467,7 +494,10 @@ export function SubmissionForm({
             }
             className="mt-0.5 size-4 shrink-0 accent-accent"
           />
-          I have read and accept the Terms of Submission and Acceptable Use Policy.
+          <span>
+            I have read and accept the Terms of Submission and Acceptable Use Policy.
+            <RequiredMark />
+          </span>
         </label>
         {errors.acceptSubmissionTerms ? (
           <p id="acceptSubmissionTerms-error" className="mt-1.5 text-xs text-danger">
@@ -478,9 +508,9 @@ export function SubmissionForm({
       </div>
 
       <div className="sticky bottom-0 -mx-7 -mb-7 mt-6 border-t border-line bg-surface/95 px-7 py-4 backdrop-blur sm:static sm:mx-0 sm:mb-0 sm:border-0 sm:bg-transparent sm:p-0">
-        <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+        <SubmitButton disabled={pending} className="w-full sm:w-auto">
           {pending ? "Sending" : "Send submission"}
-        </Button>
+        </SubmitButton>
       </div>
     </form>
   );

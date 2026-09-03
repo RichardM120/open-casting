@@ -123,6 +123,9 @@ section("5 role with terms: acceptance is required");
   await p.goto(`${BASE}/c/${HEARTH}/couple-hearth`, { waitUntil: "networkidle" });
   check("terms shown on the listing", (await p.getByText("Terms for this role").count()) > 0);
   check("acceptance checkbox present", (await p.locator("#acceptTerms").count()) === 1);
+  check("phone is marked required", (await p.locator('label[for="phone"]').innerText()).includes("*"));
+  check("the showreel link is marked optional", (await p.locator('label[for="reelUrl"]').innerText()).toLowerCase().includes("optional"));
+  check("the submit stays quiet until the form is complete", (await p.getByRole("button", { name: "Send submission" }).getAttribute("data-ready")) === "false");
 
   await p.fill("#name", "Terms Tester");
   await p.fill("#email", `terms${t}@example.com`);
@@ -143,6 +146,7 @@ section("5 role with terms: acceptance is required");
   check(`the age survives a refusal (age=${JSON.stringify(got)}, name=${JSON.stringify(names)})`, got === "65");
 }
   await p.check("#acceptTerms");
+  check("and lights up once it is", await p.locator('button[data-ready="true"]', { hasText: "Send submission" }).waitFor({ timeout: 5000 }).then(() => true, () => false));
   await p.getByRole("button", { name: "Send submission" }).click();
   await p.getByText("Submission sent").waitFor({ timeout: 20000 });
   check("accepting lets it through", true);
@@ -161,7 +165,9 @@ section("6 role without terms: no checkbox, submits cleanly");
   // The applicant's page stands alone: no site navigation, no footer of links.
   check("no site navigation on the applicant page", (await p.locator("header nav").count()) === 0);
   check("and no footer links", (await p.getByRole("link", { name: "Admin", exact: true }).count()) === 0 && (await p.getByRole("link", { name: "Casting director" }).count()) === 0);
-  check("but the mark and the form", (await p.getByText("Run with Open Casting").count()) > 0 && (await p.locator("#name").count()) === 1);
+  check("but the footer line and the form", (await p.getByText(/covered by UK GDPR/).count()) > 0 && (await p.locator("#name").count()) === 1);
+  check("it opens with the words Casting call", (await p.getByText("Casting call", { exact: true }).count()) > 0);
+  check("and a picture, or the slate that stands in for one", (await p.locator("img[alt$='header image'], img[alt$='logo'], [role='img'][aria-label*='No picture']").count()) === 1);
   check("and no count of submissions for applicants", (await p.getByText(/so far/).count()) === 0 && (await p.getByText(/^Submissions$/).count()) === 0);
   check("no acceptance checkbox", (await p.locator("#acceptTerms").count()) === 0);
   await p.fill("#name", "No Terms"); await p.fill("#email", `not${t}@example.com`);

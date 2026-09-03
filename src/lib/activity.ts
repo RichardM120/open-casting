@@ -137,6 +137,7 @@ export async function listActivity(
  * is recorded against it.
  */
 const TRACKED: { key: keyof Role; label: string }[] = [
+  { key: "requiredFields", label: "what applicants must send" },
   { key: "title", label: "role name" },
   { key: "characterBrief", label: "character brief" },
   { key: "requirements", label: "requirements" },

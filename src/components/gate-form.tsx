@@ -5,7 +5,8 @@ import { useActionState } from "react";
 import { unlockSite } from "@/lib/gate-actions";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
 
-import { Button, Field, Input } from "./ui";
+import { Field, Input } from "./ui";
+import { SubmitButton } from "./submit-button";
 
 export function GateForm({ next }: { next: string }) {
   const [state, formAction, pending] = useActionState(unlockSite, IDLE_FORM_STATE);
@@ -18,9 +19,9 @@ export function GateForm({ next }: { next: string }) {
         <Input id="passcode" name="passcode" type="password" autoFocus required />
       </Field>
 
-      <Button type="submit" disabled={pending} className="w-full">
+      <SubmitButton disabled={pending} className="w-full">
         {pending ? "Checking…" : "Enter"}
-      </Button>
+      </SubmitButton>
 
       {state.status === "error" && state.message ? (
         <p role="alert" className="text-sm text-danger">

@@ -17,6 +17,7 @@ import {
   provision,
   shareTokenForRole,
   submit,
+  shareToken,
 } from "./_helpers.mjs";
 
 const { check, section, finish, errors } = reporter();
@@ -258,6 +259,55 @@ section("13 a draft can be left and picked up again");
   check("the new call is in progress", (await draftCard.getAttribute("data-state")) === "draft" && (await draftCard.getByText("In progress", { exact: true }).count()) > 0);
   check("live sits above in progress", (await liveCard.boundingBox()).y < (await draftCard.boundingBox()).y);
   check("no header image field without a store", (await dir.p.goto(`${BASE}/dashboard/sessions/new`, { waitUntil: "networkidle" })) && (await dir.p.locator("#hero").count()) === 0);
+}
+
+section("14 the director chooses what applicants must send");
+{
+  const call = await openSession(dir.p, { name: `Asks ${t}`, company: CO, opensAt: at(-1), closesAt: at(20, "23:59") });
+  await dir.p.goto(`${BASE}/dashboard/roles/new?session=${call}`, { waitUntil: "networkidle" });
+  check("each ask offers required or optional", (await dir.p.locator('input[name="ask_phone"]').count()) === 2);
+  check("phone starts required", await dir.p.locator('input[name="ask_phone"][value="required"]').isChecked());
+  check("the showreel starts optional", await dir.p.locator('input[name="ask_reelUrl"][value="optional"]').isChecked());
+  check("no photo or video to ask for without a store", (await dir.p.locator('input[name="ask_photo"]').count()) === 0);
+  check("the post button stays quiet until the form is complete", (await dir.p.getByRole("button", { name: "Post the role" }).getAttribute("data-ready")) === "false");
+  await dir.p.selectOption("#sessionId", call);
+  await dir.p.fill("#title", `Asks role ${t}`);
+  await dir.p.fill("#characterBrief", "A character brief comfortably long enough to pass validation.");
+  await dir.p.fill("#location", "Leeds, UK");
+  check("and lights up once it is", await dir.p.locator('button[data-ready="true"]', { hasText: "Post the role" }).waitFor({ timeout: 5000 }).then(() => true, () => false));
+  await dir.p.locator('label:has(input[name="ask_phone"][value="optional"])').click();
+  await dir.p.locator('label:has(input[name="ask_coverNote"][value="optional"])').click();
+  await dir.p.locator('label:has(input[name="ask_reelUrl"][value="required"])').click();
+  await dir.p.getByRole("button", { name: "Post the role" }).click();
+  await dir.p.waitForURL(/\/dashboard\/roles\/rol_/, { timeout: 20000 });
+  const roleId = dir.p.url().match(/roles\/(rol_[^?]+)/)[1];
+  await dir.p.goto(`${BASE}/dashboard/roles/${roleId}/edit`, { waitUntil: "networkidle" });
+  check("the choice is kept on the role", await dir.p.locator('input[name="ask_phone"][value="optional"]').isChecked() && await dir.p.locator('input[name="ask_reelUrl"][value="required"]').isChecked());
+  await publish(dir.p, call);
+  const token = await shareToken(dir.p, call);
+
+  const applicant = await session(browser, errors);
+  const p = applicant.p;
+  await p.goto(`${BASE}/c/${token}/${roleId}`, { waitUntil: "networkidle" });
+  check("phone is now marked optional", (await p.locator('label[for="phone"]').innerText()).toLowerCase().includes("optional"));
+  check("the cover note too", (await p.locator('label[for="coverNote"]').innerText()).toLowerCase().includes("optional"));
+  check("the showreel link is now marked required", (await p.locator('label[for="reelUrl"]').innerText()).includes("*"));
+  await p.selectOption("#age", "30");
+  await p.fill("#name", `Asks Applicant ${t}`);
+  await p.fill("#email", `asks${t}@example.com`);
+  await p.fill("#location", "Leeds");
+  await p.check("#acceptSubmissionTerms");
+  check("not ready without the showreel it requires", (await p.getByRole("button", { name: "Send submission" }).getAttribute("data-ready")) === "false");
+  await p.fill("#reelUrl", "https://vimeo.com/123456");
+  check("ready once it has one", await p.locator('button[data-ready="true"]', { hasText: "Send submission" }).waitFor({ timeout: 5000 }).then(() => true, () => false));
+  await p.getByRole("button", { name: "Send submission" }).click();
+  await p.getByText("Submission sent").waitFor({ timeout: 20000 });
+  check("accepted without a phone number or a cover note", (await p.getByText("Submission sent").count()) > 0);
+  await applicant.c.close();
+
+  await dir.p.goto(`${BASE}/dashboard/roles/${roleId}`, { waitUntil: "networkidle" });
+  const card = dir.p.locator('li:has(select[aria-label="Submission status"])').first();
+  check("the card reads without them", (await card.innerText()).includes("Leeds · 30 · submitted") && (await card.locator("a[href^='mailto:']").count()) === 1);
 }
 
 for (const s of [dir, other, prod, admin]) await s.c.close();

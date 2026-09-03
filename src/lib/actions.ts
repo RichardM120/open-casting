@@ -7,7 +7,7 @@ import { SUBMISSION_TERMS } from "@/content/legal";
 
 import { record, describeChanges, describeSessionChanges } from "./activity";
 import { requireUser, type SessionUser } from "./auth";
-import { checkStore, deleteMedia, isHeroUrl, isSubmissionMediaUrl } from "./blob";
+import { checkStore, deleteMedia, isHeroUrl, isSubmissionMediaUrl, uploadsEnabled } from "./blob";
 import { UNIQUE_VIOLATION } from "./db";
 import { emailConfigured, sendEmail } from "./email";
 import { exportFilename, submissionsWorkbook } from "./export";
@@ -69,6 +69,7 @@ import {
   clientSchema,
   fieldErrors,
   newAccountSchema,
+  readRequiredFields,
   roleSchema,
   sessionSchema,
   submissionSchema,
@@ -190,6 +191,38 @@ export async function submitApplication(
     media[field] = posted;
   }
 
+  // What has to be there is the role's call, not the form's: a field the
+  // director made required is checked here whatever the form sent. A photo
+  // or a video can only be asked for while uploads are on.
+  {
+    const required = new Set(role.requiredFields);
+    const missing: FieldErrors = {};
+    if (required.has("phone") && !submission.phone) missing.phone = "Enter a contact number";
+    if (required.has("location") && !submission.location) {
+      missing.location = "Where are you based?";
+    }
+    if (required.has("coverNote") && !submission.coverNote) {
+      missing.coverNote = "Tell the casting director a little about yourself, for this part";
+    }
+    if (required.has("reelUrl") && !submission.reelUrl) {
+      missing.reelUrl = "Add a link to your showreel";
+    }
+    if (required.has("profileUrl") && !submission.profileUrl) {
+      missing.profileUrl = "Add a link to your profile";
+    }
+    if (uploadsEnabled()) {
+      if (required.has("photo") && !media.photoUrl) missing.photoUrl = "Add a profile photo";
+      if (required.has("video") && !media.videoUrl) missing.videoUrl = "Add a video";
+    }
+    if (Object.keys(missing).length > 0) {
+      return invalid(
+        missing,
+        "This role needs a little more from you. Check the highlighted fields.",
+        formData,
+      );
+    }
+  }
+
   // The role decides whether terms must be accepted, not the form that was
   // posted. Otherwise dropping the checkbox from the request would skip it.
   if (role.disclaimer && !acceptTerms) {
@@ -260,7 +293,8 @@ export async function postRole(
   // this is what actually stops an unauthenticated request writing a role.
   const user = await requireUser("/dashboard/roles/new");
 
-  const parsed = roleSchema.safeParse(Object.fromEntries(formData));
+  const entries = Object.fromEntries(formData);
+  const parsed = roleSchema.safeParse({ ...entries, requiredFields: readRequiredFields(entries) });
   if (!parsed.success) {
     return invalid(
       fieldErrors(parsed.error),
@@ -385,7 +419,8 @@ export async function editRole(
   const id = String(formData.get("roleId") ?? "");
   const user = await requireUser(`/dashboard/roles/${id}/edit`);
 
-  const parsed = roleSchema.safeParse(Object.fromEntries(formData));
+  const entries = Object.fromEntries(formData);
+  const parsed = roleSchema.safeParse({ ...entries, requiredFields: readRequiredFields(entries) });
   if (!parsed.success) {
     return invalid(
       fieldErrors(parsed.error),

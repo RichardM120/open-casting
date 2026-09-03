@@ -8,7 +8,8 @@ import { IDLE_FORM_STATE } from "@/lib/form-state";
 import { ROLE_DESCRIPTIONS, SIGNUP_ROLES, type Client } from "@/lib/types";
 
 import { useErrorFocus } from "./use-error-focus";
-import { Button, ErrorSummary, Field, Input, Select } from "./ui";
+import { ErrorSummary, Field, Input, RequiredKey, Select } from "./ui";
+import { SubmitButton } from "./submit-button";
 
 const LABELS: Record<string, string> = {
   name: "Their name",
@@ -75,6 +76,7 @@ export function NewAccountForm({ clients }: { clients: Client[] }) {
           </>
         ) : null}
 
+        <RequiredKey />
         <div className="grid gap-4 sm:grid-cols-2">
           <Field label="Their name" htmlFor="name" error={errors.name}>
             <Input id="name" name="name" defaultValue={values.name ?? ""} required />
@@ -113,7 +115,7 @@ export function NewAccountForm({ clients }: { clients: Client[] }) {
             hint={ROLE_DESCRIPTIONS[(values.role as "director" | "producer") ?? "director"]}
             error={errors.role}
           >
-            <Select id="role" name="role" defaultValue={values.role ?? "director"}>
+            <Select id="role" name="role" defaultValue={values.role ?? "director"} required>
               {SIGNUP_ROLES.map((role) => (
                 <option key={role} value={role}>
                   {ROLE_HEADINGS[role]}
@@ -133,9 +135,9 @@ export function NewAccountForm({ clients }: { clients: Client[] }) {
         </p>
 
         <div className="mt-1">
-          <Button type="submit" disabled={pending}>
+          <SubmitButton disabled={pending}>
             {pending ? "Creating…" : "Create the account"}
-          </Button>
+          </SubmitButton>
         </div>
       </form>
     </div>

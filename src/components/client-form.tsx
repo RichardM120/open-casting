@@ -8,7 +8,8 @@ import { TIERS, TIER_KEYS, type Client } from "@/lib/types";
 
 import { DateTimeField } from "./date-time-field";
 import { useErrorFocus } from "./use-error-focus";
-import { Button, ButtonLink, ErrorSummary, Field, Input, Select, Textarea } from "./ui";
+import { ButtonLink, ErrorSummary, Field, Input, RequiredKey, Select, Textarea } from "./ui";
+import { SubmitButton } from "./submit-button";
 
 const LABELS: Record<string, string> = {
   name: "Client",
@@ -70,6 +71,7 @@ export function ClientForm({ client }: { client?: Client }) {
         </>
       ) : null}
 
+      <RequiredKey />
       <fieldset className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
         <legend className="mb-2 text-lg font-semibold tracking-tight">The company</legend>
         <p className="text-sm text-muted">
@@ -202,9 +204,9 @@ export function ClientForm({ client }: { client?: Client }) {
       </fieldset>
 
       <div className="flex flex-wrap items-center gap-3">
-        <Button type="submit" disabled={pending}>
+        <SubmitButton disabled={pending}>
           {pending ? "Saving..." : client ? "Save the client" : "Take on the client"}
-        </Button>
+        </SubmitButton>
         <ButtonLink href="/admin/clients" variant="ghost">
           Cancel
         </ButtonLink>

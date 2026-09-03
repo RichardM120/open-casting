@@ -11,7 +11,8 @@ import { PRODUCTION_TYPES, type CastingSession, type HeroKind } from "@/lib/type
 
 import { DateTimeField } from "./date-time-field";
 import { useErrorFocus } from "./use-error-focus";
-import { Button, ButtonLink, ErrorSummary, Field, Input, Select, Textarea } from "./ui";
+import { Button, ButtonLink, ErrorSummary, Field, Input, RequiredKey, Select, Textarea } from "./ui";
+import { SubmitButton } from "./submit-button";
 
 const LABELS: Record<string, string> = {
   name: "Casting call",
@@ -224,6 +225,7 @@ export function SessionForm({
         </>
       ) : null}
 
+      <RequiredKey />
       <fieldset className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
         <legend className="mb-2 text-lg font-semibold tracking-tight">The casting call</legend>
         <p className="text-sm text-muted">
@@ -375,9 +377,9 @@ export function SessionForm({
       </fieldset>
 
       <div className="flex flex-wrap items-center gap-4 border-t border-line pt-6">
-        <Button type="submit" disabled={pending}>
+        <SubmitButton disabled={pending}>
           {pending ? "Saving" : session ? "Save changes" : "Save and continue"}
-        </Button>
+        </SubmitButton>
         <ButtonLink
           href={session ? `/dashboard/sessions/${session.id}` : "/dashboard"}
           variant="ghost"

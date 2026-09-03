@@ -4,6 +4,7 @@ import { SetupProgress } from "@/components/setup-progress";
 import { notFound } from "next/navigation";
 
 import { RoleForm } from "@/components/role-form";
+import { uploadsEnabled } from "@/lib/blob";
 import { Eyebrow } from "@/components/ui";
 import { currentUser, requireUser } from "@/lib/auth";
 import { getVisibleRole } from "@/lib/roles";
@@ -49,7 +50,7 @@ export default async function EditRolePage({
       </div>
 
       <div className="mt-10">
-        <RoleForm role={role} sessions={sessions} />
+        <RoleForm role={role} sessions={sessions} uploads={uploadsEnabled()} />
       </div>
     </div>
   );

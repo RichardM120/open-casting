@@ -489,6 +489,11 @@ const SCHEMA = `
   -- so a later edit cannot rewrite what somebody agreed to.
   ALTER TABLE roles ADD COLUMN IF NOT EXISTS disclaimer text NOT NULL DEFAULT '';
 
+  -- Which of the applicant's fields the director requires on this role. The
+  -- default is what the form always asked for.
+  ALTER TABLE roles ADD COLUMN IF NOT EXISTS required_fields jsonb NOT NULL
+    DEFAULT '["phone","location","coverNote"]'::jsonb;
+
   -- Closing early is recorded separately rather than by moving the deadline,
   -- so the listing still shows the date it originally advertised.
   ALTER TABLE roles ADD COLUMN IF NOT EXISTS closed_at timestamptz;

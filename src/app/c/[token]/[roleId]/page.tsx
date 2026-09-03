@@ -148,6 +148,7 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
               session={role.session.name}
               closesOn={formatDateTime(role.session.closesAt)}
               disclaimer={role.disclaimer}
+              required={role.requiredFields}
               backTo={`/c/${token}`}
             />
           ) : (

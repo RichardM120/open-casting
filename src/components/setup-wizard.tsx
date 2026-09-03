@@ -9,6 +9,7 @@ import { IDLE_FORM_STATE } from "@/lib/form-state";
 
 import { useErrorFocus } from "./use-error-focus";
 import { Button, ErrorSummary, Field, Input, cx } from "./ui";
+import { SubmitButton } from "./submit-button";
 
 const LABELS = { name: "Your name", company: "Company or agency" };
 
@@ -63,9 +64,9 @@ export function AgreementStep({ nextStep, children }: { nextStep: number; childr
       </label>
 
       <div>
-        <Button type="submit" disabled={pending}>
+        <SubmitButton disabled={pending}>
           {pending ? "Recording…" : "Accept and continue"}
-        </Button>
+        </SubmitButton>
       </div>
 
       <p className="text-xs leading-relaxed text-faint">
@@ -112,9 +113,9 @@ export function ProfileStep({ user, nextStep }: { user: SessionUser; nextStep: n
       </Field>
 
       <div className="mt-2">
-        <Button type="submit" disabled={pending}>
+        <SubmitButton disabled={pending}>
           {pending ? "Saving…" : "Save and continue"}
-        </Button>
+        </SubmitButton>
       </div>
     </form>
   );
