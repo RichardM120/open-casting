@@ -139,13 +139,15 @@ export function EmptyState({
 
 /* ---------------------------------------------------------------- forms -- */
 
+/**
+ * The shape of every field. Its colours, which say whether it is still to be
+ * filled in or is done, are the `.control` rules in globals.css. A red border
+ * alone would not reach anyone who cannot see it; it sits alongside the
+ * message the field is wired to through aria-describedby.
+ */
 const CONTROL =
-  "min-h-11 w-full rounded-xl border border-line bg-raised px-3.5 py-2.5 text-sm text-text " +
-  "placeholder:text-faint transition-colors hover:border-line-strong " +
-  "focus:border-accent focus:outline-none " +
-  // A red border alone would not reach anyone who cannot see it; it sits
-  // alongside the message the field is wired to through aria-describedby.
-  "aria-invalid:border-danger aria-invalid:hover:border-danger";
+  "control min-h-11 w-full rounded-xl px-3.5 py-2.5 text-sm text-text " +
+  "placeholder:text-faint transition-colors focus:outline-none";
 
 export function Field({
   label,
@@ -288,12 +290,20 @@ export function ErrorSummary({
   );
 }
 
-export function Input({ className, ...props }: ComponentProps<"input">) {
-  return <input {...props} className={cx(CONTROL, className)} />;
+// Every field has a placeholder, if only a space: :placeholder-shown is how
+// the stylesheet tells an empty field from a filled one.
+export function Input({ className, placeholder, ...props }: ComponentProps<"input">) {
+  return <input {...props} placeholder={placeholder ?? " "} className={cx(CONTROL, className)} />;
 }
 
-export function Textarea({ className, ...props }: ComponentProps<"textarea">) {
-  return <textarea {...props} className={cx(CONTROL, "resize-y", className)} />;
+export function Textarea({ className, placeholder, ...props }: ComponentProps<"textarea">) {
+  return (
+    <textarea
+      {...props}
+      placeholder={placeholder ?? " "}
+      className={cx(CONTROL, "resize-y", className)}
+    />
+  );
 }
 
 export function Select({ className, ...props }: ComponentProps<"select">) {

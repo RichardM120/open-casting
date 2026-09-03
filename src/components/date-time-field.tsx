@@ -213,6 +213,7 @@ export function DateTimeField({
           value={value}
           onChange={(event) => commit(event.target.value)}
           required={required}
+          data-filled={value ? "true" : "false"}
           className="date-field min-w-0 flex-1"
           {...aria}
         />
@@ -224,7 +225,7 @@ export function DateTimeField({
           aria-expanded={open}
           aria-controls={open ? dialogId : undefined}
           aria-label={`Pick ${what} for ${label}`}
-          className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-line bg-raised text-muted transition-colors hover:border-accent hover:text-brand"
+          className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-line-strong bg-surface text-muted transition-colors hover:border-accent hover:text-brand"
         >
           <CalendarGlyph />
         </button>

@@ -24,6 +24,7 @@
   --color-accent-soft: #F6EBCF;
   --color-positive: #1E7A4A;
   --color-positive-soft: #E1F2E7;
+  --color-positive-line: #9AC3AE;
   --color-danger: #B3261E;
   --color-danger-soft: #F9E3E0;
   /* The brand: terracotta for the header and headings, never for a button. */
@@ -114,6 +115,49 @@
    */
   .date-field::-webkit-calendar-picker-indicator {
     display: none;
+  }
+
+  /*
+   * A field says at a glance whether it is done. Until something is in it, it
+   * is a white box, with a charcoal edge where it has to be filled in and a
+   * quieter grey edge where it can be left; once it holds a value it turns
+   * pale green, with a tick in a text field. White is not the ground's cream,
+   * so a field never disappears into the page, and green is not white, so
+   * what is still to do stands apart from what is done.
+   *
+   * An empty text field is told from a filled one by its placeholder, which
+   * every field has, if only a space; a select by which option is chosen; a
+   * date by the flag its own component sets, since a date field never shows
+   * a placeholder and a file field never holds a value the stylesheet can see.
+   */
+  .control {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-line-strong);
+  }
+  .control:is(:required, [aria-required="true"]):placeholder-shown,
+  select.control:is(:required, [aria-required="true"]):has(option:checked[value=""]),
+  .control[data-filled="false"]:is(:required, [aria-required="true"]) {
+    border-color: var(--color-text);
+  }
+  .control:not(select):not([type="file"]):not([data-filled]):not(:placeholder-shown),
+  select.control:has(option:checked:not([value=""])),
+  .control[data-filled="true"] {
+    background-color: var(--color-positive-soft);
+    border-color: var(--color-positive-line);
+  }
+  input.control:not([type="file"]):not([data-filled]):not(:placeholder-shown),
+  input.control[data-filled="true"] {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%231E7A4A' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m3.5 8.5 3 3 6-7'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 0.75rem center;
+    background-size: 1rem;
+    padding-right: 2.5rem;
+  }
+  .control.control:focus {
+    border-color: var(--color-accent);
+  }
+  .control.control[aria-invalid="true"] {
+    border-color: var(--color-danger);
   }
 }
 
