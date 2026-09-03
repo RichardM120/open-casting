@@ -1013,6 +1013,11 @@ export async function editCastingSession(
     detail: `${session.name}: ${before ? describeSessionChanges(before, session) : "edited"}`,
   });
 
+  // A picture that has been replaced is no longer referenced, so it goes.
+  if (before?.heroUrl && before.heroUrl !== session.heroUrl) {
+    await deleteMedia([before.heroUrl]);
+  }
+
   revalidateEverything();
   redirect(`/dashboard/sessions/${session.id}?saved=1`);
 }

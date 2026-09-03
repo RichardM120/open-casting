@@ -28,10 +28,12 @@ export const MEDIA_KINDS = {
 export type MediaKind = keyof typeof MEDIA_KINDS;
 
 /**
- * The image on a casting call's applicant page, a banner or a logo. Public,
- * since the page it sits on is open to anyone holding the link. The browser
- * shrinks a picture to 1600px and WebP before it is sent, so the limit here
- * is a backstop for a browser that could not; SVG is small and scales itself.
+ * The image on a casting call's applicant page, a banner or a logo. Private
+ * like everything else in the store, and read back through /api/hero, which
+ * checks only that the file is one of ours: the page it sits on is open to
+ * anyone holding the link. The browser shrinks a picture to 1600px and WebP
+ * before it is sent, so the limit here is a backstop for a browser that could
+ * not; SVG is small and scales itself.
  */
 export const HERO = {
   label: "Header image or logo",
@@ -44,17 +46,28 @@ export function heroPrefix(userId: string): string {
   return `calls/${userId}/hero/`;
 }
 
-/** Whether a header image URL is one this store issued for this account. */
-export function isHeroUrl(url: string, userId: string): boolean {
+/** The pathname within the store, when the URL is a store's; otherwise null. */
+function storePathname(url: string): string | null {
   let parsed: URL;
   try {
     parsed = new URL(url);
   } catch {
-    return false;
+    return null;
   }
-  if (parsed.protocol !== "https:") return false;
-  if (!parsed.hostname.endsWith(".blob.vercel-storage.com")) return false;
-  return parsed.pathname.slice(1).startsWith(heroPrefix(userId));
+  if (parsed.protocol !== "https:") return null;
+  if (!parsed.hostname.endsWith(".blob.vercel-storage.com")) return null;
+  return parsed.pathname.slice(1);
+}
+
+/** Whether a header image URL is one this store issued for this account. */
+export function isHeroUrl(url: string, userId: string): boolean {
+  return storePathname(url)?.startsWith(heroPrefix(userId)) ?? false;
+}
+
+/** Whether a URL is a header image this store issued for any account. */
+export function isStoredHeroUrl(url: string): boolean {
+  const path = storePathname(url);
+  return path !== null && /^calls\/[^/]+\/hero\/.+$/.test(path);
 }
 
 /**
@@ -99,15 +112,7 @@ export function isSubmissionMediaUrl(
   roleId: string,
   kind: MediaKind,
 ): boolean {
-  let parsed: URL;
-  try {
-    parsed = new URL(url);
-  } catch {
-    return false;
-  }
-  if (parsed.protocol !== "https:") return false;
-  if (!parsed.hostname.endsWith(".blob.vercel-storage.com")) return false;
-  return parsed.pathname.slice(1).startsWith(mediaPrefix(sessionId, roleId, kind));
+  return storePathname(url)?.startsWith(mediaPrefix(sessionId, roleId, kind)) ?? false;
 }
 
 /** What a store check found. */

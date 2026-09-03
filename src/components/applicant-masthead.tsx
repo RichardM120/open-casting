@@ -1,3 +1,4 @@
+import { heroSrc } from "@/lib/media";
 import type { HeroKind } from "@/lib/types";
 
 /**
@@ -23,18 +24,18 @@ export function ApplicantMasthead({
       <div className="mt-6">
         {heroUrl && heroKind === "logo" ? (
           <div className="flex justify-center rounded-2xl border border-line bg-surface p-6 shadow-card">
-            {/* eslint-disable-next-line @next/next/no-img-element -- a public blob chosen by the casting director */}
+            {/* eslint-disable-next-line @next/next/no-img-element -- a private blob, served by /api/hero */}
             <img
-              src={heroUrl}
+              src={heroSrc(heroUrl)}
               alt={`${name} logo`}
               decoding="async"
               className="h-auto max-h-32 w-auto max-w-full sm:max-h-40"
             />
           </div>
         ) : heroUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element -- a public blob chosen by the casting director
+          // eslint-disable-next-line @next/next/no-img-element -- a private blob, served by /api/hero
           <img
-            src={heroUrl}
+            src={heroSrc(heroUrl)}
             alt={`${name} header image`}
             decoding="async"
             className="max-h-72 w-full rounded-2xl border border-line object-cover shadow-card"

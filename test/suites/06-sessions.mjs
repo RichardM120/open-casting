@@ -260,6 +260,7 @@ section("13 a draft can be left and picked up again");
   check("the new call is in progress", (await draftCard.getAttribute("data-state")) === "draft" && (await draftCard.getByText("In progress", { exact: true }).count()) > 0);
   check("live sits above in progress", (await liveCard.boundingBox()).y < (await draftCard.boundingBox()).y);
   check("no header image field without a store", (await dir.p.goto(`${BASE}/dashboard/sessions/new`, { waitUntil: "networkidle" })) && (await dir.p.locator("#hero").count()) === 0);
+  check("the header image route answers nothing without a store", (await dir.p.request.get(`${BASE}/api/hero?u=${encodeURIComponent("https://x.public.blob.vercel-storage.com/calls/a/hero/b.webp")}`)).status() === 404);
 }
 
 section("14 the director chooses what applicants must send");

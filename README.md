@@ -412,9 +412,9 @@ send button stays in reach on a phone.
 
 The applicant's pages under `/c/` stand alone: no site navigation, no footer
 of links, a parchment ground, and an optional header image across the top
-that the casting director uploads on the casting call form (a public blob,
-offered only when a store is connected). The same URL is the director's
-preview and the applicants' page.
+that the casting director uploads on the casting call form, offered only when
+a store is connected. The same URL is the director's preview and the
+applicants' page.
 
 The casting calls list is a traffic light. Live and about-to-open calls are
 green and come first; a call closed to submissions and being reviewed is
@@ -474,6 +474,13 @@ to, passes a Range request through so a tape can be scrubbed, and never lets
 a shared cache keep a copy. The files are deleted with the submission: on
 removal, and thirty days after the production finishes.
 
+The header image is private too, and served through `/api/hero`, which asks
+only that the file is one of ours under an account's hero folder: the page it
+sits on is open to anyone holding the link, and the page's Content Security
+Policy lets an image come from this origin and nowhere else, so the store's
+own address would never have rendered. A picture that is replaced is deleted
+from the store.
+
 A file goes to the store before the form is sent, so the form remembers what
 it has uploaded: a submission refused for a missing field is corrected and
 sent again without the tape going up twice. A file whose form never arrives
@@ -488,6 +495,13 @@ the same in words. When a store is connected the card offers **Test the
 store**, which writes a small private file, reads it back and deletes it, and
 says whether that worked from this deployment. The suite never touches the
 store, so that test is the check to run after connecting one.
+
+Create the store as **private**: the app writes nothing public, and a public
+store would serve a tape to anyone holding its address. Connecting the store
+to the project in the Vercel dashboard puts the token into the project's
+settings, and settings reach a deployment only when it is built, so a
+deployment made before the store was connected keeps reporting `uploads: off`
+until it is redeployed. Connect, redeploy, then run the test.
 
 ## Two sections, and four words
 

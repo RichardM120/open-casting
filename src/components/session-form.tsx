@@ -7,6 +7,7 @@ import { createCastingSession, editCastingSession } from "@/lib/actions";
 import { formatDateTime, fromLocalInput, toLocalInput } from "@/lib/format";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
 import { guessImageKind, shrinkImage } from "@/lib/image";
+import { heroSrc } from "@/lib/media";
 import { DEFAULT_INCLUSION_STATEMENT, DEFAULT_TAPE_GUIDANCE, PRODUCTION_TYPES, type CastingSession, type HeroKind } from "@/lib/types";
 
 import { DateTimeField } from "./date-time-field";
@@ -83,7 +84,7 @@ function HeroUpload({
       // The shape of the picture decides how it is shown, until the director says otherwise.
       if (shrunk.width && shrunk.height) setKind(guessImageKind(shrunk.width, shrunk.height));
       const result = await upload(`calls/${userId}/hero/${shrunk.file.name}`, shrunk.file, {
-        access: "public",
+        access: "private",
         handleUploadUrl: "/api/blob/upload",
         clientPayload: JSON.stringify({ kind: "hero" }),
         onUploadProgress: ({ percentage }) => setProgress(percentage),
@@ -112,12 +113,12 @@ function HeroUpload({
       {url ? (
         kind === "logo" ? (
           <div className="flex justify-center rounded-xl border border-line bg-surface p-5">
-            {/* eslint-disable-next-line @next/next/no-img-element -- a public blob the director just chose */}
-            <img src={url} alt="" className="h-auto max-h-32 w-auto max-w-full" />
+            {/* eslint-disable-next-line @next/next/no-img-element -- a private blob, served by /api/hero */}
+            <img src={heroSrc(url)} alt="" className="h-auto max-h-32 w-auto max-w-full" />
           </div>
         ) : (
-          // eslint-disable-next-line @next/next/no-img-element -- a public blob the director just chose
-          <img src={url} alt="" className="max-h-48 w-full rounded-xl border border-line object-cover" />
+          // eslint-disable-next-line @next/next/no-img-element -- a private blob, served by /api/hero
+          <img src={heroSrc(url)} alt="" className="max-h-48 w-full rounded-xl border border-line object-cover" />
         )
       ) : null}
       <Field
