@@ -26,10 +26,11 @@ section("1 the home page is the way in, and nothing else");
   check("/ -> 200", (await p.goto(BASE, { waitUntil: "networkidle" })).status() === 200);
   // One way in, not one per kind of account: there is a single credential
   // check, and the role comes from the account rather than the door.
+  // The way in may be repeated down the page, but it is always the same door.
   const signIns = p.locator("main").getByRole("link", { name: /sign in/i });
   const count = await signIns.count();
-  check(`exactly one sign-in on the page (found ${count})`, count === 1);
-  check("and it goes to /login", (await signIns.getAttribute("href")) === "/login");
+  const doors = new Set(await signIns.evaluateAll((els) => els.map((el) => el.getAttribute("href"))));
+  check(`every sign-in on the page goes to /login (found ${count})`, count >= 1 && doors.size === 1 && doors.has("/login"));
   check("no separate admin door", (await p.getByRole("link", { name: /sign in as admin/i }).count()) === 0);
   check("explains what you see follows from the account", (await p.getByText(/follows from your\s+account/).count()) > 0);
   check("explains applicants use a link", (await p.getByText(/Sent a casting link/).count()) > 0);

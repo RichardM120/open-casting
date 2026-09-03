@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 
+import { HowItWorks } from "@/components/how-it-works";
 import { ButtonLink, Eyebrow } from "@/components/ui";
 import { currentUser } from "@/lib/auth";
 
@@ -23,7 +24,7 @@ export default async function HomePage() {
   if (await currentUser()) redirect("/dashboard");
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-20 sm:px-6 md:py-28">
+    <div className="mx-auto max-w-6xl px-4 py-20 sm:px-6 md:py-28">
       <Eyebrow>Open Casting</Eyebrow>
       <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-balance md:text-5xl">
         Sign in to run your casting.
@@ -43,7 +44,9 @@ export default async function HomePage() {
         casting call on the system, a casting director on their own.
       </p>
 
-      <div className="mt-12 rounded-2xl border border-line bg-surface p-7">
+      <HowItWorks />
+
+      <div className="mt-16 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
         <h2 className="text-lg font-semibold tracking-tight">Sent a casting link?</h2>
         <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
           Applicants do not sign in and do not need an account. Open the link the casting call sent
