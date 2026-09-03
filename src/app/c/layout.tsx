@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { Logo } from "@/components/logo";
+import Link from "next/link";
 
 /**
  * The applicant's pages stand alone: no site navigation, no footer of links,
@@ -19,13 +19,19 @@ export default function ApplicantLayout({ children }: { children: ReactNode }) {
       <main id="main" className="flex-1">
         {children}
       </main>
-      <p className="mx-auto flex w-full max-w-4xl items-center gap-2.5 px-4 py-8 text-sm text-text sm:px-6">
-        <Logo tone="onLight" size="sm" />
-        <span>
-          Run with Open Casting. This page is the whole of the casting call; there is nothing else
-          here to browse.
-        </span>
-      </p>
+      <footer className="mx-auto w-full max-w-4xl px-4 py-8 text-sm sm:px-6">
+        <p className="font-semibold tracking-[0.08em] text-text uppercase">Open Casting</p>
+        <p className="mt-2 max-w-prose leading-relaxed text-muted">
+          Every submission made through this page is covered by UK GDPR and by the{" "}
+          <Link
+            href="/legal/submission-terms"
+            className="text-brand underline-offset-4 hover:underline"
+          >
+            Terms of Submission
+          </Link>
+          , the legal terms and conditions that apply to it.
+        </p>
+      </footer>
     </div>
   );
 }
