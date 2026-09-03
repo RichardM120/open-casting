@@ -7,7 +7,7 @@ import { createCastingSession, editCastingSession } from "@/lib/actions";
 import { formatDateTime, fromLocalInput, toLocalInput } from "@/lib/format";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
 import { guessImageKind, shrinkImage } from "@/lib/image";
-import { DEFAULT_INCLUSION_STATEMENT, PRODUCTION_TYPES, type CastingSession, type HeroKind } from "@/lib/types";
+import { DEFAULT_INCLUSION_STATEMENT, DEFAULT_TAPE_GUIDANCE, PRODUCTION_TYPES, type CastingSession, type HeroKind } from "@/lib/types";
 
 import { DateTimeField } from "./date-time-field";
 import { useErrorFocus } from "./use-error-focus";
@@ -25,6 +25,7 @@ const LABELS: Record<string, string> = {
   heroUrl: "Header image or logo",
   inclusionStatement: "Inclusive casting statement",
   agentRoute: "If they have an agent",
+  tapeGuidance: "Self-tape guidance",
 };
 
 /**
@@ -204,6 +205,7 @@ export function SessionForm({
           productionCompany: session.productionCompany,
           inclusionStatement: session.inclusionStatement ?? DEFAULT_INCLUSION_STATEMENT,
           agentRoute: session.agentRoute,
+          tapeGuidance: session.tapeGuidance ?? DEFAULT_TAPE_GUIDANCE,
           productionType: session.productionType,
           synopsis: session.synopsis,
           opensAt: toLocalInput(session.opensAt),
@@ -411,6 +413,19 @@ export function SessionForm({
               rows={3}
               placeholder="Represented UK actors: please apply through your agent rather than this form."
               defaultValue={values.agentRoute ?? ""}
+            />
+          </Field>
+          <Field
+            label="Self-tape guidance"
+            htmlFor="tapeGuidance"
+            hint="Shown beside the video upload, one point per line. Edit it to suit the production, or clear it to show none."
+            error={errors.tapeGuidance}
+          >
+            <Textarea
+              id="tapeGuidance"
+              name="tapeGuidance"
+              rows={6}
+              defaultValue={values.tapeGuidance ?? DEFAULT_TAPE_GUIDANCE}
             />
           </Field>
         </div>

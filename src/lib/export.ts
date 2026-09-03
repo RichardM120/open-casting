@@ -53,7 +53,7 @@ export async function submissionsWorkbook(
     { header: "Showreel", key: "reelUrl", width: 36 },
     { header: "Profile", key: "profileUrl", width: 36 },
     { header: "Photo", key: "photo", width: 8 },
-    { header: "Video", key: "video", width: 8 },
+    { header: "Videos", key: "video", width: 8 },
     { header: "Parent or guardian", key: "guardianName", width: 24 },
     { header: "Guardian email", key: "guardianEmail", width: 30 },
     { header: "Terms accepted", key: "acceptedAt", width: 20 },
@@ -77,7 +77,7 @@ export async function submissionsWorkbook(
       reelUrl: submission.reelUrl,
       profileUrl: submission.profileUrl,
       photo: submission.photoUrl ? "Yes" : "",
-      video: submission.videoUrl ? "Yes" : "",
+      video: submission.videos.length ? String(submission.videos.length) : submission.videoUrl ? "1" : "",
       guardianName: submission.guardianName ?? "",
       guardianEmail: submission.guardianEmail ?? "",
       acceptedAt: submission.acceptedTerms

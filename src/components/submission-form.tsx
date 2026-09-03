@@ -7,14 +7,59 @@ import { useActionState, useState } from "react";
 import { submitApplication } from "@/lib/actions";
 import { SUBMISSION_TERMS } from "@/content/legal";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
-import { ADULT_AGE, RESIDENCIES, type AskKey } from "@/lib/types";
+import { ADULT_AGE, RESIDENCIES, type AskKey, type MediaSlot } from "@/lib/types";
+import { formatSeconds, videoDuration } from "@/lib/video";
 
 import { useErrorFocus } from "./use-error-focus";
 import { cx, Button, ButtonLink, ErrorSummary, Field, Input, RequiredKey, RequiredMark, Select, Textarea } from "./ui";
 import { SubmitButton } from "./submit-button";
 
-type MediaKind = "photo" | "video";
 type Uploaded = { url: string; name: string };
+
+/**
+ * How to tape, beside the upload rather than in a caption nobody reads twice,
+ * with a drawing of the framing: landscape, head and shoulders, eyes a third
+ * of the way down.
+ */
+function TapeGuidance({ text }: { text: string }) {
+  const points = text
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+  return (
+    <details className="group mt-5 rounded-xl border border-line bg-surface p-4">
+      <summary className="cursor-pointer text-sm font-semibold tracking-tight">
+        How to tape
+        <span className="ml-2 text-xs font-normal text-muted group-open:hidden">Show</span>
+      </summary>
+      <div className="mt-3 flex flex-col gap-4 sm:flex-row sm:items-start">
+        <svg
+          aria-label="Framing: landscape, head and shoulders, eyes a third of the way down"
+          role="img"
+          viewBox="0 0 96 64"
+          className="w-40 shrink-0 rounded-lg border border-line bg-raised stroke-text"
+          fill="none"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        >
+          <circle cx="48" cy="27" r="11" className="fill-surface" />
+          <path d="M22 64c3-14 12-20 26-20s23 6 26 20" className="fill-surface" />
+          <path d="M8 22h10M78 22h10" strokeDasharray="2 3" className="stroke-brand" />
+          <path d="M4 4h10M4 4v10M82 4h10M92 4v10M4 60v-10M4 60h10M92 60v-10M92 60H82" className="stroke-brand" />
+        </svg>
+        <ul className="flex flex-col gap-2 text-sm leading-relaxed text-muted">
+          {points.map((point) => (
+            <li key={point} className="flex gap-2.5">
+              <span aria-hidden="true" className="mt-2.5 size-1.5 shrink-0 rounded-full bg-accent" />
+              {point}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </details>
+  );
+}
 
 /** Says a file is already with the store, so the applicant need not pick it again. */
 function UploadedNote({ file }: { file: Uploaded | undefined }) {
@@ -64,6 +109,8 @@ export function SubmissionForm({
   hidden,
   agentRoute,
   availability,
+  slots,
+  tapeGuidance,
 }: {
   roleId: string;
   roleTitle: string;
@@ -85,6 +132,10 @@ export function SubmissionForm({
   agentRoute: string;
   /** The shoot dates to confirm availability for, in words, or null when the role has none. */
   availability: string | null;
+  /** The videos this role asks for, each with its brief and cap. */
+  slots: MediaSlot[];
+  /** How to tape, one point per line. Empty for none. */
+  tapeGuidance: string;
 }) {
   const [state, formAction, pending] = useActionState(submitApplication, IDLE_FORM_STATE);
   const must = new Set(required);
@@ -97,7 +148,10 @@ export function SubmissionForm({
   // What has already gone to the store. Kept across a refused submission, and
   // posted again as the hidden fields below, so a corrected form does not send
   // a two-hundred-megabyte tape a second time.
-  const [uploaded, setUploaded] = useState<Partial<Record<MediaKind, Uploaded>>>({});
+  const [uploaded, setUploaded] = useState<Partial<Record<string, Uploaded>>>({});
+  // A video over its slot's limit is refused the moment it is chosen, by its
+  // own metadata, so nothing that long is ever sent.
+  const [tooLong, setTooLong] = useState<Partial<Record<string, string>>>({});
 
   // Files go straight to the store first, from the browser, and only their
   // URLs travel with the rest of the form: a video is far larger than a
@@ -105,35 +159,64 @@ export function SubmissionForm({
   // the size before it accepts anything.
   async function withUploads(formData: FormData) {
     setUploadError(null);
-    for (const kind of ["photo", "video"] as const) {
-      const file = formData.get(kind);
-      formData.delete(kind);
+    const files: { field: string; kind: "photo" | "video"; what: string; path: string; slot?: MediaSlot }[] = [
+      { field: "photo", kind: "photo", what: "The photo", path: `submissions/${sessionId}/${roleId}/photo` },
+      ...slots.map((slot) => ({
+        field: `video_${slot.key}`,
+        kind: "video" as const,
+        what: slot.label,
+        path: `submissions/${sessionId}/${roleId}/video/${slot.key}`,
+        slot,
+      })),
+    ];
+    for (const { field, kind, what, path, slot } of files) {
+      const file = formData.get(field);
+      formData.delete(field);
       if (!(file instanceof File) || file.size === 0) continue;
+      if (slot?.maxSeconds) {
+        const seconds = await videoDuration(file);
+        if (seconds !== null && seconds > slot.maxSeconds + 1) {
+          setUploadError(
+            `${what} runs ${formatSeconds(seconds)}; the limit is ${formatSeconds(slot.maxSeconds)}. Trim it and choose it again.`,
+          );
+          return;
+        }
+      }
       try {
-        const result = await upload(
-          `submissions/${sessionId}/${roleId}/${kind}/${file.name}`,
-          file,
-          {
-            access: "private",
-            handleUploadUrl: "/api/blob/upload",
-            clientPayload: JSON.stringify({ token, roleId, kind }),
-            onUploadProgress: ({ percentage }) => setProgress({ kind, percent: percentage }),
-          },
-        );
-        formData.set(kind === "photo" ? "photoUrl" : "videoUrl", result.url);
-        setUploaded((current) => ({ ...current, [kind]: { url: result.url, name: file.name } }));
+        const result = await upload(`${path}/${file.name}`, file, {
+          access: "private",
+          handleUploadUrl: "/api/blob/upload",
+          clientPayload: JSON.stringify({ token, roleId, kind }),
+          onUploadProgress: ({ percentage }) => setProgress({ kind: what, percent: percentage }),
+        });
+        formData.set(kind === "photo" ? "photoUrl" : field, result.url);
+        setUploaded((current) => ({ ...current, [field]: { url: result.url, name: file.name } }));
       } catch (error) {
         setProgress(null);
         setUploadError(
           error instanceof Error && error.message
-            ? `${kind === "photo" ? "The photo" : "The video"} did not upload: ${error.message}`
-            : `${kind === "photo" ? "The photo" : "The video"} did not upload. Check its size and type, then try again.`,
+            ? `${what} did not upload: ${error.message}`
+            : `${what} did not upload. Check its size and type, then try again.`,
         );
         return;
       }
     }
     setProgress(null);
     formAction(formData);
+  }
+
+  // Read as soon as a file is chosen, so the applicant hears about a tape
+  // that is too long before they have filled in anything else.
+  async function checkLength(slot: MediaSlot, file: File | undefined) {
+    if (!file || !slot.maxSeconds) return setTooLong((current) => ({ ...current, [slot.key]: undefined }));
+    const seconds = await videoDuration(file);
+    setTooLong((current) => ({
+      ...current,
+      [slot.key]:
+        seconds !== null && seconds > slot.maxSeconds! + 1
+          ? `This one runs ${formatSeconds(seconds)}; the limit is ${formatSeconds(slot.maxSeconds!)}.`
+          : undefined,
+    }));
   }
   const formRef = useErrorFocus(state.status, state.errors);
 
@@ -178,6 +261,10 @@ export function SubmissionForm({
   }
 
   const { errors, values } = state;
+  const labels = {
+    ...LABELS,
+    ...Object.fromEntries(slots.map((slot) => [`video_${slot.key}`, slot.label])),
+  };
 
   if (agentRoute && represented !== "no") {
     return (
@@ -249,7 +336,7 @@ export function SubmissionForm({
               {state.message}
             </p>
           ) : null}
-          <ErrorSummary errors={errors} labels={LABELS} />
+          <ErrorSummary errors={errors} labels={labels} />
         </div>
       ) : null}
 
@@ -558,29 +645,62 @@ export function SubmissionForm({
             {asked("photo") && asked("video") ? "Photo and video" : asked("photo") ? "Photo" : "Video"}
           </h3>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            A recent photo of you, and a self-tape or showreel. Both are seen only by the casting
-            team and are deleted with your submission.
+            {asked("video") && slots.length > 1
+              ? `A recent photo of you, and the ${slots.length} videos set out below. Each is seen only by the casting team and is deleted with your submission.`
+              : "A recent photo of you, and a self-tape or showreel. Both are seen only by the casting team and are deleted with your submission."}
           </p>
           <input type="hidden" name="photoUrl" value={uploaded.photo?.url ?? ""} />
-          <input type="hidden" name="videoUrl" value={uploaded.video?.url ?? ""} />
+          {slots.map((slot) => (
+            <input
+              key={slot.key}
+              type="hidden"
+              name={`video_${slot.key}`}
+              value={uploaded[`video_${slot.key}`]?.url ?? ""}
+            />
+          ))}
           <div className="mt-4 grid gap-6 sm:grid-cols-2">
             {asked("photo") ? (
-            <div>
-              <Field label="Profile photo" htmlFor="photo" hint="JPEG, PNG or WebP, up to 5 MB." error={errors.photoUrl}>
-                <Input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" required={must.has("photo") && !uploaded.photo} />
-              </Field>
-              <UploadedNote file={uploaded.photo} />
-            </div>
+              <div>
+                <Field label="Profile photo" htmlFor="photo" hint="JPEG, PNG or WebP, up to 5 MB." error={errors.photoUrl}>
+                  <Input id="photo" name="photo" type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" required={must.has("photo") && !uploaded.photo} />
+                </Field>
+                <UploadedNote file={uploaded.photo} />
+              </div>
             ) : null}
-            {asked("video") ? (
-            <div>
-              <Field label="Video" htmlFor="video" hint="MP4, MOV or WebM, up to 200 MB." error={errors.videoUrl}>
-                <Input id="video" name="video" type="file" accept="video/mp4,video/quicktime,video/webm,video/x-m4v" required={must.has("video") && !uploaded.video} />
-              </Field>
-              <UploadedNote file={uploaded.video} />
-            </div>
-            ) : null}
+            {asked("video")
+              ? slots.map((slot) => (
+                  <div key={slot.key} className={slots.length > 1 ? "sm:col-span-2" : undefined}>
+                    <Field
+                      label={slot.label}
+                      htmlFor={`video_${slot.key}`}
+                      hint={[
+                        slot.maxSeconds ? `Up to ${formatSeconds(slot.maxSeconds)}.` : "",
+                        "MP4, MOV or WebM, up to 200 MB.",
+                      ]
+                        .filter(Boolean)
+                        .join(" ")}
+                      error={errors[`video_${slot.key}`] ?? tooLong[slot.key]}
+                    >
+                      <>
+                        {slot.brief ? (
+                          <p className="text-sm leading-relaxed whitespace-pre-line text-text">{slot.brief}</p>
+                        ) : null}
+                        <Input
+                          id={`video_${slot.key}`}
+                          name={`video_${slot.key}`}
+                          type="file"
+                          accept="video/mp4,video/quicktime,video/webm,video/x-m4v"
+                          required={slot.required && !uploaded[`video_${slot.key}`]}
+                          onChange={(event) => void checkLength(slot, event.currentTarget.files?.[0])}
+                        />
+                      </>
+                    </Field>
+                    <UploadedNote file={uploaded[`video_${slot.key}`]} />
+                  </div>
+                ))
+              : null}
           </div>
+          {asked("video") && tapeGuidance ? <TapeGuidance text={tapeGuidance} /> : null}
           {progress ? (
             <p className="mt-3 text-sm text-muted" aria-live="polite">
               Uploading the {progress.kind}: {progress.percent}%

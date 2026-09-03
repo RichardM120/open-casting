@@ -4,6 +4,8 @@ import { notFound } from "next/navigation";
 import { ApplicantMasthead } from "@/components/applicant-masthead";
 import { InclusionStatement, YourData } from "@/components/applicant-notices";
 import { reportAddress } from "@/lib/site";
+import { DEFAULT_TAPE_GUIDANCE } from "@/lib/types";
+import { formatSeconds } from "@/lib/video";
 import { DeadlineBadge } from "@/components/deadline-badge";
 import { SubmissionForm, SubmissionsClosed } from "@/components/submission-form";
 import { Badge, Eyebrow } from "@/components/ui";
@@ -20,7 +22,7 @@ import { requestOrigin } from "@/lib/origin";
 import { uploadsEnabled } from "@/lib/blob";
 import { canPreview } from "@/lib/preview";
 import { ShareLink } from "@/components/share-link";
-import { getSessionRole } from "@/lib/roles";
+import { getSessionRole, slotsFor } from "@/lib/roles";
 import { getSessionByToken, shareSlug } from "@/lib/sessions";
 import { Breadcrumb } from "@/components/breadcrumb";
 
@@ -139,6 +141,33 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
             </Section>
           ) : null}
 
+          {uploadsEnabled() && !role.hiddenFields.includes("video") && role.mediaSlots.length > 0 ? (
+            <Section title="What to send">
+              <ol className="flex flex-col gap-4">
+                {role.mediaSlots.map((slot, index) => (
+                  <li key={slot.key} className="flex gap-3">
+                    <span
+                      aria-hidden="true"
+                      className="flex size-7 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-ink"
+                    >
+                      {index + 1}
+                    </span>
+                    <div>
+                      <p className="font-medium">
+                        {slot.label}
+                        {slot.maxSeconds ? (
+                          <span className="font-normal text-muted"> · up to {formatSeconds(slot.maxSeconds)}</span>
+                        ) : null}
+                        {!slot.required ? <span className="font-normal text-muted"> · optional</span> : null}
+                      </p>
+                      {slot.brief ? <p className="mt-1 whitespace-pre-line">{slot.brief}</p> : null}
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </Section>
+          ) : null}
+
           <InclusionStatement session={session} />
           <YourData session={session} reportTo={reportAddress()} />
         </div>
@@ -158,6 +187,8 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
               hidden={role.hiddenFields}
               agentRoute={session.agentRoute}
               availability={role.shootStartsAt ? shootWindow(role) : null}
+              slots={slotsFor(role)}
+              tapeGuidance={session.tapeGuidance ?? DEFAULT_TAPE_GUIDANCE}
               backTo={`/c/${token}`}
             />
           ) : (

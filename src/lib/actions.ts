@@ -38,6 +38,7 @@ import {
   getVisibleRole,
   listSessionRoles,
   setRoleClosed,
+  slotsFor,
   updateRole,
 } from "./roles";
 import {
@@ -56,6 +57,7 @@ import {
   type SubmissionStatus,
   type Tier,
 } from "./types";
+import type { SubmissionVideo } from "./types";
 import {
   EmailTakenError,
   accountUsage,
@@ -70,6 +72,7 @@ import {
   fieldErrors,
   newAccountSchema,
   readAsks,
+  readMediaSlots,
   roleSchema,
   sessionSchema,
   submissionSchema,
@@ -192,18 +195,34 @@ export async function submitApplication(
   // Uploaded files come back as URLs. A form can post any string, so each is
   // checked against the store and the prefix the upload token was minted for,
   // before it is stored against anybody.
-  const media = { photoUrl: null as string | null, videoUrl: null as string | null };
-  for (const [field, kind] of [["photoUrl", "photo"], ["videoUrl", "video"]] as const) {
+  const media = { photoUrl: null as string | null, videos: [] as SubmissionVideo[] };
+  {
+    const posted = String(formData.get("photoUrl") ?? "").trim();
+    if (posted) {
+      if (!isSubmissionMediaUrl(posted, role.sessionId, roleId, "photo")) {
+        return invalid(
+          { photoUrl: "That file did not upload properly. Please try again." },
+          "One of the files did not upload properly. Please try again.",
+          formData,
+        );
+      }
+      media.photoUrl = posted;
+    }
+  }
+  // One field per video the role asks for, each checked the same way.
+  const slots = slotsFor(role);
+  for (const slot of slots) {
+    const field = `video_${slot.key}`;
     const posted = String(formData.get(field) ?? "").trim();
     if (!posted) continue;
-    if (!isSubmissionMediaUrl(posted, role.sessionId, roleId, kind)) {
+    if (!isSubmissionMediaUrl(posted, role.sessionId, roleId, "video")) {
       return invalid(
         { [field]: "That file did not upload properly. Please try again." },
         "One of the files did not upload properly. Please try again.",
         formData,
       );
     }
-    media[field] = posted;
+    media.videos.push({ slot: slot.key, url: posted, name: fileName(posted) });
   }
 
   // What has to be there is the role's call, not the form's: a field the
@@ -232,11 +251,15 @@ export async function submitApplication(
       missing.height = "Enter your height";
     }
     if (uploadsEnabled()) {
-      if (required.has("photo") && !media.photoUrl) {
-        if (!hidden.has("photo")) missing.photoUrl = "Add a profile photo";
+      if (required.has("photo") && !media.photoUrl && !hidden.has("photo")) {
+        missing.photoUrl = "Add a profile photo";
       }
-      if (required.has("video") && !media.videoUrl) {
-        if (!hidden.has("video")) missing.videoUrl = "Add a video";
+      if (!hidden.has("video")) {
+        for (const slot of slots) {
+          if (slot.required && !media.videos.some((video) => video.slot === slot.key)) {
+            missing[`video_${slot.key}`] = `Add ${slot.label}`;
+          }
+        }
       }
     }
     // A role with shoot dates asks for a plain yes: pulling out late is what
@@ -276,7 +299,8 @@ export async function submitApplication(
       available: role.shootStartsAt ? true : null,
       // A file the role does not ask for is not kept either.
       photoUrl: hidden.has("photo") ? null : media.photoUrl,
-      videoUrl: hidden.has("video") ? null : media.videoUrl,
+      videoUrl: hidden.has("video") ? null : (media.videos[0]?.url ?? null),
+      videos: hidden.has("video") ? [] : media.videos,
       acceptedTerms: role.disclaimer || null,
       acceptedAt: role.disclaimer ? new Date().toISOString() : null,
       // Recorded so it is possible to say afterwards exactly what was agreed.
@@ -326,7 +350,11 @@ export async function postRole(
   const user = await requireUser("/dashboard/roles/new");
 
   const entries = Object.fromEntries(formData);
-  const parsed = roleSchema.safeParse({ ...entries, ...readAsks(entries) });
+  const parsed = roleSchema.safeParse({
+    ...entries,
+    ...readAsks(entries),
+    mediaSlots: readMediaSlots(entries),
+  });
   if (!parsed.success) {
     return invalid(
       fieldErrors(parsed.error),
@@ -367,6 +395,17 @@ export async function postRole(
   });
   revalidateEverything();
   redirect(`/dashboard/roles/${role.id}?posted=1`);
+}
+
+/** The name a file was uploaded under, from the end of its stored path. */
+function fileName(url: string): string {
+  try {
+    const last = decodeURIComponent(new URL(url).pathname.split("/").pop() ?? "");
+    // The store adds a random suffix before the extension: "tape-AbC123.mp4".
+    return last.replace(/-[A-Za-z0-9]{20,}(?=\.[^.]+$)/, "");
+  } catch {
+    return "";
+  }
 }
 
 function isSubmissionStatus(value: string): value is SubmissionStatus {
@@ -452,7 +491,11 @@ export async function editRole(
   const user = await requireUser(`/dashboard/roles/${id}/edit`);
 
   const entries = Object.fromEntries(formData);
-  const parsed = roleSchema.safeParse({ ...entries, ...readAsks(entries) });
+  const parsed = roleSchema.safeParse({
+    ...entries,
+    ...readAsks(entries),
+    mediaSlots: readMediaSlots(entries),
+  });
   if (!parsed.success) {
     return invalid(
       fieldErrors(parsed.error),

@@ -140,6 +140,7 @@ const TRACKED: { key: keyof Role; label: string }[] = [
   { key: "requiredFields", label: "what applicants must send" },
   { key: "hiddenFields", label: "what applicants are asked for" },
   { key: "paid", label: "whether it is paid" },
+  { key: "mediaSlots", label: "the videos asked for" },
   { key: "title", label: "role name" },
   { key: "characterBrief", label: "character brief" },
   { key: "requirements", label: "requirements" },
@@ -167,6 +168,7 @@ const TRACKED_SESSION: { key: keyof CastingSession; label: string }[] = [
   { key: "productionEndsAt", label: "production end" },
   { key: "inclusionStatement", label: "inclusive casting statement" },
   { key: "agentRoute", label: "the route for represented actors" },
+  { key: "tapeGuidance", label: "the self-tape guidance" },
 ];
 
 export function describeSessionChanges(
@@ -183,7 +185,7 @@ function diff<T>(before: T, after: T, tracked: { key: keyof T; label: string }[]
     const a: unknown = before[key];
     const b: unknown = after[key];
     const same = Array.isArray(a) && Array.isArray(b)
-      ? a.length === b.length && a.every((value, index) => value === b[index])
+      ? JSON.stringify(a) === JSON.stringify(b)
       : a === b;
     if (!same) changed.add(label);
   }

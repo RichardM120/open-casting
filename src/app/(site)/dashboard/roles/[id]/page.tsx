@@ -26,7 +26,7 @@ import { PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
 import { ProfilePhoto } from "@/components/profile-photo";
 import { mediaSrc } from "@/lib/media";
 import { countsForRole, listSubmissions } from "@/lib/submissions";
-import type { Submission } from "@/lib/types";
+import type { MediaSlot, Submission } from "@/lib/types";
 import { Breadcrumb } from "@/components/breadcrumb";
 
 export async function generateMetadata({
@@ -140,7 +140,7 @@ export default async function RoleSubmissionsPage({
         <>
           <ul className="mt-8 flex flex-col gap-4">
             {submissions.map((submission) => (
-              <SubmissionCard key={submission.id} submission={submission} />
+              <SubmissionCard slots={role.mediaSlots} key={submission.id} submission={submission} />
             ))}
           </ul>
           <Pagination
@@ -228,7 +228,15 @@ function Count({
   );
 }
 
-function SubmissionCard({ submission }: { submission: Submission }) {
+function SubmissionCard({ submission, slots }: { submission: Submission; slots: MediaSlot[] }) {
+  // Every video sent, or the one a submission from before there were slots holds.
+  const videos = submission.videos.length
+    ? submission.videos
+    : submission.videoUrl
+      ? [{ slot: "tape", url: submission.videoUrl, name: "" }]
+      : [];
+  const labelFor = (key: string) =>
+    slots.find((slot) => slot.key === key)?.label ?? (key === "tape" ? "Self-tape or showreel" : "Video");
   return (
     <li className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
       {/*
@@ -272,18 +280,21 @@ function SubmissionCard({ submission }: { submission: Submission }) {
         </p>
       ) : null}
 
-      {submission.videoUrl ? (
+      {videos.map((video) => (
         // Nothing is fetched until the director presses play: a long list of
         // tapes should not pull every one of them down on the way in.
-        <video
-          controls
-          preload="none"
-          src={mediaSrc(submission.videoUrl)}
-          className="mt-4 max-h-80 w-full max-w-xl rounded-xl border border-line bg-black"
-        >
-          <a href={mediaSrc(submission.videoUrl)}>Watch the video</a>
-        </video>
-      ) : null}
+        <figure key={video.url} className="mt-4">
+          <figcaption className="text-xs font-medium text-muted">{labelFor(video.slot)}</figcaption>
+          <video
+            controls
+            preload="none"
+            src={mediaSrc(video.url)}
+            className="mt-1.5 max-h-80 w-full max-w-xl rounded-xl border border-line bg-black"
+          >
+            <a href={mediaSrc(video.url)}>Watch the video</a>
+          </video>
+        </figure>
+      ))}
 
       {submission.acceptedTerms ? (
         <details className="mt-4 rounded-xl border border-line bg-raised p-4">
@@ -313,9 +324,11 @@ function SubmissionCard({ submission }: { submission: Submission }) {
         {submission.profileUrl ? (
           <ExternalLink href={submission.profileUrl}>Profile</ExternalLink>
         ) : null}
-        {submission.videoUrl ? (
-          <ExternalLink href={mediaSrc(submission.videoUrl)}>Video</ExternalLink>
-        ) : null}
+        {videos.map((video) => (
+          <ExternalLink key={video.url} href={mediaSrc(video.url)}>
+            {videos.length > 1 ? labelFor(video.slot) : "Video"}
+          </ExternalLink>
+        ))}
       </div>
     </li>
   );

@@ -270,7 +270,7 @@ section("14 the director chooses what applicants must send");
   check("height and residency start not asked", await dir.p.locator('input[name="ask_height"][value="off"]').isChecked() && await dir.p.locator('input[name="ask_residency"][value="off"]').isChecked());
   check("phone starts required", await dir.p.locator('input[name="ask_phone"][value="required"]').isChecked());
   check("the showreel starts optional", await dir.p.locator('input[name="ask_reelUrl"][value="optional"]').isChecked());
-  check("no photo or video to ask for without a store", (await dir.p.locator('input[name="ask_photo"]').count()) === 0);
+  check("photo and video can be set out without a store", (await dir.p.locator('input[name="ask_photo"]').count()) === 3 && (await dir.p.locator('input[name="ask_video"]').count()) === 3);
   check("the post button stays quiet until the form is complete", (await dir.p.getByRole("button", { name: "Post the role" }).getAttribute("data-ready")) === "false");
   await dir.p.selectOption("#sessionId", call);
   await dir.p.fill("#title", `Asks role ${t}`);
@@ -331,6 +331,7 @@ section("15 a casting call can send represented actors elsewhere");
   const roleId = await postRole(dir.p, { sessionId: call, title: `Agents role ${t}`, company: CO });
   await dir.p.goto(`${BASE}/dashboard/sessions/${call}/edit`, { waitUntil: "networkidle" });
   check("the inclusive statement starts with the default wording", (await dir.p.inputValue("#inclusionStatement")).includes("open to applicants of every background"));
+  check("and so does the self-tape guidance", (await dir.p.inputValue("#tapeGuidance")).includes("Film in landscape"));
   await dir.p.fill("#inclusionStatement", "We are casting inclusively and welcome everyone who fits the brief.");
   await dir.p.fill("#agentRoute", "Represented UK actors: please apply through your agent rather than this form.");
   await dir.p.getByRole("button", { name: "Save changes" }).click();
@@ -349,6 +350,32 @@ section("15 a casting call can send represented actors elsewhere");
   await p.getByRole("button", { name: "I am not represented after all" }).click();
   check("and can come back to the form", (await p.locator("#name").count()) === 1);
   await applicant.c.close();
+}
+
+section("16 a role sets out the videos it asks for");
+{
+  const call = await openSession(dir.p, { name: `Tapes ${t}`, company: CO, opensAt: at(-1), closesAt: at(20, "23:59") });
+  const roleId = await postRole(dir.p, { sessionId: call, title: `Tapes role ${t}`, company: CO });
+  await dir.p.goto(`${BASE}/dashboard/roles/${roleId}/edit`, { waitUntil: "networkidle" });
+  check("with no videos set out, the editor offers to", (await dir.p.getByRole("button", { name: "Set out the videos" }).count()) === 1 && (await dir.p.locator('input[name="slot_1_label"]').count()) === 0);
+  await dir.p.getByRole("button", { name: "Set out the videos" }).click();
+  await dir.p.fill('input[name="slot_1_label"]', "A monologue of your choosing");
+  await dir.p.fill('textarea[name="slot_1_brief"]', "Nothing from the production itself, in your own accent.");
+  await dir.p.selectOption('select[name="slot_1_max"]', "30");
+  await dir.p.getByRole("button", { name: "Add another video" }).click();
+  await dir.p.fill('input[name="slot_2_label"]', "A piece about yourself");
+  await dir.p.getByRole("button", { name: "Save changes" }).click();
+  await dir.p.waitForURL(/saved=1/, { timeout: 20000 });
+  await dir.p.goto(`${BASE}/dashboard/roles/${roleId}/edit`, { waitUntil: "networkidle" });
+  check("both videos are kept, with the brief and the limit", (await dir.p.inputValue('input[name="slot_1_label"]')) === "A monologue of your choosing" && (await dir.p.inputValue('textarea[name="slot_1_brief"]')).includes("own accent") && (await dir.p.inputValue('select[name="slot_1_max"]')) === "30" && (await dir.p.inputValue('input[name="slot_2_label"]')) === "A piece about yourself");
+  check("a third can still be added, and no more after", (await dir.p.getByRole("button", { name: "Add another video" }).count()) === 1);
+  await dir.p.getByRole("button", { name: "Remove this video" }).last().click();
+  await dir.p.getByRole("button", { name: "Save changes" }).click();
+  await dir.p.waitForURL(/saved=1/, { timeout: 20000 });
+  await dir.p.goto(`${BASE}/dashboard/roles/${roleId}/edit`, { waitUntil: "networkidle" });
+  check("removing one removes it", (await dir.p.locator('input[name="slot_2_label"]').count()) === 0 && (await dir.p.locator('input[name="slot_1_label"]').count()) === 1);
+  await dir.p.locator('label:has(input[name="ask_video"][value="off"])').click();
+  check("with videos not asked for, there is nothing to set out", (await dir.p.locator('input[name="slot_1_label"]').count()) === 0);
 }
 
 for (const s of [dir, other, prod, admin]) await s.c.close();

@@ -496,6 +496,9 @@ const SCHEMA = `
   ALTER TABLE roles ADD COLUMN IF NOT EXISTS hidden_fields jsonb NOT NULL
     DEFAULT '["residency","height"]'::jsonb;
   ALTER TABLE roles ADD COLUMN IF NOT EXISTS paid boolean NOT NULL DEFAULT true;
+  -- The videos a role asks for: key, label, brief, longest run and whether
+  -- required. Empty asks for one general tape.
+  ALTER TABLE roles ADD COLUMN IF NOT EXISTS media_slots jsonb NOT NULL DEFAULT '[]'::jsonb;
 
   -- Closing early is recorded separately rather than by moving the deadline,
   -- so the listing still shows the date it originally advertised.
@@ -575,6 +578,8 @@ const SCHEMA = `
   ALTER TABLE submissions ADD COLUMN IF NOT EXISTS height_cm integer;
   ALTER TABLE submissions ADD COLUMN IF NOT EXISTS residency text NOT NULL DEFAULT '';
   ALTER TABLE submissions ADD COLUMN IF NOT EXISTS available boolean;
+  -- Every video sent, against the slot it answers; video_url keeps the first.
+  ALTER TABLE submissions ADD COLUMN IF NOT EXISTS videos jsonb NOT NULL DEFAULT '[]'::jsonb;
 
   CREATE UNIQUE INDEX IF NOT EXISTS submissions_session_email_idx
     ON submissions (session_id, lower(email))
@@ -644,6 +649,7 @@ const SCHEMA = `
   -- default wording, empty none) and where represented actors go instead.
   ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS inclusion_statement text;
   ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS agent_route text NOT NULL DEFAULT '';
+  ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS tape_guidance text;
 
   DO $$
   BEGIN

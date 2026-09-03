@@ -83,6 +83,11 @@ export type CastingSession = {
    */
   agentRoute: string;
   /**
+   * How to tape, shown beside the upload. Null on a casting call from before
+   * there was one, which shows the default; empty when cleared.
+   */
+  tapeGuidance: string | null;
+  /**
    * ISO timestamps. Submissions are accepted from opensAt up to closesAt. The
    * casting director enters both in UK time; they are stored as instants.
    */
@@ -148,6 +153,49 @@ export const RESIDENCIES = [
   "Outside Europe",
 ] as const;
 
+/**
+ * One video a role asks for: what it is, what to do in it, the longest it may
+ * run, and whether it has to be there. A role with none set asks for one
+ * general tape, DEFAULT_MEDIA_SLOT.
+ */
+export type MediaSlot = {
+  key: string;
+  label: string;
+  brief: string;
+  maxSeconds: number | null;
+  required: boolean;
+};
+
+export const MAX_MEDIA_SLOTS = 3;
+
+/** The lengths a director can cap a video at, in seconds. */
+export const SLOT_LENGTHS = [30, 45, 60, 90, 120, 180, 300] as const;
+
+export const DEFAULT_MEDIA_SLOT: MediaSlot = {
+  key: "tape",
+  label: "Self-tape or showreel",
+  brief: "",
+  maxSeconds: null,
+  required: false,
+};
+
+/** A video an applicant sent, against the slot it was sent for. */
+export type SubmissionVideo = { slot: string; url: string; name: string };
+
+/**
+ * How to tape, as every casting director writes it out from scratch and
+ * every applicant has stopped reading by the time they press record. Shown
+ * beside the upload instead, and editable per casting call.
+ */
+export const DEFAULT_TAPE_GUIDANCE = [
+  "Film in landscape on a phone or a camera, with the lens at eye level about an arm's length away.",
+  "Frame your head and shoulders, and look just beside the lens rather than at yourself on the screen.",
+  "Find a quiet, well-lit room: daylight or a lamp in front of you, never behind you, and no music.",
+  "Use a plain, neutral background and wear your own clothes, nothing with a logo or a pattern.",
+  "Say your name and the role at the start, then go straight into the piece.",
+  "Keep to the length asked for. If in doubt, shorter.",
+].join("\n");
+
 /** The inclusive casting statement a new casting call starts with. The director may edit or clear it. */
 export const DEFAULT_INCLUSION_STATEMENT =
   "We welcome submissions from everyone. This casting is open to applicants of every background, ethnicity, faith, gender identity, sexuality and disability, and we encourage anyone who fits the brief to submit.";
@@ -184,6 +232,8 @@ export type Role = {
   requiredFields: AskKey[];
   /** Which are not asked for at all. Never a field that is required. */
   hiddenFields: AskKey[];
+  /** The videos asked for, each with its brief and cap. Empty means one general tape. */
+  mediaSlots: MediaSlot[];
   /** Set when closed ahead of the production's closing time. ISO timestamp, or null. */
   closedAt: string | null;
   /** The account that posted it. Null only for rows predating accounts. */
@@ -217,7 +267,10 @@ export type Submission = {
   profileUrl: string;
   /** Uploaded with the submission, held privately, deleted with it. */
   photoUrl: string | null;
+  /** The first video, kept for rows and code from before there were slots. */
   videoUrl: string | null;
+  /** Every video sent, against the slot it answers. */
+  videos: SubmissionVideo[];
   coverNote: string;
   status: SubmissionStatus;
   /**

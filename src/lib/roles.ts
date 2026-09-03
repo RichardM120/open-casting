@@ -3,8 +3,8 @@ import "server-only";
 import type { SessionUser } from "./auth";
 import { query } from "./db";
 import { LIVE, SESSION_COLUMNS, toSession } from "./sessions";
-import { ASK_KEYS, DEFAULT_REQUIRED_FIELDS } from "./types";
-import type { AskKey, CastingSession, ProductionType, Role } from "./types";
+import { ASK_KEYS, DEFAULT_MEDIA_SLOT, DEFAULT_REQUIRED_FIELDS, MAX_MEDIA_SLOTS } from "./types";
+import type { AskKey, CastingSession, MediaSlot, ProductionType, Role } from "./types";
 
 /* ------------------------------------------------------------- row shape -- */
 
@@ -29,6 +29,7 @@ type RoleRow = {
   disclaimer: string;
   required_fields: unknown;
   hidden_fields: unknown;
+  media_slots: unknown;
   closed_at: Date | null;
   owner_id: string | null;
   session_id: string;
@@ -40,8 +41,8 @@ const COLUMNS = `
   requirements, location, self_tape, paid, age_min, age_max,
   to_char(shoot_starts_at, 'YYYY-MM-DD') AS shoot_starts_at,
   to_char(shoot_ends_at, 'YYYY-MM-DD') AS shoot_ends_at,
-  casting_director, company, disclaimer, required_fields, hidden_fields, closed_at, owner_id,
-  session_id, posted_at
+  casting_director, company, disclaimer, required_fields, hidden_fields, media_slots, closed_at,
+  owner_id, session_id, posted_at
 `;
 
 function toRole(row: RoleRow): Role {
@@ -68,6 +69,7 @@ function toRole(row: RoleRow): Role {
     hiddenFields: readAsks(row.hidden_fields).filter(
       (key) => !readAsks(row.required_fields).includes(key),
     ),
+    mediaSlots: readSlots(row.media_slots),
     closedAt: row.closed_at?.toISOString() ?? null,
     ownerId: row.owner_id,
     sessionId: row.session_id,
@@ -79,6 +81,32 @@ function toRole(row: RoleRow): Role {
 function readAsks(value: unknown): AskKey[] {
   if (!Array.isArray(value)) return [...DEFAULT_REQUIRED_FIELDS];
   return ASK_KEYS.filter((key) => value.includes(key));
+}
+
+/** The stored slots, kept to the shape the app writes; anything else is ignored. */
+function readSlots(value: unknown): MediaSlot[] {
+  if (!Array.isArray(value)) return [];
+  const slots: MediaSlot[] = [];
+  for (const item of value) {
+    if (!item || typeof item !== "object") continue;
+    const slot = item as Record<string, unknown>;
+    if (typeof slot.key !== "string" || typeof slot.label !== "string" || !slot.key || !slot.label) continue;
+    slots.push({
+      key: slot.key,
+      label: slot.label,
+      brief: typeof slot.brief === "string" ? slot.brief : "",
+      maxSeconds: typeof slot.maxSeconds === "number" && slot.maxSeconds > 0 ? slot.maxSeconds : null,
+      required: slot.required === true,
+    });
+    if (slots.length === MAX_MEDIA_SLOTS) break;
+  }
+  return slots;
+}
+
+/** The videos a role asks for: its own, or the one general tape, required when the video ask is. */
+export function slotsFor(role: Pick<Role, "mediaSlots" | "requiredFields">): MediaSlot[] {
+  if (role.mediaSlots.length > 0) return role.mediaSlots;
+  return [{ ...DEFAULT_MEDIA_SLOT, required: role.requiredFields.includes("video") }];
 }
 
 export type ListedRole = Role & { session: CastingSession };
@@ -239,8 +267,8 @@ export async function createRole(
        id, slug, title, production, production_type, synopsis, character_brief,
        requirements, location, self_tape, age_min, age_max, shoot_starts_at,
        shoot_ends_at, casting_director, company, owner_id, disclaimer, session_id,
-       required_fields, hidden_fields, paid
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
+       required_fields, hidden_fields, paid, media_slots
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
      RETURNING ${COLUMNS}`,
     [
       `rol_${crypto.randomUUID().slice(0, 12)}`,
@@ -266,6 +294,7 @@ export async function createRole(
       JSON.stringify(input.requiredFields),
       JSON.stringify(input.hiddenFields),
       input.paid,
+      JSON.stringify(input.mediaSlots),
     ],
   );
   return toRole(rows[0]);
@@ -311,7 +340,8 @@ export async function updateRole(
        disclaimer = $${params.length + 11},
        required_fields = $${params.length + 12},
        hidden_fields = $${params.length + 13},
-       paid = $${params.length + 14}
+       paid = $${params.length + 14},
+       media_slots = $${params.length + 15}
      WHERE id = $${params.length + 1}${where ? ` AND ${where}` : ""}
      RETURNING ${COLUMNS}`,
     [
@@ -323,6 +353,7 @@ export async function updateRole(
       JSON.stringify(input.requiredFields),
       JSON.stringify(input.hiddenFields),
       input.paid,
+      JSON.stringify(input.mediaSlots),
     ],
   );
   return rows[0] ? toRole(rows[0]) : null;

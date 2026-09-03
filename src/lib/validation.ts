@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { fromLocalInput, londonDate } from "./format";
 import { PRODUCTION_TYPES, SIGNUP_ROLES, TIER_KEYS, ADULT_AGE } from "./types";
-import { APPLICANT_ASKS, ASK_KEYS, DEFAULT_HIDDEN_FIELDS, DEFAULT_REQUIRED_FIELDS, RESIDENCIES, type AskKey } from "./types";
+import { APPLICANT_ASKS, ASK_KEYS, DEFAULT_HIDDEN_FIELDS, DEFAULT_REQUIRED_FIELDS, MAX_MEDIA_SLOTS, RESIDENCIES, type AskKey, type MediaSlot } from "./types";
 import { parseHeight } from "./height";
 
 const trimmed = z.string().trim();
@@ -138,6 +138,18 @@ export const roleSchema = z
     // Built by the action from the form's radios; see readAsks.
     requiredFields: z.array(z.enum(ASK_KEYS)),
     hiddenFields: z.array(z.enum(ASK_KEYS)),
+    // Built by the action from the form's rows; see readMediaSlots.
+    mediaSlots: z
+      .array(
+        z.object({
+          key: z.string().min(1).max(40),
+          label: trimmed.min(2, "Say what the video is").max(80),
+          brief: trimmed.max(600, "Keep the brief under 600 characters"),
+          maxSeconds: z.number().int().positive().nullable(),
+          required: z.boolean(),
+        }),
+      )
+      .max(MAX_MEDIA_SLOTS),
   })
   .refine(
     (value) => !value.shootEndsAt || !value.shootStartsAt || value.shootEndsAt >= value.shootStartsAt,
@@ -162,6 +174,33 @@ export type RoleInput = z.infer<typeof roleSchema>;
  * "required", "optional" or "off". A form that sent none of them gets the
  * defaults, which are what the form always asked for.
  */
+/**
+ * The role form posts up to three video rows, `slot_1_label`, `slot_1_brief`,
+ * `slot_1_max`, `slot_1_required` and a `slot_1_key` that keeps a row's
+ * identity across an edit. A row with nothing in it is dropped.
+ */
+export function readMediaSlots(entries: Record<string, unknown>): MediaSlot[] {
+  const slots: MediaSlot[] = [];
+  for (let n = 1; n <= MAX_MEDIA_SLOTS; n += 1) {
+    if (!(`slot_${n}_label` in entries)) continue;
+    const label = String(entries[`slot_${n}_label`] ?? "").trim();
+    const brief = String(entries[`slot_${n}_brief`] ?? "").trim();
+    if (!label && !brief) continue;
+    const key = String(entries[`slot_${n}_key`] ?? "")
+      .replace(/[^a-z0-9_-]/gi, "")
+      .slice(0, 40);
+    const max = String(entries[`slot_${n}_max`] ?? "").trim();
+    slots.push({
+      key: key || `slot_${n}`,
+      label,
+      brief,
+      maxSeconds: /^\d+$/.test(max) ? Number(max) : null,
+      required: entries[`slot_${n}_required`] === "on",
+    });
+  }
+  return slots;
+}
+
 export function readAsks(entries: Record<string, unknown>): {
   requiredFields: AskKey[];
   hiddenFields: AskKey[];
@@ -307,6 +346,7 @@ export const sessionSchema = z
     // gate).
     inclusionStatement: trimmed.max(600, "Keep the statement under 600 characters"),
     agentRoute: trimmed.max(600, "Keep it under 600 characters"),
+    tapeGuidance: trimmed.max(2000, "Keep the guidance under 2000 characters"),
     opensAt: localDateTime("Choose when submissions open"),
     closesAt: localDateTime("Choose when submissions close"),
     productionEndsAt: trimmed.regex(

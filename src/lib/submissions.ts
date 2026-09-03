@@ -3,7 +3,7 @@ import "server-only";
 import type { SessionUser } from "./auth";
 import { UNIQUE_VIOLATION, query } from "./db";
 import { visibility } from "./roles";
-import { SUBMISSION_STATUSES, type Submission, type SubmissionStatus } from "./types";
+import { SUBMISSION_STATUSES, type Submission, type SubmissionStatus, type SubmissionVideo } from "./types";
 
 export type SubmissionCounts = Record<SubmissionStatus, number> & { total: number };
 
@@ -47,13 +47,14 @@ type SubmissionRow = {
   guardian_consent_at: Date | null;
   photo_url: string | null;
   video_url: string | null;
+  videos: unknown;
   submitted_at: Date;
 };
 
 const COLUMNS = `
   id, role_id, session_id, name, email, phone, location, age, reel_url,
   profile_url, cover_note, status, accepted_terms, accepted_at, terms_version,
-  guardian_name, guardian_email, guardian_consent_at, photo_url, video_url,
+  guardian_name, guardian_email, guardian_consent_at, photo_url, video_url, videos,
   height_cm, residency, available, submitted_at
 `;
 
@@ -82,8 +83,24 @@ function toSubmission(row: SubmissionRow): Submission {
     guardianConsentAt: row.guardian_consent_at?.toISOString() ?? null,
     photoUrl: row.photo_url,
     videoUrl: row.video_url,
+    videos: readVideos(row.videos),
     submittedAt: row.submitted_at.toISOString(),
   };
+}
+
+/** The stored videos, kept to the shape the app writes. */
+function readVideos(value: unknown): SubmissionVideo[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const video = item as Record<string, unknown>;
+    if (typeof video.url !== "string" || !video.url) return [];
+    return [{
+      slot: typeof video.slot === "string" ? video.slot : "tape",
+      url: video.url,
+      name: typeof video.name === "string" ? video.name : "",
+    }];
+  });
 }
 
 /* --------------------------------------------------------------- queries -- */
@@ -267,8 +284,8 @@ export async function createSubmission(input: NewSubmission): Promise<Submission
          id, role_id, session_id, name, email, phone, location, age, reel_url,
          profile_url, cover_note, accepted_terms, accepted_at, terms_version,
          guardian_name, guardian_email, guardian_consent_at, photo_url, video_url,
-         height_cm, residency, available
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22)
+         height_cm, residency, available, videos
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
        RETURNING ${COLUMNS}`,
       [
         `sub_${crypto.randomUUID().slice(0, 12)}`,
@@ -293,6 +310,7 @@ export async function createSubmission(input: NewSubmission): Promise<Submission
         input.heightCm,
         input.residency,
         input.available,
+        JSON.stringify(input.videos),
       ],
     );
     return toSubmission(rows[0]);
@@ -360,34 +378,48 @@ export async function submissionContext(id: string): Promise<{
 /** The submission a stored file belongs to, for the route that reads it back. */
 export async function findSubmissionByMediaUrl(url: string): Promise<Submission | null> {
   const rows = await query<SubmissionRow>(
-    `SELECT ${COLUMNS} FROM submissions WHERE photo_url = $1 OR video_url = $1 LIMIT 1`,
-    [url],
+    `SELECT ${COLUMNS} FROM submissions
+     WHERE photo_url = $1 OR video_url = $1 OR videos @> $2::jsonb LIMIT 1`,
+    [url, JSON.stringify([{ url }])],
   );
   return rows[0] ? toSubmission(rows[0]) : null;
 }
 
+type MediaRow = { photo_url: string | null; video_url: string | null; videos: unknown };
+
+/** Every file a row refers to, the slot videos included, each once. */
+function urlsOf(rows: MediaRow[]): string[] {
+  const urls = new Set<string>();
+  for (const row of rows) {
+    if (row.photo_url) urls.add(row.photo_url);
+    if (row.video_url) urls.add(row.video_url);
+    for (const video of readVideos(row.videos)) urls.add(video.url);
+  }
+  return [...urls];
+}
+
 /** Every file under a casting call, so removing it can remove them too. */
 export async function mediaUrlsForSession(sessionId: string): Promise<string[]> {
-  const rows = await query<{ photo_url: string | null; video_url: string | null }>(
-    "SELECT photo_url, video_url FROM submissions WHERE session_id = $1",
+  const rows = await query<MediaRow>(
+    "SELECT photo_url, video_url, videos FROM submissions WHERE session_id = $1",
     [sessionId],
   );
-  return rows.flatMap((row) => [row.photo_url, row.video_url]).filter((u): u is string => Boolean(u));
+  return urlsOf(rows);
 }
 
 /** Every file any submission still refers to: what the orphan sweep must keep. */
 export async function allMediaUrls(): Promise<string[]> {
-  const rows = await query<{ photo_url: string | null; video_url: string | null }>(
-    "SELECT photo_url, video_url FROM submissions WHERE photo_url IS NOT NULL OR video_url IS NOT NULL",
+  const rows = await query<MediaRow>(
+    "SELECT photo_url, video_url, videos FROM submissions WHERE photo_url IS NOT NULL OR video_url IS NOT NULL OR videos <> '[]'::jsonb",
   );
-  return rows.flatMap((row) => [row.photo_url, row.video_url]).filter((u): u is string => Boolean(u));
+  return urlsOf(rows);
 }
 
 /** Every file under a role, for the same reason. */
 export async function mediaUrlsForRole(roleId: string): Promise<string[]> {
-  const rows = await query<{ photo_url: string | null; video_url: string | null }>(
-    "SELECT photo_url, video_url FROM submissions WHERE role_id = $1",
+  const rows = await query<MediaRow>(
+    "SELECT photo_url, video_url, videos FROM submissions WHERE role_id = $1",
     [roleId],
   );
-  return rows.flatMap((row) => [row.photo_url, row.video_url]).filter((u): u is string => Boolean(u));
+  return urlsOf(rows);
 }

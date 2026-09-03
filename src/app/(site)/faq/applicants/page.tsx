@@ -192,6 +192,11 @@ export default function ApplicantFaqPage() {
               "A short paragraph on why you, for this part. Specific beats general, so refer to the brief.",
           },
           {
+            term: "Videos",
+            means:
+              "Some roles ask for one or more videos, each with its own brief and sometimes a limit on its length. A tape over the limit is refused when you choose it, before anything is sent, and filming guidance sits beside the upload.",
+          },
+          {
             term: "Available for the shoot dates",
             means:
               "A role with shoot dates asks you to confirm you are free for all of them before you can submit. Only tick it if you are: pulling out late is what makes casting directors stop running open calls.",

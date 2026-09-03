@@ -1,16 +1,17 @@
 "use client";
 
-import { useActionState } from "react";
+import { useActionState, useState } from "react";
 
 import { editRole, postRole } from "@/lib/actions";
 import { formatDateTime } from "@/lib/format";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
-import { APPLICANT_ASKS, DEFAULT_HIDDEN_FIELDS, DEFAULT_REQUIRED_FIELDS } from "@/lib/types";
-import type { AskKey, CastingSession, Role } from "@/lib/types";
+import { APPLICANT_ASKS, DEFAULT_HIDDEN_FIELDS, DEFAULT_REQUIRED_FIELDS, MAX_MEDIA_SLOTS, SLOT_LENGTHS } from "@/lib/types";
+import type { AskKey, CastingSession, MediaSlot, Role } from "@/lib/types";
 
 import { DateTimeField } from "./date-time-field";
 import { useErrorFocus } from "./use-error-focus";
-import { ButtonLink, Checkbox, ErrorSummary, Field, Input, RequiredKey, Select, Textarea } from "./ui";
+import { Button, ButtonLink, Checkbox, ErrorSummary, Field, Input, RequiredKey, Select, Textarea } from "./ui";
+import { formatSeconds } from "@/lib/video";
 import { SubmitButton } from "./submit-button";
 
 const LABELS: Record<string, string> = {
@@ -90,9 +91,10 @@ export function RoleForm({
     }
     return requiredNow.has(key) ? "required" : hiddenNow.has(key) ? "off" : "optional";
   };
-  const asks = APPLICANT_ASKS.filter(
-    (ask) => uploads || (ask.key !== "photo" && ask.key !== "video"),
-  );
+  const asks = APPLICANT_ASKS;
+  // The video rows follow the video ask: nothing to set out for a role that
+  // does not take videos.
+  const [videoAsk, setVideoAsk] = useState(askValue("video"));
 
   return (
     <form ref={formRef} action={formAction} className="flex flex-col gap-8">
@@ -314,6 +316,9 @@ export function RoleForm({
                       name={`ask_${ask.key}`}
                       value={option.value}
                       defaultChecked={askValue(ask.key) === option.value}
+                      onChange={
+                        ask.key === "video" ? (event) => setVideoAsk(event.currentTarget.value as typeof videoAsk) : undefined
+                      }
                       className="sr-only"
                     />
                     {option.label}
@@ -323,6 +328,18 @@ export function RoleForm({
             </div>
           ))}
         </div>
+        {!uploads ? (
+          <p className="text-xs leading-relaxed text-muted sm:col-span-2">
+            Photos and videos are only collected once the file store is connected. What you set
+            here is kept until then.
+          </p>
+        ) : null}
+        <MediaSlotsEditor
+          initial={role?.mediaSlots ?? []}
+          videoAsk={videoAsk}
+          errors={errors}
+          submitted={state.status === "idle" ? null : submitted}
+        />
       </Fieldset>
 
       <Fieldset
@@ -363,6 +380,132 @@ export function RoleForm({
         </ButtonLink>
       </div>
     </form>
+  );
+}
+
+/**
+ * The videos a role asks for, set out one by one: what it is, what to do in
+ * it, the longest it may run and whether it must be there. With none set
+ * the form asks for one general tape. Rows are posted as slot_1_label and so
+ * on; a slot_n_key keeps a row's identity when a role is edited, so a video
+ * an applicant has already sent still answers the same slot.
+ */
+function MediaSlotsEditor({
+  initial,
+  videoAsk,
+  errors,
+  submitted,
+}: {
+  initial: MediaSlot[];
+  videoAsk: "required" | "optional" | "off";
+  errors: Record<string, string>;
+  /** What was just posted after a refused save, or null when showing the role as it is. */
+  submitted: Record<string, string> | null;
+}) {
+  const [rows, setRows] = useState<MediaSlot[]>(() => {
+    if (!submitted) return initial;
+    const posted: MediaSlot[] = [];
+    for (let n = 1; n <= MAX_MEDIA_SLOTS; n += 1) {
+      if (!(`slot_${n}_label` in submitted)) continue;
+      posted.push({
+        key: submitted[`slot_${n}_key`] || `slot_${n}`,
+        label: submitted[`slot_${n}_label`] ?? "",
+        brief: submitted[`slot_${n}_brief`] ?? "",
+        maxSeconds: /^\d+$/.test(submitted[`slot_${n}_max`] ?? "") ? Number(submitted[`slot_${n}_max`]) : null,
+        required: submitted[`slot_${n}_required`] === "on",
+      });
+    }
+    return posted;
+  });
+  if (videoAsk === "off") return null;
+
+  return (
+    <div className="mt-2 flex flex-col gap-3 sm:col-span-2">
+      <div>
+        <p className="text-sm font-medium text-text">The videos</p>
+        <p className="mt-1 text-xs leading-relaxed text-muted">
+          Leave this empty to ask for one video, &ldquo;Self-tape or showreel&rdquo;, with no limit
+          on its length. Or set out up to three, each with its own brief and limit: a monologue
+          and a piece to camera, say. A limit is checked before the upload starts, so nobody sends
+          a tape that is too long.
+        </p>
+      </div>
+      {rows.map((row, index) => {
+        const n = index + 1;
+        return (
+          <div key={row.key} className="rounded-xl border border-line bg-raised p-4">
+            <input type="hidden" name={`slot_${n}_key`} value={row.key} />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <Field
+                label={`Video ${n}: what it is`}
+                htmlFor={`mediaSlots.${index}.label`}
+                error={errors[`mediaSlots.${index}.label`]}
+                className="sm:col-span-2"
+              >
+                <Input
+                  id={`mediaSlots.${index}.label`}
+                  name={`slot_${n}_label`}
+                  defaultValue={row.label}
+                  placeholder="A monologue of your choosing"
+                  required
+                />
+              </Field>
+              <Field
+                label="What to do in it"
+                htmlFor={`mediaSlots.${index}.brief`}
+                hint="Shown above the upload."
+                error={errors[`mediaSlots.${index}.brief`]}
+                className="sm:col-span-2"
+              >
+                <Textarea
+                  id={`mediaSlots.${index}.brief`}
+                  name={`slot_${n}_brief`}
+                  rows={3}
+                  defaultValue={row.brief}
+                  placeholder="Nothing from the production itself, in your own accent, up to 30 seconds."
+                />
+              </Field>
+              <Field label="Longest it may run" htmlFor={`slot_${n}_max`}>
+                <Select id={`slot_${n}_max`} name={`slot_${n}_max`} defaultValue={row.maxSeconds ?? ""}>
+                  <option value="">No limit</option>
+                  {SLOT_LENGTHS.map((seconds) => (
+                    <option key={seconds} value={seconds}>
+                      {formatSeconds(seconds)}
+                    </option>
+                  ))}
+                </Select>
+              </Field>
+              <div className="flex flex-col justify-end gap-3">
+                <Checkbox name={`slot_${n}_required`} label="Has to be sent" defaultChecked={row.required} />
+                <button
+                  type="button"
+                  onClick={() => setRows((current) => current.filter((other) => other.key !== row.key))}
+                  className="self-start text-sm text-danger underline-offset-4 hover:underline"
+                >
+                  Remove this video
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })}
+      {rows.length < MAX_MEDIA_SLOTS ? (
+        <Button
+          type="button"
+          variant="secondary"
+          size="sm"
+          className="self-start"
+          onClick={() =>
+            setRows((current) => [
+              ...current,
+              { key: `v${Date.now().toString(36)}`, label: "", brief: "", maxSeconds: null, required: true },
+            ])
+          }
+        >
+          {rows.length === 0 ? "Set out the videos" : "Add another video"}
+        </Button>
+      ) : null}
+    </div>
   );
 }
 
