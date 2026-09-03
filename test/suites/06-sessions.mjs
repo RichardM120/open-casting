@@ -10,6 +10,7 @@ import {
   launch,
   openSession,
   publish,
+  openAdvanced,
   postRole,
   reporter,
   session,
@@ -267,6 +268,8 @@ section("14 the director chooses what applicants must send");
 {
   const call = await openSession(dir.p, { name: `Asks ${t}`, company: CO, opensAt: at(-1), closesAt: at(20, "23:59") });
   await dir.p.goto(`${BASE}/dashboard/roles/new?session=${call}`, { waitUntil: "networkidle" });
+  check("what applicants must send starts folded away", (await dir.p.locator('details[data-more="asks"]').getAttribute("open")) === null);
+  await openAdvanced(dir.p);
   check("each ask offers required, optional or not asked", (await dir.p.locator('input[name="ask_phone"]').count()) === 3);
   check("height and residency start not asked", await dir.p.locator('input[name="ask_height"][value="off"]').isChecked() && await dir.p.locator('input[name="ask_residency"][value="off"]').isChecked());
   check("phone starts required", await dir.p.locator('input[name="ask_phone"][value="required"]').isChecked());
@@ -288,6 +291,7 @@ section("14 the director chooses what applicants must send");
   await dir.p.waitForURL(/\/dashboard\/roles\/rol_/, { timeout: 20000 });
   const roleId = dir.p.url().match(/roles\/(rol_[^?]+)/)[1];
   await dir.p.goto(`${BASE}/dashboard/roles/${roleId}/edit`, { waitUntil: "networkidle" });
+  check("a fold that is not at its default starts open", (await dir.p.locator('details[data-more="asks"]').getAttribute("open")) !== null);
   check("the choice is kept on the role", await dir.p.locator('input[name="ask_phone"][value="off"]').isChecked() && await dir.p.locator('input[name="ask_reelUrl"][value="required"]').isChecked() && await dir.p.locator('input[name="ask_height"][value="required"]').isChecked());
   check("the role is paid unless said otherwise", await dir.p.locator('input[name="paid"]').isChecked());
   await publish(dir.p, call);
@@ -358,6 +362,7 @@ section("16 a role sets out the videos it asks for");
   const call = await openSession(dir.p, { name: `Tapes ${t}`, company: CO, opensAt: at(-1), closesAt: at(20, "23:59") });
   const roleId = await postRole(dir.p, { sessionId: call, title: `Tapes role ${t}`, company: CO });
   await dir.p.goto(`${BASE}/dashboard/roles/${roleId}/edit`, { waitUntil: "networkidle" });
+  await openAdvanced(dir.p);
   check("with no videos set out, the editor offers to", (await dir.p.getByRole("button", { name: "Set out the videos" }).count()) === 1 && (await dir.p.locator('input[name="slot_1_label"]').count()) === 0);
   await dir.p.getByRole("button", { name: "Set out the videos" }).click();
   await dir.p.fill('input[name="slot_1_label"]', "A monologue of your choosing");
@@ -368,12 +373,14 @@ section("16 a role sets out the videos it asks for");
   await dir.p.getByRole("button", { name: "Save changes" }).click();
   await dir.p.waitForURL(/saved=1/, { timeout: 20000 });
   await dir.p.goto(`${BASE}/dashboard/roles/${roleId}/edit`, { waitUntil: "networkidle" });
+  await openAdvanced(dir.p);
   check("both videos are kept, with the brief and the limit", (await dir.p.inputValue('input[name="slot_1_label"]')) === "A monologue of your choosing" && (await dir.p.inputValue('textarea[name="slot_1_brief"]')).includes("own accent") && (await dir.p.inputValue('select[name="slot_1_max"]')) === "30" && (await dir.p.inputValue('input[name="slot_2_label"]')) === "A piece about yourself");
   check("a third can still be added, and no more after", (await dir.p.getByRole("button", { name: "Add another video" }).count()) === 1);
   await dir.p.getByRole("button", { name: "Remove this video" }).last().click();
   await dir.p.getByRole("button", { name: "Save changes" }).click();
   await dir.p.waitForURL(/saved=1/, { timeout: 20000 });
   await dir.p.goto(`${BASE}/dashboard/roles/${roleId}/edit`, { waitUntil: "networkidle" });
+  await openAdvanced(dir.p);
   check("removing one removes it", (await dir.p.locator('input[name="slot_2_label"]').count()) === 0 && (await dir.p.locator('input[name="slot_1_label"]').count()) === 1);
   await dir.p.locator('label:has(input[name="ask_video"][value="off"])').click();
   check("with videos not asked for, there is nothing to set out", (await dir.p.locator('input[name="slot_1_label"]').count()) === 0);
@@ -384,6 +391,7 @@ section("17 a role may ask about a protected characteristic, under a recorded re
   const call = await openSession(dir.p, { name: `Heritage ${t}`, company: CO, opensAt: at(-1), closesAt: at(20, "23:59") });
   const roleId = await postRole(dir.p, { sessionId: call, title: `Heritage role ${t}`, company: CO });
   await dir.p.goto(`${BASE}/dashboard/roles/${roleId}/edit`, { waitUntil: "networkidle" });
+  await openAdvanced(dir.p);
   check("no question fields until a characteristic is chosen", (await dir.p.locator("#specialQuestion").count()) === 0);
   await dir.p.selectOption("#specialKind", "ethnicity");
   await dir.p.fill("#specialQuestion", "Do you have Jewish heritage?");

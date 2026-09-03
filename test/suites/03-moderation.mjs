@@ -1,6 +1,7 @@
 import {
   BASE,
   launch,
+  openAdvanced,
   postRole,
   reporter,
   session,
@@ -25,6 +26,7 @@ section("1 owner can edit their own role");
 await dir.p.goto(`${BASE}/dashboard/roles/${roleId}/edit`, { waitUntil: "networkidle" });
 check("edit form prefilled", (await dir.p.inputValue("#title")) === `MOD-${t}`);
 await dir.p.fill("#location", "Whitby, Yorkshire");
+await openAdvanced(dir.p);
 await dir.p.fill("#disclaimer", "Edited terms: usage UK only, 3 months.");
 await dir.p.getByRole("button", { name: "Save changes" }).click();
 await dir.p.waitForURL("**/dashboard/roles/**", { timeout: 20000 });

@@ -255,6 +255,16 @@ export async function publish(page, sessionId) {
  * is opened first unless the caller passes `sessionId`. The casting call details
  * (name, synopsis, company) come from the casting call, not the role form.
  */
+/**
+ * Opens every fold under the role form's "Advanced options", so a suite can
+ * reach the controls inside as a director who opened them would.
+ */
+export async function openAdvanced(page) {
+  await page.evaluate(() => {
+    for (const fold of document.querySelectorAll("details[data-more]")) fold.open = true;
+  });
+}
+
 export async function postRole(page, fields) {
   const sessionId =
     fields.sessionId ??
@@ -274,7 +284,10 @@ export async function postRole(page, fields) {
   );
   await page.fill("#location", fields.location ?? "Leeds, UK");
   await page.fill("#shootStartsAt", fields.shootStartsAt ?? day(120));
-  if (fields.disclaimer) await page.fill("#disclaimer", fields.disclaimer);
+  if (fields.disclaimer) {
+    await openAdvanced(page);
+    await page.fill("#disclaimer", fields.disclaimer);
+  }
   await page.getByRole("button", { name: "Post the role" }).click();
   await page.waitForURL(/\/dashboard\/roles\/rol_/, { timeout: 20000 });
   const roleId = page.url().match(/roles\/(rol_[^?]+)/)[1];

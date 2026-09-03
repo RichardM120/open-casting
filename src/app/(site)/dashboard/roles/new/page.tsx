@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 
-import Link from "next/link";
 import { HelpNote } from "@/components/help-note";
 import { SetupProgress } from "@/components/setup-progress";
 
 import { RoleForm } from "@/components/role-form";
 import { uploadsEnabled } from "@/lib/blob";
-import { ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
+import { ButtonLink, EmptyState } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { listVisibleSessions } from "@/lib/sessions";
 import { Breadcrumb } from "@/components/breadcrumb";
@@ -57,17 +56,11 @@ export default async function NewRolePage({ searchParams }: PageProps<"/dashboar
         <p dangerouslySetInnerHTML={{ __html: 'A role is the brief and the practicalities: who you are looking for, where it shoots and when. The dates it takes submissions between come from the casting call, not from here.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'Terms you set here must be accepted by everyone who submits to this role.' }} />
       </HelpNote>
-      <Eyebrow className="mt-6">New role</Eyebrow>
-      <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Post a role</h1>
+      <h1 className="mt-6 text-3xl font-semibold tracking-tight md:text-4xl">Post a role</h1>
       <p className="mt-3 max-w-2xl text-muted">
-        The clearer the brief, the fewer wrong submissions you read. The role goes live under{" "}
+        Name the part, describe it, and say where and when it shoots. What applicants are asked
+        to send is set to what suits most roles, under Advanced options. The role goes live under{" "}
         {user.company} when its casting call opens.
-      </p>
-      <p className="mt-3 text-sm text-muted">
-        <Link href="/faq/casting-directors" className="text-brand underline-offset-4 hover:underline">
-          What each field commits you to
-        </Link>
-        , including the buyout, and how to write terms worth having.
       </p>
 
       <div className="mt-10">
