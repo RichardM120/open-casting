@@ -58,7 +58,7 @@ export function RoleForm({
           ageMin: String(role.ageMin),
           ageMax: String(role.ageMax),
           location: role.location,
-          shootStartsAt: role.shootStartsAt,
+          shootStartsAt: role.shootStartsAt ?? "",
           shootEndsAt: role.shootEndsAt ?? "",
           sessionId: role.sessionId,
           disclaimer: role.disclaimer,
@@ -216,6 +216,7 @@ export function RoleForm({
         <Field
           label="First shoot day"
           htmlFor="shootStartsAt"
+          hint="Leave blank if the dates are not fixed yet."
           error={errors.shootStartsAt}
         >
           <DateTimeField
@@ -224,7 +225,6 @@ export function RoleForm({
             label="First shoot day"
             mode="date"
             defaultValue={values.shootStartsAt ?? ""}
-            required
           />
         </Field>
         <Field

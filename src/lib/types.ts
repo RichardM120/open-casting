@@ -117,8 +117,8 @@ export type Role = {
   selfTape: boolean;
   ageMin: number;
   ageMax: number;
-  /** yyyy-mm-dd. When it shoots; the end is null for a single day. */
-  shootStartsAt: string;
+  /** yyyy-mm-dd. When it shoots, once known: null until the dates are fixed; the end is null for a single day. */
+  shootStartsAt: string | null;
   shootEndsAt: string | null;
   /** The name of the account that posted it. */
   castingDirector: string;

@@ -86,8 +86,11 @@ export function HowItWorks() {
     slide?.scrollIntoView({ behavior: "smooth", block: "nearest", inline: "center" });
   }, []);
 
+  // Each card is a positioning context: the hidden "Step n" prefix in its
+  // heading is absolutely positioned, and without this it would hang off the
+  // page beside the card and widen the page by the carousel's length.
   const card =
-    "flex shrink-0 snap-center flex-col gap-3 rounded-2xl border border-line bg-surface p-5 shadow-card lg:shrink lg:snap-align-none";
+    "relative flex shrink-0 snap-center flex-col gap-3 rounded-2xl border border-line bg-surface p-5 shadow-card lg:shrink lg:snap-align-none";
 
   return (
     <section aria-labelledby="how-it-works" className="mt-24">

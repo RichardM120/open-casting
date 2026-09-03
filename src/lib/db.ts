@@ -611,6 +611,8 @@ const SCHEMA = `
   ALTER TABLE roles ADD COLUMN IF NOT EXISTS shoot_ends_at date;
   UPDATE roles SET shoot_starts_at = current_date WHERE shoot_starts_at IS NULL;
   ALTER TABLE roles ALTER COLUMN shoot_starts_at SET NOT NULL;
+  -- Then made optional again: a role can go up before its dates are fixed.
+  ALTER TABLE roles ALTER COLUMN shoot_starts_at DROP NOT NULL;
   ALTER TABLE roles DROP COLUMN IF EXISTS shoot_dates;
 
   -- Who is making the production. A line on the form rather than a record of

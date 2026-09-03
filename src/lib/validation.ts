@@ -90,14 +90,21 @@ export const roleSchema = z
     selfTape: z.coerce.boolean(),
     ageMin: z.coerce.number({ message: "Enter a minimum age" }).int().min(5).max(100),
     ageMax: z.coerce.number({ message: "Enter a maximum age" }).int().min(5).max(100),
-    shootStartsAt: trimmed.regex(/^\d{4}-\d{2}-\d{2}$/, "Choose the first shoot day"),
+    shootStartsAt: optionalDate,
     shootEndsAt: optionalDate,
     sessionId: trimmed.min(1, "Choose the production this role belongs to"),
     disclaimer: trimmed.max(2000, "Keep the terms under 2000 characters"),
   })
-  .refine((value) => !value.shootEndsAt || value.shootEndsAt >= value.shootStartsAt, {
+  .refine(
+    (value) => !value.shootEndsAt || !value.shootStartsAt || value.shootEndsAt >= value.shootStartsAt,
+    {
     path: ["shootEndsAt"],
     message: "The last shoot day cannot be before the first",
+  })
+  // A last day on its own says nothing; either both are set or neither is.
+  .refine((value) => !(value.shootEndsAt && !value.shootStartsAt), {
+    path: ["shootStartsAt"],
+    message: "Choose the first shoot day as well, or leave both blank",
   })
   .refine((value) => value.ageMax >= value.ageMin, {
     path: ["ageMax"],

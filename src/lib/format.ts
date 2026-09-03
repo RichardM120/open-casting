@@ -131,10 +131,15 @@ export function formatDate(value: string): string {
 }
 
 /**
- * "12 Nov 2026" for a single day, "12 to 13 Nov 2026" for a run. The end is
- * optional, because plenty of roles shoot on one day.
+ * "12 Nov 2026" for a single day, "12 to 13 Nov 2026" for a run, and "Dates to
+ * be confirmed" while a role has none. The end is optional, because plenty of
+ * roles shoot on one day.
  */
-export function shootWindow(role: { shootStartsAt: string; shootEndsAt: string | null }): string {
+export function shootWindow(role: {
+  shootStartsAt: string | null;
+  shootEndsAt: string | null;
+}): string {
+  if (!role.shootStartsAt) return "Dates to be confirmed";
   const start = formatDate(role.shootStartsAt);
   if (!role.shootEndsAt || role.shootEndsAt === role.shootStartsAt) return start;
   return `${start} to ${formatDate(role.shootEndsAt)}`;

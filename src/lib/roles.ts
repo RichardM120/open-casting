@@ -20,7 +20,7 @@ type RoleRow = {
   self_tape: boolean;
   age_min: number;
   age_max: number;
-  shoot_starts_at: string;
+  shoot_starts_at: string | null;
   shoot_ends_at: string | null;
   casting_director: string;
   company: string;
