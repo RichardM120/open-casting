@@ -245,6 +245,8 @@ export async function openSession(page, fields) {
 export async function publish(page, sessionId) {
   await page.goto(`${BASE}/dashboard/sessions/${sessionId}`, { waitUntil: "networkidle" });
   await page.getByRole("button", { name: "Publish this casting call" }).click();
+  // Publishing asks first: the page goes live for anyone with the link.
+  await page.getByRole("dialog").getByRole("button", { name: "Publish now" }).click();
   await page.waitForURL(/published=1/, { timeout: 20000 });
 }
 

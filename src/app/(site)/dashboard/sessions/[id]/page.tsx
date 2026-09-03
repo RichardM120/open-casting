@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { HelpNote } from "@/components/help-note";
 import { SetupProgress } from "@/components/setup-progress";
+import { ConfirmSubmit } from "@/components/confirm-submit";
 import { notFound } from "next/navigation";
 
 import { DeadlineBadge } from "@/components/deadline-badge";
@@ -400,9 +401,24 @@ export default async function SessionPage({
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <form action={publishCastingSession}>
               <input type="hidden" name="sessionId" value={session.id} />
-              <Button type="submit" disabled={roles.length === 0}>
-                Publish this casting call
-              </Button>
+              <ConfirmSubmit
+                label="Publish this casting call"
+                disabled={roles.length === 0}
+                title="Publish this casting call?"
+                body={
+                  <>
+                    <p>
+                      The applicant&apos;s page goes live the moment you publish. It is not listed
+                      anywhere, but anyone with the link can open it and submit, so from then on
+                      treat the link as public.
+                    </p>
+                    <p className="mt-2">
+                      You can share the link straight away, and close the call early at any time.
+                    </p>
+                  </>
+                }
+                confirmLabel="Publish now"
+              />
             </form>
             <ButtonLink href={`/c/${shareSlug(session)}`} variant="secondary" size="sm">
               Preview as an applicant
