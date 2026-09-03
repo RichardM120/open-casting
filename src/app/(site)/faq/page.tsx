@@ -28,7 +28,7 @@ const GUIDES = [
 
 export default function FaqPage() {
   return (
-    <div className="mx-auto max-w-3xl px-5 py-12">
+    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <Eyebrow>Help</Eyebrow>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
         Questions, answered
@@ -37,7 +37,7 @@ export default function FaqPage() {
         Two guides, because the two sides of a casting call need different things explained.
       </p>
 
-      <div className="mt-10 grid gap-5">
+      <div className="mt-10 grid gap-6">
         {GUIDES.map((guide) => (
           <Link
             key={guide.href}

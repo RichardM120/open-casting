@@ -63,7 +63,7 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
   const step = needsAgreement ? 1 : Math.max(asked, offset + 1);
 
   return (
-    <div className="mx-auto max-w-2xl px-5 py-16">
+    <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6">
       <Eyebrow>Setting up</Eyebrow>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
         {needsAgreement
@@ -116,7 +116,7 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
         {!needsAgreement && step === offset + 2 ? (
           <>
             <h2 className="text-lg font-semibold tracking-tight">What that means</h2>
-            <ul className="mt-5 flex flex-col gap-3">
+            <ul className="mt-6 flex flex-col gap-3">
               {guide.points.map((point) => (
                 <li key={point} className="flex gap-3 text-sm leading-relaxed text-muted">
                   <span aria-hidden="true" className="mt-2 size-1.5 shrink-0 rounded-full bg-accent" />

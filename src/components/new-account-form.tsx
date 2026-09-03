@@ -35,9 +35,9 @@ export function NewAccountForm({ clients }: { clients: Client[] }) {
   const created = state.status === "success" ? state.data : undefined;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-6">
       {created ? (
-        <div role="status" className="rounded-xl border border-positive/40 bg-positive-soft p-5">
+        <div role="status" className="rounded-xl border border-positive/40 bg-positive-soft p-4 sm:p-6">
           <p className="text-sm font-medium text-positive">{state.message}</p>
           <p className="mt-2 text-sm leading-relaxed text-muted">
             Send them these. The password is shown once and is not stored anywhere readable. If

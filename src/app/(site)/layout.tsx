@@ -22,7 +22,8 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
       <main id="main" className="flex-1">
         {children}
       </main>
-      <SiteFooter />
+      {/* Signed in, a phone has a tab bar along the bottom; the footer keeps clear of it. */}
+      <SiteFooter padForTabs={user !== null} />
     </>
   );
 }

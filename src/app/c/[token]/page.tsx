@@ -42,7 +42,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
   const open = isOpen(session);
 
   return (
-    <div className="mx-auto max-w-4xl px-5 py-12">
+    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
       <ApplicantMasthead heroUrl={session.heroUrl} name={session.name} />
       {preview ? (
         <p className="mb-8 rounded-xl border border-accent/40 bg-accent-soft px-4 py-3 text-sm leading-relaxed text-text">
@@ -56,7 +56,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
       </h1>
       <p className="mt-2 text-lg text-muted">{session.company}</p>
 
-      <div className="mt-5 flex flex-wrap items-center gap-2">
+      <div className="mt-6 flex flex-wrap items-center gap-2">
         <DeadlineBadge session={session} />
         <Badge tone="outline">
           {roles.length} {roles.length === 1 ? "role" : "roles"}

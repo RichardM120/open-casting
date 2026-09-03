@@ -23,7 +23,7 @@ export default async function AccountsPage() {
   const suspended = accounts.filter((account) => account.suspended_at).length;
 
   return (
-    <div className="mx-auto max-w-5xl px-5 py-12">
+    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
       <HelpNote title="What this screen is for">
         <p dangerouslySetInnerHTML={{ __html: 'Accounts belong to a client and inherit its plan. The password is generated and shown once, so hand it over straight away; it cannot be retrieved afterwards.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'A director sees only the casting calls they open. A producer sees every call under their client.' }} />
@@ -73,7 +73,7 @@ export default async function AccountsPage() {
           return (
             <li
               key={account.id}
-              className="rounded-2xl border border-line bg-surface p-5"
+              className="rounded-2xl border border-line bg-surface p-4 sm:p-6"
             >
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
               <div className="min-w-0 flex-1">

@@ -30,7 +30,7 @@ export default async function EditRolePage({
   const sessions = await listVisibleSessions(user);
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-12">
+    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <SetupProgress stage={3} sessionId={role.sessionId} />
       <HelpNote title="What this screen is for" faq="/faq/casting-directors">
         <p dangerouslySetInnerHTML={{ __html: 'Edits show on the public page immediately. Changing the terms does not change what people who already submitted agreed to.' }} />

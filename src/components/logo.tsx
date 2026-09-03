@@ -35,15 +35,16 @@ export function Logo({
  * charcoal, set in capitals with open tracking. The gap is three tenths of
  * the tile and the type just under half of it, the spacing the logo book
  * fixes. The header carries it on a cream plate, because charcoal type would
- * not read on terracotta.
+ * not read on terracotta. The tile is 36px on a desktop and 32px on a phone,
+ * where the plate then stands 44px tall: the size of a thumb.
  */
 export function Lockup({ className }: { className?: string }) {
   return (
     <span
-      className={`inline-flex shrink-0 items-center gap-2.5 rounded-xl bg-ink px-2 py-1.5 font-semibold tracking-[0.08em] text-text uppercase sm:px-3 ${className ?? ""}`}
+      className={`inline-flex shrink-0 items-center gap-2.5 rounded-xl bg-ink px-2.5 py-1.5 font-semibold tracking-[0.08em] text-text uppercase sm:px-3 ${className ?? ""}`}
     >
-      <Logo tone="onLight" className="size-10 sm:size-9" />
-      <span className="text-[1rem] whitespace-nowrap sm:text-base">Open Casting</span>
+      <Logo tone="onLight" className="size-8 sm:size-9" />
+      <span className="text-sm whitespace-nowrap sm:text-base">Open Casting</span>
     </span>
   );
 }

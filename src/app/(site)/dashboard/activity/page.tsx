@@ -20,7 +20,7 @@ export default async function ActivityPage() {
   const entries = await listActivity(user, { limit: 200 });
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-12">
+    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <HelpNote title="What this screen is for" faq="/faq/casting-directors">
         <p dangerouslySetInnerHTML={{ __html: 'Everything that has happened on your casting calls and roles, newest first. Nothing here is editable; it is the record.' }} />
       </HelpNote>

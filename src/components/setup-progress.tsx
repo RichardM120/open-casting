@@ -82,7 +82,7 @@ export function SetupProgress({
             <li
               key={step.key}
               aria-current={current ? "step" : undefined}
-              className="flex items-start gap-3 sm:gap-5"
+              className="flex items-start gap-3 sm:gap-6"
             >
               {href ? (
                 <Link

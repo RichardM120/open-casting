@@ -1,6 +1,14 @@
 @import "tailwindcss";
 
 @theme {
+  /*
+   * An 8pt grid: spacing is in pixels, not rem, so a margin is 16px or 24px on
+   * every screen and does not stretch with the larger phone type below.
+   */
+  --spacing: 4px;
+  /* Containers sit on the ground with a 1px line and a soft shadow, for depth. */
+  --shadow-card: 0 4px 12px rgb(28 33 36 / 0.06);
+
   /* Cinema-room palette: near-black surfaces, warm gold for anything actionable. */
   --color-ink: #EAE3D6;
   --color-surface: #FFFFFF;
@@ -93,8 +101,9 @@
 }
 
 /*
- * On a phone the root grows, and with it every rem-based size: copy, spacing
- * and the controls, which then clear 48px. Read on a train, not at a desk.
+ * On a phone the root grows, and with it the copy and the controls, which then
+ * clear 48px. Spacing is in pixels and stays on the grid. Read on a train, not
+ * at a desk.
  */
 @media (max-width: 40rem) {
   html {

@@ -2,7 +2,7 @@ import { ButtonLink, Eyebrow } from "@/components/ui";
 
 export default function NotFound() {
   return (
-    <div className="mx-auto flex max-w-2xl flex-col items-start px-5 py-28">
+    <div className="mx-auto flex max-w-2xl flex-col items-start px-4 py-28 sm:px-6">
       <Eyebrow>404</Eyebrow>
       <h1 className="mt-4 text-3xl font-semibold tracking-tight md:text-4xl">
         That page is not here

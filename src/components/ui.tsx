@@ -24,7 +24,7 @@ const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
 // Both sizes clear a comfortable touch target; the app gets used on phones.
 const BUTTON_SIZES: Record<ButtonSize, string> = {
   sm: "min-h-10 px-4 py-2 text-sm",
-  md: "min-h-11 px-5 py-2.5 text-sm",
+  md: "min-h-11 px-6 py-2 text-sm",
 };
 
 export function buttonStyles(
@@ -99,7 +99,7 @@ export function Card({
   return (
     <div
       className={cx(
-        "rounded-2xl border border-line bg-surface p-6 md:p-7",
+        "rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6",
         className,
       )}
     >
@@ -126,7 +126,7 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-dashed border-line-strong px-6 py-14 text-center">
+    <div className="rounded-2xl border border-dashed border-line-strong px-6 py-12 text-center">
       <p className="text-lg font-medium">{title}</p>
       <p className="mx-auto mt-2 max-w-md text-sm text-muted">{description}</p>
       {action ? <div className="mt-6 flex justify-center">{action}</div> : null}
@@ -181,7 +181,20 @@ export function Field({
       {control}
       {error ? (
         <p id={`${htmlFor}-error`} className="flex items-start gap-1.5 text-xs text-danger">
-          <span aria-hidden="true" className="mt-px">⚠</span>
+          {/* The colour and the icon carry the same meaning as the words. */}
+          <svg
+            aria-hidden="true"
+            viewBox="0 0 16 16"
+            className="mt-0.5 size-4 shrink-0"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="1.5"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <circle cx="8" cy="8" r="6.5" />
+            <path d="M8 4.5v4M8 11h.01" />
+          </svg>
           {error}
         </p>
       ) : hint ? (

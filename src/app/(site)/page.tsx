@@ -23,12 +23,12 @@ export default async function HomePage() {
   if (await currentUser()) redirect("/dashboard");
 
   return (
-    <div className="mx-auto max-w-4xl px-5 py-20 md:py-28">
+    <div className="mx-auto max-w-4xl px-4 py-20 sm:px-6 md:py-28">
       <Eyebrow>Open Casting</Eyebrow>
       <h1 className="mt-4 max-w-2xl text-4xl font-semibold tracking-tight text-balance md:text-5xl">
         Sign in to run your casting.
       </h1>
-      <p className="mt-5 max-w-xl text-lg leading-relaxed text-muted">
+      <p className="mt-6 max-w-xl text-lg leading-relaxed text-muted">
         Set up a casting call, post its roles, and read every submission in one place. Accounts are
         created by the administrator, so there is nothing to register for.
       </p>

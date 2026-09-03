@@ -21,7 +21,7 @@ export default async function AdminActivityPage() {
   const entries = await listActivity(user, { limit: 200 });
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-12">
+    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <HelpNote title="What this screen is for">
         <p dangerouslySetInnerHTML={{ __html: 'Everything on the site, across every client, including account changes. It is the record, and it is not editable.' }} />
       </HelpNote>

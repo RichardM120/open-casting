@@ -231,16 +231,40 @@ export function DateTimeField({
       </div>
 
       {open ? (
-        <div
-          id={dialogId}
-          role="dialog"
-          aria-label={`Pick ${what} for ${label}`}
-          className={cx(
-            "absolute top-full z-30 mt-2 w-[min(22rem,calc(100vw-2.5rem))] rounded-2xl border border-line-strong bg-surface p-4 shadow-2xl shadow-black/15",
-            align === "end" ? "right-0" : "left-0",
-          )}
-        >
-          <div className="flex items-center justify-between gap-2">
+        <>
+          {/* Dims the page behind the picker; a click on it is a cancel. */}
+          <div
+            aria-hidden="true"
+            onMouseDown={() => setOpen(false)}
+            className="fixed inset-0 z-20 bg-black/30"
+          />
+          <div
+            id={dialogId}
+            role="dialog"
+            aria-modal="true"
+            aria-label={`Pick ${what} for ${label}`}
+            onKeyDown={trapFocus}
+            className={cx(
+              "absolute top-full z-30 mt-2 w-[min(22rem,calc(100vw-2rem))] rounded-2xl border border-line-strong bg-surface p-4 shadow-2xl shadow-black/15",
+              align === "end" ? "right-0" : "left-0",
+            )}
+          >
+            <div className="mb-3 flex items-center justify-between gap-2 border-b border-line pb-3">
+              <p className="text-sm font-semibold">
+                {`Pick ${what}`}
+                <span className="block text-xs font-normal text-muted">{label}</span>
+              </p>
+              <button
+                type="button"
+                onClick={close}
+                aria-label="Close"
+                className="inline-flex size-10 shrink-0 items-center justify-center rounded-lg text-muted transition-colors hover:bg-raised hover:text-text"
+              >
+                <Cross />
+              </button>
+            </div>
+
+            <div className="flex items-center justify-between gap-2">
             <button
               type="button"
               onClick={() => setView(previousMonth(view))}
@@ -361,9 +385,48 @@ export function DateTimeField({
               </Button>
             </div>
           </div>
-        </div>
+          </div>
+        </>
       ) : null}
     </div>
+  );
+}
+
+/** Tab stays inside the picker while it is open: past the last control it wraps to the first. */
+function trapFocus(event: React.KeyboardEvent<HTMLDivElement>) {
+  if (event.key !== "Tab") return;
+  const controls = Array.from(
+    event.currentTarget.querySelectorAll<HTMLElement>(
+      'button:not([disabled]):not([tabindex="-1"]), select:not([disabled])',
+    ),
+  );
+  if (controls.length === 0) return;
+  const first = controls[0];
+  const last = controls[controls.length - 1];
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus();
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus();
+  }
+}
+
+function Cross() {
+  return (
+    <svg
+      aria-hidden="true"
+      viewBox="0 0 16 16"
+      width="16"
+      height="16"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.5"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+    >
+      <path d="m4 4 8 8M12 4l-8 8" />
+    </svg>
   );
 }
 

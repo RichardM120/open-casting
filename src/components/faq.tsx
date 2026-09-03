@@ -15,7 +15,7 @@ export function FaqSection({
     <section className="mt-14">
       <Eyebrow>{title}</Eyebrow>
       {intro ? <p className="mt-3 max-w-prose text-sm text-muted">{intro}</p> : null}
-      <div className="mt-5 flex flex-col gap-2.5">{children}</div>
+      <div className="mt-6 flex flex-col gap-2.5">{children}</div>
     </section>
   );
 }
@@ -24,7 +24,7 @@ export function FaqSection({
 export function FaqItem({ q, children }: { q: string; children: ReactNode }) {
   return (
     <details className="group rounded-xl border border-line bg-surface open:border-line-strong">
-      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-5 text-sm font-medium">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-4 sm:p-6 text-sm font-medium">
         {q}
         <span
           aria-hidden="true"
@@ -33,7 +33,7 @@ export function FaqItem({ q, children }: { q: string; children: ReactNode }) {
           +
         </span>
       </summary>
-      <div className="flex flex-col gap-3 px-5 pb-5 text-sm leading-relaxed text-muted [&_a]:text-brand [&_a]:underline-offset-4 hover:[&_a]:underline">
+      <div className="flex flex-col gap-3 px-4 pb-4 sm:px-6 sm:pb-6 text-sm leading-relaxed text-muted [&_a]:text-brand [&_a]:underline-offset-4 hover:[&_a]:underline">
         {children}
       </div>
     </details>
@@ -47,9 +47,9 @@ export function FieldGlossary({
   items: { term: string; means: ReactNode }[];
 }) {
   return (
-    <dl className="mt-5 divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+    <dl className="mt-6 divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
       {items.map((item) => (
-        <div key={item.term} className="grid gap-1.5 p-5 sm:grid-cols-[200px_minmax(0,1fr)] sm:gap-6">
+        <div key={item.term} className="grid gap-1.5 p-4 sm:p-6 sm:grid-cols-[200px_minmax(0,1fr)] sm:gap-6">
           <dt className="text-sm font-medium text-text">{item.term}</dt>
           <dd className="text-sm leading-relaxed text-muted">{item.means}</dd>
         </div>
@@ -60,7 +60,7 @@ export function FieldGlossary({
 
 export function NotLegalAdvice() {
   return (
-    <p className="mt-14 rounded-xl border border-line bg-raised p-5 text-sm leading-relaxed text-muted">
+    <p className="mt-14 rounded-xl border border-line bg-raised p-4 sm:p-6 text-sm leading-relaxed text-muted">
       <strong className="text-text">This is plain-English guidance, not legal advice.</strong>{" "}
       It explains what the fields on this site mean and how they are normally used in UK film,
       television and theatre. It is not a contract, and it does not replace an agreement between

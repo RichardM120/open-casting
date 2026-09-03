@@ -38,7 +38,7 @@ export function AgreementStep({ nextStep, children }: { nextStep: number; childr
   const [state, formAction, pending] = useActionState(acceptAgreement, IDLE_FORM_STATE);
 
   return (
-    <form action={formAction} className="flex flex-col gap-5">
+    <form action={formAction} className="flex flex-col gap-6">
       <input type="hidden" name="nextStep" value={nextStep} />
 
       {children}

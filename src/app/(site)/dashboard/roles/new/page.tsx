@@ -22,7 +22,7 @@ export default async function NewRolePage({ searchParams }: PageProps<"/dashboar
   // one exists. Saying so beats a form with an empty, required dropdown.
   if (sessions.length === 0) {
     return (
-      <div className="mx-auto max-w-3xl px-5 py-12">
+      <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
         <SetupProgress stage={2} />
         <HelpNote title="What this screen is for" faq="/faq/casting-directors">
           <p dangerouslySetInnerHTML={{ __html: 'A role is the brief and the practicalities: who you are looking for, where it shoots and when. The dates it takes submissions between come from the casting call, not from here.' }} />
@@ -50,7 +50,7 @@ export default async function NewRolePage({ searchParams }: PageProps<"/dashboar
   const production = sessions.find((session) => session.id === defaultSessionId) ?? sessions[0];
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-12">
+    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <SetupProgress stage={2} sessionId={requested} />
       <HelpNote title="What this screen is for" faq="/faq/casting-directors">
         <p dangerouslySetInnerHTML={{ __html: 'A role is the brief and the practicalities: who you are looking for, where it shoots and when. The dates it takes submissions between come from the casting call, not from here.' }} />

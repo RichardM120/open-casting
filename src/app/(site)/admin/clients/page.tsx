@@ -34,7 +34,7 @@ export default async function ClientsPage({ searchParams }: PageProps<"/admin/cl
   const live = clients.filter((client) => client.suspendedAt === null).length;
 
   return (
-    <div className="mx-auto max-w-5xl px-5 py-12">
+    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
       <HelpNote title="What this screen is for">
         <p dangerouslySetInnerHTML={{ __html: 'One row per company paying for Open Casting. Open a client to see its accounts, what it is using against what it bought, and to suspend or restore it.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'Take on a new client before making its accounts; an account cannot exist without one.' }} />
@@ -86,7 +86,7 @@ export default async function ClientsPage({ searchParams }: PageProps<"/admin/cl
               return (
                 <li
                   key={client.id}
-                  className="rounded-2xl border border-line bg-surface p-5 transition-colors hover:border-line-strong"
+                  className="rounded-2xl border border-line bg-surface p-4 sm:p-6 transition-colors hover:border-line-strong"
                 >
                   <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                     <div className="min-w-0 flex-1">

@@ -17,7 +17,7 @@ export default async function NewSessionPage() {
   const user = await requireUser("/dashboard/sessions/new");
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-12">
+    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <SetupProgress stage={1} />
       <HelpNote title="What this screen is for" faq="/faq/casting-directors">
         <p dangerouslySetInnerHTML={{ __html: 'A casting call holds the opening and closing times. Every role you post into it takes submissions only between them, so set the window here and not per role.' }} />

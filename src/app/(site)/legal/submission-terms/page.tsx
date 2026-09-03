@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function SubmissionTermsPage() {
   return (
-    <div className="mx-auto max-w-3xl px-5 py-12">
+    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <Eyebrow>For applicants and guardians</Eyebrow>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
         Terms of Submission

@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function CastingDirectorFaqPage() {
   return (
-    <div className="mx-auto max-w-3xl px-5 py-12">
+    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <Link href="/faq" className="text-sm text-muted transition-colors hover:text-text">
         &larr; All FAQs
       </Link>

@@ -44,7 +44,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
   );
 
   return (
-    <div className="mx-auto max-w-5xl px-5 py-12">
+    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
       <HelpNote title="What this screen is for">
         <p dangerouslySetInnerHTML={{ __html: 'The service as a whole: who is paying, what they are using, and what has happened. Your own casting work lives in the casting director section.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'The file store card says whether applicants can attach photos and videos, and can prove the store works from this deployment.' }} />
@@ -140,7 +140,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
 
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-2xl border border-line bg-surface p-5">
+    <div className="rounded-2xl border border-line bg-surface p-4 sm:p-6">
       <dt className="text-sm text-muted">{label}</dt>
       <dd className="mt-1 text-2xl font-semibold tracking-tight">{value}</dd>
     </div>

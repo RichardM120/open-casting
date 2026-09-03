@@ -31,7 +31,7 @@ export default async function EditSessionPage({
   const roles = await listSessionRoles(id);
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-12">
+    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <SetupProgress stage={1} sessionId={session.id} />
       <HelpNote title="What this screen is for" faq="/faq/casting-directors">
         <p dangerouslySetInnerHTML={{ __html: 'Changes go live straight away, and moving the times moves every role in the call with them. Shortening the window drops anyone mid-submission.' }} />

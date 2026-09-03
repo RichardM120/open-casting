@@ -26,7 +26,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const error = Array.isArray(params.error) ? params.error[0] : params.error;
 
   return (
-    <div className="mx-auto grid max-w-5xl gap-12 px-5 py-16 lg:grid-cols-2 lg:gap-16 lg:py-24">
+    <div className="mx-auto grid max-w-5xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:py-24">
       {/* Form first on a phone: whoever is signing in came to sign in. */}
       <div className="order-1 lg:order-2">
         <Eyebrow>Open Casting</Eyebrow>

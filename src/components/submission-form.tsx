@@ -186,7 +186,7 @@ export function SubmissionForm({
       <input type="hidden" name="roleId" value={roleId} />
 
       {state.status === "error" ? (
-        <div className="mt-5 flex flex-col gap-3">
+        <div className="mt-6 flex flex-col gap-3">
           {state.message ? (
             <p role="alert" className="rounded-xl border border-danger/40 bg-danger-soft p-4 text-sm text-danger">
               {state.message}
@@ -217,7 +217,7 @@ export function SubmissionForm({
       </div>
 
       {minor ? (
-        <div className="mt-4 rounded-xl border border-accent/40 bg-accent-soft p-5">
+        <div className="mt-4 rounded-xl border border-accent/40 bg-accent-soft p-4 sm:p-6">
           <h3 className="text-sm font-semibold tracking-tight">
             This applicant is under {ADULT_AGE}
           </h3>
@@ -365,7 +365,7 @@ export function SubmissionForm({
       </div>
 
       {disclaimer ? (
-        <div className="mt-6 rounded-xl border border-line-strong bg-raised p-5">
+        <div className="mt-6 rounded-xl border border-line-strong bg-raised p-4 sm:p-6">
           <h3 className="text-sm font-semibold">Terms for this role</h3>
           <p className="mt-2 text-sm leading-relaxed whitespace-pre-line text-muted">
             {disclaimer}
@@ -396,7 +396,7 @@ export function SubmissionForm({
       ) : null}
 
       {uploads ? (
-        <div className="mt-6 rounded-xl border border-line bg-raised p-5">
+        <div className="mt-6 rounded-xl border border-line bg-raised p-4 sm:p-6">
           <h3 className="text-sm font-semibold tracking-tight">Photo and video</h3>
           <p className="mt-2 text-sm leading-relaxed text-muted">
             Optional. A recent photo of you, and a self-tape or showreel if you have one. Both are
@@ -431,7 +431,7 @@ export function SubmissionForm({
         </div>
       ) : null}
 
-      <div className="mt-6 rounded-xl border border-line bg-raised p-5">
+      <div className="mt-6 rounded-xl border border-line bg-raised p-4 sm:p-6">
         <h3 className="text-sm font-semibold tracking-tight">Terms of Submission</h3>
         <p className="mt-2 text-sm leading-relaxed text-muted">
           You keep ownership of everything you send. Nothing is sold, and nothing is used to
@@ -519,7 +519,7 @@ export function SubmissionsClosed({
           </>
         )}
       </p>
-      <div className="mt-5">
+      <div className="mt-6">
         <ButtonLink href={backTo} variant="secondary" size="sm">
           The other roles for {session}
         </ButtonLink>

@@ -17,7 +17,7 @@ export default async function NewClientPage() {
   if (user.role !== "admin") notFound();
 
   return (
-    <div className="mx-auto max-w-3xl px-5 py-12">
+    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
       <HelpNote title="What this screen is for">
         <p dangerouslySetInnerHTML={{ __html: 'The company, who to talk to, where the invoice goes, and what they bought. Their accounts come next and inherit all of it.' }} />
       </HelpNote>

@@ -19,7 +19,7 @@ export default function ApplicantLayout({ children }: { children: ReactNode }) {
       <main id="main" className="flex-1">
         {children}
       </main>
-      <p className="mx-auto flex w-full max-w-4xl items-center gap-2.5 px-5 py-8 text-xs text-muted">
+      <p className="mx-auto flex w-full max-w-4xl items-center gap-2.5 px-4 py-8 sm:px-6 text-xs text-muted">
         <Logo tone="onLight" size="sm" />
         <span>
           Run with Open Casting. This page is the whole of the casting call; there is nothing else

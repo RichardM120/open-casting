@@ -20,7 +20,7 @@ export default async function GatePage({ searchParams }: PageProps<"/gate">) {
   const next = typeof params.next === "string" && /^\/(?!\/)/.test(params.next) ? params.next : "/";
 
   return (
-    <div className="mx-auto max-w-md px-5 py-24">
+    <div className="mx-auto max-w-md px-4 py-24 sm:px-6">
       <Eyebrow>Not open yet</Eyebrow>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight">Open Casting</h1>
       <p className="mt-4 text-sm leading-relaxed text-muted">

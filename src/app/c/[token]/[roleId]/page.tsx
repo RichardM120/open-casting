@@ -57,7 +57,7 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
   const upcoming = notYetOpen(window);
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-12">
+    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
       <ApplicantMasthead heroUrl={session.heroUrl} name={session.name} />
       <Link
         href={`/c/${token}`}
@@ -67,7 +67,7 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
       </Link>
 
       {owner && shareUrl ? (
-        <section className="mt-6 rounded-2xl border border-accent/30 bg-accent-soft p-5">
+        <section className="mt-6 rounded-2xl border border-accent/30 bg-accent-soft p-4 sm:p-6">
           <div className="flex flex-wrap items-center gap-2">
             <Badge tone={session.publishedAt ? "positive" : "accent"}>
               {session.publishedAt ? "Published" : "Draft"}
@@ -92,7 +92,7 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
             <DeadlineBadge session={window} />
           </div>
 
-          <h1 className="mt-5 text-3xl font-semibold tracking-tight text-balance md:text-4xl">
+          <h1 className="mt-6 text-3xl font-semibold tracking-tight text-balance md:text-4xl">
             {role.title}
           </h1>
           <p className="mt-2 text-lg text-muted">

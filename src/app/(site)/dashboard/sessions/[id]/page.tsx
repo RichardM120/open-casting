@@ -155,7 +155,7 @@ export default async function SessionPage({
       ) : null}
 
       {sessionCounts.total > 0 ? (
-        <nav aria-label="Narrow the list" className="mt-4 flex flex-wrap gap-1.5 text-sm">
+        <nav aria-label="Narrow the list" className="mt-4 flex gap-2 overflow-x-auto pb-1 text-sm">
           {[null, ...SUBMISSION_STATUSES].map((which) => {
             const current = which === status;
             const n = which ? byStatus(which) : sessionCounts.total;
@@ -164,9 +164,9 @@ export default async function SessionPage({
                 key={which ?? "all"}
                 href={which ? `/dashboard/sessions/${session.id}?status=${which}` : `/dashboard/sessions/${session.id}`}
                 aria-current={current ? "page" : undefined}
-                className={`rounded-full border px-3 py-1 transition-colors ${
+                className={`inline-flex min-h-10 shrink-0 items-center rounded-full border px-4 py-2 whitespace-nowrap transition-colors ${
                   current
-                    ? "border-accent bg-accent-soft text-text"
+                    ? "border-accent bg-accent-soft font-medium text-text"
                     : "border-line text-muted hover:border-line-strong hover:text-text"
                 }`}
               >
@@ -265,7 +265,7 @@ export default async function SessionPage({
               <li key={role.id}>
                 <Link
                   href={`/dashboard/roles/${role.id}`}
-                  className="group flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-line bg-surface p-5 transition-colors hover:border-line-strong"
+                  className="group flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-line bg-surface p-4 sm:p-6 transition-colors hover:border-line-strong"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium transition-colors group-hover:text-brand">
@@ -304,7 +304,7 @@ export default async function SessionPage({
   );
 
   return (
-    <div className="mx-auto max-w-5xl px-5 py-12">
+    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
       <SetupProgress stage={draft ? (roles.length === 0 ? 2 : 3) : 4} sessionId={session.id} />
       <HelpNote title="What to do on this screen" faq="/faq/casting-directors">
         <p dangerouslySetInnerHTML={{ __html: '<strong>Post the roles</strong> first. Then <strong>publish</strong>: that is the moment the share link starts working, and it cannot be undone.' }} />

@@ -54,7 +54,7 @@ export default async function ClientPage({
             : null;
 
   return (
-    <div className="mx-auto max-w-4xl px-5 py-12">
+    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
       <HelpNote title="What to do on this screen">
         <p dangerouslySetInnerHTML={{ __html: 'Change what this client is on here: the plan, the ceilings and the access date. Every account under them inherits it, so there is nothing to set per account.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'Suspending locks every account out at once and is reversible. Removing is only possible once nothing is left under the client.' }} />
@@ -206,7 +206,7 @@ export default async function ClientPage({
 
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-2xl border border-line bg-surface p-5">
+    <div className="rounded-2xl border border-line bg-surface p-4 sm:p-6">
       <dt className="text-sm text-muted">{label}</dt>
       <dd className="mt-1 text-2xl font-semibold tracking-tight">{value}</dd>
     </div>

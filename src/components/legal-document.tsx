@@ -34,7 +34,7 @@ export function LegalText({ document }: { document: LegalDocument }) {
 /** The same thing, boxed and scrollable, for reading inside a form. */
 export function LegalScroller({ document }: { document: LegalDocument }) {
   return (
-    <div className="max-h-80 overflow-y-auto rounded-xl border border-line bg-ink p-5">
+    <div className="max-h-80 overflow-y-auto rounded-xl border border-line bg-ink p-4 sm:p-6">
       <LegalText document={document} />
     </div>
   );

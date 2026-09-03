@@ -59,13 +59,13 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   const atLimit = user.maxSessions !== null && sessions.length >= user.maxSessions;
 
   return (
-    <div className="mx-auto max-w-6xl px-5 py-12">
+    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
       <HelpNote title="What this screen is for" faq="/faq/casting-directors">
         <p dangerouslySetInnerHTML={{ __html: 'Every casting call you can see, with its numbers: how many have submitted, how many are still to review, and how many are shortlisted, called back or declined. Open one to post roles, publish it, and read the submissions themselves.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'Start a new one from <strong>New casting call</strong> in the navigation.' }} />
       </HelpNote>
       {user.onboardedAt ? null : (
-        <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-accent-soft p-5">
+        <div className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-accent-soft p-4 sm:p-6">
           <p className="text-sm text-text">
             Your account setup is not finished. It takes about a minute.
           </p>
@@ -126,7 +126,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         </p>
       ) : null}
 
-      <dl className="mt-10 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-4 md:grid-cols-[repeat(4,10rem)]">
+      <dl className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4 md:grid-cols-[repeat(4,11rem)]">
         <Stat label="Open now" value={totals.open} />
         <Stat label="Roles" value={totals.roles} />
         <Stat label="Submissions" value={totals.submissions} />
@@ -135,7 +135,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
 
       {sessions.length > 0 ? (
         <>
-          <p className="mt-8 text-sm text-muted">
+          <p className="mt-6 text-sm text-muted">
             {totals.open} of {sessions.length}{" "}
             {sessions.length === 1 ? "casting call is" : "casting calls are"} accepting submissions
             now.
@@ -147,7 +147,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               : ""}
           </p>
 
-          <ul className="mt-6 flex flex-col gap-3">
+          <ul className="mt-4 flex flex-col gap-4">
             {ordered.map(({ session, state }) => {
               const count = stats.get(session.id);
               // The whole card is the way into the casting call: the name's
@@ -157,7 +157,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                 <li
                   key={session.id}
                   data-state={state.key}
-                  className={`relative rounded-2xl border border-line p-5 transition-colors hover:border-line-strong sm:p-6 ${cardTone(state)}`}
+                  className={`relative rounded-2xl border border-line p-4 shadow-card transition-colors hover:border-line-strong sm:p-6 ${cardTone(state)}`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
                     <div className="min-w-0 flex-1">
@@ -286,9 +286,10 @@ function Figures({
 }
 
 /**
- * One of the four squares of totals: two by two on a phone, a row of four
- * from a tablet up, and a row of four fixed squares on a desktop. As stacked
- * cards they took most of a phone's first screen.
+ * One of the four tiles of totals: two by two on a phone, a row of four from
+ * a tablet up. The label and the number sit close, so the tile is no taller
+ * than it needs to be; as stacked cards the four took most of a phone's
+ * first screen.
  */
 function Stat({
   label,
@@ -303,9 +304,9 @@ function Stat({
     value === 0 ? "text-text" : tone === "accent" ? "text-brand" : tone === "positive" ? "text-positive" : "text-text";
 
   return (
-    <div className="flex aspect-square flex-col justify-between rounded-2xl border border-line bg-surface p-4 sm:p-5">
+    <div className="rounded-2xl border border-line bg-surface p-4 shadow-card">
       <dt className="text-sm text-muted">{label}</dt>
-      <dd className={`text-3xl font-semibold tracking-tight ${colour}`}>{value}</dd>
+      <dd className={`mt-1 text-2xl font-semibold tracking-tight sm:text-3xl ${colour}`}>{value}</dd>
     </div>
   );
 }

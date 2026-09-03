@@ -12,7 +12,7 @@ function GoogleButton({ next, label }: { next: string; label: string }) {
     <>
       <a
         href={`/api/auth/google?next=${encodeURIComponent(next)}`}
-        className="flex w-full items-center justify-center gap-2.5 rounded-full border border-line-strong bg-raised px-5 py-2.5 text-sm font-medium transition-colors hover:border-accent hover:text-brand"
+        className="flex w-full items-center justify-center gap-2.5 rounded-full border border-line-strong bg-raised px-6 py-2 text-sm font-medium transition-colors hover:border-accent hover:text-brand"
       >
         <GoogleMark />
         {label}

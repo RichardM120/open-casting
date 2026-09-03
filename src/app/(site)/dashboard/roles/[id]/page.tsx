@@ -65,7 +65,7 @@ export default async function RoleSubmissionsPage({
   const open = isOpen(roleWindow(role));
 
   return (
-    <div className="mx-auto max-w-5xl px-5 py-12">
+    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
       <SetupProgress stage={role.session.publishedAt ? 4 : 3} sessionId={role.sessionId} />
       <HelpNote title="What to do on this screen" faq="/faq/casting-directors">
         <p dangerouslySetInnerHTML={{ __html: 'Submissions to this role arrive here. Move people through <strong>New</strong>, <strong>Shortlisted</strong>, <strong>Callback</strong> and <strong>Declined</strong> as you work; nothing is emailed to them automatically.' }} />

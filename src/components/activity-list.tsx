@@ -40,7 +40,7 @@ function Subject({ entry }: { entry: ActivityEntry }) {
   return entry.roleId ? (
     <Link
       href={`/dashboard/roles/${entry.roleId}`}
-      className="text-text underline-offset-4 hover:text-brand hover:underline"
+      className="font-medium text-brand underline-offset-4 hover:underline"
     >
       {entry.roleTitle}
     </Link>
@@ -60,30 +60,28 @@ export function ActivityList({
     return <EmptyState title="Nothing yet" description={emptyDescription} />;
   }
 
+  // Each entry on its own cream card, so one stands apart from the next and
+  // the copy sits on a lighter ground than the page: charcoal on cream.
   return (
-    <ol className="flex flex-col">
-      {entries.map((entry, index) => {
+    <ol className="flex flex-col gap-2">
+      {entries.map((entry) => {
         const shape = SHAPE[entry.action];
         return (
-          <li key={entry.id} className="flex gap-4">
-            <div className="flex flex-col items-center pt-1.5">
-              <span
-                aria-hidden="true"
-                className={`size-2 shrink-0 rounded-full ${shape?.tone ?? "bg-muted"}`}
-              />
-              {index < entries.length - 1 ? (
-                <span aria-hidden="true" className="mt-1 w-px flex-1 bg-line" />
-              ) : null}
-            </div>
-
-            <div className="min-w-0 flex-1 pb-6">
-              <p className="text-sm leading-relaxed">
-                <span className="font-medium">{entry.actorName}</span>{" "}
-                <span className="text-muted">{shape?.verb ?? entry.action}</span>{" "}
-                <Subject entry={entry} />
-                {entry.detail ? <span className="text-muted">: {entry.detail}</span> : null}
+          <li
+            key={entry.id}
+            className="flex gap-3 rounded-xl border border-line bg-raised px-4 py-3 shadow-card"
+          >
+            <span
+              aria-hidden="true"
+              className={`mt-2 size-2 shrink-0 rounded-full ${shape?.tone ?? "bg-muted"}`}
+            />
+            <div className="min-w-0 flex-1">
+              <p className="text-sm leading-relaxed text-text">
+                <span className="font-semibold">{entry.actorName}</span>{" "}
+                {shape?.verb ?? entry.action} <Subject entry={entry} />
+                {entry.detail ? <span>: {entry.detail}</span> : null}
               </p>
-              <p className="mt-0.5 text-xs text-faint">
+              <p className="mt-0.5 text-xs text-muted">
                 <time dateTime={entry.createdAt}>{formatRelative(entry.createdAt)}</time>
               </p>
             </div>
