@@ -23,7 +23,7 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
         {children}
       </main>
       {/* Signed in, a phone has a tab bar along the bottom; the footer keeps clear of it. */}
-      <SiteFooter padForTabs={user !== null} />
+      <SiteFooter user={user} padForTabs={user !== null} />
     </>
   );
 }

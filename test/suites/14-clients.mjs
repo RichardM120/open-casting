@@ -82,18 +82,24 @@ section("5 a director cannot reach the admin side");
     (await dir.p.locator("header nav").first().getByText("Clients", { exact: true }).count()) === 0);
 }
 
-section("5b the footer offers both sections while sign-in cannot route");
+section("5b the footer offers each reader their own section, and never a door that is shut");
 {
   await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
   const footer = dir.p.locator("footer");
-  check("a link to the casting section",
-    (await footer.getByRole("link", { name: "Casting director" }).count()) > 0);
-  check("and one to admin",
-    (await footer.getByRole("link", { name: "Admin" }).count()) > 0);
+  check("a director's footer links to their casting calls",
+    (await footer.getByRole("link", { name: "Casting calls", exact: true }).count()) > 0);
+  check("and not to admin",
+    (await footer.getByRole("link", { name: "Admin", exact: true }).count()) === 0);
+  check("the footer is a landmark", (await footer.locator("nav[aria-label='Footer']").count()) === 1);
+  check("and its mark goes home", (await footer.locator("a[href='/']").count()) === 1);
 
-  // The link is navigation, not a way in: the section still refuses.
+  // The section itself still refuses a director, footer or no footer.
   const landed = await dir.p.goto(`${BASE}/admin`, { waitUntil: "domcontentloaded" });
   check(`which still refuses a director (${landed.status()})`, landed.status() === 404);
+
+  await admin.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
+  check("an admin's footer does link to admin",
+    (await admin.p.locator("footer").getByRole("link", { name: "Admin", exact: true }).count()) > 0);
 }
 
 section("5c the admin section carries its own navigation");
