@@ -8,8 +8,10 @@ import { ButtonLink, Eyebrow, SPOTLIGHT, cx } from "./ui";
  * The five moves from a brief to a shortlist, each with a line drawing. From a
  * wide screen up they stand in a row of five cards with a closing note. On a
  * phone they are a carousel: one card in view with the next peeking, swiped
- * through to a last slide that is the way in: the sign-up button. The drawings share one grid,
- * one stroke and one accent, so the row reads as a set.
+ * through to a last slide that is the way in: the sign-up button. The same
+ * button stands under the introduction, above the cards, so a phone shows the
+ * way in without a swipe. The drawings share one grid, one stroke and one
+ * accent, so the row reads as a set.
  */
 const STEPS: { key: StepKey; title: string; body: string }[] = [
   {
@@ -108,6 +110,14 @@ export function HowItWorks() {
         There is nothing to browse and nothing to register for. A casting director sets a call up
         once; applicants open one link.
       </p>
+      <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-3">
+        <ButtonLink href="/login" variant="signup" size="lg">
+          Sign up
+        </ButtonLink>
+        <p className="text-sm text-muted">
+          For casting teams. Applicants never sign up: they open the link they were sent.
+        </p>
+      </div>
 
       {/*
         On a phone the list scrolls sideways and snaps a card to the middle,
