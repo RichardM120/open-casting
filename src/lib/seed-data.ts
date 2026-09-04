@@ -354,7 +354,13 @@ const roles: SeedRole[] = [
 
 const submissions: Omit<
   Submission,
-  "sessionId" | "termsVersion" | "guardianName" | "guardianEmail" | "guardianConsentAt"
+  | "sessionId"
+  | "termsVersion"
+  | "guardianName"
+  | "guardianEmail"
+  | "guardianConsentAt"
+  | "mediaFlaggedAt"
+  | "mediaFlagReason"
 >[] = [
   {
     id: "sub_0001",
@@ -575,6 +581,8 @@ export function seedDatabase(): Database {
       guardianName: null,
       guardianEmail: null,
       guardianConsentAt: null,
+      mediaFlaggedAt: null,
+      mediaFlagReason: "",
     };
   });
 

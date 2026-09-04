@@ -35,6 +35,12 @@ export async function GET(request: Request) {
   if (!(await getVisibleRole(submission.roleId, user))) {
     return new NextResponse(null, { status: 404 });
   }
+  // Held back pending a look: the administrator who can clear it may still
+  // see it, and the casting team cannot until they do. A 404 rather than a
+  // 403, as everywhere else here, so nothing is confirmed by the refusal.
+  if (submission.mediaFlaggedAt && user.role !== "admin") {
+    return new NextResponse(null, { status: 404 });
+  }
 
   const range = request.headers.get("range");
   let file: Awaited<ReturnType<typeof readBlob>>;

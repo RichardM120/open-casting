@@ -3,7 +3,13 @@ import "server-only";
 import type { SessionUser } from "./auth";
 import { UNIQUE_VIOLATION, query } from "./db";
 import { visibility } from "./roles";
-import { SUBMISSION_STATUSES, type Submission, type SubmissionStatus, type SubmissionVideo } from "./types";
+import {
+  ADULT_AGE,
+  SUBMISSION_STATUSES,
+  type Submission,
+  type SubmissionStatus,
+  type SubmissionVideo,
+} from "./types";
 
 export type SubmissionCounts = Record<SubmissionStatus, number> & { total: number };
 
@@ -48,6 +54,8 @@ type SubmissionRow = {
   photo_url: string | null;
   video_url: string | null;
   videos: unknown;
+  media_flagged_at: Date | null;
+  media_flag_reason: string;
   submitted_at: Date;
 };
 
@@ -55,7 +63,7 @@ const COLUMNS = `
   id, role_id, session_id, name, email, phone, location, age, reel_url,
   profile_url, cover_note, status, accepted_terms, accepted_at, terms_version,
   guardian_name, guardian_email, guardian_consent_at, photo_url, video_url, videos,
-  height_cm, residency, available, submitted_at
+  height_cm, residency, available, media_flagged_at, media_flag_reason, submitted_at
 `;
 
 function toSubmission(row: SubmissionRow): Submission {
@@ -84,6 +92,8 @@ function toSubmission(row: SubmissionRow): Submission {
     photoUrl: row.photo_url,
     videoUrl: row.video_url,
     videos: readVideos(row.videos),
+    mediaFlaggedAt: row.media_flagged_at?.toISOString() ?? null,
+    mediaFlagReason: row.media_flag_reason ?? "",
     submittedAt: row.submitted_at.toISOString(),
   };
 }
@@ -269,7 +279,10 @@ export function summarise(submissions: Submission[]): SubmissionCounts {
   return counts;
 }
 
-export type NewSubmission = Omit<Submission, "id" | "status" | "submittedAt">;
+export type NewSubmission = Omit<
+  Submission,
+  "id" | "status" | "submittedAt" | "mediaFlaggedAt" | "mediaFlagReason"
+>;
 
 /**
  * Throws `DuplicateSubmissionError` if this email has already submitted into
@@ -422,4 +435,177 @@ export async function mediaUrlsForRole(roleId: string): Promise<string[]> {
     [roleId],
   );
   return urlsOf(rows);
+}
+
+/* ------------------------------------------------- admin: the whole feed -- */
+
+/** One row of the administrator's feed: a submission with where it came from. */
+export type FeedSubmission = Submission & {
+  roleTitle: string;
+  sessionName: string;
+  company: string;
+  clientId: string | null;
+};
+
+export type FeedFilter = {
+  status?: SubmissionStatus | null;
+  /** "flagged" for held media, "minors" for applicants under 18, "media" for anything with a file. */
+  only?: "flagged" | "minors" | "media" | null;
+  clientId?: string | null;
+  sessionId?: string | null;
+  limit?: number;
+  offset?: number;
+};
+
+function feedWhere(filter: FeedFilter): { where: string; params: unknown[] } {
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+  if (filter.status) {
+    params.push(filter.status);
+    conditions.push(`s.status = $${params.length}`);
+  }
+  if (filter.clientId) {
+    params.push(filter.clientId);
+    conditions.push(`c.client_id = $${params.length}`);
+  }
+  if (filter.sessionId) {
+    params.push(filter.sessionId);
+    conditions.push(`s.session_id = $${params.length}`);
+  }
+  if (filter.only === "flagged") conditions.push("s.media_flagged_at IS NOT NULL");
+  if (filter.only === "minors") conditions.push(`s.age < ${ADULT_AGE}`);
+  if (filter.only === "media") {
+    conditions.push("(s.photo_url IS NOT NULL OR s.video_url IS NOT NULL OR jsonb_array_length(s.videos) > 0)");
+  }
+  return { where: conditions.length ? `WHERE ${conditions.join(" AND ")}` : "", params };
+}
+
+const FEED_SOURCE = `
+  FROM submissions s
+  JOIN roles r            ON r.id = s.role_id
+  JOIN sessions_casting c ON c.id = s.session_id
+`;
+
+/**
+ * Every submission on the site, newest first, whoever it was sent to. The
+ * administrator's feed only: the pages that call this refuse anyone else
+ * before they run, which is why there is no visibility clause here.
+ */
+export async function listAllSubmissions(filter: FeedFilter = {}): Promise<FeedSubmission[]> {
+  const { where, params } = feedWhere(filter);
+  let tail = "";
+  if (filter.limit !== undefined) {
+    params.push(filter.limit);
+    tail += ` LIMIT $${params.length}`;
+  }
+  if (filter.offset) {
+    params.push(filter.offset);
+    tail += ` OFFSET $${params.length}`;
+  }
+  const rows = await query<
+    SubmissionRow & {
+      role_title: string;
+      session_name: string;
+      session_company: string;
+      client_id: string | null;
+    }
+  >(
+    `SELECT s.*, r.title AS role_title, c.name AS session_name,
+            c.company AS session_company, c.client_id
+       ${FEED_SOURCE}
+       ${where}
+      ORDER BY s.submitted_at DESC, s.id${tail}`,
+    params,
+  );
+  return rows.map((row) => ({
+    ...toSubmission(row),
+    roleTitle: row.role_title,
+    sessionName: row.session_name,
+    company: row.session_company,
+    clientId: row.client_id,
+  }));
+}
+
+/** How the feed breaks down, for the filter bar and for paging it. */
+export async function countAllSubmissions(
+  filter: FeedFilter = {},
+): Promise<{ total: number; flagged: number; minors: number; withMedia: number; byStatus: SubmissionCounts }> {
+  const { where, params } = feedWhere({ ...filter, status: null, only: null });
+  const [row] = await query<{
+    total: string;
+    flagged: string;
+    minors: string;
+    with_media: string;
+  }>(
+    `SELECT count(*)::text AS total,
+            count(*) FILTER (WHERE s.media_flagged_at IS NOT NULL)::text AS flagged,
+            count(*) FILTER (WHERE s.age < ${ADULT_AGE})::text AS minors,
+            count(*) FILTER (WHERE s.photo_url IS NOT NULL OR s.video_url IS NOT NULL
+                               OR jsonb_array_length(s.videos) > 0)::text AS with_media
+       ${FEED_SOURCE}
+       ${where}`,
+    params,
+  );
+  const statusRows = await query<{ status: string; count: string }>(
+    `SELECT s.status, count(*)::text AS count ${FEED_SOURCE} ${where} GROUP BY s.status`,
+    params,
+  );
+  return {
+    total: Number(row?.total ?? 0),
+    flagged: Number(row?.flagged ?? 0),
+    minors: Number(row?.minors ?? 0),
+    withMedia: Number(row?.with_media ?? 0),
+    byStatus: tally(statusRows),
+  };
+}
+
+/**
+ * Holds a submission's photo and tapes back from the casting team, or lets
+ * them through again. The files are not moved: what changes is who may fetch
+ * them, which /api/media decides on every request.
+ */
+export async function setMediaFlagged(
+  id: string,
+  flagged: boolean,
+  by: { id: string; reason: string },
+): Promise<Submission | null> {
+  const rows = await query<SubmissionRow>(
+    flagged
+      ? `UPDATE submissions
+            SET media_flagged_at = now(), media_flagged_by = $2, media_flag_reason = $3
+          WHERE id = $1 RETURNING ${COLUMNS}`
+      : `UPDATE submissions
+            SET media_flagged_at = NULL, media_flagged_by = NULL, media_flag_reason = ''
+          WHERE id = $1 RETURNING ${COLUMNS}`,
+    flagged ? [id, by.id, by.reason.slice(0, 300)] : [id],
+  );
+  return rows[0] ? toSubmission(rows[0]) : null;
+}
+
+/** One submission, whoever it belongs to. Admin only; enforce upstream. */
+export async function getSubmission(id: string): Promise<FeedSubmission | null> {
+  const rows = await query<
+    SubmissionRow & {
+      role_title: string;
+      session_name: string;
+      session_company: string;
+      client_id: string | null;
+    }
+  >(
+    `SELECT s.*, r.title AS role_title, c.name AS session_name,
+            c.company AS session_company, c.client_id
+       ${FEED_SOURCE}
+      WHERE s.id = $1`,
+    [id],
+  );
+  const row = rows[0];
+  return row
+    ? {
+        ...toSubmission(row),
+        roleTitle: row.role_title,
+        sessionName: row.session_name,
+        company: row.session_company,
+        clientId: row.client_id,
+      }
+    : null;
 }

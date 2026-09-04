@@ -48,6 +48,8 @@ import {
   DuplicateSubmissionError,
   countsForSession,
   createSubmission,
+  getSubmission,
+  setMediaFlagged,
   setSubmissionStatus,
   submissionContext,
   mediaUrlsForRole,
@@ -1244,4 +1246,77 @@ export async function adminSetCallLimits(formData: FormData): Promise<void> {
   });
   revalidateEverything();
   redirect("/admin/projects?changed=1");
+}
+
+/* ---------------------------------------------------- admin: submissions -- */
+
+/**
+ * Holds a submission's photo and tapes back from the casting team, or lets
+ * them through again. Nothing is moved or deleted: the media route stops
+ * serving the files to anyone but an administrator, so a wrong call is undone
+ * by clearing the flag rather than by restoring anything.
+ */
+export async function setSubmissionMediaFlagged(formData: FormData): Promise<void> {
+  const user = await requireUser("/admin/submissions");
+  if (user.role !== "admin") return;
+
+  const id = String(formData.get("submissionId") ?? "");
+  const flagged = formData.get("flagged") === "1";
+  const reason = String(formData.get("reason") ?? "").trim();
+  if (!id) return;
+
+  const submission = await setMediaFlagged(id, flagged, { id: user.id, reason });
+  if (!submission) return;
+
+  const context = await submissionContext(id);
+  await record({
+    action: flagged ? "media.flagged" : "media.cleared",
+    actorId: user.id,
+    actorName: user.name,
+    ownerId: context?.ownerId ?? null,
+    company: context?.company ?? "",
+    role: { id: submission.roleId, title: context?.roleTitle ?? "" },
+    detail: flagged
+      ? `${submission.name}'s photo and tapes held back${reason ? `: ${reason}` : ""}`
+      : `${submission.name}'s photo and tapes released`,
+  });
+  revalidateEverything();
+  // Back to the submission that was open, not to the top of the feed: holding
+  // media back is usually followed by looking at the rest of it.
+  redirect(`/admin/submissions?open=${id}&done=${flagged ? "flagged" : "cleared"}`);
+}
+
+/**
+ * Removes one submission and its files. Admin only, and the confirmation has
+ * to be ticked: this is somebody's contact details and their tapes, and there
+ * is nothing to restore them from afterwards.
+ */
+export async function removeSubmission(formData: FormData): Promise<void> {
+  const user = await requireUser("/admin/submissions");
+  if (user.role !== "admin" || formData.get("confirm") !== "on") return;
+
+  const id = String(formData.get("submissionId") ?? "");
+  if (!id) return;
+
+  const submission = await getSubmission(id);
+  if (!submission) return;
+
+  const context = await submissionContext(id);
+  // Described before it goes: afterwards there is nothing left to describe.
+  await record({
+    action: "submission.removed",
+    actorId: user.id,
+    actorName: user.name,
+    ownerId: context?.ownerId ?? null,
+    company: context?.company ?? "",
+    role: { id: submission.roleId, title: context?.roleTitle ?? "" },
+    detail: `${submission.name} · ${submission.sessionName} · removed by the administrator`,
+  });
+
+  const media = [submission.photoUrl, submission.videoUrl, ...submission.videos.map((video) => video.url)];
+  await forgetSubmission(id);
+  await deleteMedia(media);
+
+  revalidateEverything();
+  redirect("/admin/submissions?done=removed");
 }

@@ -737,6 +737,15 @@ const SCHEMA = `
   -- The most submissions a casting call will take before it stops accepting
   -- them. NULL is no cap, which is what every call had before this existed.
   ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS submission_cap integer;
+
+  -- Media held back from the casting team pending a look: who did it, when and
+  -- why. The files stay where they are; what changes is who may fetch them,
+  -- which is decided in the route rather than by moving anything.
+  ALTER TABLE submissions ADD COLUMN IF NOT EXISTS media_flagged_at timestamptz;
+  ALTER TABLE submissions ADD COLUMN IF NOT EXISTS media_flagged_by text;
+  ALTER TABLE submissions ADD COLUMN IF NOT EXISTS media_flag_reason text NOT NULL DEFAULT '';
+  CREATE INDEX IF NOT EXISTS submissions_flagged_idx
+    ON submissions (media_flagged_at) WHERE media_flagged_at IS NOT NULL;
 `;
 
 /** Postgres error code for a unique constraint violation. */

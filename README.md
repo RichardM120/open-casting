@@ -762,6 +762,22 @@ There is no public-versus-unlisted setting, because there is no public
 listing: a share link is the whole of the authorisation and every applicant
 page carries `noindex`. Making calls browsable would be a different product.
 
+### Submissions and moderation
+
+`/admin/submissions` is every submission on the site, newest first, whoever it
+was sent to, narrowed by status, by held-back media, by applicants under 18 and
+by whether anything was attached. Opening a row shows the photo and the tapes,
+played through `/api/media` as everywhere else, with the applicant's details
+and their guardian's where there is one.
+
+**Hold the media back** sets `media_flagged_at` with a reason and who did it.
+Nothing is moved or deleted: `/api/media` refuses the file to everyone but an
+administrator, so the casting team stops seeing it and clearing the flag puts
+it back. **Remove this submission** needs a ticked confirmation and deletes the
+row and every file with it, which cannot be undone. Both are recorded in the
+activity trail against the administrator who did them, as `media.flagged`,
+`media.cleared` and `submission.removed`.
+
 ### Storage
 
 `/admin/storage` is what to open to ask whether the site is still working. It

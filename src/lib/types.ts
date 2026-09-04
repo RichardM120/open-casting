@@ -334,6 +334,12 @@ export type Submission = {
   guardianName: string | null;
   guardianEmail: string | null;
   guardianConsentAt: string | null;
+  /**
+   * Set when an administrator held the photo and tapes back from the casting
+   * team pending a look. The rest of the submission is unaffected.
+   */
+  mediaFlaggedAt: string | null;
+  mediaFlagReason: string;
   /** ISO timestamp. */
   submittedAt: string;
 };

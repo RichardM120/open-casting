@@ -284,6 +284,86 @@ section("10 a director cannot reach Projects");
   check("/admin/projects is a 404 for a director", response.status() === 404, String(response.status()));
 }
 
+section("11 the submissions feed carries everything, and holds media back");
+{
+  const { p } = admin;
+  await p.goto(`${BASE}/admin/submissions`, { waitUntil: "networkidle" });
+  check("the feed lists submissions across every call", (await p.getByRole("heading", { name: "Submissions", level: 1 }).count()) === 1);
+  const row = p.locator("main ul > li").filter({ hasText: "Sam Stored" });
+  check("the submission made above is on it", (await row.count()) === 1);
+  check("with its role and its casting call", (await row.getByText(`Stored ${t}`).count()) >= 1 && (await row.getByText("Kept role").count()) >= 1);
+  check("and its status", (await row.getByText("New", { exact: true }).count()) === 1);
+
+  await row.getByRole("link", { name: "Open", exact: true }).click();
+  await p.waitForURL(/open=/, { timeout: 20000 });
+  const opened = p.locator("main ul > li").filter({ hasText: "Sam Stored" });
+  check("opening it shows the applicant's details", (await opened.getByText(`sam${t}@example.com`).count()) === 1);
+  check("and their cover note", (await opened.getByText(/comfortably longer than the twenty character minimum/).count()) === 1);
+
+  await opened.locator('input[name="reason"]').fill("Checking the tape");
+  await Promise.all([
+    p.waitForNavigation({ timeout: 20000 }),
+    opened.getByRole("button", { name: "Hold the media back" }).click(),
+  ]);
+  check("holding it back says so", (await p.getByText(/cannot fetch that photo or those tapes/).count()) === 1);
+  const held = p.locator("main ul > li").filter({ hasText: "Sam Stored" });
+  check("and the row is marked", (await held.getByText("Media held back").count()) === 1);
+  check("filtering by held back finds it", (await p.getByRole("link", { name: /^Held back · 1$/ }).count()) === 1);
+}
+{
+  // The casting team cannot fetch a held file; the administrator still can.
+  const { rows } = await pool.query("SELECT id, media_flagged_at, media_flag_reason FROM submissions WHERE email = $1", [`sam${t}@example.com`]);
+  check("the flag is on the submission, with the reason", rows[0]?.media_flagged_at !== null && rows[0].media_flag_reason === "Checking the tape", JSON.stringify(rows[0]));
+}
+{
+  const { p } = admin;
+  // The redirect kept the submission open, so the release button is here.
+  const row = p.locator("main ul > li").filter({ hasText: "Sam Stored" });
+  await row.getByRole("button", { name: "Release the media" }).waitFor({ timeout: 20000 });
+  await Promise.all([
+    p.waitForNavigation({ timeout: 20000 }),
+    row.getByRole("button", { name: "Release the media" }).click(),
+  ]);
+  check("releasing it says so", (await p.getByText(/can see it again/).count()) === 1);
+  check("and the mark is gone", (await p.locator("main ul > li").filter({ hasText: "Sam Stored" }).getByText("Media held back").count()) === 0);
+  await p.screenshot({ path: `${SHOTS}/submissions-feed.png`, fullPage: true });
+}
+{
+  // Both are in the trail, against the administrator who did them.
+  const { p } = admin;
+  await p.goto(`${BASE}/admin/activity`, { waitUntil: "networkidle" });
+  check("holding back is recorded", (await p.getByText(/held back a photo or tape on/).count()) >= 1);
+  check("and so is releasing", (await p.getByText(/released a photo or tape on/).count()) >= 1);
+}
+
+section("12 a submission can be removed from the feed, with its files");
+{
+  const { p } = admin;
+  await p.goto(`${BASE}/admin/submissions?open=`, { waitUntil: "networkidle" });
+  const row = p.locator("main ul > li").filter({ hasText: "Sam Stored" });
+  await row.getByRole("link", { name: "Open", exact: true }).click();
+  await p.waitForURL(/open=/, { timeout: 20000 });
+  const opened = p.locator("main ul > li").filter({ hasText: "Sam Stored" });
+  await opened.getByText("Remove this submission").click();
+  await opened.locator('input[name="confirm"]').check();
+  await Promise.all([
+    p.waitForNavigation({ timeout: 20000 }),
+    opened.getByRole("button", { name: "Remove submission and files" }).click(),
+  ]);
+  check("it says the submission is gone", (await p.getByText(/files are gone/).count()) === 1);
+  check("and it is off the feed", (await p.locator("main ul > li").filter({ hasText: "Sam Stored" }).count()) === 0);
+  const { rows } = await pool.query("SELECT count(*)::int AS n FROM submissions WHERE email = $1", [`sam${t}@example.com`]);
+  check("the row is gone from the database", rows[0].n === 0);
+  await p.goto(`${BASE}/admin/activity`, { waitUntil: "networkidle" });
+  check("the removal is in the trail", (await p.getByText(/removed a submission from/).count()) >= 1);
+}
+
+section("13 a director cannot reach the feed");
+{
+  const response = await dir.p.goto(`${BASE}/admin/submissions`, { waitUntil: "networkidle" });
+  check("/admin/submissions is a 404 for a director", response.status() === 404, String(response.status()));
+}
+
 await pool.end();
 await dir.c.close();
 await admin.c.close();
