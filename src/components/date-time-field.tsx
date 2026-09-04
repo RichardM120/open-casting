@@ -14,6 +14,12 @@ import { Button, Input, Select, cx } from "./ui";
  * instead: pick a day, set the time, and nothing reaches the field until
  * Confirm. Cancel, Escape and a click elsewhere leave it as it was.
  *
+ * That is for a mouse. On a phone, or anything else driven by touch, the
+ * device's own picker is the one to use: it is made for a thumb and the
+ * person already knows it. There the field keeps its own pop-up, and the
+ * calendar button asks the field to show it (showPicker) rather than opening
+ * the picker here, which is kept only for a browser that has none.
+ *
  * Weeks start on Monday, as UK calendars do. Values are whatever the native
  * field would hold: yyyy-mm-dd, or yyyy-mm-ddThh:mm, read as UK time by the
  * server exactly as before.
@@ -100,8 +106,11 @@ export function DateTimeField({
   });
   const [hour, setHour] = useState(9);
   const [minute, setMinute] = useState(0);
+  // Whether the main pointer is a finger: then the device's picker is used.
+  const [coarse, setCoarse] = useState(false);
 
   const wrapper = useRef<HTMLDivElement>(null);
+  const input = useRef<HTMLInputElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const grid = useRef<HTMLDivElement>(null);
   const followFocus = useRef(false);
@@ -138,6 +147,23 @@ export function DateTimeField({
     trigger.current?.focus();
   }
 
+  /**
+   * Asks the device for its own picker. A browser may refuse (no picker of
+   * its own, or one already up), and then the picker here opens instead.
+   */
+  function askDevice() {
+    const field = input.current;
+    try {
+      if (field && typeof field.showPicker === "function") {
+        field.showPicker();
+        return;
+      }
+    } catch {
+      // Fall through to the picker here.
+    }
+    show();
+  }
+
   function choose(day: Day) {
     setPicked(day);
     setView({ year: day.year, month: day.month });
@@ -169,6 +195,15 @@ export function DateTimeField({
     followFocus.current = true;
     choose(shift(picked ?? today, step));
   }
+
+  // Only the browser knows what the page is being touched with.
+  useEffect(() => {
+    const query = window.matchMedia("(pointer: coarse)");
+    const read = () => setCoarse(query.matches);
+    read();
+    query.addEventListener("change", read);
+    return () => query.removeEventListener("change", read);
+  }, []);
 
   // The keyboard moves the selection; focus follows it once it has rendered.
   useEffect(() => {
@@ -211,6 +246,7 @@ export function DateTimeField({
     <div ref={wrapper} className="relative">
       <div className="flex items-center gap-2">
         <Input
+          ref={input}
           id={id}
           name={name}
           type={mode === "date" ? "date" : "datetime-local"}
@@ -225,10 +261,10 @@ export function DateTimeField({
         <button
           ref={trigger}
           type="button"
-          onClick={() => (open ? close() : show())}
-          aria-haspopup="dialog"
-          aria-expanded={open}
-          aria-controls={open ? dialogId : undefined}
+          onClick={() => (coarse ? askDevice() : open ? close() : show())}
+          aria-haspopup={coarse ? undefined : "dialog"}
+          aria-expanded={coarse ? undefined : open}
+          aria-controls={!coarse && open ? dialogId : undefined}
           aria-label={`Pick ${what} for ${label}`}
           className="inline-flex size-11 shrink-0 items-center justify-center rounded-xl border border-line-strong bg-surface text-muted transition-colors hover:border-accent hover:text-brand"
         >

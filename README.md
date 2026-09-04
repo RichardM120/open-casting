@@ -480,6 +480,11 @@ The field can still be typed into, which is also how the end-to-end suite
 fills it. Under the casting window fields the chosen moment is read back in
 words, in UK time, which is how the server stores it.
 
+That is for a mouse. On a phone, or anything else driven by touch, the field
+keeps the device's own picker, made for a thumb and already familiar, and the
+calendar button opens that one too, through `showPicker`; a browser with no
+picker of its own gets the site's. The values are the same either way.
+
 ## Photos and videos
 
 An applicant can attach a profile photo (up to 5 MB) and a video (up to

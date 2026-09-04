@@ -110,11 +110,15 @@
   }
 
   /*
-   * A date field's own pop-up is hidden: the calendar button beside it opens
-   * a picker that asks before it commits. Typing into the field still works.
+   * Where there is a mouse, a date field's own pop-up is hidden: the calendar
+   * button beside it opens a picker that asks before it commits, and typing
+   * into the field still works. On a phone the field keeps the device's own
+   * picker, made for a thumb, and the button opens that one too.
    */
-  .date-field::-webkit-calendar-picker-indicator {
-    display: none;
+  @media (pointer: fine) {
+    .date-field::-webkit-calendar-picker-indicator {
+      display: none;
+    }
   }
 
   /*

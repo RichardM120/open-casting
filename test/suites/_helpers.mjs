@@ -42,12 +42,13 @@ export async function launch(options = {}) {
 
 /**
  * A fresh, isolated browser context, cookies included, so roles do not bleed
- * between accounts. Returned as `{ c, p }`: context and page.
+ * between accounts. Returned as `{ c, p }`: context and page. `options` go to
+ * Playwright as they are: `{ hasTouch: true }` makes a phone of it.
  */
-export async function session(browser, errors, viewport) {
+export async function session(browser, errors, viewport, options = {}) {
   // The stand-in store speaks HTTPS with a certificate it made itself, and
   // nothing else the suites reach is HTTPS at all.
-  const c = await browser.newContext({ ignoreHTTPSErrors: true, ...(viewport ? { viewport } : {}) });
+  const c = await browser.newContext({ ignoreHTTPSErrors: true, ...(viewport ? { viewport } : {}), ...options });
   const p = await c.newPage();
   p.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
   p.on("console", (message) => {

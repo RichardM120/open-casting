@@ -19,6 +19,7 @@ import {
   shareTokenForRole,
   submit,
   shareToken,
+  signIn,
   day,
 } from "./_helpers.mjs";
 
@@ -228,6 +229,23 @@ section("12 the date picker asks before it commits");
   const date = await dir.p.inputValue("#productionEndsAt");
   check("a date-only field takes a date", /^\d{4}-\d{2}-20$/.test(date), date);
   check("typing into the field still works", await dir.p.fill("#opensAt", at(3, "12:00")).then(async () => (await dir.p.inputValue("#opensAt")) === at(3, "12:00")));
+
+  // On a phone the same button asks the device for its own picker, which a
+  // headless browser has none of: the ask itself is what is checked.
+  const phone = await session(browser, errors, { width: 390, height: 844 }, { hasTouch: true });
+  await phone.c.addInitScript(() => {
+    window.__pickers = [];
+    HTMLInputElement.prototype.showPicker = function () {
+      window.__pickers.push(this.id);
+    };
+  });
+  await signIn(phone.p, `sd${t}@example.com`, dir.password);
+  await phone.p.goto(`${BASE}/dashboard/sessions/new`, { waitUntil: "networkidle" });
+  check("a phone reports a coarse pointer", await phone.p.evaluate(() => matchMedia("(pointer: coarse)").matches));
+  await phone.p.getByRole("button", { name: "Pick a date and time for Submissions open" }).click();
+  check("on a phone the button asks the device for its picker", (await phone.p.evaluate(() => window.__pickers)).includes("opensAt"));
+  check("and opens none of its own", (await phone.p.getByRole("dialog").count()) === 0);
+  await phone.c.close();
 }
 
 section("13 a draft can be left and picked up again");
