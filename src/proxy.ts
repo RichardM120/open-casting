@@ -31,11 +31,13 @@ export async function proxy(request: NextRequest) {
     // 'unsafe-eval' is only for React's development error reconstruction.
     `script-src 'self' 'nonce-${nonce}' 'strict-dynamic'${isDev ? " 'unsafe-eval'" : ""}`,
     `style-src 'self' 'nonce-${nonce}'`,
-    // Applicant media lives in Vercel Blob: the browser uploads to it directly,
-    // and the dashboard shows it back through /api/media on this origin.
+    // Applicant media lives in Vercel Blob. The browser puts a file there
+    // itself, through the SDK's upload endpoint on vercel.com, and the
+    // dashboard shows it back through /api/media on this origin. Suite 17
+    // uploads through this policy, so a host missing here fails there first.
     "img-src 'self' blob: data:",
     "media-src 'self' blob:",
-    "connect-src 'self' https://*.vercel-storage.com https://blob.vercel-storage.com",
+    "connect-src 'self' https://vercel.com https://*.vercel-storage.com https://blob.vercel-storage.com",
     // next/font self-hosts Geist, so no external font origin is needed.
     "font-src 'self'",
     // The submission and role forms post to this origin only.

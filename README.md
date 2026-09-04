@@ -418,6 +418,21 @@ ground's cream, and what is still to do stands apart from what is done. A value
 that was already there when the page opened, a default or a saved one, stays
 white until they change it.
 
+The two dashboard forms, the casting call's and the role's, put what a call
+cannot go out without in one card and everything else under **Advanced
+options**: two folds on the casting call form (the production company and
+picture, what applicants are told) and three on the role form (what
+applicants must send, the terms they accept, a question about a protected
+characteristic). A fold is a native `<details>` with a line on it saying what
+it is set to, so a closed form still reads in full and its defaults are
+posted whether or not it was opened. A fold opens itself when it holds
+something other than the default, or an error after a refused save, and after
+that stays as the person leaves it. What a role asks of an applicant is a list
+of fields, each with one switch reading Optional or Mandatory and **Don't
+ask** beside it; a field that is not asked says so, with **Ask for it**. The
+switch is a button with `role="switch"`, and the value travels in a hidden
+input, so what is posted is what the switch says.
+
 The applicant's pages under `/c/` stand alone: no site navigation, no footer
 of links, a parchment ground, and an optional header image across the top
 that the casting director uploads on the casting call form, offered only when
@@ -475,6 +490,18 @@ casting call that is open now, naming a role in it. The address is good for one
 kind of file under that role, its content types and its size, and an hour, so
 nothing else can be sent with it.
 
+The browser puts the file through `https://vercel.com/api/blob`, the SDK's
+own endpoint rather than the store's host, and the page's Content Security
+Policy names that address under `connect-src` (`src/proxy.ts`). Without it
+the browser refuses the upload before a byte leaves it and the form says the
+file did not upload, which is what the first deployment with a store did. A
+header image is shrunk before it goes: `src/lib/image.ts` redraws it in the
+browser to at most 1600px on its longest edge and re-encodes it as WebP
+(JPEG where the browser cannot write WebP), so a photograph off a camera
+arrives as a file of tens of kilobytes, and the form says by how much. SVG
+goes up as it is. No plugin or server-side library is involved, and the
+server never handles the bytes.
+
 Blobs are **private**. A casting tape is personal data, sometimes of a child,
 and an unguessable public URL is still a URL. The dashboard reads a file back
 through `/api/media`, which checks the viewer may see the submission it belongs
@@ -495,14 +522,28 @@ sent again without the tape going up twice. A file whose form never arrives
 at all is an orphan, and the daily retention sweep (`/api/retention`) deletes
 any orphan older than a day.
 
-Without `BLOB_READ_WRITE_TOKEN` the form offers no uploads and everything else
-works as before; the end-to-end suite runs that way. `/api/health` reports
-`uploads` as `ready` or `off`, so a deployment can be checked for the token
-without reading it, and the Admin overview has a **File store** card that says
-the same in words. When a store is connected the card offers **Test the
-store**, which writes a small private file, reads it back and deletes it, and
-says whether that worked from this deployment. The suite never touches the
-store, so that test is the check to run after connecting one.
+Without a store connected the form offers no uploads and everything else
+works as before, which is how all but one of the end-to-end suites run.
+`/api/health` reports `uploads` as `ready` or `off`, so a deployment can be
+checked without reading its settings, and the Admin overview has a **File
+store** card that says the same in words. When a store is connected the card
+offers **Test the store**, which writes a small private file, reads it back
+and deletes it, and says whether that worked from this deployment: it is the
+check to run after connecting one.
+
+Suite 17 (`test/suites/17-uploads.mjs`) proves the whole path without a
+store, against a stand-in (`test/blob-standin.mjs`) that the harness starts
+beside the app. The server is given a token and pointed at the stand-in
+(`BLOB_READ_WRITE_TOKEN`, `VERCEL_BLOB_API_URL`, and `BLOB_READ_BASE`, which
+sends every read of a stored file there instead of to the host in its URL).
+The browser is given a proxy that tunnels `vercel.com` to the stand-in's
+HTTPS listener and refuses everything else, so it does exactly what it does
+on a deployment, the Content Security Policy and the CORS preflight included,
+over HTTP/2, which a browser insists on before it will stream a request body.
+A header image goes up from the casting call form and comes back on the
+applicant's page as WebP; a photo goes up with a submission and comes back to
+the director and to nobody else; removing the role removes the file.
+`BLOB_READ_BASE` exists for that harness and has no place on a deployment.
 
 Create the store as **private**: the app writes nothing public, and a public
 store would serve a tape to anyone holding its address. Connect it to the
@@ -736,8 +777,6 @@ printing the connection string.
 Anyone holding a share link can submit; there is no per-applicant identity, so a
 link that is forwarded is a link that works. Regenerating a token is not exposed
 in the UI yet; closing the casting call early is the way to stop a leaked link
-today. Headshots and tapes are links, not uploads. Nobody is emailed when a
-submission arrives or a status changes: the applicant's address is on every
-submission, and replying is a manual step. A role cannot be moved between
-casting calls.
-There is no export: submissions are read in the dashboard.
+today. Nobody is emailed when a submission arrives or a status changes: the
+applicant's address is on every submission, and replying is a manual step. A
+role cannot be moved between casting calls.

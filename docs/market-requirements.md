@@ -10,7 +10,7 @@ repository; what they need to say is in `docs/compliance-notes.md`.
 A few of the register's names do not match the code's. The register's
 "casting" is a casting call (`sessions_casting`); a "field type" is an ask a
 role makes of an applicant (`APPLICANT_ASKS` in `src/lib/types.ts`), which a
-director sets to required, optional or not asked; the "form builder" is the
+director turns on for a role and flips between optional and mandatory with one switch; the "form builder" is the
 role form. Every schema change is an idempotent statement in
 `src/lib/db.ts`, applied at boot.
 

@@ -8,12 +8,19 @@ import { formatDateTime, fromLocalInput, toLocalInput } from "@/lib/format";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
 import { guessImageKind, shrinkImage } from "@/lib/image";
 import { heroSrc } from "@/lib/media";
-import { DEFAULT_INCLUSION_STATEMENT, DEFAULT_TAPE_GUIDANCE, PRODUCTION_TYPES, type CastingSession, type HeroKind } from "@/lib/types";
+import {
+  DEFAULT_INCLUSION_STATEMENT,
+  DEFAULT_TAPE_GUIDANCE,
+  PRODUCTION_TYPES,
+  type CastingSession,
+  type HeroKind,
+} from "@/lib/types";
 
 import { DateTimeField } from "./date-time-field";
-import { useErrorFocus } from "./use-error-focus";
-import { Button, ButtonLink, ErrorSummary, Field, Input, RequiredKey, Select, Textarea } from "./ui";
+import { Fold } from "./fold";
 import { SubmitButton } from "./submit-button";
+import { Button, ButtonLink, ErrorSummary, Field, Input, RequiredKey, Select, Textarea } from "./ui";
+import { useErrorFocus } from "./use-error-focus";
 
 const LABELS: Record<string, string> = {
   name: "Casting call",
@@ -29,11 +36,6 @@ const LABELS: Record<string, string> = {
   tapeGuidance: "Self-tape guidance",
 };
 
-/**
- * One form for opening a casting call and for editing one. The dates and times
- * here govern every role in the casting call, which is the whole point of
- * putting them here rather than on each role, so the form says so.
- */
 /** The picked moment, read back in words, or nothing until one is picked. */
 function Picked({ value }: { value: string }) {
   if (!value) return null;
@@ -44,6 +46,12 @@ function Picked({ value }: { value: string }) {
       Set to <strong className="font-medium text-text">{formatDateTime(instant)}</strong>, UK time.
     </p>
   );
+}
+
+/** Text as a textarea would post it back: one kind of line ending, no edges. */
+function same(a: string, b: string): boolean {
+  const flat = (text: string) => text.replace(/\r\n?/g, "\n").trim();
+  return flat(a) === flat(b);
 }
 
 /** "2.4 MB" or "180 KB", for saying what the shrinking did. */
@@ -63,17 +71,27 @@ function HeroUpload({
   current,
   currentKind,
   error,
+  onChange,
 }: {
   userId: string;
   current: string | null;
   currentKind: HeroKind;
   error?: string;
+  /** Tells the form what is set, for the line that summarises the fold. */
+  onChange: (picture: { url: string; kind: HeroKind }) => void;
 }) {
   const [url, setUrl] = useState<string>(current ?? "");
   const [kind, setKind] = useState<HeroKind>(currentKind);
   const [progress, setProgress] = useState<number | null>(null);
   const [problem, setProblem] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+
+  function pick(next: { url?: string; kind?: HeroKind }) {
+    const picture = { url: next.url ?? url, kind: next.kind ?? kind };
+    if (next.url !== undefined) setUrl(next.url);
+    if (next.kind !== undefined) setKind(next.kind);
+    onChange(picture);
+  }
 
   async function send(source: File) {
     setProblem(null);
@@ -82,14 +100,15 @@ function HeroUpload({
     try {
       const shrunk = await shrinkImage(source);
       // The shape of the picture decides how it is shown, until the director says otherwise.
-      if (shrunk.width && shrunk.height) setKind(guessImageKind(shrunk.width, shrunk.height));
+      const shape =
+        shrunk.width && shrunk.height ? guessImageKind(shrunk.width, shrunk.height) : kind;
       const result = await uploadPresigned(`calls/${userId}/hero/${shrunk.file.name}`, shrunk.file, {
         access: "private",
         handleUploadUrl: "/api/blob/upload",
         clientPayload: JSON.stringify({ kind: "hero" }),
         onUploadProgress: ({ percentage }) => setProgress(percentage),
       });
-      setUrl(result.url);
+      pick({ url: result.url, kind: shape });
       if (shrunk.after < shrunk.before) {
         setNote(
           `Resized to ${shrunk.width} by ${shrunk.height} pixels and ${kb(shrunk.after)}, down from ${kb(shrunk.before)}.`,
@@ -107,7 +126,7 @@ function HeroUpload({
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3 sm:col-span-2">
       <input type="hidden" name="heroUrl" value={url} />
       <input type="hidden" name="heroKind" value={kind} />
       {url ? (
@@ -124,7 +143,7 @@ function HeroUpload({
       <Field
         label="Header image or logo"
         htmlFor="hero"
-        hint="Optional. A wide picture runs across the top of the applicant's page; a squarer one, or a logo, sits centred. JPEG, PNG, WebP or SVG, shrunk and compressed before sending so it loads fast on a phone."
+        hint="A wide picture runs across the top of the applicant's page; a squarer one, or a logo, sits centred. JPEG, PNG, WebP or SVG, shrunk and compressed before sending so it loads fast on a phone."
         error={error ?? problem ?? undefined}
       >
         <Input
@@ -159,14 +178,14 @@ function HeroUpload({
                   name="heroKindChoice"
                   value={option}
                   checked={kind === option}
-                  onChange={() => setKind(option)}
+                  onChange={() => pick({ kind: option })}
                   className="size-4 accent-brand"
                 />
                 {option === "banner" ? "A banner across the top" : "A logo, centred"}
               </label>
             ))}
           </fieldset>
-          <Button type="button" variant="ghost" size="sm" onClick={() => setUrl("")}>
+          <Button type="button" variant="ghost" size="sm" onClick={() => pick({ url: "" })}>
             Remove the image
           </Button>
         </div>
@@ -175,6 +194,19 @@ function HeroUpload({
   );
 }
 
+/**
+ * One form for opening a casting call and for editing one. The dates and
+ * times here govern every role in the casting call, which is the whole point
+ * of putting them here rather than on each role, so the form says so.
+ *
+ * What a casting call needs is one card: its name, what kind of production,
+ * the synopsis, when submissions open and close, and when the production
+ * finishes. Everything else is optional detail and sits folded under
+ * "Advanced options", each fold saying on one line what it is set to: the
+ * production company and the picture at the top of the applicant's page, and
+ * the three things the page says for itself. A fold opens itself when what it
+ * holds is not the default, or when a refused save left an error inside it.
+ */
 export function SessionForm({
   session,
   uploads,
@@ -215,6 +247,53 @@ export function SessionForm({
         }
       : submitted;
 
+  // What the folds hold, kept up to date as it is changed, for their summaries.
+  const [company, setCompany] = useState(values.productionCompany ?? "");
+  const [picture, setPicture] = useState<{ url: string; kind: HeroKind }>({
+    url: state.status === "idle" ? (session?.heroUrl ?? "") : (submitted.heroUrl ?? ""),
+    kind: session?.heroKind ?? "banner",
+  });
+  const [inclusion, setInclusion] = useState(values.inclusionStatement ?? DEFAULT_INCLUSION_STATEMENT);
+  const [agentRoute, setAgentRoute] = useState(values.agentRoute ?? "");
+  const [tape, setTape] = useState(values.tapeGuidance ?? DEFAULT_TAPE_GUIDANCE);
+
+  // Which folds start open: any holding something that is not the default. A
+  // fold is only ever told to open, never to close, so the ones the director
+  // opens or closes stay as they left them.
+  const errorIn = (keys: string[]) => keys.some((key) => key in errors);
+  const [open, setOpen] = useState(() => ({
+    production: Boolean(company) || Boolean(picture.url),
+    told:
+      !same(inclusion, DEFAULT_INCLUSION_STATEMENT) ||
+      agentRoute.trim() !== "" ||
+      !same(tape, DEFAULT_TAPE_GUIDANCE),
+  }));
+  const [seen, setSeen] = useState(state);
+  if (seen !== state) {
+    setSeen(state);
+    setOpen((current) => ({
+      production: current.production || errorIn(["productionCompany", "heroUrl", "heroKind"]),
+      told: current.told || errorIn(["inclusionStatement", "agentRoute", "tapeGuidance"]),
+    }));
+  }
+
+  const productionSummary = `${company.trim() || "No production company"}, ${
+    picture.url ? `with a ${picture.kind === "logo" ? "logo" : "banner"}` : "no picture yet"
+  }.`;
+  const toldSummary = [
+    same(inclusion, DEFAULT_INCLUSION_STATEMENT)
+      ? "The standard inclusive casting statement"
+      : inclusion.trim()
+        ? "Your own inclusive casting statement"
+        : "No inclusive casting statement",
+    agentRoute.trim() ? "represented applicants are sent to their agent" : "everyone may apply",
+    same(tape, DEFAULT_TAPE_GUIDANCE)
+      ? "the standard self-tape guidance"
+      : tape.trim()
+        ? "your own self-tape guidance"
+        : "no self-tape guidance",
+  ].join("; ");
+
   return (
     <form ref={formRef} action={formAction} className="flex flex-col gap-8">
       {session ? <input type="hidden" name="sessionId" value={session.id} /> : null}
@@ -233,10 +312,12 @@ export function SessionForm({
       ) : null}
 
       <RequiredKey />
+
       <fieldset className="rounded-2xl border border-line-strong bg-raised p-4 shadow-card sm:p-6">
         <legend className="mb-2 text-lg font-semibold tracking-tight">The casting call</legend>
         <p className="text-sm text-muted">
-          What applicants see above every role you post into it.
+          What applicants see above every role, and when they can submit. Every role in the call
+          takes submissions between these times and at no other time, in UK time.
         </p>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <Field label="Casting call" htmlFor="name" error={errors.name}>
@@ -263,19 +344,6 @@ export function SessionForm({
             </Select>
           </Field>
           <Field
-            label="Production company"
-            htmlFor="productionCompany"
-            hint="Who is making it. Yours to see, never shown to applicants. Optional."
-            error={errors.productionCompany}
-          >
-            <Input
-              id="productionCompany"
-              name="productionCompany"
-              placeholder="Wildseed Films"
-              defaultValue={values.productionCompany ?? ""}
-            />
-          </Field>
-          <Field
             label="Synopsis"
             htmlFor="synopsis"
             hint="A sentence or two about the casting call. It appears on every role."
@@ -290,31 +358,6 @@ export function SessionForm({
               required
             />
           </Field>
-          {uploads ? (
-            <div className="sm:col-span-2">
-              <HeroUpload
-                userId={userId}
-                current={session?.heroUrl ?? null}
-                currentKind={session?.heroKind ?? "banner"}
-                error={errors.heroUrl}
-              />
-            </div>
-          ) : (
-            <>
-              <input type="hidden" name="heroUrl" value={session?.heroUrl ?? ""} />
-              <input type="hidden" name="heroKind" value={session?.heroKind ?? "banner"} />
-            </>
-          )}
-        </div>
-      </fieldset>
-
-      <fieldset className="rounded-2xl border border-line-strong bg-raised p-4 shadow-card sm:p-6">
-        <legend className="mb-2 text-lg font-semibold tracking-tight">The casting window</legend>
-        <p className="text-sm text-muted">
-          Every role in this casting call takes submissions between these times, and at no other
-          time. UK time.
-        </p>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <Field
             label="Submissions open"
             htmlFor="opensAt"
@@ -352,24 +395,12 @@ export function SessionForm({
             />
             <Picked value={closes ?? values.closesAt ?? ""} />
           </Field>
-        </div>
-      </fieldset>
-
-      <fieldset className="rounded-2xl border border-line-strong bg-raised p-4 shadow-card sm:p-6">
-        <legend className="mb-2 text-lg font-semibold tracking-tight">
-          When the production finishes
-        </legend>
-        <p className="max-w-prose text-sm text-muted">
-          The date the shoot or run wraps, not the date casting closes. Everything applicants
-          send is deleted 30 days later, as your agreement and their terms both promise. You are
-          emailed 14 days and 48 hours beforehand.
-        </p>
-        <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <Field
             label="Production finishes"
             htmlFor="productionEndsAt"
-            hint="If the schedule moves, change this and the deletion date follows."
+            hint="The date the shoot or run wraps, not the date casting closes. Everything applicants send is deleted 30 days later, as your agreement and their terms both promise; you are emailed 14 days and 48 hours before. If the schedule moves, change this and the deletion date follows."
             error={errors.productionEndsAt}
+            className="sm:col-span-2"
           >
             <DateTimeField
               id="productionEndsAt"
@@ -383,23 +414,71 @@ export function SessionForm({
         </div>
       </fieldset>
 
-      <fieldset className="rounded-2xl border border-line-strong bg-raised p-4 shadow-card sm:p-6">
-        <legend className="mb-2 text-lg font-semibold tracking-tight">What applicants are told</legend>
-        <p className="text-sm text-muted">
-          Two things every casting call says for itself on the applicant&apos;s page.
-        </p>
-        <div className="mt-6 grid gap-4">
+      <section aria-labelledby="advanced-options" className="flex flex-col gap-3">
+        <div>
+          <h2 id="advanced-options" className="text-lg font-semibold tracking-tight">
+            Advanced options
+          </h2>
+          <p className="mt-1 text-sm text-muted">
+            Optional detail. Each is set to what suits most casting calls; open one only to
+            change it.
+          </p>
+        </div>
+
+        <Fold
+          id="production"
+          title="Production company and picture"
+          summary={productionSummary}
+          open={open.production}
+        >
+          <Field
+            label="Production company"
+            htmlFor="productionCompany"
+            hint="Who is making it. Yours to see, never shown to applicants."
+            error={errors.productionCompany}
+            className="sm:col-span-2"
+          >
+            <Input
+              id="productionCompany"
+              name="productionCompany"
+              placeholder="Wildseed Films"
+              defaultValue={values.productionCompany ?? ""}
+              onChange={(event) => setCompany(event.currentTarget.value)}
+            />
+          </Field>
+          {uploads ? (
+            <HeroUpload
+              userId={userId}
+              current={session?.heroUrl ?? null}
+              currentKind={session?.heroKind ?? "banner"}
+              error={errors.heroUrl}
+              onChange={setPicture}
+            />
+          ) : (
+            <>
+              <input type="hidden" name="heroUrl" value={session?.heroUrl ?? ""} />
+              <input type="hidden" name="heroKind" value={session?.heroKind ?? "banner"} />
+              <p className="text-sm text-muted sm:col-span-2">
+                A header image or logo can be added once the file store is connected.
+              </p>
+            </>
+          )}
+        </Fold>
+
+        <Fold id="told" title="What applicants are told" summary={toldSummary} open={open.told}>
           <Field
             label="Inclusive casting statement"
             htmlFor="inclusionStatement"
             hint="Shown on the applicant's page. Edit it to suit the production, or clear it to show none."
             error={errors.inclusionStatement}
+            className="sm:col-span-2"
           >
             <Textarea
               id="inclusionStatement"
               name="inclusionStatement"
               rows={3}
               defaultValue={values.inclusionStatement ?? DEFAULT_INCLUSION_STATEMENT}
+              onChange={(event) => setInclusion(event.currentTarget.value)}
             />
           </Field>
           <Field
@@ -407,6 +486,7 @@ export function SessionForm({
             htmlFor="agentRoute"
             hint="Shown instead of the form to anyone who says they are represented: where they should apply. Leave blank to take submissions from everyone."
             error={errors.agentRoute}
+            className="sm:col-span-2"
           >
             <Textarea
               id="agentRoute"
@@ -414,6 +494,7 @@ export function SessionForm({
               rows={3}
               placeholder="Represented UK actors: please apply through your agent rather than this form."
               defaultValue={values.agentRoute ?? ""}
+              onChange={(event) => setAgentRoute(event.currentTarget.value)}
             />
           </Field>
           <Field
@@ -421,16 +502,18 @@ export function SessionForm({
             htmlFor="tapeGuidance"
             hint="Shown beside the video upload, one point per line. Edit it to suit the production, or clear it to show none."
             error={errors.tapeGuidance}
+            className="sm:col-span-2"
           >
             <Textarea
               id="tapeGuidance"
               name="tapeGuidance"
               rows={6}
               defaultValue={values.tapeGuidance ?? DEFAULT_TAPE_GUIDANCE}
+              onChange={(event) => setTape(event.currentTarget.value)}
             />
           </Field>
-        </div>
-      </fieldset>
+        </Fold>
+      </section>
 
       <div className="flex flex-wrap items-center gap-4 border-t border-line pt-6">
         <SubmitButton disabled={pending}>

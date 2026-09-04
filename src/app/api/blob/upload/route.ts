@@ -81,6 +81,9 @@ export async function POST(request: Request) {
     return NextResponse.json(json);
   } catch (error) {
     const message = error instanceof Error ? error.message : "Upload refused";
+    // The browser shows the message; this is for the deployment's logs, so a
+    // refusal can be diagnosed after the event without asking the person.
+    console.warn(`[blob] upload refused for ${body.payload?.pathname ?? "?"}: ${message}`);
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }

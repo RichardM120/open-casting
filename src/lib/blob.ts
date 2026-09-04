@@ -153,6 +153,45 @@ export function describeStore(): string {
   return "not connected";
 }
 
+/** A private file read back: its bytes and the headers that describe them. */
+export type BlobRead = {
+  stream: ReadableStream<Uint8Array>;
+  headers: { get(name: string): string | null };
+};
+
+/**
+ * Reads a private file back, or null when the store has nothing at that
+ * address. A Range header is passed through so a video player can seek, and
+ * `fresh` reads past any cache, for a file written a moment ago. On a
+ * deployment this is the SDK's get, signed as storeAuth() says. The SDK will
+ * only read from a real Vercel host, and the test harness has no store, so
+ * with BLOB_READ_BASE set the same pathname is fetched from that base instead:
+ * the harness's stand-in store. It is never set on a deployment.
+ */
+export async function readBlob(
+  url: string,
+  { range, fresh = false }: { range?: string | null; fresh?: boolean } = {},
+): Promise<BlobRead | null> {
+  const path = storePathname(url);
+  if (path === null) return null;
+  const base = process.env.BLOB_READ_BASE?.trim();
+  if (base) {
+    const response = await fetch(`${base.replace(/\/$/, "")}/${path}`, {
+      headers: range ? { range } : undefined,
+    });
+    if (!response.ok || !response.body) return null;
+    return { stream: response.body, headers: response.headers };
+  }
+  const file = await get(url, {
+    ...storeAuth(),
+    access: "private",
+    useCache: fresh ? false : undefined,
+    headers: range ? { range } : undefined,
+  });
+  if (!file || !file.stream) return null;
+  return { stream: file.stream, headers: file.headers };
+}
+
 /** Everything applicants upload lives under here. */
 export const MEDIA_ROOT = "submissions/";
 
@@ -200,7 +239,7 @@ export async function checkStore(): Promise<StoreCheck> {
       contentType: "text/plain",
     });
     try {
-      const read = await get(blob.url, { ...auth, access: "private", useCache: false });
+      const read = await readBlob(blob.url, { fresh: true });
       const text = read?.stream ? await new Response(read.stream).text() : null;
       if (text !== "Hello World!") {
         return {

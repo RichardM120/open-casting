@@ -18,7 +18,9 @@ import { formatSeconds } from "@/lib/video";
 
 import { BriefLint } from "./brief-lint";
 import { DateTimeField } from "./date-time-field";
+import { Fold } from "./fold";
 import { SubmitButton } from "./submit-button";
+import { Switch } from "./switch";
 import {
   Button,
   ButtonLink,
@@ -29,6 +31,7 @@ import {
   RequiredKey,
   Select,
   Textarea,
+  cx,
 } from "./ui";
 import { useErrorFocus } from "./use-error-focus";
 
@@ -48,14 +51,12 @@ const LABELS: Record<string, string> = {
   disclaimer: "Terms for applicants",
 };
 
-/** The three settings a director can give each of the applicant's fields. */
+/**
+ * The three settings a director can give each of the applicant's fields. The
+ * form shows them as one switch, optional or mandatory, with "Don't ask"
+ * beside it for the third; a field that is not asked shows "Ask for it".
+ */
 type AskSetting = "required" | "optional" | "off";
-
-const ASK_OPTIONS: { value: AskSetting; label: string }[] = [
-  { value: "required", label: "Required" },
-  { value: "optional", label: "Optional" },
-  { value: "off", label: "Not asked" },
-];
 
 /** What a role asks for unless the director says otherwise. */
 function defaultAsk(key: AskKey): AskSetting {
@@ -392,49 +393,65 @@ export function RoleForm({
         <Fold
           id="asks"
           title="What applicants must send"
-          summary={`Required: ${required || "nothing more"}. Optional: ${optional || "nothing"}. Not asked: ${notAsked || "nothing"}.`}
+          summary={`Mandatory: ${required || "nothing more"}. Optional: ${optional || "nothing"}. Not asked: ${notAsked || "nothing"}.`}
           open={open.asks}
         >
           <p className="text-sm text-muted sm:col-span-2">
             Their name, email and age are always asked for, and every submission accepts the
             terms. The less you ask for, the less you hold.
           </p>
-          <div className="divide-y divide-line sm:col-span-2">
-            {APPLICANT_ASKS.map((ask) => (
-              <div
-                key={ask.key}
-                className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-3"
-              >
-                <span id={`ask-${ask.key}`} className="text-sm font-medium text-text">
-                  {ask.label}
-                </span>
-                <span
-                  role="radiogroup"
-                  aria-labelledby={`ask-${ask.key}`}
-                  className="inline-flex rounded-full border border-line-strong bg-surface p-0.5"
+          <ul className="divide-y divide-line sm:col-span-2">
+            {APPLICANT_ASKS.map((ask) => {
+              const setting = asks[ask.key];
+              const set = (next: AskSetting) =>
+                setAsks((current) => ({ ...current, [ask.key]: next }));
+              return (
+                <li
+                  key={ask.key}
+                  data-ask={ask.key}
+                  data-setting={setting}
+                  className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 py-3"
                 >
-                  {ASK_OPTIONS.map((option) => (
-                    <label
-                      key={option.value}
-                      className="cursor-pointer rounded-full px-3.5 py-1.5 text-sm text-muted transition-colors has-checked:bg-accent has-checked:font-semibold has-checked:text-accent-ink has-focus-visible:outline-2 has-focus-visible:outline-offset-2 has-focus-visible:outline-brand"
-                    >
-                      <input
-                        type="radio"
-                        name={`ask_${ask.key}`}
-                        value={option.value}
-                        defaultChecked={askAtStart(ask.key) === option.value}
-                        onChange={() =>
-                          setAsks((current) => ({ ...current, [ask.key]: option.value }))
-                        }
-                        className="sr-only"
+                  <input type="hidden" name={`ask_${ask.key}`} value={setting} />
+                  <span
+                    id={`ask-${ask.key}`}
+                    className={cx("text-sm font-medium", setting === "off" ? "text-muted" : "text-text")}
+                  >
+                    {ask.label}
+                  </span>
+                  {setting === "off" ? (
+                    <span className="inline-flex items-center gap-4 text-sm text-muted">
+                      Not asked
+                      <button
+                        type="button"
+                        onClick={() => set("optional")}
+                        className="text-sm text-brand underline-offset-4 hover:underline"
+                      >
+                        Ask for it
+                      </button>
+                    </span>
+                  ) : (
+                    <span className="inline-flex flex-wrap items-center gap-x-4 gap-y-2">
+                      <Switch
+                        labelledBy={`ask-${ask.key}`}
+                        checked={setting === "required"}
+                        onChange={(on) => set(on ? "required" : "optional")}
+                        offLabel="Optional"
+                        onLabel="Mandatory"
                       />
-                      {option.label}
-                    </label>
-                  ))}
-                </span>
-              </div>
-            ))}
-          </div>
+                      <button
+                        type="button"
+                        onClick={() => set("off")}
+                        className="text-xs text-muted underline-offset-4 hover:text-text hover:underline"
+                      >
+                        Don&rsquo;t ask
+                      </button>
+                    </span>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
           {!uploads ? (
             <p className="text-xs leading-relaxed text-muted sm:col-span-2">
               Photos and videos are only collected once the file store is connected. What you
@@ -568,47 +585,6 @@ export function RoleForm({
         </ButtonLink>
       </div>
     </form>
-  );
-}
-
-/**
- * One of the folded sections under "Advanced options": a title, a line saying
- * what it is set to, and the fields behind them. The fields are in the form
- * whether the fold is open or not, so the defaults are always posted.
- */
-function Fold({
-  id,
-  title,
-  summary,
-  open,
-  children,
-}: {
-  id: string;
-  title: string;
-  summary: string;
-  open: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <details
-      data-more={id}
-      open={open}
-      className="group rounded-2xl border border-line-strong bg-raised shadow-card"
-    >
-      <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-4 gap-y-1 p-4 sm:px-6 [&::-webkit-details-marker]:hidden">
-        <span className="text-base font-semibold tracking-tight text-text">{title}</span>
-        <span className="text-sm text-muted group-open:hidden">{summary}</span>
-        <span className="ml-auto text-xs text-faint group-open:hidden">Show</span>
-        <span className="ml-auto hidden text-xs text-faint group-open:inline">Hide</span>
-      </summary>
-      <div
-        role="group"
-        aria-label={title}
-        className="grid gap-4 border-t border-line p-4 sm:grid-cols-2 sm:p-6"
-      >
-        {children}
-      </div>
-    </details>
   );
 }
 

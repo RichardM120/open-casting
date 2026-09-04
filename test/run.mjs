@@ -15,6 +15,8 @@ import { setTimeout as sleep } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
 
+import { TOKEN as BLOB_TOKEN, startBlobStandIn } from "./blob-standin.mjs";
+
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, "..");
 const PORT = Number(process.env.TEST_PORT ?? 3100);
@@ -45,6 +47,23 @@ const SUITE_ENV = {
 const MAIL_PORT = PORT + 1;
 const MAILBOX = path.join(here, "mailbox.json");
 const BASE = `http://127.0.0.1:${PORT}`;
+
+/**
+ * The stand-in store, for the one suite that puts files up. Every other suite
+ * runs with no store, as a deployment without one does, and checks that the
+ * form offers no uploads. The server is given a token so it treats the store
+ * as connected, told to send the SDK's requests here, and told to read files
+ * back from here; the suite routes the browser's uploads here itself.
+ */
+const BLOB_PORT = PORT + 2;
+const BLOB_STANDIN = `http://127.0.0.1:${BLOB_PORT}`;
+/** The proxy the suite's browser is given: vercel.com goes to the stand-in, nothing else goes anywhere. */
+const BLOB_PROXY = `http://127.0.0.1:${PORT + 4}`;
+SUITE_ENV["17-uploads.mjs"] = {
+  BLOB_READ_WRITE_TOKEN: BLOB_TOKEN,
+  VERCEL_BLOB_API_URL: BLOB_STANDIN,
+  BLOB_READ_BASE: BLOB_STANDIN,
+};
 
 const ONLY = process.argv.slice(2);
 const SUITES = readdirSync(path.join(here, "suites"))
@@ -134,6 +153,7 @@ function startMailbox() {
 }
 
 const mailbox = startMailbox();
+const blobStore = startBlobStandIn(BLOB_PORT, PORT + 3, PORT + 4);
 
 let failures = 0;
 
@@ -177,6 +197,8 @@ for (const suite of SUITES) {
           AUTH_SECRET,
           MAIL_LOG,
           MAILBOX,
+          BLOB_STANDIN,
+          BLOB_PROXY,
           ...(SUITE_ENV[suite] ?? {}),
         },
       });
@@ -198,5 +220,8 @@ for (const suite of SUITES) {
 }
 
 mailbox.close();
+blobStore.server.close();
+blobStore.secure.close();
+blobStore.proxy.close();
 console.log(`\n${failures === 0 ? "All suites passed" : `${failures} suite(s) failed`}`);
 process.exit(failures === 0 ? 0 : 1);

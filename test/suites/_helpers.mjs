@@ -34,8 +34,9 @@ export function reporter() {
   };
 }
 
-export async function launch() {
-  const browser = await chromium.launch();
+/** A browser. Options go to Playwright as they are: the uploads suite gives it a proxy. */
+export async function launch(options = {}) {
+  const browser = await chromium.launch(options);
   return browser;
 }
 
@@ -44,7 +45,9 @@ export async function launch() {
  * between accounts. Returned as `{ c, p }`: context and page.
  */
 export async function session(browser, errors, viewport) {
-  const c = await browser.newContext(viewport ? { viewport } : {});
+  // The stand-in store speaks HTTPS with a certificate it made itself, and
+  // nothing else the suites reach is HTTPS at all.
+  const c = await browser.newContext({ ignoreHTTPSErrors: true, ...(viewport ? { viewport } : {}) });
   const p = await c.newPage();
   p.on("pageerror", (error) => errors.push(`pageerror: ${error.message}`));
   p.on("console", (message) => {
@@ -227,6 +230,7 @@ export async function openSession(page, fields) {
   const companyName = fields.productionCompany ?? fields.client ?? fields.company ?? "";
 
   await page.goto(`${BASE}/dashboard/sessions/new`, { waitUntil: "networkidle" });
+  await openAdvanced(page);
   await page.fill("#name", fields.name);
   await page.fill(
     "#synopsis",

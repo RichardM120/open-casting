@@ -1,7 +1,6 @@
-import { get } from "@vercel/blob";
 import { NextResponse } from "next/server";
 
-import { isStoredHeroUrl, storeAuth, uploadsEnabled } from "@/lib/blob";
+import { isStoredHeroUrl, readBlob, uploadsEnabled } from "@/lib/blob";
 
 export const dynamic = "force-dynamic";
 
@@ -26,13 +25,14 @@ export async function GET(request: Request) {
   const url = new URL(request.url).searchParams.get("u");
   if (!url || !isStoredHeroUrl(url)) return new NextResponse(null, { status: 404 });
 
-  let file: Awaited<ReturnType<typeof get>>;
+  let file: Awaited<ReturnType<typeof readBlob>>;
   try {
-    file = await get(url, { ...storeAuth(), access: "private" });
-  } catch {
+    file = await readBlob(url);
+  } catch (error) {
+    console.warn(`[blob] header image could not be read: ${error instanceof Error ? error.message : String(error)}`);
     return new NextResponse(null, { status: 404 });
   }
-  if (!file || !file.stream) return new NextResponse(null, { status: 404 });
+  if (!file) return new NextResponse(null, { status: 404 });
 
   const headers = new Headers();
   for (const name of ["content-type", "content-length", "etag", "last-modified"]) {
