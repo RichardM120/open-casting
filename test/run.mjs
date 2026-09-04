@@ -59,6 +59,10 @@ const BLOB_PORT = PORT + 2;
 const BLOB_STANDIN = `http://127.0.0.1:${BLOB_PORT}`;
 /** The proxy the suite's browser is given: vercel.com goes to the stand-in, nothing else goes anywhere. */
 const BLOB_PROXY = `http://127.0.0.1:${PORT + 4}`;
+// The admin suite sends the automated emails, so it needs the stand-in mail
+// provider the harness already runs for the sign-in link.
+SUITE_ENV["19-admin.mjs"] = { INBOUND_EMAIL_DOMAIN: "replies.example.com" };
+
 for (const suite of ["17-uploads.mjs", "18-capacity.mjs"]) {
   SUITE_ENV[suite] = {
     BLOB_READ_WRITE_TOKEN: BLOB_TOKEN,

@@ -1,5 +1,7 @@
 import "server-only";
 
+import { noteMessage } from "./notifications";
+
 /**
  * Outbound email, which today means one thing: the sign-in link for an account
  * that needs a second factor.
@@ -24,17 +26,24 @@ export async function sendEmail(message: {
   to: string;
   subject: string;
   text: string;
+  /** What prompted it, for the delivery log. */
+  trigger?: string;
+  /** Where a reply should go, when there is somewhere sensible to send it. */
+  replyTo?: string;
   /** Files to attach, content base64-encoded, as the provider takes them. */
   attachments?: Array<{ filename: string; content: string }>;
 }): Promise<Delivery> {
   const apiKey = process.env.RESEND_API_KEY?.trim();
+  const trigger = message.trigger ?? "other";
 
   if (!apiKey) {
     // Never in production: a link printed to a log is a link in the log.
     if (process.env.NODE_ENV !== "production") {
       console.log(`\n[email] to ${message.to}: ${message.subject}\n${message.text}\n`);
     }
-    return { delivered: false, reason: "RESEND_API_KEY is not set" };
+    const reason = "RESEND_API_KEY is not set";
+    await noteMessage({ recipient: message.to, subject: message.subject, trigger, delivered: false, reason });
+    return { delivered: false, reason };
   }
 
   try {
@@ -54,6 +63,7 @@ export async function sendEmail(message: {
         to: [message.to],
         subject: message.subject,
         text: message.text,
+        ...(message.replyTo ? { reply_to: message.replyTo } : {}),
         ...(message.attachments?.length ? { attachments: message.attachments } : {}),
       }),
     });
@@ -61,11 +71,30 @@ export async function sendEmail(message: {
     if (!response.ok) {
       const detail = await response.text();
       console.error("[email] send failed", response.status, detail);
-      return { delivered: false, reason: `the mail provider returned ${response.status}` };
+      const reason = `the mail provider returned ${response.status}`;
+      await noteMessage({ recipient: message.to, subject: message.subject, trigger, delivered: false, reason });
+      return { delivered: false, reason };
     }
+    await noteMessage({ recipient: message.to, subject: message.subject, trigger, delivered: true });
     return { delivered: true };
   } catch (error) {
     console.error("[email] send threw", error);
-    return { delivered: false, reason: "the mail provider could not be reached" };
+    const reason = "the mail provider could not be reached";
+    await noteMessage({ recipient: message.to, subject: message.subject, trigger, delivered: false, reason });
+    return { delivered: false, reason };
   }
+}
+
+/**
+ * Where a reply to an automated message should go.
+ *
+ * The address is per role and carries the role's id, so a reply can be routed
+ * to the team casting it without putting anybody's own mailbox on a message
+ * that goes to strangers. It needs an inbound service listening on that
+ * domain to be worth anything; with none configured there is no reply-to, and
+ * the message says in words how to get in touch instead.
+ */
+export function replyToFor(roleId: string): string | undefined {
+  const domain = process.env.INBOUND_EMAIL_DOMAIN?.trim();
+  return domain ? `role-${roleId}@${domain}` : undefined;
 }

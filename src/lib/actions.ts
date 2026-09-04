@@ -16,7 +16,17 @@ import {
   uploadsEnabled,
 } from "./blob";
 import { UNIQUE_VIOLATION } from "./db";
-import { emailConfigured, sendEmail } from "./email";
+import { emailConfigured, replyToFor, sendEmail } from "./email";
+import {
+  TEMPLATES,
+  TEMPLATE_KEYS,
+  fill,
+  resetTemplate,
+  saveTemplate,
+  templateFor,
+  type Placeholder,
+  type TemplateKey,
+} from "./notifications";
 import { exportFilename, submissionsWorkbook } from "./export";
 import { logRequest, closeRequest, eraseFor, REQUEST_KINDS } from "./privacy";
 import { recordSweep } from "./monitoring";
@@ -69,6 +79,7 @@ import {
 import {
   ADULT_AGE,
   ROLE_LABELS,
+  type CastingSession,
   SUBMISSION_STATUSES,
   type SubmissionStatus,
   type BillingPeriod,
@@ -330,6 +341,9 @@ export async function submitApplication(
     );
   }
 
+  // Kept from inside the try, so what was made can be told about afterwards.
+  let made: { id: string; email: string } | null = null;
+
   try {
     const created = await createSubmission({
       ...submission,
@@ -353,6 +367,7 @@ export async function submitApplication(
       guardianEmail: minor ? (guardianEmail ?? null) : null,
       guardianConsentAt: minor ? new Date().toISOString() : null,
     });
+    made = { id: created.id, email: created.email };
     if (role.specialQuestion && specialAnswer) {
       try {
         await recordSpecialAnswer({
@@ -388,7 +403,27 @@ export async function submitApplication(
     role,
     ownerId: role.ownerId,
     company: role.company,
+    subjectId: made?.id ?? null,
   });
+
+  // Told they were heard, and the team told when the call is nearly full.
+  // Neither can fail the submission: it is already in, and an email that did
+  // not send is a line in the delivery log, not a lost application.
+  if (made) {
+    await tellApplicant("submission_received", {
+      to: made.email,
+      roleId: role.id,
+      values: {
+        applicant: submission.name,
+        role: role.title,
+        call: role.session.name,
+        company: role.company,
+        submission: made.id,
+        closes: formatDateTime(role.session.closesAt),
+      },
+    });
+  }
+  await warnIfNearlyFull(role.session, role.sessionId);
 
   revalidateEverything();
 
@@ -514,8 +549,28 @@ export async function updateSubmissionStatus(formData: FormData): Promise<void> 
       role: context ? { id: context.roleId, title: context.roleTitle } : undefined,
       ownerId: context?.ownerId ?? null,
       company: context?.company ?? null,
+      subjectId: id,
       detail: `${context?.name ?? "a submission"} → ${status}`,
     });
+
+    // The applicant hears about it, except on the way back to New, which is
+    // somebody undoing a click rather than a decision worth an email.
+    if (status !== "New" && context) {
+      const submission = await getSubmission(id);
+      if (submission) {
+        await tellApplicant("status_update", {
+          to: submission.email,
+          roleId: submission.roleId,
+          values: {
+            applicant: submission.name,
+            role: context.roleTitle,
+            call: submission.sessionName,
+            company: context.company,
+            status,
+          },
+        });
+      }
+    }
   }
   revalidateEverything();
 }
@@ -1440,4 +1495,103 @@ export async function runRetentionSweep(): Promise<void> {
   });
   revalidateEverything();
   redirect(`/admin/privacy?swept=${purged.length}`);
+}
+
+/* -------------------------------------------------- the automated emails -- */
+
+/**
+ * Sends one of the automated messages, in whatever wording is in force.
+ * Never throws into the caller: the thing that prompted it has already
+ * happened, and a message that did not send is a line in the delivery log.
+ */
+async function tellApplicant(
+  key: TemplateKey,
+  message: { to: string; roleId: string; values: Partial<Record<Placeholder, string>> },
+): Promise<void> {
+  try {
+    if (!emailConfigured()) return;
+    const template = await templateFor(key);
+    await sendEmail({
+      to: message.to,
+      subject: fill(template.subject, message.values),
+      text: fill(template.body, message.values),
+      trigger: key,
+      replyTo: replyToFor(message.roleId),
+    });
+  } catch (error) {
+    console.error("[email] could not send", key, error);
+  }
+}
+
+/**
+ * Tells the casting team once their call passes nine in ten of the cap they
+ * set. Sent once: the check is against the count before this submission, so
+ * only the one that crosses the line sends anything.
+ */
+async function warnIfNearlyFull(
+  session: Pick<CastingSession, "name" | "submissionCap" | "closesAt" | "ownerId">,
+  sessionId: string,
+): Promise<void> {
+  try {
+    if (session.submissionCap === null || !emailConfigured() || !session.ownerId) return;
+    const counts = await countsForSession(sessionId);
+    const threshold = Math.ceil(session.submissionCap * 0.9);
+    if (counts.total !== threshold) return;
+
+    const owner = await findAccount(session.ownerId);
+    if (!owner) return;
+
+    const template = await templateFor("cap_warning");
+    const values = {
+      call: session.name,
+      count: String(counts.total),
+      cap: String(session.submissionCap),
+      closes: formatDateTime(session.closesAt),
+    };
+    await sendEmail({
+      to: owner.email,
+      subject: fill(template.subject, values),
+      text: fill(template.body, values),
+      trigger: "cap_warning",
+    });
+  } catch (error) {
+    console.error("[email] could not send the cap warning", error);
+  }
+}
+
+/* -------------------------------------------------- admin: notifications -- */
+
+/** Changes the wording of one automated message, or puts it back. */
+export async function saveEmailTemplate(formData: FormData): Promise<void> {
+  const user = await requireUser("/admin/notifications");
+  if (user.role !== "admin") return;
+
+  const key = String(formData.get("key") ?? "");
+  if (!TEMPLATE_KEYS.includes(key as TemplateKey)) return;
+
+  if (formData.get("reset") === "1") {
+    await resetTemplate(key as TemplateKey);
+    await record({
+      action: "template.edited",
+      actorId: user.id,
+      actorName: user.name,
+      detail: `${TEMPLATES[key as TemplateKey].label}: put back to the wording that ships`,
+    });
+    revalidateEverything();
+    redirect("/admin/notifications?done=reset");
+  }
+
+  const subject = String(formData.get("subject") ?? "").trim();
+  const body = String(formData.get("body") ?? "").trim();
+  if (subject.length < 3 || body.length < 20) redirect("/admin/notifications?bad=short");
+
+  await saveTemplate(key as TemplateKey, { subject, body }, user.id);
+  await record({
+    action: "template.edited",
+    actorId: user.id,
+    actorName: user.name,
+    detail: `${TEMPLATES[key as TemplateKey].label}: wording changed`,
+  });
+  revalidateEverything();
+  redirect("/admin/notifications?done=saved");
 }

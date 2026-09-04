@@ -773,6 +773,32 @@ const SCHEMA = `
   ALTER TABLE activity ADD COLUMN IF NOT EXISTS subject_id text;
   CREATE INDEX IF NOT EXISTS activity_subject_idx ON activity (subject_id);
   CREATE INDEX IF NOT EXISTS activity_actor_idx ON activity (actor_id, created_at DESC);
+
+  -- Every message the app tried to send, and what happened to it. Without this
+  -- "did they get the email" is unanswerable, and the answer matters most when
+  -- somebody says they never heard back.
+  CREATE TABLE IF NOT EXISTS messages (
+    id        bigserial PRIMARY KEY,
+    sent_at   timestamptz NOT NULL DEFAULT now(),
+    recipient text        NOT NULL,
+    subject   text        NOT NULL,
+    trigger   text        NOT NULL DEFAULT 'other',
+    delivered boolean     NOT NULL,
+    reason    text        NOT NULL DEFAULT ''
+  );
+  CREATE INDEX IF NOT EXISTS messages_recent_idx ON messages (sent_at DESC);
+  CREATE INDEX IF NOT EXISTS messages_recipient_idx ON messages (lower(recipient));
+
+  -- The wording of the automated emails, where it has been changed. A row
+  -- exists only for a template somebody edited; the rest come from the code,
+  -- so a fresh deployment sends sensible words with nothing to set up.
+  CREATE TABLE IF NOT EXISTS email_templates (
+    key        text PRIMARY KEY,
+    subject    text        NOT NULL,
+    body       text        NOT NULL,
+    updated_at timestamptz NOT NULL DEFAULT now(),
+    updated_by text
+  );
 `;
 
 /** Postgres error code for a unique constraint violation. */

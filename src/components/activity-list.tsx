@@ -36,6 +36,7 @@ const SHAPE: Record<Action, { verb: string; tone: string }> = {
   "data.purged": { verb: "removed applicant details from", tone: "bg-muted" },
   "data.exported": { verb: "exported the submissions of", tone: "bg-accent" },
   "data.requested": { verb: "logged a request about somebody's own data", tone: "bg-accent" },
+  "template.edited": { verb: "changed the wording of an automated email", tone: "bg-accent" },
 };
 
 function Subject({ entry }: { entry: ActivityEntry }) {

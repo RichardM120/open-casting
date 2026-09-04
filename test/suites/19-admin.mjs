@@ -504,6 +504,57 @@ section("18 a director cannot reach the audit log");
   check("/admin/audit-logs is a 404 for a director", response.status() === 404, String(response.status()));
 }
 
+section("19 the automated emails: wording, sending, and the delivery log");
+{
+  const { p } = admin;
+  await p.goto(`${BASE}/admin/notifications`, { waitUntil: "networkidle" });
+  check("the page is the administrator's", (await p.getByRole("heading", { name: "Notifications", level: 1 }).count()) === 1);
+  check("all three are listed", (await p.getByRole("heading", { name: "A submission arrives" }).count()) === 1 && (await p.getByRole("heading", { name: "A submission's status changes" }).count()) === 1 && (await p.getByRole("heading", { name: "A casting call is nearly full" }).count()) === 1);
+  check("each starts as the wording that ships", (await p.getByText("As it ships").count()) === 3);
+
+  await p.fill("#subject-submission_received", "We have your submission for {{role}}");
+  await Promise.all([
+    p.waitForNavigation({ timeout: 20000 }),
+    p.locator('form:has(#subject-submission_received)').getByRole("button", { name: "Save the wording" }).click(),
+  ]);
+  check("the wording can be changed", (await p.getByText(/The next message uses it/).count()) === 1);
+  check("and it says it was changed", (await p.getByText(/^Changed /).count()) === 1);
+  check("with a way to put it back", (await p.getByRole("button", { name: "Put it back" }).count()) === 1);
+}
+{
+  // A submission now sends a receipt, in the wording set above.
+  const call = await openSession(dir.p, { name: `Told ${t}`, company: `Store Co ${t}`, opensAt: at(-1), closesAt: at(5, "23:59"), productionEndsAt: day(10) });
+  const role = await postRole(dir.p, { sessionId: call, title: "Told role", company: `Store Co ${t}` });
+  await publish(dir.p, call);
+  const token = await shareToken(dir.p, call);
+  const applicant = await session(browser, errors);
+  await submit(applicant.p, token, role, { name: "Tilly Told", email: `told${t}@example.com` });
+  await applicant.p.getByText("Submission sent").waitFor({ timeout: 20000 });
+  await applicant.c.close();
+
+  const { p } = admin;
+  await p.goto(`${BASE}/admin/notifications?tab=log`, { waitUntil: "networkidle" });
+  const row = p.locator("tbody tr").filter({ hasText: `told${t}@example.com` });
+  check("the receipt is in the delivery log", (await row.count()) === 1);
+  check("in the wording that was set", (await row.getByText("We have your submission for Told role").count()) === 1);
+  check("against the trigger that sent it", (await row.getByText("submission_received").count()) === 1);
+  check("and it says whether it got there", (await row.getByText("Sent").count()) === 1);
+  await p.screenshot({ path: `${SHOTS}/notifications.png`, fullPage: true });
+
+  // And a status change tells them too.
+  await dir.p.goto(`${BASE}/dashboard/roles/${role}`, { waitUntil: "networkidle" });
+  await dir.p.locator('select[aria-label="Submission status"]').first().selectOption("Shortlisted");
+  await dir.p.waitForTimeout(2500);
+  await p.goto(`${BASE}/admin/notifications?tab=log`, { waitUntil: "networkidle" });
+  check("a status change tells the applicant", (await p.locator("tbody tr").filter({ hasText: "status_update" }).count()) === 1);
+}
+
+section("20 a director cannot reach the notifications");
+{
+  const response = await dir.p.goto(`${BASE}/admin/notifications`, { waitUntil: "networkidle" });
+  check("/admin/notifications is a 404 for a director", response.status() === 404, String(response.status()));
+}
+
 await pool.end();
 await dir.c.close();
 await admin.c.close();

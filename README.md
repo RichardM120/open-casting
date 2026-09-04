@@ -778,6 +778,30 @@ row and every file with it, which cannot be undone. Both are recorded in the
 activity trail against the administrator who did them, as `media.flagged`,
 `media.cleared` and `submission.removed`.
 
+### Notifications
+
+The app sends three messages on its own, which it did not before: a receipt to
+the applicant when their submission goes through, an update when the casting
+team moves their status to anything but New, and a warning to the team once
+their call passes nine in ten of the cap they set. None of them can fail the
+thing that prompted it: a message that did not send is a line in the log, not
+a lost application.
+
+`/admin/notifications` holds the wording of all three, editable without a
+deployment and revertible to what ships, with the placeholders each may use
+listed under it. Anything not filled is left reading as the placeholder, so a
+mistake shows rather than becoming the word "undefined".
+
+The second half is the delivery log: every message the app has tried to send,
+who it went to, what prompted it and whether it got there, with the reason
+when it did not. `sendEmail` writes that line itself, so nothing can send
+without being recorded.
+
+With `INBOUND_EMAIL_DOMAIN` set, each message carries a reply-to of
+`role-<id>@that-domain`, which names the role and no person; routing those to
+the casting team needs an inbound service listening on the domain. Until one
+exists there is no reply-to and nobody's address is exposed.
+
 ### The audit log
 
 `/admin/audit-logs` is the same trail as everywhere else, unscoped: every
@@ -950,4 +974,5 @@ applicant's address is on every submission, and replying is a manual step. A
 role cannot be moved between casting calls. Submissions are throttled at ten
 an hour from one address, which is generous for a household and useless for a
 script, but a school or an agency sending many through one connection will
-meet it.
+meet it. Replies to the automated emails need an inbound mail service before
+they reach anybody.
