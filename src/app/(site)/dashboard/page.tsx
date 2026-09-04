@@ -3,7 +3,7 @@ import Link from "next/link";
 import { HelpNote } from "@/components/help-note";
 
 import { ActivityList } from "@/components/activity-list";
-import { Badge, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
+import { Badge, ButtonLink, CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
 import { listActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
 import { formatDateTime, isOpen } from "@/lib/format";
@@ -95,7 +95,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       ) : null}
 
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
+        <div className="min-w-0 flex-1">
           <Eyebrow>Casting calls</Eyebrow>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
             Your casting calls
@@ -105,49 +105,36 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               ? "Every casting call on the site, across all companies."
               : user.role === "producer"
                 ? `Every casting call under ${user.company}.`
-                : "The casting calls you are casting."}{" "}
-            Each one has its own casting window and share link, and shows its numbers here. Open
-            one to post roles, publish it, and read what has come in.
+                : "The casting calls you are casting, each with its own window, its own link and its numbers."}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          {atLimit ? null : (
-            <ButtonLink href="/dashboard/sessions/new">New casting call</ButtonLink>
-          )}
-        </div>
+        {atLimit ? null : <ButtonLink href="/dashboard/sessions/new">New casting call</ButtonLink>}
       </div>
 
-      {atLimit ? (
-        <p className="mt-8 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
-          Your account covers {user.maxSessions}{" "}
-          {user.maxSessions === 1 ? "casting call" : "casting calls"} and you have used{" "}
-          {user.maxSessions === 1 ? "it" : "them all"}. Ask the administrator to extend it if you
-          need another.
-        </p>
-      ) : null}
+      <section className={cx(CARD, "mt-8")} aria-labelledby="calls-heading">
+        <SectionHead
+          id="calls-heading"
+          title="Casting calls"
+          line={
+            atLimit
+              ? `Your account covers ${user.maxSessions} ${user.maxSessions === 1 ? "casting call" : "casting calls"} and you have used ${user.maxSessions === 1 ? "it" : "them all"}. Ask the administrator to extend it if you need another.`
+              : sessions.length === 0
+                ? "No casting calls yet. Open one, then post its roles into it: the casting call holds the dates, so the roles do not have to."
+                : `${totals.open} of ${sessions.length} ${sessions.length === 1 ? "casting call is" : "casting calls are"} accepting submissions now.${
+                    drafts > 0 ? ` ${drafts} ${drafts === 1 ? "is" : "are"} still in progress and not yet published.` : ""
+                  }${user.maxSessions !== null ? ` Your account covers ${user.maxSessions} ${user.maxSessions === 1 ? "casting call" : "casting calls"}.` : ""}`
+          }
+        />
 
-      <dl className="mt-8 grid grid-cols-2 gap-4 sm:grid-cols-4 md:grid-cols-[repeat(4,11rem)]">
-        <Stat label="Open now" value={totals.open} />
-        <Stat label="Roles" value={totals.roles} />
-        <Stat label="Submissions" value={totals.submissions} />
-        <Stat label="Still to read" value={totals.toRead} tone="accent" />
-      </dl>
+        <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Stat label="Open now" value={totals.open} />
+          <Stat label="Roles" value={totals.roles} />
+          <Stat label="Submissions" value={totals.submissions} />
+          <Stat label="Still to read" value={totals.toRead} tone="accent" />
+        </dl>
 
-      {sessions.length > 0 ? (
-        <>
-          <p className="mt-6 text-sm text-muted">
-            {totals.open} of {sessions.length}{" "}
-            {sessions.length === 1 ? "casting call is" : "casting calls are"} accepting submissions
-            now.
-            {drafts > 0
-              ? ` ${drafts} ${drafts === 1 ? "is" : "are"} still in progress and not yet published, so nobody can open ${drafts === 1 ? "its" : "their"} link.`
-              : ""}
-            {user.maxSessions !== null
-              ? ` Your account covers ${user.maxSessions} ${user.maxSessions === 1 ? "casting call" : "casting calls"}.`
-              : ""}
-          </p>
-
-          <ul className="mt-4 flex flex-col gap-4">
+        {sessions.length > 0 ? (
+          <ul className="mt-5 flex flex-col gap-3">
             {ordered.map(({ session, state }) => {
               const count = stats.get(session.id);
               // The whole card is the way into the casting call: the name's
@@ -157,14 +144,14 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                 <li
                   key={session.id}
                   data-state={state.key}
-                  className={`relative rounded-2xl border border-line p-4 shadow-card transition-colors hover:border-accent sm:p-6 ${cardTone(state)}`}
+                  className={`relative rounded-xl border border-line p-4 transition-colors hover:border-accent sm:p-5 ${cardTone(state)}`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
                     <div className="min-w-0 flex-1">
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                         <Link
                           href={`/dashboard/sessions/${session.id}`}
-                          className="text-xl font-semibold tracking-tight transition-colors after:absolute after:inset-0 after:rounded-2xl hover:text-brand sm:text-2xl"
+                          className="text-xl font-semibold tracking-tight transition-colors after:absolute after:inset-0 after:rounded-xl hover:text-brand sm:text-2xl"
                         >
                           {session.name}
                         </Link>
@@ -197,29 +184,21 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
               );
             })}
           </ul>
-        </>
-      ) : (
-        <div className="mt-10">
-          <EmptyState
-            title="No casting calls yet"
-            description="Open a casting call, then post its roles into it. The casting call holds the dates, so the roles do not have to."
-            action={<ButtonLink href="/dashboard/sessions/new">New casting call</ButtonLink>}
-          />
-        </div>
-      )}
+        ) : null}
+      </section>
 
-      <section className="mt-16">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <Eyebrow>History</Eyebrow>
-            <h2 className="mt-2 text-2xl font-semibold tracking-tight">Recent activity</h2>
-          </div>
-          <ButtonLink href="/dashboard/activity" variant="secondary" size="sm">
-            See all activity
-          </ButtonLink>
-        </div>
-
-        <div className="mt-8">
+      <section className={cx(CARD, "mt-8")} aria-labelledby="activity-heading">
+        <SectionHead
+          id="activity-heading"
+          title="Recent activity"
+          line="The last few things that happened, newest first."
+          aside={
+            <ButtonLink href="/dashboard/activity" variant="secondary" size="sm">
+              See all activity
+            </ButtonLink>
+          }
+        />
+        <div className="mt-5">
           <ActivityList
             entries={activity}
             emptyDescription="Open a casting call, and everything that happens to it is recorded here."
@@ -304,7 +283,7 @@ function Stat({
     value === 0 ? "text-text" : tone === "accent" ? "text-brand" : tone === "positive" ? "text-positive" : "text-text";
 
   return (
-    <div className="rounded-2xl border border-line-strong bg-raised p-4 shadow-card">
+    <div className="rounded-xl border border-line bg-surface p-4">
       <dt className="text-sm text-muted">{label}</dt>
       <dd className={`mt-1 text-2xl font-semibold tracking-tight sm:text-3xl ${colour}`}>{value}</dd>
     </div>

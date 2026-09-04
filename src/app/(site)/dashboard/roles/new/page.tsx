@@ -5,7 +5,7 @@ import { SetupProgress } from "@/components/setup-progress";
 
 import { RoleForm } from "@/components/role-form";
 import { uploadsEnabled } from "@/lib/blob";
-import { ButtonLink, EmptyState } from "@/components/ui";
+import { ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { listVisibleSessions } from "@/lib/sessions";
 import { Breadcrumb } from "@/components/breadcrumb";
@@ -56,12 +56,14 @@ export default async function NewRolePage({ searchParams }: PageProps<"/dashboar
         <p dangerouslySetInnerHTML={{ __html: 'A role is the brief and the practicalities: who you are looking for, where it shoots and when. Its submission dates come from the casting call, not from here.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'Terms you set here must be accepted by everyone who submits to this role.' }} />
       </HelpNote>
-      <h1 className="mt-6 text-3xl font-semibold tracking-tight md:text-4xl">Post a role</h1>
-      <p className="mt-3 max-w-2xl text-muted">
-        Name the part, describe it, and say where and when it shoots. What applicants are asked
-        to send is set to what suits most roles, under Advanced options. The role goes live under{" "}
-        {user.company} when its casting call opens.
-      </p>
+      <div className="mt-6">
+        <Eyebrow>{production.name}</Eyebrow>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Post a role</h1>
+        <p className="mt-3 max-w-2xl text-muted">
+          Name the part, describe it, and say where and when it shoots. It goes live under{" "}
+          {user.company} when its casting call opens.
+        </p>
+      </div>
 
       <div className="mt-10">
         <RoleForm sessions={sessions} defaultSessionId={defaultSessionId} uploads={uploadsEnabled()} />

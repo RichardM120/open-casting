@@ -7,7 +7,7 @@ import { ActivityList } from "@/components/activity-list";
 import { DeadlineBadge } from "@/components/deadline-badge";
 import { StatusBadge } from "@/components/status-badge";
 import { SubmissionStatusControl } from "@/components/submission-status-control";
-import { Badge, Button, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
+import { Badge, Button, ButtonLink, CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
 import { removeRole, toggleRoleClosed } from "@/lib/actions";
 import { listActivity } from "@/lib/activity";
 import { currentUser, requireUser } from "@/lib/auth";
@@ -93,17 +93,19 @@ export default async function RoleSubmissionsPage({
         </p>
       ) : null}
 
-      <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
-        <div>
+      <div className="mt-8 flex flex-wrap items-start justify-between gap-4">
+        <div className="min-w-0 flex-1">
           <Eyebrow>{role.production}</Eyebrow>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight">{role.title}</h1>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">{role.title}</h1>
           <p className="mt-2 text-muted">
             {role.location} · playing age {ageRange(role.ageMin, role.ageMax)} · closes{" "}
             {formatDateTime(role.session.closesAt)}
           </p>
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <DeadlineBadge session={roleWindow(role)} />
+          </div>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <DeadlineBadge session={roleWindow(role)} />
           <ButtonLink
             href={`/c/${shareSlug(role.session)}/${role.slug}`}
             variant="secondary"
@@ -124,65 +126,54 @@ export default async function RoleSubmissionsPage({
         </div>
       </div>
 
-      {!open ? (
-        <p className="mt-6 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
-          {role.closedAt
-            ? `Closed early on ${formatDateTime(role.closedAt)}. The role stays up for reference and takes no new submissions.`
-            : role.session.closedAt
-              ? `${role.production} was closed early on ${formatDateTime(role.session.closedAt)}, which closed every role in it.`
-              : "Outside the casting call's casting window. The role stays up for reference and takes no new submissions."}
-        </p>
-      ) : null}
+      <section className={cx(CARD, "mt-8")} aria-labelledby="submissions-heading">
+        <SectionHead
+          id="submissions-heading"
+          title="Submissions"
+          line={
+            !open
+              ? role.closedAt
+                ? `Closed early on ${formatDateTime(role.closedAt)}. The role stays up for reference and takes no new submissions.`
+                : role.session.closedAt
+                  ? `${role.production} was closed early on ${formatDateTime(role.session.closedAt)}, which closed every role in it.`
+                  : "Outside the casting call's casting window. The role stays up for reference and takes no new submissions."
+              : counts.total === 0
+                ? "None yet. They appear here as they come in, newest first."
+                : `${counts.total} in total, newest first. Move each one through New, Shortlisted, Callback and Declined as you work.`
+          }
+        />
+        <div className="mt-4 flex flex-wrap gap-2">
+          <Badge tone="outline">{counts.total} total</Badge>
+          <Count value={counts.New} label="new" tone="neutral" />
+          <Count value={counts.Shortlisted} label="shortlisted" tone="accent" />
+          <Count value={counts.Callback} label="callback" tone="positive" />
+          <Count value={counts.Declined} label="declined" tone="danger" />
+        </div>
+        {submissions.length > 0 ? (
+          <>
+            <ul className="mt-5 flex flex-col gap-3">
+              {submissions.map((submission) => (
+                <SubmissionCard slots={role.mediaSlots} question={role.specialQuestion} special={answers.get(submission.id) ?? null} answered={answered.has(submission.id)} key={submission.id} submission={submission} />
+              ))}
+            </ul>
+            <Pagination
+              page={page}
+              total={counts.total}
+              pageSize={PAGE_SIZE}
+              href={(n) => (n > 1 ? `/dashboard/roles/${id}?page=${n}` : `/dashboard/roles/${id}`)}
+            />
+          </>
+        ) : null}
+      </section>
 
-      <div className="mt-8 flex flex-wrap gap-2">
-        <Badge tone="outline">{counts.total} total</Badge>
-        <Count value={counts.New} label="new" tone="neutral" />
-        <Count value={counts.Shortlisted} label="shortlisted" tone="accent" />
-        <Count value={counts.Callback} label="callback" tone="positive" />
-        <Count value={counts.Declined} label="declined" tone="danger" />
-      </div>
-
-      {submissions.length > 0 ? (
-        <>
-          <ul className="mt-8 flex flex-col gap-4">
-            {submissions.map((submission) => (
-              <SubmissionCard slots={role.mediaSlots} question={role.specialQuestion} special={answers.get(submission.id) ?? null} answered={answered.has(submission.id)} key={submission.id} submission={submission} />
-            ))}
-          </ul>
-          <Pagination
-            page={page}
-            total={counts.total}
-            pageSize={PAGE_SIZE}
-            href={(n) => (n > 1 ? `/dashboard/roles/${id}?page=${n}` : `/dashboard/roles/${id}`)}
-          />
-        </>
-      ) : (
-        <div className="mt-8">
-          <EmptyState
-            title="No submissions yet"
-            description="They will appear here as they come in, newest first."
-            action={
-              <ButtonLink
-                href={`/c/${shareSlug(role.session)}/${role.slug}`}
-                variant="secondary"
-                size="sm"
-              >
-                View as an applicant
-              </ButtonLink>
-            }
+      <section className={cx(CARD, "mt-8")} aria-labelledby="history-heading">
+        <SectionHead id="history-heading" title="History" line="Everything that happened to this role, newest first." />
+        <div className="mt-5">
+          <ActivityList
+            entries={activity}
+            emptyDescription="Nothing has been recorded against this role yet."
           />
         </div>
-      )}
-
-      <section className="mt-14">
-        <Eyebrow>History</Eyebrow>
-        <h2 className="mt-2 mb-6 text-xl font-semibold tracking-tight">
-          Everything that happened to this role
-        </h2>
-        <ActivityList
-          entries={activity}
-          emptyDescription="Nothing has been recorded against this role yet."
-        />
       </section>
 
       {user.role === "admin" ? (
@@ -259,7 +250,7 @@ function SubmissionCard({
   const labelFor = (key: string) =>
     slots.find((slot) => slot.key === key)?.label ?? (key === "tape" ? "Self-tape or showreel" : "Video");
   return (
-    <li className="rounded-2xl border border-line-strong bg-raised p-4 shadow-card sm:p-6">
+    <li className="rounded-xl border border-line bg-surface p-4 sm:p-5">
       {/*
         On a phone the applicant comes first, across the whole card, and the
         status control sits on its own row beneath: beside the control and
@@ -277,7 +268,7 @@ function SubmissionCard({
           <ProfilePhoto url={submission.photoUrl} name={submission.name} />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <h2 className="font-medium">{submission.name}</h2>
+              <h3 className="font-medium">{submission.name}</h3>
               <StatusBadge status={submission.status} />
             </div>
             <p className="mt-1 text-sm text-muted">
@@ -302,7 +293,7 @@ function SubmissionCard({
       ) : null}
 
       {question && (special || answered) ? (
-        <div className="mt-4 max-w-prose rounded-xl border border-line-strong bg-surface p-4 text-sm">
+        <div className="mt-4 max-w-prose rounded-xl border border-line bg-raised p-4 text-sm">
           <p className="text-xs font-medium text-muted">{question.question}</p>
           {special ? (
             <p className="mt-1 text-text">{special.answer}</p>
@@ -336,7 +327,7 @@ function SubmissionCard({
       ))}
 
       {submission.acceptedTerms ? (
-        <details className="mt-4 rounded-xl border border-line bg-surface p-4">
+        <details className="mt-4 rounded-xl border border-line bg-raised p-4">
           <summary className="cursor-pointer text-xs text-muted">
             Accepted your terms on {formatDate(submission.acceptedAt ?? submission.submittedAt)}
           </summary>

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { HelpNote } from "@/components/help-note";
 
 import { ActivityList } from "@/components/activity-list";
-import { Button, ButtonLink, Eyebrow } from "@/components/ui";
+import { Button, ButtonLink, CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
 import { testFileStore } from "@/lib/actions";
 import { listActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
@@ -49,56 +49,69 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
         <p dangerouslySetInnerHTML={{ __html: 'The service as a whole: who is paying, what they are using, and what has happened. Your own casting work lives in the casting director section.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'The file store card says whether applicants can attach photos and videos, and can prove the store works from this deployment.' }} />
       </HelpNote>
-      <Eyebrow>Admin</Eyebrow>
-      <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
-        Open Casting, as a service
-      </h1>
-      <p className="mt-3 max-w-2xl text-muted">
-        Who is paying, what they are on, and what the site is doing. Your own casting work is in
-        the{" "}
-        <Link href="/dashboard" className="text-brand underline-offset-4 hover:underline">
-          casting director section
-        </Link>
-        .
-      </p>
-
-      <dl className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <Stat label="Clients" value={`${totals.live} of ${clients.length} active`} />
-        <Stat label="Accounts" value={accounts.length} />
-        <Stat label="Casting calls" value={totals.productions} />
-        <Stat label="Submissions" value={totals.submissions} />
-      </dl>
-
-      <div className="mt-8 flex flex-wrap gap-3">
-        <ButtonLink href="/admin/clients">Clients</ButtonLink>
-        <ButtonLink href="/admin/accounts" variant="secondary">
-          Accounts
-        </ButtonLink>
-        <ButtonLink href="/admin/activity" variant="secondary">
-          Activity
-        </ButtonLink>
+      <div className="mt-6">
+        <Eyebrow>Admin</Eyebrow>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
+          Open Casting, as a service
+        </h1>
+        <p className="mt-3 max-w-2xl text-muted">
+          Who is paying, what they are on, and what the site is doing. Your own casting work is in
+          the{" "}
+          <Link href="/dashboard" className="text-brand underline-offset-4 hover:underline">
+            casting director section
+          </Link>
+          .
+        </p>
       </div>
 
-      <section className="mt-10 rounded-2xl border border-line-strong bg-raised p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight">File store</h2>
-            <p className="mt-1 max-w-prose text-sm leading-relaxed text-muted">
-              {store
-                ? `Connected through a ${describeStore()}. Applicants can attach a photo and a video to a submission. Files are private, read back only through the dashboard, and go with the submission.`
-                : describeStore() === "not connected"
-                  ? "Not connected. The form offers no uploads until a Vercel Blob store is connected to this project's Production environment and the site is redeployed."
-                  : `Not connected: ${describeStore()}.`}
-            </p>
-          </div>
-          {store ? (
-            <form action={testFileStore}>
-              <Button type="submit" variant="secondary" size="sm">
-                Test the store
-              </Button>
-            </form>
-          ) : null}
-        </div>
+      <section className={cx(CARD, "mt-8")} aria-labelledby="service-heading">
+        <SectionHead
+          id="service-heading"
+          title="The service"
+          line="Clients, the accounts under them, and what has come through."
+          aside={
+            <>
+              <ButtonLink href="/admin/clients" size="sm">
+                Clients
+              </ButtonLink>
+              <ButtonLink href="/admin/accounts" variant="secondary" size="sm">
+                Accounts
+              </ButtonLink>
+              <ButtonLink href="/admin/activity" variant="secondary" size="sm">
+                Activity
+              </ButtonLink>
+            </>
+          }
+        />
+        <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <Stat label="Clients" value={`${totals.live} of ${clients.length} active`} />
+          <Stat label="Accounts" value={accounts.length} />
+          <Stat label="Casting calls" value={totals.productions} />
+          <Stat label="Submissions" value={totals.submissions} />
+        </dl>
+      </section>
+
+      <section className={cx(CARD, "mt-8")} aria-labelledby="store-heading">
+        <SectionHead
+          id="store-heading"
+          title="File store"
+          line={
+            store
+              ? `Connected through a ${describeStore()}. Applicants can attach a photo and a video to a submission. Files are private, read back only through the dashboard, and go with the submission.`
+              : describeStore() === "not connected"
+                ? "Not connected. The form offers no uploads until a Vercel Blob store is connected to this project's Production environment and the site is redeployed."
+                : `Not connected: ${describeStore()}.`
+          }
+          aside={
+            store ? (
+              <form action={testFileStore}>
+                <Button type="submit" variant="secondary" size="sm">
+                  Test the store
+                </Button>
+              </form>
+            ) : null
+          }
+        />
         {query.store === "ok" ? (
           <p
             role="status"
@@ -119,17 +132,18 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
         ) : null}
       </section>
 
-      <section className="mt-12">
-        <div className="flex items-baseline justify-between gap-4">
-          <h2 className="text-lg font-semibold tracking-tight">Latest activity</h2>
-          <Link
-            href="/admin/activity"
-            className="text-sm text-muted transition-colors hover:text-text"
-          >
-            All of it
-          </Link>
-        </div>
-        <div className="mt-4">
+      <section className={cx(CARD, "mt-8")} aria-labelledby="latest-heading">
+        <SectionHead
+          id="latest-heading"
+          title="Latest activity"
+          line="The last few things that happened on the site, newest first."
+          aside={
+            <ButtonLink href="/admin/activity" variant="secondary" size="sm">
+              See all activity
+            </ButtonLink>
+          }
+        />
+        <div className="mt-5">
           <ActivityList
             entries={activity}
             emptyDescription="Nothing has happened on the site yet."
@@ -142,7 +156,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
 
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-2xl border border-line-strong bg-raised p-4 sm:p-6">
+    <div className="rounded-xl border border-line bg-surface p-4">
       <dt className="text-sm text-muted">{label}</dt>
       <dd className="mt-1 text-2xl font-semibold tracking-tight">{value}</dd>
     </div>

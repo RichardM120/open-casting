@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { HelpNote } from "@/components/help-note";
 
 import { ActivityList } from "@/components/activity-list";
-import { Eyebrow } from "@/components/ui";
+import { CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
 import { listActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
 import { Breadcrumb } from "@/components/breadcrumb";
@@ -32,12 +32,15 @@ export default async function ActivityPage() {
         <p className="mt-3 max-w-prose text-muted">{SCOPE[user.role]}</p>
       </div>
 
-      <div className="mt-10">
-        <ActivityList
-          entries={entries}
-          emptyDescription="Open a casting call, and everything that happens to it is recorded here."
-        />
-      </div>
+      <section className={cx(CARD, "mt-8")} aria-labelledby="record-heading">
+        <SectionHead id="record-heading" title="The record" line="Newest first, and nothing here can be edited." />
+        <div className="mt-5">
+          <ActivityList
+            entries={entries}
+            emptyDescription="Open a casting call, and everything that happens to it is recorded here."
+          />
+        </div>
+      </section>
     </div>
   );
 }

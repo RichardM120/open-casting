@@ -3,7 +3,7 @@ import Link from "next/link";
 import { HelpNote } from "@/components/help-note";
 import { notFound } from "next/navigation";
 
-import { Badge, ButtonLink, EmptyState, Eyebrow } from "@/components/ui";
+import { Badge, ButtonLink, CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { clientUsage, listClients } from "@/lib/clients";
 import { formatDate } from "@/lib/format";
@@ -58,34 +58,31 @@ export default async function ClientsPage({ searchParams }: PageProps<"/admin/cl
             Who pays for Open Casting
           </h1>
           <p className="mt-3 max-w-2xl text-muted">
-            One row per company on the service. Open one to see its accounts, what it is using
-            against what it bought, and to stop or restart it.
+            One row per company on the service. Open one to see its accounts and what it is using
+            against what it bought.
           </p>
         </div>
         <ButtonLink href="/admin/clients/new">New client</ButtonLink>
       </div>
 
-      {clients.length === 0 ? (
-        <div className="mt-10">
-          <EmptyState
-            title="No clients yet"
-            description="Take on the first company paying for Open Casting, then make its accounts."
-            action={<ButtonLink href="/admin/clients/new">New client</ButtonLink>}
-          />
-        </div>
-      ) : (
-        <>
-          <p className="mt-8 text-sm text-muted">
-            {live} of {clients.length} {clients.length === 1 ? "client is" : "clients are"}{" "}
-            active.
-          </p>
-          <ul className="mt-6 flex flex-col gap-3">
+      <section className={cx(CARD, "mt-8")} aria-labelledby="clients-heading">
+        <SectionHead
+          id="clients-heading"
+          title="Clients"
+          line={
+            clients.length === 0
+              ? "No clients yet. Take on the first company paying for Open Casting, then make its accounts."
+              : `${live} of ${clients.length} ${clients.length === 1 ? "client is" : "clients are"} active.`
+          }
+        />
+        {clients.length > 0 ? (
+          <ul className="mt-5 flex flex-col gap-3">
             {clients.map((client) => {
               const used = usage.get(client.id);
               return (
                 <li
                   key={client.id}
-                  className="rounded-2xl border border-line-strong bg-raised p-4 sm:p-6 transition-colors hover:border-accent"
+                  className="rounded-xl border border-line bg-surface p-4 transition-colors hover:border-accent sm:p-5"
                 >
                   <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                     <div className="min-w-0 flex-1">
@@ -121,8 +118,8 @@ export default async function ClientsPage({ searchParams }: PageProps<"/admin/cl
               );
             })}
           </ul>
-        </>
-      )}
+        ) : null}
+      </section>
     </div>
   );
 }

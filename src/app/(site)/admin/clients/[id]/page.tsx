@@ -4,7 +4,7 @@ import { HelpNote } from "@/components/help-note";
 import { notFound } from "next/navigation";
 
 import { ClientForm } from "@/components/client-form";
-import { Badge, Button, ButtonLink, Eyebrow } from "@/components/ui";
+import { Badge, Button, ButtonLink, CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
 import { removeClient, toggleClientSuspended } from "@/lib/actions";
 import { currentUser, requireUser } from "@/lib/auth";
 import { clientUsage, getClient } from "@/lib/clients";
@@ -84,7 +84,9 @@ export default async function ClientPage({
         {client.suspendedAt ? <Badge tone="danger">Suspended</Badge> : null}
       </div>
 
-      <dl className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <section className={cx(CARD, "mt-8")} aria-labelledby="usage-heading">
+      <SectionHead id="usage-heading" title="Usage" line="What this client is using against what it bought." />
+      <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Accounts" value={used?.accounts ?? 0} />
         <Stat
           label="Casting calls"
@@ -97,14 +99,21 @@ export default async function ClientPage({
         <Stat label="Roles" value={used?.roles ?? 0} />
         <Stat label="Submissions" value={used?.submissions ?? 0} />
       </dl>
+      </section>
 
-      <section className="mt-10">
-        <h2 className="text-lg font-semibold tracking-tight">Accounts</h2>
-        <p className="mt-2 text-sm text-muted">
-          Everyone signing in under this client. They inherit its plan and its ceilings.
-        </p>
+      <section className={cx(CARD, "mt-8")} aria-labelledby="accounts-heading">
+        <SectionHead
+          id="accounts-heading"
+          title="Accounts"
+          line="Everyone signing in under this client. They inherit its plan and its ceilings."
+          aside={
+            <ButtonLink href="/admin/accounts" variant="secondary" size="sm">
+              Manage accounts
+            </ButtonLink>
+          }
+        />
         {accounts.length === 0 ? (
-          <p className="mt-4 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
+          <p className="mt-4 text-sm text-muted">
             No accounts yet.{" "}
             <Link
               href="/admin/accounts"
@@ -115,11 +124,11 @@ export default async function ClientPage({
             .
           </p>
         ) : (
-          <ul className="mt-4 flex flex-col gap-2">
+          <ul className="mt-5 flex flex-col gap-2">
             {accounts.map((account) => (
               <li
                 key={account.id}
-                className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-line-strong bg-raised px-4 py-3"
+                className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-line bg-surface px-4 py-3"
               >
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{account.name}</p>
@@ -131,11 +140,6 @@ export default async function ClientPage({
             ))}
           </ul>
         )}
-        <div className="mt-4">
-          <ButtonLink href="/admin/accounts" variant="secondary" size="sm">
-            Manage accounts
-          </ButtonLink>
-        </div>
       </section>
 
       {client.contactName ||
@@ -145,9 +149,9 @@ export default async function ClientPage({
       client.billingReference ||
       client.address ||
       client.notes ? (
-        <section className="mt-10 rounded-2xl border border-line-strong bg-raised p-6">
-          <h2 className="text-lg font-semibold tracking-tight">Details</h2>
-          <dl className="mt-4 grid gap-4 sm:grid-cols-2">
+        <section className={cx(CARD, "mt-8")} aria-labelledby="details-heading">
+          <SectionHead id="details-heading" title="Details" line="Who to talk to, and where the invoice goes." />
+          <dl className="mt-5 grid gap-4 sm:grid-cols-2">
             <Detail label="Contact" value={client.contactName} />
             <Detail label="Contact email" value={client.contactEmail} />
             <Detail label="Phone" value={client.contactPhone} />
@@ -159,21 +163,24 @@ export default async function ClientPage({
         </section>
       ) : null}
 
-      <section className="mt-10">
-        <h2 className="text-lg font-semibold tracking-tight">Change what they are on</h2>
-        <div className="mt-4">
+      <section className="mt-8" aria-labelledby="plan-heading">
+        <SectionHead
+          id="plan-heading"
+          title="What they are on"
+          line="The plan, the ceilings and the access date. Every account under them inherits it."
+        />
+        <div className="mt-5">
           <ClientForm client={client} />
         </div>
       </section>
 
-      <section className="mt-12 rounded-2xl border border-line bg-surface p-6">
-        <h2 className="text-lg font-semibold tracking-tight">Stopping this client</h2>
-        <p className="mt-2 max-w-prose text-sm text-muted">
-          Suspending locks every account under this client out at once, and is reversible.
-          Nothing they have made is touched. Removing is only possible once a client has no
-          accounts and no casting calls left.
-        </p>
-        <div className="mt-4 flex flex-wrap items-center gap-3">
+      <section className={cx(CARD, "mt-8")} aria-labelledby="stopping-heading">
+        <SectionHead
+          id="stopping-heading"
+          title="Stopping this client"
+          line="Suspending locks every account under this client out at once and is reversible; removing is possible only once nothing is left under it."
+        />
+        <div className="mt-5 flex flex-wrap items-center gap-3">
           <form action={toggleClientSuspended}>
             <input type="hidden" name="clientId" value={client.id} />
             {client.suspendedAt ? null : <input type="hidden" name="suspend" value="on" />}
@@ -202,7 +209,7 @@ export default async function ClientPage({
 
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-2xl border border-line-strong bg-raised p-4 sm:p-6">
+    <div className="rounded-xl border border-line bg-surface p-4">
       <dt className="text-sm text-muted">{label}</dt>
       <dd className="mt-1 text-2xl font-semibold tracking-tight">{value}</dd>
     </div>

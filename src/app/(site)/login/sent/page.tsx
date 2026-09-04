@@ -18,12 +18,8 @@ export default async function LinkSentPage({ searchParams }: PageProps<"/login/s
       <h1 className="mt-3 text-3xl font-semibold tracking-tight">Check your email</h1>
       <p className="mt-4 text-sm leading-relaxed text-muted">
         Your password was right. Because this account can see and change other people&rsquo;s
-        work, a password on its own is not enough, so we have sent a one-time link
-        {to ? ` to ${to}` : ""}.
-      </p>
-      <p className="mt-3 text-sm leading-relaxed text-muted">
-        It works once and expires in {CHALLENGE_WINDOW_MINUTES} minutes. Asking for another
-        cancels this one.
+        work, we have sent a one-time link{to ? ` to ${to}` : ""}: it works once, expires in{" "}
+        {CHALLENGE_WINDOW_MINUTES} minutes, and asking for another cancels it.
       </p>
       <div className="mt-8">
         <ButtonLink href="/login" variant="secondary" size="sm">

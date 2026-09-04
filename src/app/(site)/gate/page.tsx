@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { GateForm } from "@/components/gate-form";
-import { Eyebrow } from "@/components/ui";
+import { cx, Eyebrow, SPOTLIGHT } from "@/components/ui";
 import { gateEnabled, gateOperable } from "@/lib/gate";
 
 export const dynamic = "force-dynamic";
@@ -28,7 +28,7 @@ export default async function GatePage({ searchParams }: PageProps<"/gate">) {
         enter it below.
       </p>
 
-      <div className="mt-8 rounded-2xl border border-line-strong bg-raised p-7">
+      <div className={cx(SPOTLIGHT, "mt-8 p-7")}>
         {gateOperable() ? (
           <GateForm next={next} />
         ) : (

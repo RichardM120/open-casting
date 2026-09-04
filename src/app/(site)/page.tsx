@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import { HowItWorks } from "@/components/how-it-works";
+import { CARD, SectionHead, cx } from "@/components/ui";
 import { currentUser } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
@@ -28,19 +29,18 @@ export default async function HomePage() {
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 md:py-16">
       <HowItWorks />
 
-      <div className="mt-16 rounded-2xl border border-line-strong bg-raised p-4 shadow-card sm:p-6">
-        <h2 className="text-lg font-semibold tracking-tight">Sent a casting link?</h2>
-        <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
-          Applicants never sign in. Open the link you were sent: it goes straight to the roles and
-          the form. There is nothing here to search, by design. A call is only circulated by the
-          team casting it.
-        </p>
+      <section className={cx(CARD, "mt-16")} aria-labelledby="link-heading">
+        <SectionHead
+          id="link-heading"
+          title="Sent a casting link?"
+          line="Applicants never sign in. Open the link you were sent: it goes straight to the roles and the form, and a call is only ever circulated by the team casting it."
+        />
         <p className="mt-4 text-sm">
           <Link href="/faq/applicants" className="text-brand underline-offset-4 hover:underline">
             What the fields on a casting call mean
           </Link>
         </p>
-      </div>
+      </section>
     </div>
   );
 }

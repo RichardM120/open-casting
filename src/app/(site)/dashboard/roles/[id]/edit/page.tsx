@@ -45,7 +45,7 @@ export default async function EditRolePage({
         </h1>
         <p className="mt-3 max-w-prose text-muted">
           Changes go live straight away. Anyone who has already submitted keeps the terms they
-          accepted at the time. The dates belong to the casting call, so change those there.
+          accepted at the time.
         </p>
       </div>
 

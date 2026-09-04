@@ -9,7 +9,7 @@ import { DEFAULT_TAPE_GUIDANCE } from "@/lib/types";
 import { formatSeconds } from "@/lib/video";
 import { DeadlineBadge } from "@/components/deadline-badge";
 import { SubmissionForm, SubmissionsClosed } from "@/components/submission-form";
-import { Badge, Eyebrow } from "@/components/ui";
+import { Badge, CARD, cx, SectionHead } from "@/components/ui";
 import {
   ageRange,
   formatDateTime,
@@ -112,7 +112,9 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
             . One submission per person per casting call, whichever role you go for.
           </p>
 
-          <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 rounded-2xl border border-line-strong bg-raised p-5 shadow-card sm:grid-cols-3 sm:p-6">
+          <section className={cx(CARD, "mt-8")} aria-labelledby="details-heading">
+          <SectionHead id="details-heading" title="Details" line="Where, when, and who it is for." />
+          <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3">
             <Detail label="Location" value={role.location} />
             <Detail label="Playing age" value={ageRange(role.ageMin, role.ageMax)} />
             <Detail label="Shoot dates" value={shootWindow(role)} />
@@ -120,6 +122,7 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
             <Detail label="Closes" value={formatDateTime(role.session.closesAt)} />
             <Detail label="Posted" value={formatRelative(role.postedAt)} />
           </dl>
+          </section>
 
           <Section title="The casting call">
             <p>{role.synopsis}</p>
@@ -226,9 +229,9 @@ function Detail({ label, value }: { label: string; value: string }) {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className="mt-10">
-      <Eyebrow>{title}</Eyebrow>
-      <div className="mt-3 max-w-prose leading-relaxed text-text">{children}</div>
+    <section className={cx(CARD, "mt-8")}>
+      <SectionHead title={title} />
+      <div className="mt-4 max-w-prose leading-relaxed text-text">{children}</div>
     </section>
   );
 }

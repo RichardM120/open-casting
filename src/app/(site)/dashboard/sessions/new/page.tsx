@@ -32,9 +32,8 @@ export default async function NewSessionPage() {
           Set up a casting call
         </h1>
         <p className="mt-3 max-w-2xl text-muted">
-          One casting call, however many roles. It holds the opening and closing times, and every
-          role in it takes submissions only between them. It saves as a draft as you go, so you
-          can leave and come back before you publish.
+          One casting call, however many roles: it holds the opening and closing times, and it
+          saves as a draft as you go.
         </p>
       </div>
 

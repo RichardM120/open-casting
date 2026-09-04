@@ -5,7 +5,7 @@ import { AgreementStep, FinishStep, ProfileStep, StepIndicator } from "@/compone
 import { LegalScroller } from "@/components/legal-document";
 import { MSA } from "@/content/legal";
 import { hasAccepted } from "@/lib/agreements";
-import { ButtonLink, Eyebrow } from "@/components/ui";
+import { ButtonLink, CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { ROLE_LABELS, type UserRole } from "@/lib/types";
 
@@ -86,37 +86,37 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
         <StepIndicator step={step} total={total} />
       </div>
 
-      <div className="mt-8 rounded-2xl border border-line-strong bg-raised p-7">
+      <div className={cx(CARD, "mt-8")}>
         {needsAgreement ? (
           <>
-            <h2 className="text-lg font-semibold tracking-tight">
-              Your agreement with opencasting.app
-            </h2>
-            <p className="mt-2 mb-6 max-w-prose text-sm leading-relaxed text-muted">
-              This sets out who owns what, who is responsible for the submissions you collect,
-              and how long applicants&rsquo; details are kept. You are the data controller for
-              everything applicants send you; we process it for you.
-            </p>
+            <SectionHead
+              title="Your agreement with opencasting.app"
+              line="Who owns what, who is responsible for the submissions you collect, and how long applicants' details are kept. You are the data controller for everything applicants send you; we process it for you."
+            />
+            <div className="mt-5">
             <AgreementStep nextStep={offset + 1}>
               <LegalScroller document={MSA} />
             </AgreementStep>
+            </div>
           </>
         ) : null}
 
         {!needsAgreement && step === offset + 1 ? (
           <>
-            <h2 className="text-lg font-semibold tracking-tight">Check your details</h2>
-            <p className="mt-2 mb-6 text-sm leading-relaxed text-muted">
-              These appear on the roles you post, so applicants know who is casting.
-            </p>
-            <ProfileStep user={user} nextStep={offset + 2} />
+            <SectionHead
+              title="Check your details"
+              line="These appear on the roles you post, so applicants know who is casting."
+            />
+            <div className="mt-5">
+              <ProfileStep user={user} nextStep={offset + 2} />
+            </div>
           </>
         ) : null}
 
         {!needsAgreement && step === offset + 2 ? (
           <>
-            <h2 className="text-lg font-semibold tracking-tight">What that means</h2>
-            <ul className="mt-6 flex flex-col gap-3">
+            <SectionHead title="What that means" line="What your role lets you see and do." />
+            <ul className="mt-5 flex flex-col gap-3">
               {guide.points.map((point) => (
                 <li key={point} className="flex gap-3 text-sm leading-relaxed text-muted">
                   <span aria-hidden="true" className="mt-2 size-1.5 shrink-0 rounded-full bg-accent" />
@@ -135,8 +135,8 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
 
         {!needsAgreement && step === offset + 3 ? (
           <>
-            <h2 className="text-lg font-semibold tracking-tight">Worth reading first</h2>
-            <p className="mt-2 text-sm leading-relaxed text-muted">
+            <SectionHead title="Worth reading first" line="Two things before you start." />
+            <p className="mt-4 text-sm leading-relaxed text-muted">
               The{" "}
               <Link
                 href="/faq/casting-directors"

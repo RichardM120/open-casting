@@ -449,7 +449,11 @@ Details go in a key-and-value grid like a spec sheet, not in boxes of prose.
 The casting call's page runs, in the order set on the design canvas: the link
 to share (on a draft, the publish panel), About this call, Roles, then
 Submissions; the applicant's page runs title, the one button, the roles, who
-can apply, and their data.
+can apply, and their data. Every other page follows the same shape: the
+casting calls list, the role page, the activity pages, the admin pages, the
+FAQ, sign-in, the passcode gate, the welcome steps and the applicant's role
+page. Only the submission form's own fieldsets and the legal documents keep
+their own layout.
 
 The casting calls list is a traffic light. Live and about-to-open calls are
 green and come first; a call closed to submissions and being reviewed is

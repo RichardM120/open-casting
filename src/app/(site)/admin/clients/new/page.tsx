@@ -29,8 +29,7 @@ export default async function NewClientPage() {
           Take on a client
         </h1>
         <p className="mt-3 max-w-2xl text-muted">
-          The company, who to talk to, where the invoice goes, and what they are on. Their
-          accounts come next, and inherit all of it.
+          The company, who to talk to, where the invoice goes, and what they are on.
         </p>
       </div>
 

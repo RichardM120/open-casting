@@ -4,7 +4,7 @@ import { HelpNote } from "@/components/help-note";
 import { notFound } from "next/navigation";
 
 import { NewAccountForm } from "@/components/new-account-form";
-import { Badge, Button, Eyebrow } from "@/components/ui";
+import { Badge, Button, CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
 import { toggleAccountSuspended } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
 import { listClients } from "@/lib/clients";
@@ -37,18 +37,17 @@ export default async function AccountsPage() {
         <p className="mt-3 max-w-2xl text-muted">
           {accounts.length} {accounts.length === 1 ? "account" : "accounts"}
           {suspended > 0 ? `, ${suspended} suspended` : ""}. Nobody can register themselves, so
-          every account here was made on this page. Suspending signs someone out immediately and
-          blocks them from signing back in. Their casting calls stay up.
+          every account here was made on this page.
         </p>
       </div>
 
-      <section className="mt-10 rounded-2xl border border-line-strong bg-raised p-6 md:p-7">
-        <h2 className="text-lg font-semibold tracking-tight">Create an account</h2>
-        <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
-          For a casting director or a production team. You will be given a password to pass on;
-          it is shown once.
-        </p>
-        <div className="mt-6">
+      <section className={cx(CARD, "mt-8")} aria-labelledby="create-heading">
+        <SectionHead
+          id="create-heading"
+          title="Create an account"
+          line="For a casting director or a production team. The password is shown once, so pass it on straight away."
+        />
+        <div className="mt-5">
           {clients.length === 0 ? (
             <p className="rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
               An account belongs to a client, so there is nothing to fill in yet.{" "}
@@ -66,13 +65,19 @@ export default async function AccountsPage() {
         </div>
       </section>
 
-      <ul className="mt-10 flex flex-col gap-3">
+      <section className={cx(CARD, "mt-8")} aria-labelledby="accounts-heading">
+      <SectionHead
+        id="accounts-heading"
+        title="Accounts"
+        line="Suspending signs someone out at once and blocks them from signing back in; their casting calls stay up."
+      />
+      <ul className="mt-5 flex flex-col gap-3">
         {accounts.map((account) => {
           const isSuspended = Boolean(account.suspended_at);
           return (
             <li
               key={account.id}
-              className="rounded-2xl border border-line-strong bg-raised p-4 sm:p-6"
+              className="rounded-xl border border-line bg-surface p-4 sm:p-5"
             >
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
               <div className="min-w-0 flex-1">
@@ -133,6 +138,7 @@ export default async function AccountsPage() {
           );
         })}
       </ul>
+      </section>
     </div>
   );
 }

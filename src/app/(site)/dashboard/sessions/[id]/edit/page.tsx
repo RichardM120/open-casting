@@ -44,9 +44,9 @@ export default async function EditSessionPage({
           Edit {session.name}
         </h1>
         <p className="mt-3 max-w-2xl text-muted">
-          Changes go live straight away. Moving the times moves{" "}
+          Changes go live straight away, and moving the times moves{" "}
           {roles.length === 1 ? "the role" : `all ${roles.length} roles`} in this casting call with
-          them, so check before you shorten the window: anyone mid-submission loses the form.
+          them.
         </p>
       </div>
 

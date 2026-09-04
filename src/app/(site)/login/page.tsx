@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { SignInForm } from "@/components/auth-form";
-import { Eyebrow, SPOTLIGHT, cx } from "@/components/ui";
+import { CARD, cx, Eyebrow, SectionHead, SPOTLIGHT } from "@/components/ui";
 import { currentUser } from "@/lib/auth";
 import { googleConfigured } from "@/lib/oauth";
 
@@ -32,11 +32,9 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         <Eyebrow>Open Casting</Eyebrow>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight">Sign in</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted">
-          The same sign-in for administrators, casting directors and production teams. What you
-          can see follows from your account.
-        </p>
-        <p className="mt-3 text-sm leading-relaxed text-muted">
-          Applicants never sign in. If you were sent a casting link, open that instead.
+          The same sign-in for administrators, casting directors and production teams; what you
+          can see follows from your account. Applicants never sign in: if you were sent a casting
+          link, open that instead.
         </p>
 
         <div className={cx(SPOTLIGHT, "mt-8 p-7")}>
@@ -44,18 +42,12 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
         </div>
       </div>
 
-      <aside className="order-2 lg:order-1">
-        <Eyebrow>What this is</Eyebrow>
-        <h2 className="mt-3 text-2xl font-semibold tracking-tight text-balance">
-          One casting call, run from one place.
-        </h2>
-        <p className="mt-4 max-w-prose leading-relaxed text-muted">
-          Open Casting is the tool a casting team runs an open call with. It is not a job board:
-          nothing to browse, nothing to join. Post the roles, send one link, and read everything
-          that comes back in one list.
-        </p>
-
-        <dl className="mt-8 flex flex-col gap-6">
+      <aside className={cx(CARD, "order-2 lg:order-1")}>
+        <SectionHead
+          title="One casting call, run from one place."
+          line="Open Casting is the tool a casting team runs an open call with. It is not a job board: nothing to browse, nothing to join."
+        />
+        <dl className="mt-6 flex flex-col gap-6">
           <Point term="A casting call at a time">
             Open a call, post its roles, set the times once. Every role opens and closes together,
             and an applicant submits once, not once per part.
@@ -74,7 +66,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           </Point>
         </dl>
 
-        <p className="mt-8 text-sm leading-relaxed text-faint">
+        <p className="mt-6 text-sm leading-relaxed text-faint">
           Accounts are made by the administrator, so there is nothing to register for. If you
           need one, ask whoever runs your casting.
         </p>
