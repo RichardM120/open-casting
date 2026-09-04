@@ -7,12 +7,21 @@ import { SUBMISSION_TERMS } from "@/content/legal";
 
 import { record, describeChanges, describeSessionChanges } from "./activity";
 import { requireUser, type SessionUser } from "./auth";
-import { checkStore, deleteMedia, isHeroUrl, isSubmissionMediaUrl, uploadsEnabled } from "./blob";
+import {
+  checkStore,
+  deleteMedia,
+  isHeroUrl,
+  isSubmissionMediaUrl,
+  sweepOrphanedMedia,
+  uploadsEnabled,
+} from "./blob";
 import { UNIQUE_VIOLATION } from "./db";
 import { emailConfigured, sendEmail } from "./email";
 import { exportFilename, submissionsWorkbook } from "./export";
-import { purgeDate } from "./retention";
-import { consentTextFor, forgetSubmission, recordSpecialAnswer } from "./special";
+import { logRequest, closeRequest, eraseFor, REQUEST_KINDS } from "./privacy";
+import { recordSweep } from "./monitoring";
+import { claimPurgeWarnings, purgeDate, purgeExpiredSubmissions } from "./retention";
+import { consentTextFor, forgetSubmission, purgeSpecialAnswers, recordSpecialAnswer } from "./special";
 import {
   createClient,
   deleteClient,
@@ -46,6 +55,7 @@ import {
 } from "./roles";
 import {
   DuplicateSubmissionError,
+  allMediaUrls,
   countsForSession,
   createSubmission,
   getSubmission,
@@ -1319,4 +1329,115 @@ export async function removeSubmission(formData: FormData): Promise<void> {
 
   revalidateEverything();
   redirect("/admin/submissions?done=removed");
+}
+
+/* -------------------------------------------------------- admin: privacy -- */
+
+/** Logs a request that arrived by email, so the clock on answering it is visible. */
+export async function logAccessRequest(formData: FormData): Promise<void> {
+  const user = await requireUser("/admin/privacy");
+  if (user.role !== "admin") return;
+
+  const email = String(formData.get("email") ?? "").trim();
+  const kind = String(formData.get("kind") ?? "access");
+  const note = String(formData.get("note") ?? "").trim().slice(0, 500);
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) redirect("/admin/privacy?bad=email");
+  if (kind !== "access" && kind !== "erasure") redirect("/admin/privacy?bad=kind");
+
+  await logRequest({ email, kind, note });
+  await record({
+    action: "data.requested",
+    actorId: user.id,
+    actorName: user.name,
+    detail: `${REQUEST_KINDS[kind].short} request logged for ${email}`,
+  });
+  revalidateEverything();
+  redirect(`/admin/privacy?logged=1&who=${encodeURIComponent(email)}`);
+}
+
+/** Marks a request answered. The answer itself goes by email, outside the app. */
+export async function closeAccessRequest(formData: FormData): Promise<void> {
+  const user = await requireUser("/admin/privacy");
+  if (user.role !== "admin") return;
+
+  const id = String(formData.get("requestId") ?? "");
+  if (!id) return;
+  const closed = await closeRequest(id, user.id);
+  if (!closed) return;
+
+  await record({
+    action: "data.requested",
+    actorId: user.id,
+    actorName: user.name,
+    detail: `${REQUEST_KINDS[closed.kind].short} request for ${closed.email} marked answered`,
+  });
+  revalidateEverything();
+  redirect("/admin/privacy?closed=1");
+}
+
+/**
+ * Deletes everything held about one email address, across every casting call.
+ * Admin only, the address has to be typed again and the confirmation ticked:
+ * this destroys somebody's submissions on every call at once, and the casting
+ * teams lose them too, which is what erasure means.
+ */
+export async function eraseApplicant(formData: FormData): Promise<void> {
+  const user = await requireUser("/admin/privacy");
+  if (user.role !== "admin" || formData.get("confirm") !== "on") return;
+
+  const email = String(formData.get("email") ?? "").trim();
+  const typed = String(formData.get("confirmEmail") ?? "").trim();
+  if (!email) return;
+  if (typed.toLowerCase() !== email.toLowerCase()) {
+    redirect(`/admin/privacy?bad=match&who=${encodeURIComponent(email)}`);
+  }
+
+  const gone = await eraseFor(email);
+  await record({
+    action: "data.purged",
+    actorId: user.id,
+    actorName: user.name,
+    detail: `Erased everything held about ${email}: ${gone.submissions} ${
+      gone.submissions === 1 ? "submission" : "submissions"
+    } and ${gone.files} ${gone.files === 1 ? "file" : "files"}`,
+  });
+  revalidateEverything();
+  redirect(`/admin/privacy?erased=${gone.submissions}`);
+}
+
+/**
+ * Runs the retention sweep by hand, from the page that says what it would do.
+ * The scheduled job does the same work; this is for when it has not run and
+ * something is overdue.
+ */
+export async function runRetentionSweep(): Promise<void> {
+  const user = await requireUser("/admin/privacy");
+  if (user.role !== "admin") return;
+
+  const started = Date.now();
+  const warnings = await claimPurgeWarnings();
+  const purged = await purgeExpiredSubmissions();
+  const specialAnswers = await purgeSpecialAnswers();
+  const orphanedFiles = await sweepOrphanedMedia(await allMediaUrls());
+
+  await recordSweep({
+    warned: warnings.length,
+    sessions: purged.length,
+    submissions: purged.reduce((total, entry) => total + entry.submissions, 0),
+    specialAnswers,
+    orphanedFiles,
+    ms: Date.now() - started,
+  });
+  await record({
+    action: "data.purged",
+    actorId: user.id,
+    actorName: user.name,
+    detail: `Ran the retention sweep by hand: ${purged.length} ${
+      purged.length === 1 ? "casting call" : "casting calls"
+    }, ${specialAnswers} ${specialAnswers === 1 ? "answer" : "answers"}, ${orphanedFiles} ${
+      orphanedFiles === 1 ? "stray file" : "stray files"
+    }`,
+  });
+  revalidateEverything();
+  redirect(`/admin/privacy?swept=${purged.length}`);
 }

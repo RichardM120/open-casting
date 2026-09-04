@@ -34,6 +34,7 @@ export const ACTIONS = [
   "account.restored",
   "data.purged",
   "data.exported",
+  "data.requested",
 ] as const;
 export type Action = (typeof ACTIONS)[number];
 

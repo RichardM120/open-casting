@@ -364,6 +364,112 @@ section("13 a director cannot reach the feed");
   check("/admin/submissions is a 404 for a director", response.status() === 404, String(response.status()));
 }
 
+section("14 Privacy: a request is logged, answered, and what is held is found and erased");
+// Its own applicant: the one above was removed in section 12, and an erasure
+// test needs somebody who is actually held.
+const PRIV = `priv${t}@example.com`;
+{
+  const held = await openSession(dir.p, { name: `Held ${t}`, company: `Store Co ${t}`, opensAt: at(-1), closesAt: at(10, "23:59"), productionEndsAt: day(20) });
+  const heldRole = await postRole(dir.p, { sessionId: held, title: "Held role", company: `Store Co ${t}` });
+  await publish(dir.p, held);
+  const token = await shareToken(dir.p, held);
+  const applicant = await session(browser, errors);
+  await submit(applicant.p, token, heldRole, { name: "Pria Vacy", email: PRIV });
+  await applicant.p.getByText("Submission sent").waitFor({ timeout: 20000 });
+  await applicant.c.close();
+}
+{
+  const { p } = admin;
+  await p.goto(`${BASE}/admin/privacy`, { waitUntil: "networkidle" });
+  check("the page is the administrator's", (await p.getByRole("heading", { name: "Privacy", level: 1 }).count()) === 1);
+  check("it states the retention rules", (await p.getByText(/Destroyed 30 days after the production finishes/).count()) === 1 && (await p.getByText(/Deleted 30 days after casting closes/).count()) === 1);
+  check("and says what the next sweep would take", (await p.getByText(/If the sweep ran now/).count()) === 1);
+
+  await p.fill("#email", PRIV);
+  await p.selectOption("#kind", "access");
+  await p.fill("#note", "Asked by email");
+  await Promise.all([p.waitForNavigation({ timeout: 20000 }), p.getByRole("button", { name: "Log the request" }).click()]);
+  check("logging a request says how long there is", (await p.getByText(/30 days to answer it/).count()) === 1);
+  const request = p.locator('[data-requests="open"] > li').filter({ hasText: PRIV });
+  check("it is on the list with the days left", (await request.count()) === 1 && (await request.getByText(/days left/).count()) === 1);
+}
+{
+  // Looking one up finds every submission they made, across calls.
+  const { p } = admin;
+  await p.goto(`${BASE}/admin/privacy?who=${encodeURIComponent(PRIV)}`, { waitUntil: "networkidle" });
+  check("what is held is listed", (await p.getByRole("cell", { name: "Held role" }).count()) >= 1);
+  check("with what it carries", (await p.getByText("no files").count()) >= 1);
+  check("and a bundle to hand over", (await p.getByRole("link", { name: "Bundle what is held" }).count()) === 1);
+}
+{
+  // The bundle itself.
+  // Fetched from inside the page, as the browser fetches it when the link is
+  // followed: that is the path with the session cookie on it.
+  const got = await admin.p.evaluate(async (url) => {
+    const response = await fetch(url);
+    return { status: response.status, type: response.headers.get("content-type") ?? "", body: await response.text() };
+  }, `${BASE}/admin/privacy/export?email=${encodeURIComponent(PRIV)}`);
+  check("the bundle downloads as JSON", got.status === 200 && got.type.includes("application/json"), `${got.status} ${got.type}`);
+  const bundle = JSON.parse(got.body);
+  check("and holds their submissions", bundle.about === PRIV && bundle.submissions.length === 1, JSON.stringify(bundle).slice(0, 200));
+  check("with a place for anything held apart from them", Array.isArray(bundle.answersAboutProtectedCharacteristics));
+}
+{
+  // Erasure: the address has to be typed again.
+  const { p } = admin;
+  await p.goto(`${BASE}/admin/privacy?who=${encodeURIComponent(PRIV)}`, { waitUntil: "networkidle" });
+  await p.locator('details[data-more="erase"] summary').click();
+  await p.fill("#confirmEmail", "someone-else@example.com");
+  await p.locator('input[name="confirm"]').check();
+  await Promise.all([p.waitForNavigation({ timeout: 20000 }), p.getByRole("button", { name: "Erase everything held about them" }).click()]);
+  check("a mistyped address deletes nothing", (await p.getByText(/did not match. Nothing was deleted/).count()) === 1);
+  const still = await pool.query("SELECT count(*)::int AS n FROM submissions WHERE lower(email) = lower($1)", [PRIV]);
+  check("and the submission is still there", still.rows[0].n === 1);
+
+  await p.goto(`${BASE}/admin/privacy?who=${encodeURIComponent(PRIV)}`, { waitUntil: "networkidle" });
+  await p.locator('details[data-more="erase"] summary').click();
+  await p.fill("#confirmEmail", PRIV);
+  await p.locator('input[name="confirm"]').check();
+  await Promise.all([p.waitForNavigation({ timeout: 20000 }), p.getByRole("button", { name: "Erase everything held about them" }).click()]);
+  check("the right address erases them", (await p.getByText(/every file with them are gone/).count()) === 1);
+  const gone = await pool.query("SELECT count(*)::int AS n FROM submissions WHERE lower(email) = lower($1)", [PRIV]);
+  check("the submission is gone", gone.rows[0].n === 0);
+  const answers = await pool.query(
+    "SELECT count(*)::int AS n FROM special_answers a JOIN submissions s ON s.id = a.submission_id WHERE lower(s.email) = lower($1)",
+    [PRIV],
+  );
+  check("and nothing of theirs is left in the answers held apart", answers.rows[0].n === 0);
+  await p.screenshot({ path: `${SHOTS}/privacy.png`, fullPage: true });
+}
+{
+  const { p } = admin;
+  await p.goto(`${BASE}/admin/privacy`, { waitUntil: "networkidle" });
+  const request = p.locator('[data-requests="open"] > li').filter({ hasText: PRIV });
+  await Promise.all([p.waitForNavigation({ timeout: 20000 }), request.getByRole("button", { name: "Mark answered" }).click()]);
+  check("a request can be marked answered", (await p.getByText("Marked answered.").count()) === 1);
+  check("and drops off the list of those to answer", (await p.locator('[data-requests="open"] > li').filter({ hasText: PRIV }).count()) === 0);
+  check("but is kept as answered", (await p.locator('[data-requests="answered"] > li').filter({ hasText: PRIV }).count()) === 1);
+  await p.goto(`${BASE}/admin/activity`, { waitUntil: "networkidle" });
+  check("both are in the trail", (await p.getByText(/logged a request about somebody's own data/).count()) >= 1 && (await p.getByText(/removed applicant details/).count()) >= 1);
+}
+
+section("15 the sweep can be run by hand from Privacy");
+{
+  const { p } = admin;
+  await p.goto(`${BASE}/admin/privacy`, { waitUntil: "networkidle" });
+  await Promise.all([p.waitForNavigation({ timeout: 20000 }), p.getByRole("button", { name: "Run the sweep now" }).click()]);
+  check("it runs and says what it took", (await p.getByText(/The sweep ran\./).count()) === 1);
+  check("and the badge says it swept today", (await p.getByText("Swept today").count()) === 1);
+}
+
+section("16 a director cannot reach Privacy");
+{
+  for (const path of ["/admin/privacy", "/admin/privacy/export?email=someone@example.com"]) {
+    const response = await dir.p.goto(BASE + path, { waitUntil: "networkidle" });
+    check(`${path} is a 404 for a director`, response.status() === 404, String(response.status()));
+  }
+}
+
 await pool.end();
 await dir.c.close();
 await admin.c.close();

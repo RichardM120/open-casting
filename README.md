@@ -778,6 +778,31 @@ row and every file with it, which cannot be undone. Both are recorded in the
 activity trail against the administrator who did them, as `media.flagged`,
 `media.cleared` and `submission.removed`.
 
+### Privacy
+
+`/admin/privacy` is for doing what the law requires when somebody asks.
+
+**Requests.** An applicant may ask what is held about them, and may ask for it
+to go. Both arrive by email, since there is no account to ask from, so they are
+logged here as they arrive with a countdown of the month there is to answer.
+A request nobody wrote down is one nobody can show they answered.
+
+**What is held about one person.** A search by email finds every submission
+they made across every casting call, with what each carries. **Bundle what is
+held** serves `/admin/privacy/export` as JSON: every field of every submission
+plus any answer about a protected characteristic, which is held apart from the
+rest and is theirs too. Files are named in it rather than packed into it, since
+a link that works for anybody is a worse answer than sending them separately.
+
+**Erasure** deletes everything held about that address, on every casting call
+at once, with the files. The address has to be typed again and the confirmation
+ticked. It is a real delete: the casting teams lose the submissions too, which
+is what erasure means.
+
+**What goes on its own** states the rules that delete without anybody asking,
+and says what the next sweep would take before it takes it. **Run the sweep
+now** does the scheduled job's work by hand, for when it has not run.
+
 ### Storage
 
 `/admin/storage` is what to open to ask whether the site is still working. It

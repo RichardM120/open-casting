@@ -746,6 +746,23 @@ const SCHEMA = `
   ALTER TABLE submissions ADD COLUMN IF NOT EXISTS media_flag_reason text NOT NULL DEFAULT '';
   CREATE INDEX IF NOT EXISTS submissions_flagged_idx
     ON submissions (media_flagged_at) WHERE media_flagged_at IS NOT NULL;
+
+  -- Somebody asking what is held about them, or asking for it to go. Logged
+  -- when the request arrives, so the clock on answering it is visible and the
+  -- answer is a record rather than a memory.
+  CREATE TABLE IF NOT EXISTS access_requests (
+    id           text PRIMARY KEY,
+    email        text        NOT NULL,
+    kind         text        NOT NULL DEFAULT 'access',
+    status       text        NOT NULL DEFAULT 'open',
+    note         text        NOT NULL DEFAULT '',
+    requested_at timestamptz NOT NULL DEFAULT now(),
+    closed_at    timestamptz,
+    closed_by    text
+  );
+  CREATE INDEX IF NOT EXISTS access_requests_open_idx
+    ON access_requests (requested_at DESC) WHERE closed_at IS NULL;
+  CREATE INDEX IF NOT EXISTS access_requests_email_idx ON access_requests (lower(email));
 `;
 
 /** Postgres error code for a unique constraint violation. */

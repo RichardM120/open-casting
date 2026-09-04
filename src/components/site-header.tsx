@@ -19,7 +19,8 @@ type IconName =
   | "accounts"
   | "storage"
   | "projects"
-  | "submissions";
+  | "submissions"
+  | "privacy";
 
 type Item = {
   href: string;
@@ -64,6 +65,7 @@ const ADMIN_NAV: Item[] = [
   { href: "/admin/submissions", label: "Submissions", short: "Subs", icon: "submissions" },
   { href: "/admin/accounts", label: "Accounts", icon: "accounts" },
   { href: "/admin/storage", label: "Storage", icon: "storage" },
+  { href: "/admin/privacy", label: "Privacy", icon: "privacy" },
   { href: "/admin/activity", label: "Activity", icon: "activity" },
 ];
 
@@ -204,6 +206,7 @@ function Icon({ name }: { name: IconName }) {
     storage: "M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3",
     projects: "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
     submissions: "M4 5h16v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM4 5l8 6 8-6M9 21h6",
+    privacy: "M12 3l7 3v6c0 4.4-3 8.2-7 9-4-.8-7-4.6-7-9V6zM9.5 12l1.8 1.8 3.4-3.6",
   };
   return (
     <svg

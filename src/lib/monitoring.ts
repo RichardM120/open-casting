@@ -2,6 +2,7 @@ import "server-only";
 
 import { query } from "./db";
 import { RETENTION_DAYS, daysUntilPurge, purgeDate } from "./retention";
+import { SPECIAL_RETENTION_DAYS } from "./types";
 
 /**
  * What the site is holding and what is due to happen to it. Everything here is
@@ -190,3 +191,40 @@ export function sweepAge(last: Sweep | undefined): number | null {
 }
 
 export { RETENTION_DAYS };
+
+/**
+ * What the nightly sweep would do if it ran now, without doing any of it.
+ * The same conditions as the sweep itself, counted rather than acted on, so
+ * the button that runs it says first what it is about to destroy.
+ */
+export async function sweepDryRun(): Promise<{
+  sessions: number;
+  submissions: number;
+  specialAnswers: number;
+}> {
+  const [row] = await query<{ sessions: string; submissions: string; answers: string }>(
+    `SELECT
+       (SELECT count(*) FROM sessions_casting s
+         WHERE s.purged_at IS NULL AND s.production_ends_at IS NOT NULL
+           AND s.production_ends_at < (now() AT TIME ZONE 'utc')::date - interval '${RETENTION_DAYS} days'
+       )::text AS sessions,
+       (SELECT count(*) FROM submissions sub
+         WHERE sub.session_id IN (
+           SELECT s.id FROM sessions_casting s
+            WHERE s.purged_at IS NULL AND s.production_ends_at IS NOT NULL
+              AND s.production_ends_at < (now() AT TIME ZONE 'utc')::date - interval '${RETENTION_DAYS} days'
+         )
+       )::text AS submissions,
+       (SELECT count(*) FROM special_answers a
+         WHERE a.session_id IN (
+           SELECT id FROM sessions_casting
+            WHERE COALESCE(closed_at, closes_at) < now() - interval '${SPECIAL_RETENTION_DAYS} days'
+         )
+       )::text AS answers`,
+  );
+  return {
+    sessions: Number(row?.sessions ?? 0),
+    submissions: Number(row?.submissions ?? 0),
+    specialAnswers: Number(row?.answers ?? 0),
+  };
+}
