@@ -114,6 +114,7 @@ export function SubmissionForm({
   slots,
   tapeGuidance,
   special,
+  retentionDays,
 }: {
   roleId: string;
   roleTitle: string;
@@ -140,7 +141,16 @@ export function SubmissionForm({
   /** How to tape, one point per line. Empty for none. */
   tapeGuidance: string;
   /** The role's question about a protected characteristic, with the consent sentence to tick, or null. */
-  special: { kind: SpecialKind; about: string; question: string; consentText: string } | null;
+  special: {
+    kind: SpecialKind;
+    about: string;
+    question: string;
+    consentText: string;
+    /** How long the answer survives casting closing, on this casting call. */
+    days: number;
+  } | null;
+  /** How long this casting call keeps what is sent, after the production finishes. */
+  retentionDays: number;
 }) {
   const [state, formAction, pending] = useActionState(submitApplication, IDLE_FORM_STATE);
   const must = new Set(required);
@@ -631,8 +641,8 @@ export function SubmissionForm({
           <p className="mt-2 text-sm leading-relaxed text-muted">
             This role is cast to a recorded occupational requirement, which is why it may ask about{" "}
             {special.about}. Your answer is kept apart from the rest of your submission, read only by
-            the casting director who posted the role and the site administrator, and deleted 30 days
-            after casting closes.
+            the casting director who posted the role and the site administrator, and deleted{" "}
+            {special.days} days after casting closes.
           </p>
           <Field label={special.question} htmlFor="specialAnswer" error={errors.specialAnswer} className="mt-4">
             <Input
@@ -787,7 +797,7 @@ export function SubmissionForm({
         <h3 className="text-sm font-semibold tracking-tight">Terms of Submission</h3>
         <p className="mt-2 text-sm leading-relaxed text-muted">
           You keep ownership of everything you send. Nothing is sold, and nothing is used to
-          train AI. Your details are destroyed 30 days after the production finishes. Nudity,
+          train AI. Your details are destroyed {retentionDays} days after the production finishes. Nudity,
           abuse, hate speech and copyrighted material are not allowed and are removed and
           reported.
         </p>

@@ -43,6 +43,12 @@ export type Client = {
   vatNumber: string;
   /** Days from the invoice to the due date. Null means not set. */
   paymentTermsDays: number | null;
+  /**
+   * What this client's casting calls are opened with, where they asked for
+   * something other than the site's own rule. Null is the site's rule.
+   */
+  retentionDays: number | null;
+  specialRetentionDays: number | null;
   tier: Tier | null;
   /** Null means no ceiling, as it does on an account. */
   maxSessions: number | null;
@@ -76,6 +82,14 @@ export type CastingSession = {
   productionCompany: string;
   /** The most submissions it will take, across its roles. Null is no cap. */
   submissionCap: number | null;
+  /**
+   * How long the applicants' details are kept after the production finishes,
+   * and how long an answer about a protected characteristic survives casting
+   * closing. Copied from the client when the call is opened; null is the
+   * site's own rule.
+   */
+  retentionDays: number | null;
+  specialRetentionDays: number | null;
   /** An optional image on the applicant's page, or null. */
   heroUrl: string | null;
   /** How that image is shown: across the top as a banner, or centred as a logo. */
@@ -296,6 +310,17 @@ export type Role = {
 /** Under this, a submission must come from a parent or legal guardian. */
 export const ADULT_AGE = 18;
 
+/** The site's own rule: how long applicants' details are kept, in days. */
+export const DEFAULT_RETENTION_DAYS = 30;
+
+/**
+ * How long one casting call keeps them, which is the site's rule unless the
+ * client bought something else when the call was opened.
+ */
+export function retentionOf(session: { retentionDays: number | null }): number {
+  return session.retentionDays ?? DEFAULT_RETENTION_DAYS;
+}
+
 export type Submission = {
   id: string;
   roleId: string;
@@ -361,7 +386,14 @@ export type SeedRole = Omit<
  */
 export type SeedSession = Omit<
   CastingSession,
-  "ownerId" | "closedAt" | "createdAt" | "publishedAt" | "purgedAt" | "submissionCap"
+  | "ownerId"
+  | "closedAt"
+  | "createdAt"
+  | "publishedAt"
+  | "purgedAt"
+  | "submissionCap"
+  | "retentionDays"
+  | "specialRetentionDays"
 >;
 
 /**

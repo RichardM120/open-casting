@@ -6,6 +6,7 @@ import { ClientForm } from "@/components/client-form";
 import { Eyebrow } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { adminTrail } from "@/lib/admin-nav";
 
 export const metadata: Metadata = {
   title: "New client",
@@ -18,7 +19,7 @@ export default async function NewClientPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <Breadcrumb trail={[{ href: "/admin", label: "Admin" }, { href: "/admin/clients", label: "Clients" }, { label: "New client" }]} />
+      <Breadcrumb trail={adminTrail("/admin/clients", [{ label: "New client" }])} />
       <HelpNote title="What this screen is for">
         <p dangerouslySetInnerHTML={{ __html: 'The company, who to talk to, where the invoice goes, and what they bought. Their accounts come next and inherit all of it.' }} />
       </HelpNote>

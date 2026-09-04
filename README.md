@@ -737,6 +737,19 @@ Accounts, clients and both activity trails come in pages of fifty
 loaded whole, as submissions do at twenty-five. A trail is only ever added to,
 so loading all of it was a query with no ceiling on it.
 
+### Getting around the admin section
+
+Ten pages will not fit across a phone, so they sit in four groups: **Overview**,
+**Clients** (with Accounts), **Casting** (Projects and Submissions) and
+**System** (Storage, Privacy, Notifications, Activity and the Audit log). The
+bar holds the four; the pages inside a group are a row of tabs on that group's
+own screens, scrolling sideways in their own well rather than wrapping.
+
+`src/lib/admin-nav.ts` is the one list of what is in which group, read by the
+header, by the tab row and by every breadcrumb, so the three cannot drift
+apart. The Overview also lists every page with a line saying what it is for,
+so nothing is more than two taps from the way in.
+
 ### Projects
 
 `/admin/projects` is every casting call on the site, whoever opened it: the
@@ -836,6 +849,16 @@ a link that works for anybody is a worse answer than sending them separately.
 at once, with the files. The address has to be typed again and the confirmation
 ticked. It is a real delete: the casting teams lose the submissions too, which
 is what erasure means.
+
+**Retention** is the site's rule of 30 days unless a client is put on
+something else. A client carries `retention_days` and `special_retention_days`;
+a casting call copies both when it is opened and keeps them. That is
+deliberate: the applicant's page names the day their details are destroyed,
+and changing what a client is on must not move a day already promised to
+somebody. Changing them applies to that client's next call. Everywhere a
+period is stated — the applicant's notice, the consent sentence stored with an
+answer, the casting call's own page, the warning emails, the sweep and the
+Storage page — reads the call's own number.
 
 **What goes on its own** states the rules that delete without anybody asking,
 and says what the next sweep would take before it takes it. **Run the sweep

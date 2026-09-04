@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Breadcrumb } from "@/components/breadcrumb";
+import { AdminTabs } from "@/components/admin-tabs";
+import { adminTrail } from "@/lib/admin-nav";
 import { HelpNote } from "@/components/help-note";
 import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
 import { Badge, Button, CARD, cx, Eyebrow, Field, Input, SectionHead, Select } from "@/components/ui";
@@ -58,7 +60,8 @@ export default async function AuditLogPage({ searchParams }: PageProps<"/admin/a
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-      <Breadcrumb trail={[{ href: "/admin", label: "Admin" }, { label: "Audit log" }]} />
+      <Breadcrumb trail={adminTrail("/admin/audit-logs")} />
+      <AdminTabs pathname="/admin/audit-logs" />
       <HelpNote title="What this screen is for">
         <p
           dangerouslySetInnerHTML={{

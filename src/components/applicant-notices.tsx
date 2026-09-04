@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { formatDate } from "@/lib/format";
-import { DEFAULT_INCLUSION_STATEMENT, type CastingSession } from "@/lib/types";
+import { DEFAULT_INCLUSION_STATEMENT, retentionOf, type CastingSession } from "@/lib/types";
 
 import { CARD, SectionHead, cx } from "./ui";
 
@@ -33,16 +33,19 @@ export function YourData({
   /** Where to write about the data, when the operator has given an address. */
   reportTo: string | null;
 }) {
+  // The call's own retention, which is the site's rule unless the client
+  // bought something else when it was opened.
+  const days = retentionOf(session);
   const purge = formatDate(
-    new Date(Date.parse(`${session.productionEndsAt}T12:00:00Z`) + 30 * 86400000).toISOString(),
+    new Date(Date.parse(`${session.productionEndsAt}T12:00:00Z`) + days * 86400000).toISOString(),
   );
   return (
     <section aria-labelledby="your-data" className={cx(CARD, "mt-8")}>
       <SectionHead id="your-data" title="Your data" />
       <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
         {session.company} holds what you send and uses it only to consider you for this call. It
-        is destroyed on {purge}, 30 days after the production finishes, and you can see it, correct
-        it or have it deleted at any time.
+        is destroyed on {purge}, {days} days after the production finishes, and you can see it,
+        correct it or have it deleted at any time.
       </p>
       <details className="group mt-1 text-sm" data-more="your-data">
         <summary className="inline-flex min-h-10 cursor-pointer list-none items-center font-medium text-brand underline-offset-4 hover:underline [&::-webkit-details-marker]:hidden">
@@ -64,8 +67,8 @@ export function YourData({
           guardian gives it. Withdraw it at any time and your submission is deleted.
         </Row>
         <Row term="How long it is kept">
-          Until 30 days after the production finishes. On {purge} everything you sent is destroyed
-          automatically, unless you ask for it sooner.
+          Until {days} days after the production finishes. On {purge} everything you sent is
+          destroyed automatically, unless you ask for it sooner.
         </Row>
         <Row term="Your rights">
           To see what is held about you, correct it, have it deleted, restrict or object to its

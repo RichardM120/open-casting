@@ -26,6 +26,8 @@ type Row = {
   production_ends_at: string;
   public_token: string;
   submission_cap: number | null;
+  retention_days: number | null;
+  special_retention_days: number | null;
   created_at: Date;
 };
 
@@ -38,7 +40,8 @@ export const SESSION_COLUMNS = `
   id, slug, name, production_type, synopsis, owner_id, company, production_company, hero_url,
   hero_kind, inclusion_statement, agent_route, tape_guidance, opens_at, closes_at,
   to_char(production_ends_at, 'YYYY-MM-DD') AS production_ends_at,
-  closed_at, published_at, purged_at, public_token, submission_cap, created_at
+  closed_at, published_at, purged_at, public_token, submission_cap,
+  retention_days, special_retention_days, created_at
 `;
 
 export function toSession(row: Row): CastingSession {
@@ -52,6 +55,8 @@ export function toSession(row: Row): CastingSession {
     company: row.company,
     productionCompany: row.production_company,
     submissionCap: row.submission_cap,
+    retentionDays: row.retention_days,
+    specialRetentionDays: row.special_retention_days,
     heroUrl: row.hero_url,
     heroKind: row.hero_kind === "logo" ? "logo" : "banner",
     inclusionStatement: row.inclusion_statement,
@@ -229,11 +234,17 @@ export async function createSession(
   clientId: string | null,
 ): Promise<CastingSession> {
   const rows = await query<Row>(
+    // The client's retention is copied onto the call rather than looked up
+    // later: the applicant's page names the day their details go, and changing
+    // what a client is on must not move a day already promised to somebody.
     `INSERT INTO sessions_casting
        (id, slug, name, production_type, synopsis, owner_id, company, opens_at,
         closes_at, production_ends_at, public_token, production_company, client_id, hero_url,
-        hero_kind, inclusion_statement, agent_route, tape_guidance)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18)
+        hero_kind, inclusion_statement, agent_route, tape_guidance,
+        retention_days, special_retention_days)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18,
+       (SELECT retention_days FROM clients WHERE id = $13),
+       (SELECT special_retention_days FROM clients WHERE id = $13))
      RETURNING ${SESSION_COLUMNS}`,
     [
       `ses_${crypto.randomUUID().slice(0, 12)}`,
@@ -446,7 +457,7 @@ const PREFIXED_COLUMNS = `
   s.agent_route, s.tape_guidance, s.opens_at, s.closes_at,
   to_char(s.production_ends_at, 'YYYY-MM-DD') AS production_ends_at,
   s.closed_at, s.published_at, s.purged_at, s.public_token, s.submission_cap,
-  s.created_at
+  s.retention_days, s.special_retention_days, s.created_at
 `;
 
 const CALL_SOURCE = `

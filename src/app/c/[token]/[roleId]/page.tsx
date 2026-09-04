@@ -5,7 +5,7 @@ import { ApplicantMasthead } from "@/components/applicant-masthead";
 import { InclusionStatement, YourData } from "@/components/applicant-notices";
 import { reportAddress } from "@/lib/site";
 import { aboutFor, consentTextFor } from "@/lib/special";
-import { DEFAULT_TAPE_GUIDANCE } from "@/lib/types";
+import { DEFAULT_TAPE_GUIDANCE, SPECIAL_RETENTION_DAYS, retentionOf } from "@/lib/types";
 import { formatSeconds } from "@/lib/video";
 import { DeadlineBadge } from "@/components/deadline-badge";
 import { SubmissionForm, SubmissionsClosed } from "@/components/submission-form";
@@ -61,6 +61,9 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
   const window = roleWindow(role);
   // A capped call stops taking submissions once it is met, whatever its
   // closing time says, so the form goes and the reason is given.
+  // This call's own clocks, which are the site's rules unless the client
+  // bought something else when it was opened.
+  const specialDays = session.specialRetentionDays ?? SPECIAL_RETENTION_DAYS;
   const counts = session.submissionCap === null ? null : await countsForSession(session.id);
   const full = counts !== null && counts.total >= session.submissionCap!;
   const open = isOpen(window) && !full;
@@ -198,13 +201,15 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
               availability={role.shootStartsAt ? shootWindow(role) : null}
               slots={slotsFor(role)}
               tapeGuidance={session.tapeGuidance ?? DEFAULT_TAPE_GUIDANCE}
+              retentionDays={retentionOf(session)}
               special={
                 role.specialQuestion
                   ? {
                       kind: role.specialQuestion.kind,
                       about: aboutFor(role.specialQuestion.kind),
                       question: role.specialQuestion.question,
-                      consentText: consentTextFor(role.specialQuestion, role.company),
+                      days: specialDays,
+                      consentText: consentTextFor(role.specialQuestion, role.company, specialDays),
                     }
                   : null
               }

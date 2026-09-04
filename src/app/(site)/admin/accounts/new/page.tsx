@@ -4,6 +4,7 @@ import { notFound } from "next/navigation";
 
 import { AccountSetupForm } from "@/components/account-setup-form";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { adminTrail } from "@/lib/admin-nav";
 import { HelpNote } from "@/components/help-note";
 import { Eyebrow } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
@@ -30,13 +31,7 @@ export default async function NewAccountPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <Breadcrumb
-        trail={[
-          { href: "/admin", label: "Admin" },
-          { href: "/admin/accounts", label: "Accounts" },
-          { label: "Set up an account" },
-        ]}
-      />
+      <Breadcrumb trail={adminTrail("/admin/accounts", [{ label: "Set up an account" }])} />
       <HelpNote title="What this screen is for">
         <p
           dangerouslySetInnerHTML={{

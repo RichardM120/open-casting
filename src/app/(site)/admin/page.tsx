@@ -5,6 +5,7 @@ import { HelpNote } from "@/components/help-note";
 import { ActivityList } from "@/components/activity-list";
 import { Button, ButtonLink, CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
 import { testFileStore } from "@/lib/actions";
+import { ADMIN_GROUPS } from "@/lib/admin-nav";
 import { listActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
 import { describeStore, uploadsEnabled } from "@/lib/blob";
@@ -75,28 +76,10 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
                 Clients
               </ButtonLink>
               <ButtonLink href="/admin/projects" variant="secondary" size="sm">
-                Projects
-              </ButtonLink>
-              <ButtonLink href="/admin/submissions" variant="secondary" size="sm">
-                Submissions
-              </ButtonLink>
-              <ButtonLink href="/admin/accounts" variant="secondary" size="sm">
-                Accounts
+                Casting
               </ButtonLink>
               <ButtonLink href="/admin/storage" variant="secondary" size="sm">
-                Storage
-              </ButtonLink>
-              <ButtonLink href="/admin/privacy" variant="secondary" size="sm">
-                Privacy
-              </ButtonLink>
-              <ButtonLink href="/admin/notifications" variant="secondary" size="sm">
-                Emails
-              </ButtonLink>
-              <ButtonLink href="/admin/activity" variant="secondary" size="sm">
-                Activity
-              </ButtonLink>
-              <ButtonLink href="/admin/audit-logs" variant="secondary" size="sm">
-                Audit
+                System
               </ButtonLink>
             </>
           }
@@ -153,6 +136,37 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
             The store did not work: {why || "no reason was given."}
           </p>
         ) : null}
+      </section>
+
+      {/* Every page in the section, said in one line each. The bar above holds
+          four groups; this is where to find what is inside one without going
+          looking for it. */}
+      <section className={cx(CARD, "mt-8")} aria-labelledby="everything-heading">
+        <SectionHead
+          id="everything-heading"
+          title="Everything here"
+          line="Four groups. Each page says what it is for."
+        />
+        <div className="mt-5 grid gap-4 sm:grid-cols-2">
+          {ADMIN_GROUPS.filter((group) => group.pages.length > 0).map((group) => (
+            <div key={group.href} className="rounded-xl border border-line bg-surface p-4">
+              <h3 className="text-sm font-semibold tracking-tight">{group.label}</h3>
+              <ul className="mt-3 flex flex-col gap-2">
+                {group.pages.map((page) => (
+                  <li key={page.href}>
+                    <Link
+                      href={page.href}
+                      className="text-sm font-medium text-brand underline-offset-4 hover:underline"
+                    >
+                      {page.label}
+                    </Link>
+                    <span className="block text-xs leading-relaxed text-muted">{page.line}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+        </div>
       </section>
 
       <section className={cx(CARD, "mt-8")} aria-labelledby="latest-heading">

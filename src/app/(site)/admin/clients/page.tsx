@@ -10,6 +10,8 @@ import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination"
 import { formatDate } from "@/lib/format";
 import { TIERS } from "@/lib/types";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { AdminTabs } from "@/components/admin-tabs";
+import { adminTrail } from "@/lib/admin-nav";
 
 export const dynamic = "force-dynamic";
 
@@ -44,7 +46,8 @@ export default async function ClientsPage({ searchParams }: PageProps<"/admin/cl
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
-      <Breadcrumb trail={[{ href: "/admin", label: "Admin" }, { label: "Clients" }]} />
+      <Breadcrumb trail={adminTrail("/admin/clients")} />
+      <AdminTabs pathname="/admin/clients" />
       <HelpNote title="What this screen is for">
         <p dangerouslySetInnerHTML={{ __html: 'One row per company paying for Open Casting. Open one to see its accounts, what it is using against what it bought, and to suspend or restore it.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'Take on a new client before making its accounts; an account cannot exist without one.' }} />

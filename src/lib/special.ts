@@ -28,12 +28,16 @@ export function aboutFor(kind: SpecialKind): string {
 }
 
 /** The sentence an applicant ticks, exactly as it read: it is stored with the answer. */
-export function consentTextFor(question: SpecialQuestion, company: string): string {
+export function consentTextFor(
+  question: SpecialQuestion,
+  company: string,
+  days: number = SPECIAL_RETENTION_DAYS,
+): string {
   return (
     `I consent to ${company} and Open Casting processing my answer about ${aboutFor(question.kind)} ` +
     "for this casting decision and nothing else. It is special category data under UK GDPR. " +
     "I can withdraw this consent at any time by asking, and the answer is deleted " +
-    `${SPECIAL_RETENTION_DAYS} days after casting closes.`
+    `${days} days after casting closes.`
   );
 }
 
@@ -125,11 +129,14 @@ export async function submissionsWithSpecialAnswers(roleId: string): Promise<Set
  * is made by then.
  */
 export async function purgeSpecialAnswers(run: Runner = query): Promise<number> {
+  // Each call against its own clock, which is the site's rule unless the
+  // client bought something else when the call was opened.
   const rows = await run<{ submission_id: string }>(
     `DELETE FROM special_answers
       WHERE session_id IN (
         SELECT id FROM sessions_casting
-         WHERE COALESCE(closed_at, closes_at) < now() - interval '${SPECIAL_RETENTION_DAYS} days'
+         WHERE COALESCE(closed_at, closes_at)
+               < now() - make_interval(days => coalesce(special_retention_days, ${SPECIAL_RETENTION_DAYS}))
       )
       RETURNING submission_id`,
   );

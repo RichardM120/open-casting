@@ -17,6 +17,7 @@ import {
   adminSession,
   at,
   day,
+  latestSignInLink,
   launch,
   openSession,
   postRole,
@@ -559,6 +560,51 @@ section("20 a director cannot reach the notifications");
 {
   const response = await dir.p.goto(`${BASE}/admin/notifications`, { waitUntil: "networkidle" });
   check("/admin/notifications is a 404 for a director", response.status() === 404, String(response.status()));
+}
+
+section("21 the admin section is four groups, with tabs inside each");
+{
+  const { p } = admin;
+  await p.goto(`${BASE}/admin`, { waitUntil: "networkidle" });
+  const bar = await p.locator("header nav").first().locator("a").allTextContents();
+  check(`the bar holds four groups and the FAQ: ${JSON.stringify(bar)}`, JSON.stringify(bar) === JSON.stringify(["Overview", "Clients", "Casting", "System", "FAQ"]));
+  check("the overview says what is in each group", (await p.getByRole("heading", { name: "Everything here" }).count()) === 1 && (await p.getByRole("link", { name: "Audit log", exact: true }).count()) >= 1);
+
+  await p.goto(`${BASE}/admin/storage`, { waitUntil: "networkidle" });
+  const tabs = await p.locator('nav[aria-label="System pages"] a').allTextContents();
+  check(`System carries its five pages as tabs: ${JSON.stringify(tabs)}`, JSON.stringify(tabs) === JSON.stringify(["Storage", "Privacy", "Notifications", "Activity", "Audit log"]));
+  check("the tab you are on is marked", (await p.locator('nav[aria-label="System pages"] [aria-current="page"]').innerText()) === "Storage");
+  check("and the group is lit in the bar", (await p.locator('header nav a[aria-current="page"]').first().innerText()) === "System");
+
+  await p.locator('nav[aria-label="System pages"]').getByRole("link", { name: "Privacy" }).click();
+  await p.waitForURL(/\/admin\/privacy$/, { timeout: 20000 });
+  check("a tab moves between the pages in a group", (await p.getByRole("heading", { name: "Privacy", level: 1 }).count()) === 1);
+  check("with the group still lit", (await p.locator('header nav a[aria-current="page"]').first().innerText()) === "System");
+
+  await p.goto(`${BASE}/admin/accounts`, { waitUntil: "networkidle" });
+  check("Clients carries its two", JSON.stringify(await p.locator('nav[aria-label="Clients pages"] a').allTextContents()) === JSON.stringify(["Clients", "Accounts"]));
+  check("and the breadcrumb names the group and the page", (await p.locator('nav[aria-label="Breadcrumb"]').innerText()).replace(/\s+/g, " ").trim() === "Admin Clients Accounts");
+
+  await p.goto(`${BASE}/admin/accounts/new`, { waitUntil: "networkidle" });
+  check("a page deeper still keeps the trail", (await p.locator('nav[aria-label="Breadcrumb"]').innerText()).replace(/\s+/g, " ").trim() === "Admin Clients Accounts Set up an account");
+}
+{
+  // A phone: four tabs and the FAQ across the bottom, each one hittable.
+  const phone = await session(browser, errors, { width: 390, height: 844 }, { hasTouch: true });
+  await signIn(phone.p, ADMIN.email, ADMIN.password);
+  const link = await latestSignInLink();
+  await phone.p.goto(link, { waitUntil: "networkidle" });
+  await phone.p.goto(`${BASE}/admin`, { waitUntil: "networkidle" });
+  const tabs = phone.p.locator("header nav").last().locator("a");
+  check("five tabs on a phone, not eleven", (await tabs.count()) === 5, String(await tabs.count()));
+  const boxes = await tabs.evaluateAll((links) => links.map((link) => link.getBoundingClientRect()));
+  check("each is wide enough to hit", boxes.every((box) => box.width >= 44 && box.height >= 44), JSON.stringify(boxes.map((box) => Math.round(box.width))));
+  check("and none of them spills off the screen", Math.max(...boxes.map((box) => box.right)) <= 391, JSON.stringify(boxes.map((box) => Math.round(box.right))));
+  await phone.p.goto(`${BASE}/admin/storage`, { waitUntil: "networkidle" });
+  const spill = await phone.p.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+  check("the tab row scrolls rather than pushing the page sideways", spill <= 0, String(spill));
+  await phone.p.screenshot({ path: `${SHOTS}/admin-phone.png`, fullPage: true });
+  await phone.c.close();
 }
 
 await pool.end();

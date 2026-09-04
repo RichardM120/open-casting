@@ -33,6 +33,8 @@ const LABELS: Record<string, string> = {
   billingPeriod: "How often",
   address: "Invoice address",
   tier: "Plan",
+  retentionDays: "Applicants' details kept for",
+  specialRetentionDays: "Answers about a protected characteristic kept for",
   maxSessions: "Casting calls included",
   maxRolesPerSession: "Roles per casting call",
   accessUntil: "Access until",
@@ -59,6 +61,9 @@ function moneyOf(client: Client | undefined): Record<string, string> {
     paymentTermsDays: client.paymentTermsDays === null ? "" : String(client.paymentTermsDays),
     ratePence: pounds(client.ratePence),
     billingPeriod: client.billingPeriod,
+    retentionDays: client.retentionDays === null ? "" : String(client.retentionDays),
+    specialRetentionDays:
+      client.specialRetentionDays === null ? "" : String(client.specialRetentionDays),
     address: client.address,
     tier: client.tier ?? "",
     maxSessions: client.maxSessions === null ? "" : String(client.maxSessions),
@@ -371,6 +376,43 @@ export function AccountSetupForm({ clients }: { clients: Client[] }) {
               defaultValue={values.maxRolesPerSession ?? ""}
             />
           </Field>
+          <Field
+            label="Applicants' details kept for"
+            htmlFor="retentionDays"
+            hint="Days after the production finishes. Blank for the site's own 30."
+            error={errors.retentionDays}
+          >
+            <Input
+              id="retentionDays"
+              name="retentionDays"
+              type="number"
+              min="1"
+              max="730"
+              placeholder="30"
+              defaultValue={values.retentionDays ?? ""}
+            />
+          </Field>
+          <Field
+            label="Answers about a protected characteristic kept for"
+            htmlFor="specialRetentionDays"
+            hint="Days after casting closes. Blank for the site's own 30."
+            error={errors.specialRetentionDays}
+          >
+            <Input
+              id="specialRetentionDays"
+              name="specialRetentionDays"
+              type="number"
+              min="1"
+              max="730"
+              placeholder="30"
+              defaultValue={values.specialRetentionDays ?? ""}
+            />
+          </Field>
+          <p className="text-xs leading-relaxed text-muted sm:col-span-2">
+            How long applicants&rsquo; details are kept is a promise made on the applicant&rsquo;s
+            own page. A casting call keeps the numbers it was opened with, so changing these
+            applies to the client&rsquo;s next call, never to one already running.
+          </p>
         </div>
       </fieldset>
 

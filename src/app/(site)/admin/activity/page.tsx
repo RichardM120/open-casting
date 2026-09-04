@@ -7,6 +7,8 @@ import { countActivity, listActivity } from "@/lib/activity";
 import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
 import { requireUser } from "@/lib/auth";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { AdminTabs } from "@/components/admin-tabs";
+import { adminTrail } from "@/lib/admin-nav";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +36,8 @@ export default async function AdminActivityPage({
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      <Breadcrumb trail={[{ href: "/admin", label: "Admin" }, { label: "Activity" }]} />
+      <Breadcrumb trail={adminTrail("/admin/activity")} />
+      <AdminTabs pathname="/admin/activity" />
       <HelpNote title="What this screen is for">
         <p dangerouslySetInnerHTML={{ __html: 'Everything on the site, across every client, including account changes. It is the record, and it is not editable.' }} />
       </HelpNote>

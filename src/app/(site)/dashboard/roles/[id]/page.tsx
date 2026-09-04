@@ -153,7 +153,15 @@ export default async function RoleSubmissionsPage({
           <>
             <ul className="mt-5 flex flex-col gap-3">
               {submissions.map((submission) => (
-                <SubmissionCard slots={role.mediaSlots} question={role.specialQuestion} special={answers.get(submission.id) ?? null} answered={answered.has(submission.id)} key={submission.id} submission={submission} />
+                <SubmissionCard
+                  slots={role.mediaSlots}
+                  question={role.specialQuestion}
+                  special={answers.get(submission.id) ?? null}
+                  answered={answered.has(submission.id)}
+                  specialDays={role.session.specialRetentionDays ?? SPECIAL_RETENTION_DAYS}
+                  key={submission.id}
+                  submission={submission}
+                />
               ))}
             </ul>
             <Pagination
@@ -231,6 +239,7 @@ function SubmissionCard({
   question,
   special,
   answered,
+  specialDays,
 }: {
   submission: Submission;
   slots: MediaSlot[];
@@ -240,6 +249,8 @@ function SubmissionCard({
   special: SpecialAnswer | null;
   /** Whether an answer exists, for a viewer who may not read it. */
   answered: boolean;
+  /** How long the answer survives casting closing, on this casting call. */
+  specialDays: number;
 }) {
   // Every video sent, or the one a submission from before there were slots holds.
   const videos = submission.videos.length
@@ -304,8 +315,8 @@ function SubmissionCard({
             </p>
           )}
           <p className="mt-2 text-xs text-faint">
-            Special category data, held apart from the rest and deleted {SPECIAL_RETENTION_DAYS} days
-            after casting closes.
+            Special category data, held apart from the rest and deleted {specialDays} days after
+            casting closes.
           </p>
         </div>
       ) : null}

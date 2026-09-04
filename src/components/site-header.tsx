@@ -3,26 +3,14 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { ADMIN_GROUPS, groupFor } from "@/lib/admin-nav";
 import { signOut } from "@/lib/auth-actions";
 import type { SessionUser } from "@/lib/auth";
 
 import { Lockup } from "./logo";
 import { ButtonLink, cx } from "./ui";
 
-type IconName =
-  | "calls"
-  | "activity"
-  | "faq"
-  | "new"
-  | "overview"
-  | "clients"
-  | "accounts"
-  | "storage"
-  | "projects"
-  | "submissions"
-  | "privacy"
-  | "audit"
-  | "notifications";
+type IconName = "calls" | "activity" | "faq" | "new" | "overview" | "clients" | "projects" | "system";
 
 type Item = {
   href: string;
@@ -59,19 +47,17 @@ const NEW_CALL: Item = {
   action: true,
 };
 
-/** The owner's section: who is paying, who they are, and what the site did. */
-const ADMIN_NAV: Item[] = [
-  { href: "/admin", label: "Overview", icon: "overview" },
-  { href: "/admin/clients", label: "Clients", icon: "clients" },
-  { href: "/admin/projects", label: "Projects", icon: "projects" },
-  { href: "/admin/submissions", label: "Submissions", short: "Subs", icon: "submissions" },
-  { href: "/admin/accounts", label: "Accounts", icon: "accounts" },
-  { href: "/admin/storage", label: "Storage", icon: "storage" },
-  { href: "/admin/privacy", label: "Privacy", icon: "privacy" },
-  { href: "/admin/notifications", label: "Emails", icon: "notifications" },
-  { href: "/admin/activity", label: "Activity", icon: "activity" },
-  { href: "/admin/audit-logs", label: "Audit", icon: "audit" },
-];
+/**
+ * The owner's section, four groups wide. The pages inside a group are a tab
+ * row on the group's own screens rather than an item here: ten of them across
+ * a phone was a row nobody could read or hit.
+ */
+const ADMIN_NAV: Item[] = ADMIN_GROUPS.map((group) => ({
+  href: group.href,
+  label: group.label,
+  short: group.short,
+  icon: group.icon,
+}));
 
 /** Terracotta would not show as a focus ring on the terracotta bar; white does. */
 const FOCUS = "focus-visible:outline-white";
@@ -97,10 +83,15 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
       : [...CASTING_NAV, ...PUBLIC_NAV, NEW_CALL]
     : PUBLIC_NAV;
 
-  /** The most specific match wins, so /dashboard/activity does not light up /dashboard too. */
-  const current = nav
-    .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
-    .sort((a, b) => b.href.length - a.href.length)[0]?.href;
+  // In the admin section the group decides, so a page inside one lights its
+  // group up rather than nothing. Elsewhere the most specific match wins, so
+  // /dashboard/activity does not light /dashboard too.
+  const current =
+    inAdmin && user?.role === "admin"
+      ? groupFor(pathname)?.href
+      : nav
+          .filter((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))
+          .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
   const linkClass = (item: Item) =>
     cx(
@@ -206,13 +197,8 @@ function Icon({ name }: { name: IconName }) {
     new: "M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18zM12 8v8M8 12h8",
     overview: "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z",
     clients: "M4 21V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16M9 8h2M13 8h2M9 12h2M13 12h2M9 16h2M13 16h2M3 21h18",
-    accounts: "M9 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2.5 20a6.5 6.5 0 0 1 13 0M17 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM21.5 19a5 5 0 0 0-5.5-4.8",
-    storage: "M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3",
     projects: "M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z",
-    submissions: "M4 5h16v11a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2zM4 5l8 6 8-6M9 21h6",
-    privacy: "M12 3l7 3v6c0 4.4-3 8.2-7 9-4-.8-7-4.6-7-9V6zM9.5 12l1.8 1.8 3.4-3.6",
-    audit: "M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8zM14 3v5h5M9 13h6M9 17h4",
-    notifications: "M18 8a6 6 0 1 0-12 0c0 7-2 8-2 8h16s-2-1-2-8M10.3 21a2 2 0 0 0 3.4 0",
+    system: "M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6zM19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 1 1-4 0v-.1A1.7 1.7 0 0 0 7 19.4a1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0-1.2-2.9H1a2 2 0 1 1 0-4h.1A1.7 1.7 0 0 0 2.6 7a1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 2.9-1.2V1a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2 1.7 1.7 0 0 0 1.8.3l.1.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0 1.2 2.9h.2a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.4 1.5z",
   };
   return (
     <svg

@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Breadcrumb } from "@/components/breadcrumb";
+import { AdminTabs } from "@/components/admin-tabs";
+import { adminTrail } from "@/lib/admin-nav";
 import { HelpNote } from "@/components/help-note";
 import { Badge, CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
@@ -107,7 +109,8 @@ export default async function StoragePage() {
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
-      <Breadcrumb trail={[{ href: "/admin", label: "Admin" }, { label: "Storage" }]} />
+      <Breadcrumb trail={adminTrail("/admin/storage")} />
+      <AdminTabs pathname="/admin/storage" />
       <HelpNote title="What this screen is for">
         <p
           dangerouslySetInnerHTML={{
@@ -262,7 +265,7 @@ export default async function StoragePage() {
         <SectionHead
           id="retention-heading"
           title="Due to be deleted"
-          line={`Applicants' details are destroyed ${RETENTION_DAYS} days after the production finishes. ${schedule.due.length === 0 ? "Nothing is holding any." : `${schedule.due.length} ${schedule.due.length === 1 ? "casting call is" : "casting calls are"} still holding some.`}`}
+          line={`Applicants' details are destroyed ${RETENTION_DAYS} days after the production finishes, unless the client is on a different number. ${schedule.due.length === 0 ? "Nothing is holding any." : `${schedule.due.length} ${schedule.due.length === 1 ? "casting call is" : "casting calls are"} still holding some.`}`}
           aside={
             soon.length > 0 || overdue.length > 0 ? (
               <Badge tone={overdue.length > 0 ? "danger" : "amber"}>

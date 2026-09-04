@@ -17,6 +17,8 @@ type Row = {
   billing_period: string;
   vat_number: string;
   payment_terms_days: number | null;
+  retention_days: number | null;
+  special_retention_days: number | null;
   tier: string | null;
   max_sessions: number | null;
   max_roles_per_session: number | null;
@@ -29,7 +31,8 @@ type Row = {
 const CLIENT_COLUMNS = `
   id, name, contact_name, contact_email, contact_phone, billing_email,
   billing_reference, address, notes, rate_pence, billing_period, vat_number,
-  payment_terms_days, tier, max_sessions, max_roles_per_session,
+  payment_terms_days, retention_days, special_retention_days,
+  tier, max_sessions, max_roles_per_session,
   to_char(access_until, 'YYYY-MM-DD') AS access_until,
   suspended_at, created_at
 `;
@@ -49,6 +52,8 @@ function toClient(row: Row): Client {
     billingPeriod: (row.billing_period as BillingPeriod | "") ?? "",
     vatNumber: row.vat_number,
     paymentTermsDays: row.payment_terms_days,
+    retentionDays: row.retention_days,
+    specialRetentionDays: row.special_retention_days,
     tier: (row.tier as Tier | null) ?? null,
     maxSessions: row.max_sessions,
     maxRolesPerSession: row.max_roles_per_session,
@@ -158,6 +163,8 @@ export type NewClient = {
   billingPeriod: BillingPeriod | "";
   vatNumber: string;
   paymentTermsDays: number | null;
+  retentionDays: number | null;
+  specialRetentionDays: number | null;
   tier: Tier | null;
   maxSessions: number | null;
   maxRolesPerSession: number | null;
@@ -168,8 +175,9 @@ const WRITABLE = `
   name = $2, contact_name = $3, contact_email = $4, contact_phone = $5,
   billing_email = $6, billing_reference = $7, address = $8, notes = $9,
   rate_pence = $10, billing_period = $11, vat_number = $12,
-  payment_terms_days = $13, tier = $14, max_sessions = $15,
-  max_roles_per_session = $16, access_until = $17
+  payment_terms_days = $13, retention_days = $14, special_retention_days = $15,
+  tier = $16, max_sessions = $17,
+  max_roles_per_session = $18, access_until = $19
 `;
 
 function writableValues(input: NewClient): unknown[] {
@@ -177,6 +185,7 @@ function writableValues(input: NewClient): unknown[] {
     input.name, input.contactName, input.contactEmail, input.contactPhone,
     input.billingEmail, input.billingReference, input.address, input.notes,
     input.ratePence, input.billingPeriod, input.vatNumber, input.paymentTermsDays,
+    input.retentionDays, input.specialRetentionDays,
     input.tier, input.maxSessions, input.maxRolesPerSession,
     input.accessUntil || null,
   ];
@@ -187,9 +196,9 @@ export async function createClient(input: NewClient): Promise<Client> {
     `INSERT INTO clients
        (id, name, contact_name, contact_email, contact_phone, billing_email,
         billing_reference, address, notes, rate_pence, billing_period,
-        vat_number, payment_terms_days, tier, max_sessions,
-        max_roles_per_session, access_until)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
+        vat_number, payment_terms_days, retention_days, special_retention_days,
+        tier, max_sessions, max_roles_per_session, access_until)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17, $18, $19)
      RETURNING ${CLIENT_COLUMNS}`,
     [`cl_${crypto.randomUUID().slice(0, 12)}`, ...writableValues(input)],
   );

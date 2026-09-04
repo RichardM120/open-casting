@@ -23,10 +23,10 @@ import { formatDate, formatDateTime, formatRelative, isOpen, notYetOpen } from "
 import { listSessionRoles } from "@/lib/roles";
 import { requestOrigin } from "@/lib/origin";
 import { callState } from "@/lib/rag";
-import { RETENTION_DAYS, daysUntilPurge, purgeDate } from "@/lib/retention";
+import { daysUntilPurge, purgeDate } from "@/lib/retention";
 import { getVisibleSession, shareSlug } from "@/lib/sessions";
 import { countsByRole, countsForSession, listSessionSubmissions } from "@/lib/submissions";
-import { SUBMISSION_STATUSES, type SubmissionStatus } from "@/lib/types";
+import { SUBMISSION_STATUSES, retentionOf, type SubmissionStatus } from "@/lib/types";
 import { Breadcrumb } from "@/components/breadcrumb";
 
 export async function generateMetadata({
@@ -111,9 +111,13 @@ export default async function SessionPage({
             ? "The role was removed, along with its submissions."
             : null;
 
+  // This call's own retention, which is the site's rule unless the client
+  // bought something else when it was opened.
+  const keptFor = retentionOf(session);
+
   // Where the call is in its life, as the line under "About this call".
   const standing = session.purgedAt
-    ? `The applicants' details were removed on ${formatDate(session.purgedAt)}, ${RETENTION_DAYS} days after this casting call finished. The roles and the counts are kept.`
+    ? `The applicants' details were removed on ${formatDate(session.purgedAt)}, ${keptFor} days after this casting call finished. The roles and the counts are kept.`
     : session.closedAt
     ? `Closed early on ${formatDateTime(session.closedAt)}. Every role in this casting call stopped taking submissions at that moment.`
     : notYetOpen(session)
@@ -122,11 +126,11 @@ export default async function SessionPage({
         ? `Accepting submissions until ${formatDateTime(session.closesAt)}. An applicant may submit to this casting call once, whichever role they go for.`
         : `Past its closing time. The roles stay up for reference and take no new submissions.`;
 
-  const daysToPurge = daysUntilPurge(session.productionEndsAt);
+  const daysToPurge = daysUntilPurge(session.productionEndsAt, keptFor);
   const deletion = session.purgedAt
     ? formatDate(session.purgedAt)
-    : `${formatDate(purgeDate(session.productionEndsAt))}${
-        daysToPurge <= 14 ? `, ${daysToPurge} ${daysToPurge === 1 ? "day" : "days"} away` : `, ${RETENTION_DAYS} days later`
+    : `${formatDate(purgeDate(session.productionEndsAt, keptFor))}${
+        daysToPurge <= 14 ? `, ${daysToPurge} ${daysToPurge === 1 ? "day" : "days"} away` : `, ${keptFor} days later`
       }`;
 
   const nextStep = draft ? (

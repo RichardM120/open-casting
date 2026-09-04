@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Breadcrumb } from "@/components/breadcrumb";
+import { AdminTabs } from "@/components/admin-tabs";
+import { adminTrail } from "@/lib/admin-nav";
 import { HelpNote } from "@/components/help-note";
 import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
 import { ProfilePhoto } from "@/components/profile-photo";
@@ -102,7 +104,8 @@ export default async function AdminSubmissionsPage({
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
-      <Breadcrumb trail={[{ href: "/admin", label: "Admin" }, { label: "Submissions" }]} />
+      <Breadcrumb trail={adminTrail("/admin/submissions")} />
+      <AdminTabs pathname="/admin/submissions" />
       <HelpNote title="What this screen is for">
         <p
           dangerouslySetInnerHTML={{

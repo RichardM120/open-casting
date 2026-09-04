@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Breadcrumb } from "@/components/breadcrumb";
+import { AdminTabs } from "@/components/admin-tabs";
+import { adminTrail } from "@/lib/admin-nav";
 import { HelpNote } from "@/components/help-note";
 import { Badge, Button, CARD, cx, Eyebrow, Field, Input, SectionHead, Select, Textarea } from "@/components/ui";
 import { closeAccessRequest, eraseApplicant, logAccessRequest, runRetentionSweep } from "@/lib/actions";
@@ -48,7 +50,8 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/admin/pr
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
-      <Breadcrumb trail={[{ href: "/admin", label: "Admin" }, { label: "Privacy" }]} />
+      <Breadcrumb trail={adminTrail("/admin/privacy")} />
+      <AdminTabs pathname="/admin/privacy" />
       <HelpNote title="What this screen is for">
         <p
           dangerouslySetInnerHTML={{
@@ -298,7 +301,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/admin/pr
         <SectionHead
           id="rules-heading"
           title="What goes on its own"
-          line="The rules that delete without anybody asking, and what the next sweep would take."
+          line="The site's rules, which delete without anybody asking. A client may be on different numbers, and every casting call keeps the ones it was opened with."
           aside={
             <Badge tone={age === null ? "amber" : age >= 2 ? "danger" : "positive"}>
               {age === null ? "Sweep never run" : age === 0 ? "Swept today" : `Swept ${age} days ago`}
@@ -310,14 +313,16 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/admin/pr
             <dt className="text-sm font-medium">Applicants&rsquo; details</dt>
             <dd className="mt-1 text-sm leading-relaxed text-muted">
               Destroyed {RETENTION_DAYS} days after the production finishes, with their photos and
-              tapes. The casting call and its roles are kept.
+              tapes. The casting call and its roles are kept. A client can be put on a different
+              number, and each call keeps the one it was opened with.
             </dd>
           </div>
           <div className="rounded-xl border border-line bg-surface p-4">
             <dt className="text-sm font-medium">Answers about a protected characteristic</dt>
             <dd className="mt-1 text-sm leading-relaxed text-muted">
               Deleted {SPECIAL_RETENTION_DAYS} days after casting closes, which is sooner: the
-              answer was needed to decide, and the decision is made by then.
+              answer was needed to decide, and the decision is made by then. This one can be set
+              per client too.
             </dd>
           </div>
           <div className="rounded-xl border border-line bg-surface p-4">

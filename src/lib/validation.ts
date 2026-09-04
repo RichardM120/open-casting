@@ -312,6 +312,25 @@ const optionalDays = trimmed
   .refine((value) => value === "" || Number(value) <= 365, "Enter 365 days or fewer, or leave blank")
   .transform((value) => (value === "" ? null : Number(value)));
 
+/**
+ * A number of days somebody may keep data for, or blank for the site's own
+ * rule. Capped at two years: longer than that is not a retention policy.
+ */
+const optionalDays730 = trimmed
+  .max(4)
+  .refine((value) => value === "" || /^\d+$/.test(value), "Enter a number of days, or leave blank")
+  .refine(
+    (value) => value === "" || (Number(value) >= 1 && Number(value) <= 730),
+    "Enter between 1 and 730 days, or leave blank for the site's own rule",
+  )
+  .transform((value) => (value === "" ? null : Number(value)));
+
+/** How long a client keeps what applicants send. Blank means the site's rule. */
+export const retentionSchema = z.object({
+  retentionDays: optionalDays730,
+  specialRetentionDays: optionalDays730,
+});
+
 /** What the client is invoiced. Every part of it can be left unset. */
 export const billingSchema = z.object({
   billingEmail: z
@@ -354,6 +373,7 @@ export const clientSchema = z.object({
     ),
   contactPhone: trimmed.max(40),
   ...billingSchema.shape,
+  ...retentionSchema.shape,
   address: trimmed.max(300),
   notes: trimmed.max(1000, "Keep the notes under 1000 characters"),
   ...limitsSchema.shape,
@@ -393,6 +413,7 @@ export type NewAccountInput = z.infer<typeof newAccountSchema>;
  */
 export const accountSetupSchema = newAccountSchema.extend({
   ...billingSchema.shape,
+  ...retentionSchema.shape,
   ...limitsSchema.shape,
   address: trimmed.max(300),
   tier: trimmed

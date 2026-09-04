@@ -3,6 +3,8 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 
 import { Breadcrumb } from "@/components/breadcrumb";
+import { AdminTabs } from "@/components/admin-tabs";
+import { adminTrail } from "@/lib/admin-nav";
 import { HelpNote } from "@/components/help-note";
 import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
 import { Badge, Button, CARD, cx, Eyebrow, Field, Input, SectionHead, Textarea } from "@/components/ui";
@@ -52,7 +54,8 @@ export default async function NotificationsPage({
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
-      <Breadcrumb trail={[{ href: "/admin", label: "Admin" }, { label: "Notifications" }]} />
+      <Breadcrumb trail={adminTrail("/admin/notifications")} />
+      <AdminTabs pathname="/admin/notifications" />
       <HelpNote title="What this screen is for">
         <p
           dangerouslySetInnerHTML={{

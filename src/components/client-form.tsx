@@ -22,6 +22,8 @@ const LABELS: Record<string, string> = {
   paymentTermsDays: "Payment terms",
   ratePence: "What they pay",
   billingPeriod: "How often",
+  retentionDays: "Applicants' details kept for",
+  specialRetentionDays: "Answers about a protected characteristic kept for",
   address: "Address",
   notes: "Notes",
   tier: "Plan",
@@ -59,6 +61,9 @@ export function ClientForm({ client }: { client?: Client }) {
             client.paymentTermsDays === null ? "" : String(client.paymentTermsDays),
           ratePence: pounds(client.ratePence),
           billingPeriod: client.billingPeriod,
+          retentionDays: client.retentionDays === null ? "" : String(client.retentionDays),
+          specialRetentionDays:
+            client.specialRetentionDays === null ? "" : String(client.specialRetentionDays),
           address: client.address,
           notes: client.notes,
           tier: client.tier ?? "",
@@ -256,6 +261,38 @@ export function ClientForm({ client }: { client?: Client }) {
               type="number"
               min="0"
               defaultValue={values.maxRolesPerSession ?? ""}
+            />
+          </Field>
+          <Field
+            label="Applicants' details kept for"
+            htmlFor="retentionDays"
+            hint="Days after the production finishes. Blank for the site's own 30."
+            error={errors.retentionDays}
+          >
+            <Input
+              id="retentionDays"
+              name="retentionDays"
+              type="number"
+              min="1"
+              max="730"
+              placeholder="30"
+              defaultValue={values.retentionDays ?? ""}
+            />
+          </Field>
+          <Field
+            label="Answers about a protected characteristic kept for"
+            htmlFor="specialRetentionDays"
+            hint="Days after casting closes. Blank for the site's own 30."
+            error={errors.specialRetentionDays}
+          >
+            <Input
+              id="specialRetentionDays"
+              name="specialRetentionDays"
+              type="number"
+              min="1"
+              max="730"
+              placeholder="30"
+              defaultValue={values.specialRetentionDays ?? ""}
             />
           </Field>
           <Field

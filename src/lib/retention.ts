@@ -3,6 +3,7 @@ import "server-only";
 import { deleteMedia } from "./blob";
 import { query } from "./db";
 import { mediaUrlsForSession } from "./submissions";
+import { DEFAULT_RETENTION_DAYS } from "./types";
 
 /**
  * How the sweep talks to the database. It is a parameter because the bootstrap
@@ -23,7 +24,7 @@ export type Runner = <T extends Record<string, unknown>>(
  * shoot can run for months after its casting call shut, and the casting
  * director needs the shortlist until it wraps.
  */
-export const RETENTION_DAYS = 30;
+export const RETENTION_DAYS = DEFAULT_RETENTION_DAYS;
 
 /** The MSA promises a warning at fourteen days and again at forty-eight hours. */
 export const WARN_DAYS = [14, 2] as const;
@@ -31,17 +32,19 @@ export const WARN_DAYS = [14, 2] as const;
 const MS_PER_DAY = 86_400_000;
 
 /** The day a casting call's submissions are destroyed, as `yyyy-mm-dd`. */
-export function purgeDate(productionEndsAt: string): string {
-  return new Date(Date.parse(`${productionEndsAt}T00:00:00Z`) + RETENTION_DAYS * MS_PER_DAY)
+export function purgeDate(productionEndsAt: string, days: number = RETENTION_DAYS): string {
+  return new Date(Date.parse(`${productionEndsAt}T00:00:00Z`) + days * MS_PER_DAY)
     .toISOString()
     .slice(0, 10);
 }
 
 /** Whole days until that happens. Negative once it has. */
-export function daysUntilPurge(productionEndsAt: string): number {
+export function daysUntilPurge(productionEndsAt: string, days: number = RETENTION_DAYS): number {
   const now = new Date();
   const today = Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate());
-  return Math.round((Date.parse(`${purgeDate(productionEndsAt)}T00:00:00Z`) - today) / MS_PER_DAY);
+  return Math.round(
+    (Date.parse(`${purgeDate(productionEndsAt, days)}T00:00:00Z`) - today) / MS_PER_DAY,
+  );
 }
 
 export type Purged = { sessionId: string; name: string; submissions: number };
@@ -64,11 +67,15 @@ export type Warning = {
  * holding anybody's personal data. This is a real delete, not a flag.
  */
 export async function purgeExpiredSubmissions(run: Runner = query): Promise<Purged[]> {
+  // Each call is measured against its own retention, which is the site's rule
+  // unless the client bought something else when the call was opened.
   const due = await run<{ id: string; name: string }>(
     `SELECT id, name FROM sessions_casting
       WHERE purged_at IS NULL
         AND production_ends_at IS NOT NULL
-        AND production_ends_at < (now() AT TIME ZONE 'utc')::date - interval '${RETENTION_DAYS} days'`,
+        AND production_ends_at
+            < (now() AT TIME ZONE 'utc')::date
+              - make_interval(days => coalesce(retention_days, ${RETENTION_DAYS}))`,
   );
 
   const purged: Purged[] = [];
@@ -111,12 +118,16 @@ export async function claimPurgeWarnings(run: Runner = query): Promise<Warning[]
           AND s.${column} IS NULL
           AND s.purged_at IS NULL
           AND s.production_ends_at IS NOT NULL
-          AND (s.production_ends_at + interval '${RETENTION_DAYS} days')
+          AND (s.production_ends_at
+               + make_interval(days => coalesce(s.retention_days, ${RETENTION_DAYS})))
               <= (now() AT TIME ZONE 'utc')::date + interval '${days} days'
-          AND (s.production_ends_at + interval '${RETENTION_DAYS} days')
+          AND (s.production_ends_at
+               + make_interval(days => coalesce(s.retention_days, ${RETENTION_DAYS})))
               >= (now() AT TIME ZONE 'utc')::date
         RETURNING s.id, s.name, u.email,
-                  to_char(s.production_ends_at + interval '${RETENTION_DAYS} days', 'YYYY-MM-DD') AS purge_on`,
+                  to_char(s.production_ends_at
+                          + make_interval(days => coalesce(s.retention_days, ${RETENTION_DAYS})),
+                          'YYYY-MM-DD') AS purge_on`,
     );
 
     for (const row of due) {

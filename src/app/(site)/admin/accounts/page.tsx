@@ -10,6 +10,8 @@ import { requireUser } from "@/lib/auth";
 import { ROLE_LABELS, TIERS, type Tier } from "@/lib/types";
 import { countAccounts, countSuspendedAccounts, listAccounts } from "@/lib/users";
 import { Breadcrumb } from "@/components/breadcrumb";
+import { AdminTabs } from "@/components/admin-tabs";
+import { adminTrail } from "@/lib/admin-nav";
 
 export const dynamic = "force-dynamic";
 
@@ -37,7 +39,8 @@ export default async function AccountsPage({ searchParams }: PageProps<"/admin/a
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
-      <Breadcrumb trail={[{ href: "/admin", label: "Admin" }, { label: "Accounts" }]} />
+      <Breadcrumb trail={adminTrail("/admin/accounts")} />
+      <AdminTabs pathname="/admin/accounts" />
       <HelpNote title="What this screen is for">
         <p dangerouslySetInnerHTML={{ __html: 'Every account here belongs to a client and inherits its plan. Set one up with New account, which asks for the person and what their client is invoiced.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'A director sees only the casting calls they open. A producer sees every call under their client.' }} />

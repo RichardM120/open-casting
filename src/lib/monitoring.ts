@@ -99,13 +99,14 @@ export async function retentionSchedule(): Promise<{ due: Retention[]; purged: R
     company: string;
     production_ends_at: string | null;
     purged_at: Date | null;
+    retention_days: number | null;
     submissions: string;
     photos: string;
     videos: string;
   }>(
     `SELECT s.id, s.name, s.company,
             to_char(s.production_ends_at, 'YYYY-MM-DD') AS production_ends_at,
-            s.purged_at,
+            s.purged_at, s.retention_days,
             (SELECT count(*) FROM submissions sub WHERE sub.session_id = s.id)::text AS submissions,
             (SELECT count(*) FROM submissions sub
               WHERE sub.session_id = s.id AND sub.photo_url IS NOT NULL)::text AS photos,
@@ -126,8 +127,8 @@ export async function retentionSchedule(): Promise<{ due: Retention[]; purged: R
       name: row.name,
       company: row.company,
       productionEndsAt: row.production_ends_at,
-      purgeOn: purgeDate(row.production_ends_at),
-      daysAway: daysUntilPurge(row.production_ends_at),
+      purgeOn: purgeDate(row.production_ends_at, row.retention_days ?? RETENTION_DAYS),
+      daysAway: daysUntilPurge(row.production_ends_at, row.retention_days ?? RETENTION_DAYS),
       submissions: Number(row.submissions),
       photos: Number(row.photos),
       videos: Number(row.videos),
@@ -206,19 +207,24 @@ export async function sweepDryRun(): Promise<{
     `SELECT
        (SELECT count(*) FROM sessions_casting s
          WHERE s.purged_at IS NULL AND s.production_ends_at IS NOT NULL
-           AND s.production_ends_at < (now() AT TIME ZONE 'utc')::date - interval '${RETENTION_DAYS} days'
+           AND s.production_ends_at
+               < (now() AT TIME ZONE 'utc')::date
+                 - make_interval(days => coalesce(s.retention_days, ${RETENTION_DAYS}))
        )::text AS sessions,
        (SELECT count(*) FROM submissions sub
          WHERE sub.session_id IN (
            SELECT s.id FROM sessions_casting s
             WHERE s.purged_at IS NULL AND s.production_ends_at IS NOT NULL
-              AND s.production_ends_at < (now() AT TIME ZONE 'utc')::date - interval '${RETENTION_DAYS} days'
+              AND s.production_ends_at
+                  < (now() AT TIME ZONE 'utc')::date
+                    - make_interval(days => coalesce(s.retention_days, ${RETENTION_DAYS}))
          )
        )::text AS submissions,
        (SELECT count(*) FROM special_answers a
          WHERE a.session_id IN (
            SELECT id FROM sessions_casting
-            WHERE COALESCE(closed_at, closes_at) < now() - interval '${SPECIAL_RETENTION_DAYS} days'
+            WHERE COALESCE(closed_at, closes_at)
+                  < now() - make_interval(days => coalesce(special_retention_days, ${SPECIAL_RETENTION_DAYS}))
          )
        )::text AS answers`,
   );

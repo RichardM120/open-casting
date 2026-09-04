@@ -799,6 +799,18 @@ const SCHEMA = `
     updated_at timestamptz NOT NULL DEFAULT now(),
     updated_by text
   );
+
+  -- How long a client keeps applicants' details, where they have asked for
+  -- something other than the site's own rule. NULL is the site's rule.
+  ALTER TABLE clients ADD COLUMN IF NOT EXISTS retention_days integer;
+  ALTER TABLE clients ADD COLUMN IF NOT EXISTS special_retention_days integer;
+
+  -- The same two, copied onto the casting call when it is opened. The
+  -- applicant's page names the day their details go, so the number has to be
+  -- fixed at that moment: changing what a client is on cannot reach back and
+  -- change a promise already made to somebody.
+  ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS retention_days integer;
+  ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS special_retention_days integer;
 `;
 
 /** Postgres error code for a unique constraint violation. */
