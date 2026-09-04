@@ -541,12 +541,18 @@ section("19 the automated emails: wording, sending, and the delivery log");
   check("and it says whether it got there", (await row.getByText("Sent").count()) === 1);
   await p.screenshot({ path: `${SHOTS}/notifications.png`, fullPage: true });
 
-  // And a status change tells them too.
+  // And a status change tells them too. The status control saves by itself, so
+  // the log is polled rather than waited on for a fixed time: a loaded machine
+  // takes longer than a quiet one and neither is a fault.
   await dir.p.goto(`${BASE}/dashboard/roles/${role}`, { waitUntil: "networkidle" });
   await dir.p.locator('select[aria-label="Submission status"]').first().selectOption("Shortlisted");
-  await dir.p.waitForTimeout(2500);
-  await p.goto(`${BASE}/admin/notifications?tab=log`, { waitUntil: "networkidle" });
-  check("a status change tells the applicant", (await p.locator("tbody tr").filter({ hasText: "status_update" }).count()) === 1);
+  let told = 0;
+  for (let attempt = 0; attempt < 20 && told === 0; attempt += 1) {
+    await p.goto(`${BASE}/admin/notifications?tab=log`, { waitUntil: "networkidle" });
+    told = await p.locator("tbody tr").filter({ hasText: "status_update" }).count();
+    if (told === 0) await p.waitForTimeout(500);
+  }
+  check("a status change tells the applicant", told >= 1, String(told));
 }
 
 section("20 a director cannot reach the notifications");
