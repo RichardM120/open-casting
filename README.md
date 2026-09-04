@@ -737,6 +737,31 @@ Accounts, clients and both activity trails come in pages of fifty
 loaded whole, as submissions do at twenty-five. A trail is only ever added to,
 so loading all of it was a query with no ceiling on it.
 
+### Projects
+
+`/admin/projects` is every casting call on the site, whoever opened it: the
+call and its roles, the client, what it has taken against whatever cap it has,
+when it closes, and what state it is in. Narrowed by client, by state and by
+closing date, all in the URL so a filtered list can be linked to, and paged at
+fifty like the rest.
+
+The row is the point of it. **Publish**, **Pause** and **Reopen** do what the
+call's own owner can do, without having to be them, for the moment a call is
+running away and whoever opened it is not around; each is recorded in the
+activity trail against the administrator who did it. **Cap and closing time**
+sets `submission_cap` and the closing moment together.
+
+A cap is the number of submissions a call will take across all its roles.
+Once it is met the call stops taking them whatever its closing time says,
+checked in the action against the database rather than against anything the
+form carried. The applicant's pages say the call is full instead of offering a
+form that would refuse, and the casting call's own page shows the count
+against the cap.
+
+There is no public-versus-unlisted setting, because there is no public
+listing: a share link is the whole of the authorisation and every applicant
+page carries `noindex`. Making calls browsable would be a different product.
+
 ### Storage
 
 `/admin/storage` is what to open to ask whether the site is still working. It
