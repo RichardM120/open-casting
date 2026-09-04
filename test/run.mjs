@@ -49,7 +49,7 @@ const MAILBOX = path.join(here, "mailbox.json");
 const BASE = `http://127.0.0.1:${PORT}`;
 
 /**
- * The stand-in store, for the one suite that puts files up. Every other suite
+ * The stand-in store, for the two suites that put files up. Every other suite
  * runs with no store, as a deployment without one does, and checks that the
  * form offers no uploads. The server is given a token so it treats the store
  * as connected, told to send the SDK's requests here, and told to read files
@@ -59,11 +59,13 @@ const BLOB_PORT = PORT + 2;
 const BLOB_STANDIN = `http://127.0.0.1:${BLOB_PORT}`;
 /** The proxy the suite's browser is given: vercel.com goes to the stand-in, nothing else goes anywhere. */
 const BLOB_PROXY = `http://127.0.0.1:${PORT + 4}`;
-SUITE_ENV["17-uploads.mjs"] = {
-  BLOB_READ_WRITE_TOKEN: BLOB_TOKEN,
-  VERCEL_BLOB_API_URL: BLOB_STANDIN,
-  BLOB_READ_BASE: BLOB_STANDIN,
-};
+for (const suite of ["17-uploads.mjs", "18-capacity.mjs"]) {
+  SUITE_ENV[suite] = {
+    BLOB_READ_WRITE_TOKEN: BLOB_TOKEN,
+    VERCEL_BLOB_API_URL: BLOB_STANDIN,
+    BLOB_READ_BASE: BLOB_STANDIN,
+  };
+}
 
 const ONLY = process.argv.slice(2);
 const SUITES = readdirSync(path.join(here, "suites"))

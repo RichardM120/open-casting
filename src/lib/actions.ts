@@ -71,12 +71,13 @@ import { generatePassword } from "./password";
 import {
   clientSchema,
   fieldErrors,
+  formEntries,
   newAccountSchema,
   readAsks,
   readMediaSlots,
   roleSchema,
-  specialQuestionOf,
   sessionSchema,
+  specialQuestionOf,
   submissionSchema,
   type FieldErrors,
 } from "./validation";
@@ -127,7 +128,7 @@ export async function submitApplication(
     );
   }
 
-  const parsed = submissionSchema.safeParse(Object.fromEntries(formData));
+  const parsed = submissionSchema.safeParse(formEntries(formData));
   if (!parsed.success) {
     return invalid(
       fieldErrors(parsed.error),
@@ -376,7 +377,7 @@ export async function postRole(
   // this is what actually stops an unauthenticated request writing a role.
   const user = await requireUser("/dashboard/roles/new");
 
-  const entries = Object.fromEntries(formData);
+  const entries = formEntries(formData);
   const parsed = roleSchema.safeParse({
     ...entries,
     ...readAsks(entries),
@@ -542,7 +543,7 @@ export async function editRole(
   const id = String(formData.get("roleId") ?? "");
   const user = await requireUser(`/dashboard/roles/${id}/edit`);
 
-  const entries = Object.fromEntries(formData);
+  const entries = formEntries(formData);
   const parsed = roleSchema.safeParse({
     ...entries,
     ...readAsks(entries),
@@ -663,7 +664,7 @@ export async function createAccount(
     return invalid({}, "Only the administrator can create accounts.", formData);
   }
 
-  const parsed = newAccountSchema.safeParse(Object.fromEntries(formData));
+  const parsed = newAccountSchema.safeParse(formEntries(formData));
   if (!parsed.success) {
     return invalid(
       fieldErrors(parsed.error),
@@ -774,7 +775,7 @@ export async function createClientRecord(
   const gate = await requireOwner("/admin/clients/new");
   if ("status" in gate) return gate;
 
-  const parsed = clientSchema.safeParse(Object.fromEntries(formData));
+  const parsed = clientSchema.safeParse(formEntries(formData));
   if (!parsed.success) {
     return invalid(
       fieldErrors(parsed.error),
@@ -818,7 +819,7 @@ export async function editClientRecord(
   const gate = await requireOwner(`/admin/clients/${id}`);
   if ("status" in gate) return gate;
 
-  const parsed = clientSchema.safeParse(Object.fromEntries(formData));
+  const parsed = clientSchema.safeParse(formEntries(formData));
   if (!parsed.success) {
     return invalid(
       fieldErrors(parsed.error),
@@ -934,7 +935,7 @@ export async function createCastingSession(
 ): Promise<FormState> {
   const user = await requireUser("/dashboard/sessions/new");
 
-  const parsed = sessionSchema.safeParse(Object.fromEntries(formData));
+  const parsed = sessionSchema.safeParse(formEntries(formData));
   if (!parsed.success) {
     return invalid(
       fieldErrors(parsed.error),
@@ -982,7 +983,7 @@ export async function editCastingSession(
   const id = String(formData.get("sessionId") ?? "");
   const user = await requireUser(`/dashboard/sessions/${id}`);
 
-  const parsed = sessionSchema.safeParse(Object.fromEntries(formData));
+  const parsed = sessionSchema.safeParse(formEntries(formData));
   if (!parsed.success) {
     return invalid(
       fieldErrors(parsed.error),

@@ -95,6 +95,8 @@ function png(width, height) {
   ]);
 }
 const BANNER = png(2400, 600);
+/** A tape that is not one: the browser reads no length off it, and the store takes the bytes. */
+const TAPE = Buffer.alloc(16 * 1024, 7);
 
 /** Whether an image in the page decoded to something with a width. */
 const rendered = (image) =>
@@ -181,7 +183,7 @@ check("and it renders", (await shown.count()) === 1 && (await rendered(shown)));
   check("the route serves it as an image, cacheable", served.status === 200 && served.type.startsWith("image/") && /public/.test(served.cache), JSON.stringify(served));
 }
 
-section("2 an applicant's photo goes up with the submission and comes back to the director alone");
+section("2 an applicant's photo and tape go up with the submission and come back to the director alone");
 await applicant.p.goto(`${BASE}/c/${token}/${roleId}`, { waitUntil: "networkidle" });
 check("the form offers a photo", (await applicant.p.locator("#photo").count()) === 1);
 await applicant.p.fill("#name", "Ada Applicant");
@@ -191,19 +193,28 @@ await applicant.p.fill("#location", "Leeds");
 await applicant.p.selectOption("#age", "30");
 await applicant.p.fill("#coverNote", "A cover note comfortably longer than the twenty character minimum.");
 await applicant.p.setInputFiles("#photo", { name: "face.png", mimeType: "image/png", buffer: PNG });
+check("and the one general tape", (await applicant.p.locator('input[type="file"][name^="video_"]').count()) === 1);
+await applicant.p.setInputFiles('input[type="file"][name^="video_"]', { name: "tape.mp4", mimeType: "video/mp4", buffer: TAPE });
 await applicant.p.check("#acceptSubmissionTerms");
 if (await applicant.p.locator("#available").count()) await applicant.p.check("#available");
 await applicant.p.getByRole("button", { name: "Send submission" }).click();
 await applicant.p.getByText("Submission sent").waitFor({ timeout: 30000 });
-check("the submission went through with the photo", true);
+check("the submission went through with the photo and the tape", true);
 {
-  const files = await stored("submissions/");
-  check("the store holds one file under the submission's folder", files.length === 1 && files[0].pathname.startsWith(`submissions/${call}/${roleId}/photo/face-`), JSON.stringify(files));
+  const files = (await stored("submissions/")).map((file) => file.pathname).sort();
+  check(
+    "the store holds both under the submission's folder",
+    files.length === 2 &&
+      files[0].startsWith(`submissions/${call}/${roleId}/photo/face-`) &&
+      files[1].startsWith(`submissions/${call}/${roleId}/video/tape/tape-`),
+    JSON.stringify(files),
+  );
 }
 await dir.p.goto(`${BASE}/dashboard/roles/${roleId}`, { waitUntil: "networkidle" });
 const photo = dir.p.locator('img[src^="/api/media?u="]').first();
 check("the director sees the photo on the submission", (await photo.count()) === 1);
 check("and it renders", (await photo.count()) === 1 && (await rendered(photo)));
+check("and the tape, to play through the same route", (await dir.p.locator('video[src^="/api/media?u="]').count()) === 1);
 const photoSrc = await photo.getAttribute("src");
 {
   const mine = await fetched(dir.p, photoSrc);
@@ -229,7 +240,7 @@ await admin.p.getByText("Remove this role", { exact: true }).click();
 await admin.p.check('input[name="confirm"]');
 await admin.p.getByRole("button", { name: "Remove role and submissions" }).click();
 await admin.p.waitForURL((url) => !url.pathname.includes(`/roles/${roleId}`), { timeout: 20000 });
-check("the photo is gone from the store", (await stored("submissions/")).length === 0);
+check("the photo and the tape are gone from the store", (await stored("submissions/")).length === 0);
 {
   const gone = await fetched(dir.p, photoSrc);
   check("and the route no longer serves it", gone.status === 404, JSON.stringify(gone));

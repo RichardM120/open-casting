@@ -36,6 +36,7 @@ import {
 } from "./users";
 import {
   fieldErrors,
+  formEntries,
   profileSchema,
   signInSchema,
   type FieldErrors,
@@ -55,7 +56,7 @@ export async function signIn(
   _previous: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const parsed = signInSchema.safeParse(Object.fromEntries(formData));
+  const parsed = signInSchema.safeParse(formEntries(formData));
   if (!parsed.success) {
     return invalid(
       fieldErrors(parsed.error),
@@ -245,7 +246,7 @@ export async function saveProfile(
   formData: FormData,
 ): Promise<FormState> {
   const user = await requireUser("/welcome");
-  const parsed = profileSchema.safeParse(Object.fromEntries(formData));
+  const parsed = profileSchema.safeParse(formEntries(formData));
 
   if (!parsed.success) {
     return invalid(

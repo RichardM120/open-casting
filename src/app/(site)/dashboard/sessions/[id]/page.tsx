@@ -371,11 +371,14 @@ export default async function SessionPage({
                       <div className="flex items-center gap-3">
                         <ProfilePhoto url={submission.photoUrl} name={submission.name} size="sm" />
                         <div className="min-w-0">
-                          <span className="font-medium">{submission.name}</span>
-                          <br />
+                          {/* A table row is not the place for a name or an address that runs to a line: the card on the role's page has the whole of it. */}
+                          <span className="block max-w-64 truncate font-medium" title={submission.name}>
+                            {submission.name}
+                          </span>
                           <a
                             href={`mailto:${submission.email}`}
-                            className="text-xs text-muted underline-offset-4 hover:underline"
+                            title={submission.email}
+                            className="block max-w-64 truncate text-xs text-muted underline-offset-4 hover:underline"
                           >
                             {submission.email}
                           </a>

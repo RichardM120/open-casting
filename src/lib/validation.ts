@@ -5,6 +5,19 @@ import { PRODUCTION_TYPES, SIGNUP_ROLES, TIER_KEYS, ADULT_AGE } from "./types";
 import { APPLICANT_ASKS, ASK_KEYS, DEFAULT_HIDDEN_FIELDS, DEFAULT_REQUIRED_FIELDS, MAX_MEDIA_SLOTS, RESIDENCIES, SPECIAL_KINDS, type AskKey, type MediaSlot, type SpecialQuestion } from "./types";
 import { parseHeight } from "./height";
 
+/**
+ * A form's fields as one object, with a browser's line endings undone: a
+ * textarea posts its lines joined by CRLF whatever it showed, and a carriage
+ * return has no place in what is stored, shown again or exported.
+ */
+export function formEntries(formData: FormData): Record<string, FormDataEntryValue> {
+  const entries: Record<string, FormDataEntryValue> = {};
+  for (const [key, value] of formData) {
+    entries[key] = typeof value === "string" ? value.replace(/\r\n?/g, "\n") : value;
+  }
+  return entries;
+}
+
 const trimmed = z.string().trim();
 const optionalUrl = trimmed
   .max(300)

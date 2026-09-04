@@ -268,7 +268,7 @@ function SubmissionCard({
           <ProfilePhoto url={submission.photoUrl} name={submission.name} />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-              <h3 className="font-medium">{submission.name}</h3>
+              <h3 className="min-w-0 font-medium wrap-anywhere">{submission.name}</h3>
               <StatusBadge status={submission.status} />
             </div>
             <p className="mt-1 text-sm text-muted">
@@ -340,7 +340,7 @@ function SubmissionCard({
       <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-2 border-t border-line pt-4 text-sm">
         <a
           href={`mailto:${submission.email}`}
-          className="text-brand underline-offset-4 hover:underline"
+          className="min-w-0 text-brand underline-offset-4 wrap-anywhere hover:underline"
         >
           {submission.email}
         </a>

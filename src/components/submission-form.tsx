@@ -175,9 +175,19 @@ export function SubmissionForm({
       })),
     ];
     for (const { field, kind, what, path, slot } of files) {
+      // The file input and the hidden field holding an earlier upload's URL
+      // are named apart. A form's data lists every control under its name
+      // and get() returns the first; while the two shared a name that was
+      // the hidden field, and the file behind it was never sent.
       const file = formData.get(field);
+      const kept = String(formData.get(`${field}_kept`) ?? "").trim();
       formData.delete(field);
-      if (!(file instanceof File) || file.size === 0) continue;
+      formData.delete(`${field}_kept`);
+      const posted = kind === "photo" ? "photoUrl" : field;
+      if (!(file instanceof File) || file.size === 0) {
+        if (kept) formData.set(posted, kept);
+        continue;
+      }
       if (slot?.maxSeconds) {
         const seconds = await videoDuration(file);
         if (seconds !== null && seconds > slot.maxSeconds + 1) {
@@ -194,7 +204,7 @@ export function SubmissionForm({
           clientPayload: JSON.stringify({ token, roleId, kind }),
           onUploadProgress: ({ percentage }) => setProgress({ kind: what, percent: percentage }),
         });
-        formData.set(kind === "photo" ? "photoUrl" : field, result.url);
+        formData.set(posted, result.url);
         setUploaded((current) => ({ ...current, [field]: { url: result.url, name: file.name } }));
       } catch (error) {
         setProgress(null);
@@ -708,12 +718,12 @@ export function SubmissionForm({
               ? `A recent photo of you, and the ${slots.length} videos set out below. Each is seen only by the casting team and is deleted with your submission.`
               : "A recent photo of you, and a self-tape or showreel. Both are seen only by the casting team and are deleted with your submission."}
           </p>
-          <input type="hidden" name="photoUrl" value={uploaded.photo?.url ?? ""} />
+          <input type="hidden" name="photo_kept" value={uploaded.photo?.url ?? ""} />
           {slots.map((slot) => (
             <input
               key={slot.key}
               type="hidden"
-              name={`video_${slot.key}`}
+              name={`video_${slot.key}_kept`}
               value={uploaded[`video_${slot.key}`]?.url ?? ""}
             />
           ))}

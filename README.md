@@ -475,6 +475,21 @@ Every row and card shows the applicant's photo, or a placeholder that says
 file could not be fetched, so a missing file never shows as a broken image. Suite 16 loads a casting call with
 200 submissions, 50 of them with photos, and walks the pages.
 
+Suite 18 (`test/suites/18-capacity.mjs`) is the capacity test. It sets a
+casting call up through the forms with every option on: a production company
+and a banner, the director's own inclusion statement, an agent route and tape
+guidance, then a lead role that asks for everything and makes all of it
+mandatory, with three videos set out, terms to accept and a question about a
+protected characteristic. One applicant sends the whole form, photo and three
+tapes included, then six more send it at once. The roles are then filled to
+over 1,200 submissions straight into the database, with photos that load and
+photos the store no longer holds, three tapes, guardians, every status, and
+names, emails, locations and cover notes far longer than anyone plans for.
+Every page a director reads is then timed against a budget and checked for a
+layout that broke, on a desktop and on a phone, and the spreadsheet is
+downloaded and emailed with every row in it. It runs against the stand-in
+store, like suite 17.
+
 The list leaves the site as a spreadsheet. **Download spreadsheet** serves
 `/dashboard/sessions/[id]/export`, an `.xlsx` built with exceljs (one row per
 applicant, the role, status, contact details and cover note; a second sheet
@@ -562,8 +577,8 @@ HTTPS listener and refuses everything else, so it does exactly what it does
 on a deployment, the Content Security Policy and the CORS preflight included,
 over HTTP/2, which a browser insists on before it will stream a request body.
 A header image goes up from the casting call form and comes back on the
-applicant's page as WebP; a photo goes up with a submission and comes back to
-the director and to nobody else; removing the role removes the file.
+applicant's page as WebP; a photo and a tape go up with a submission and come
+back to the director and to nobody else; removing the role removes the files.
 `BLOB_READ_BASE` exists for that harness and has no place on a deployment.
 
 Create the store as **private**: the app writes nothing public, and a public
@@ -800,4 +815,7 @@ link that is forwarded is a link that works. Regenerating a token is not exposed
 in the UI yet; closing the casting call early is the way to stop a leaked link
 today. Nobody is emailed when a submission arrives or a status changes: the
 applicant's address is on every submission, and replying is a manual step. A
-role cannot be moved between casting calls.
+role cannot be moved between casting calls. Submissions are throttled at ten
+an hour from one address, which is generous for a household and useless for a
+script, but a school or an agency sending many through one connection will
+meet it.
