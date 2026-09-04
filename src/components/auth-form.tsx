@@ -13,7 +13,7 @@ function GoogleButton({ next, label }: { next: string; label: string }) {
     <>
       <a
         href={`/api/auth/google?next=${encodeURIComponent(next)}`}
-        className="flex w-full items-center justify-center gap-2.5 rounded-full border border-line-strong bg-raised px-6 py-2 text-sm font-medium transition-colors hover:border-accent hover:text-brand"
+        className="flex w-full items-center justify-center gap-2.5 rounded-full border border-line-strong bg-surface px-6 py-2 text-sm font-medium transition-colors hover:border-accent hover:text-brand"
       >
         <GoogleMark />
         {label}
@@ -110,8 +110,8 @@ export function SignInForm({
       ) : null}
 
       <p className="mt-2 text-sm leading-relaxed text-muted">
-        Accounts are created by the administrator, so there is nothing to register for. If you
-        do not have one, ask whoever runs the casting for this casting call.
+        Accounts are made by the administrator. If you do not have one, ask whoever runs your
+        casting.
       </p>
     </form>
   );

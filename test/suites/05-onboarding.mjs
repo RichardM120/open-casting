@@ -59,7 +59,7 @@ section("3b accounts cannot be self-registered");
   const { c, p } = await ctx();
   check("no signup page", (await p.goto(`${BASE}/signup`, { waitUntil: "networkidle" })).status() === 404);
   await p.goto(`${BASE}/login`, { waitUntil: "networkidle" });
-  check("sign-in says who makes accounts", (await p.getByText(/created by the administrator/).count()) > 0);
+  check("sign-in says who makes accounts", (await p.getByText(/made by the administrator/).count()) > 0);
   check("no link offering to create one", (await p.getByRole("link", { name: /create one/i }).count()) === 0);
   await c.close();
 }

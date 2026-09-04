@@ -403,8 +403,11 @@ The date is shown on every casting call's page, and both FAQs state it.
 ## The look, and the applicant's own page
 
 Charcoal, terracotta, cream and gold, from the brand board: cream ground,
-white cards, charcoal text, a terracotta header with white on it, and gold for
-the one primary action on a screen. Every colour used for text reaches 4.5:1
+copy in charcoal on warm cream containers with a crisp outline, white for the
+wells inside them and for every field, a terracotta header with white on it,
+and gold for the one primary action on a screen. The one panel that is the
+next thing to do, publishing a draft, the link once it is live, the form on an
+applicant's page, is white with a gold edge and a small gold tag naming it. Every colour used for text reaches 4.5:1
 on what it sits on; gold is a fill, never a colour for words, which is why
 the accent text of the old dark theme became terracotta. Focus rings are
 terracotta too, controls are at least 44px tall, and the submission form's

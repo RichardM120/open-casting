@@ -34,7 +34,7 @@ export default async function AgreementPage() {
       </h1>
 
       {mine.length > 0 ? (
-        <div className="mt-6 rounded-xl border border-line bg-surface p-4 sm:p-6">
+        <div className="mt-6 rounded-xl border border-line-strong bg-raised p-4 sm:p-6">
           <p className="text-sm text-muted">
             {mine[0].current
               ? "You have accepted the current version."

@@ -16,7 +16,7 @@ const BUTTON_BASE =
 
 const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   primary: "bg-accent text-accent-ink hover:bg-accent-hover",
-  secondary: "border border-line-strong bg-raised text-text hover:border-accent hover:text-brand",
+  secondary: "border border-line-strong bg-surface text-text hover:border-accent hover:text-brand",
   ghost: "text-muted hover:text-text",
   danger: "border border-line-strong text-danger hover:bg-danger-soft",
   /* The homepage's way in, as the design canvas has it: teal and bold. */
@@ -102,12 +102,32 @@ export function Card({
   return (
     <div
       className={cx(
-        "rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6",
+        "rounded-2xl border border-line-strong bg-raised p-4 shadow-card sm:p-6",
         className,
       )}
     >
       {children}
     </div>
+  );
+}
+
+/**
+ * The one panel on a screen that is the next thing to do: white where the
+ * copy containers are cream, with a gold edge. Used with a Nudge naming it.
+ */
+export const SPOTLIGHT = "rounded-2xl border-2 border-accent bg-surface shadow-card";
+
+/** A small gold tag that points at a key interaction: "Next step", "Apply here". */
+export function Nudge({ children, className }: { children: ReactNode; className?: string }) {
+  return (
+    <span
+      className={cx(
+        "inline-flex items-center gap-1.5 rounded-full bg-accent px-2.5 py-0.5 text-xs font-semibold tracking-wide text-accent-ink",
+        className,
+      )}
+    >
+      {children}
+    </span>
   );
 }
 

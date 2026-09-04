@@ -233,7 +233,7 @@ export function SessionForm({
       ) : null}
 
       <RequiredKey />
-      <fieldset className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
+      <fieldset className="rounded-2xl border border-line-strong bg-raised p-4 shadow-card sm:p-6">
         <legend className="mb-2 text-lg font-semibold tracking-tight">The casting call</legend>
         <p className="text-sm text-muted">
           What applicants see above every role you post into it.
@@ -308,7 +308,7 @@ export function SessionForm({
         </div>
       </fieldset>
 
-      <fieldset className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
+      <fieldset className="rounded-2xl border border-line-strong bg-raised p-4 shadow-card sm:p-6">
         <legend className="mb-2 text-lg font-semibold tracking-tight">The casting window</legend>
         <p className="text-sm text-muted">
           Every role in this casting call takes submissions between these times, and at no other
@@ -355,7 +355,7 @@ export function SessionForm({
         </div>
       </fieldset>
 
-      <fieldset className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
+      <fieldset className="rounded-2xl border border-line-strong bg-raised p-4 shadow-card sm:p-6">
         <legend className="mb-2 text-lg font-semibold tracking-tight">
           When the production finishes
         </legend>
@@ -383,7 +383,7 @@ export function SessionForm({
         </div>
       </fieldset>
 
-      <fieldset className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
+      <fieldset className="rounded-2xl border border-line-strong bg-raised p-4 shadow-card sm:p-6">
         <legend className="mb-2 text-lg font-semibold tracking-tight">What applicants are told</legend>
         <p className="text-sm text-muted">
           Two things every casting call says for itself on the applicant&apos;s page.

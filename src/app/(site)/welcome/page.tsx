@@ -86,7 +86,7 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
         <StepIndicator step={step} total={total} />
       </div>
 
-      <div className="mt-8 rounded-2xl border border-line bg-surface p-7">
+      <div className="mt-8 rounded-2xl border border-line-strong bg-raised p-7">
         {needsAgreement ? (
           <>
             <h2 className="text-lg font-semibold tracking-tight">

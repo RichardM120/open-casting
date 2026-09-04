@@ -78,7 +78,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       {params.removed ? (
         <p
           role="status"
-          className="mb-8 rounded-2xl border border-line bg-surface p-4 text-sm text-muted"
+          className="mb-8 rounded-2xl border border-line-strong bg-raised p-4 text-sm text-muted"
         >
           The casting call was removed, along with its roles and their submissions.
         </p>
@@ -118,7 +118,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       </div>
 
       {atLimit ? (
-        <p className="mt-8 rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">
+        <p className="mt-8 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
           Your account covers {user.maxSessions}{" "}
           {user.maxSessions === 1 ? "casting call" : "casting calls"} and you have used{" "}
           {user.maxSessions === 1 ? "it" : "them all"}. Ask the administrator to extend it if you
@@ -157,7 +157,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                 <li
                   key={session.id}
                   data-state={state.key}
-                  className={`relative rounded-2xl border border-line p-4 shadow-card transition-colors hover:border-line-strong sm:p-6 ${cardTone(state)}`}
+                  className={`relative rounded-2xl border border-line p-4 shadow-card transition-colors hover:border-accent sm:p-6 ${cardTone(state)}`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
                     <div className="min-w-0 flex-1">
@@ -304,7 +304,7 @@ function Stat({
     value === 0 ? "text-text" : tone === "accent" ? "text-brand" : tone === "positive" ? "text-positive" : "text-text";
 
   return (
-    <div className="rounded-2xl border border-line bg-surface p-4 shadow-card">
+    <div className="rounded-2xl border border-line-strong bg-raised p-4 shadow-card">
       <dt className="text-sm text-muted">{label}</dt>
       <dd className={`mt-1 text-2xl font-semibold tracking-tight sm:text-3xl ${colour}`}>{value}</dd>
     </div>

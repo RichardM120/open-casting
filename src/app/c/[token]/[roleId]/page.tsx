@@ -112,7 +112,7 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
             . One submission per person per casting call, whichever role you go for.
           </p>
 
-          <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 rounded-2xl border border-line bg-surface p-5 shadow-card sm:grid-cols-3 sm:p-6">
+          <dl className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 rounded-2xl border border-line-strong bg-raised p-5 shadow-card sm:grid-cols-3 sm:p-6">
             <Detail label="Location" value={role.location} />
             <Detail label="Playing age" value={ageRange(role.ageMin, role.ageMax)} />
             <Detail label="Shoot dates" value={shootWindow(role)} />

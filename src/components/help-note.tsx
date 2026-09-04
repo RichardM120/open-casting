@@ -18,7 +18,7 @@ export function HelpNote({
   children: ReactNode;
 }) {
   return (
-    <details className="group mt-6 rounded-xl border border-line bg-raised text-sm">
+    <details className="group mt-6 rounded-xl border border-line bg-surface text-sm">
       <summary className="flex cursor-pointer items-center gap-2 px-4 py-3 text-muted transition-colors hover:text-text [&::-webkit-details-marker]:hidden">
         <span
           aria-hidden

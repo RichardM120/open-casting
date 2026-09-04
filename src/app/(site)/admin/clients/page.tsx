@@ -45,7 +45,7 @@ export default async function ClientsPage({ searchParams }: PageProps<"/admin/cl
       {params.removed ? (
         <p
           role="status"
-          className="mt-6 rounded-2xl border border-line bg-surface p-4 text-sm text-muted"
+          className="mt-6 rounded-2xl border border-line-strong bg-raised p-4 text-sm text-muted"
         >
           The client was removed.
         </p>
@@ -85,7 +85,7 @@ export default async function ClientsPage({ searchParams }: PageProps<"/admin/cl
               return (
                 <li
                   key={client.id}
-                  className="rounded-2xl border border-line bg-surface p-4 sm:p-6 transition-colors hover:border-line-strong"
+                  className="rounded-2xl border border-line-strong bg-raised p-4 sm:p-6 transition-colors hover:border-accent"
                 >
                   <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                     <div className="min-w-0 flex-1">

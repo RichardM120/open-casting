@@ -69,7 +69,7 @@ export function ActivityList({
         return (
           <li
             key={entry.id}
-            className="flex gap-3 rounded-xl border border-line bg-raised px-4 py-3 shadow-card"
+            className="flex gap-3 rounded-xl border border-line bg-surface px-4 py-3 shadow-card"
           >
             <span
               aria-hidden="true"

@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 
 import { SignInForm } from "@/components/auth-form";
-import { Eyebrow } from "@/components/ui";
+import { Eyebrow, SPOTLIGHT, cx } from "@/components/ui";
 import { currentUser } from "@/lib/auth";
 import { googleConfigured } from "@/lib/oauth";
 
@@ -39,7 +39,7 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           Applicants never sign in. If you were sent a casting link, open that instead.
         </p>
 
-        <div className="mt-8 rounded-2xl border border-line bg-surface p-7">
+        <div className={cx(SPOTLIGHT, "mt-8 p-7")}>
           <SignInForm next={next} google={googleConfigured()} notice={error} />
         </div>
       </div>

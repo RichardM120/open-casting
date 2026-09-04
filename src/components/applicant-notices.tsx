@@ -8,7 +8,7 @@ export function InclusionStatement({ session }: { session: CastingSession }) {
   const text = session.inclusionStatement ?? DEFAULT_INCLUSION_STATEMENT;
   if (!text) return null;
   return (
-    <p className="mt-10 max-w-prose rounded-2xl border border-line bg-surface p-5 leading-relaxed text-text shadow-card sm:p-6">
+    <p className="mt-10 max-w-prose rounded-2xl border border-line-strong bg-raised p-5 leading-relaxed text-text shadow-card sm:p-6">
       {text}
     </p>
   );
@@ -34,7 +34,7 @@ export function YourData({
   return (
     <section
       aria-labelledby="your-data"
-      className="mt-12 rounded-2xl border border-line bg-surface p-5 shadow-card sm:p-6"
+      className="mt-12 rounded-2xl border border-line-strong bg-raised p-5 shadow-card sm:p-6"
     >
       <h2 id="your-data" className="text-lg font-semibold tracking-tight">
         Your data

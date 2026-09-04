@@ -50,7 +50,7 @@ export function AgreementStep({ nextStep, children }: { nextStep: number; childr
         </p>
       ) : null}
 
-      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-raised p-4 text-sm leading-relaxed text-muted">
+      <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-line bg-surface p-4 text-sm leading-relaxed text-muted">
         <input
           type="checkbox"
           name="accept"

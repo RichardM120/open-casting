@@ -42,7 +42,7 @@ export default async function AccountsPage() {
         </p>
       </div>
 
-      <section className="mt-10 rounded-2xl border border-line bg-surface p-6 md:p-7">
+      <section className="mt-10 rounded-2xl border border-line-strong bg-raised p-6 md:p-7">
         <h2 className="text-lg font-semibold tracking-tight">Create an account</h2>
         <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
           For a casting director or a production team. You will be given a password to pass on;
@@ -50,7 +50,7 @@ export default async function AccountsPage() {
         </p>
         <div className="mt-6">
           {clients.length === 0 ? (
-            <p className="rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">
+            <p className="rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
               An account belongs to a client, so there is nothing to fill in yet.{" "}
               <Link
                 href="/admin/clients/new"
@@ -72,7 +72,7 @@ export default async function AccountsPage() {
           return (
             <li
               key={account.id}
-              className="rounded-2xl border border-line bg-surface p-4 sm:p-6"
+              className="rounded-2xl border border-line-strong bg-raised p-4 sm:p-6"
             >
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
               <div className="min-w-0 flex-1">

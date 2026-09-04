@@ -23,7 +23,7 @@ export function FaqSection({
 /** Collapsed by default so a long page stays scannable. */
 export function FaqItem({ q, children }: { q: string; children: ReactNode }) {
   return (
-    <details className="group rounded-xl border border-line bg-surface open:border-line-strong">
+    <details className="group rounded-xl border border-line-strong bg-raised transition-colors open:border-accent">
       <summary className="flex cursor-pointer list-none items-center justify-between gap-4 p-4 sm:p-6 text-sm font-medium">
         {q}
         <span
@@ -47,7 +47,7 @@ export function FieldGlossary({
   items: { term: string; means: ReactNode }[];
 }) {
   return (
-    <dl className="mt-6 divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+    <dl className="mt-6 divide-y divide-line overflow-hidden rounded-2xl border border-line-strong bg-raised">
       {items.map((item) => (
         <div key={item.term} className="grid gap-1.5 p-4 sm:p-6 sm:grid-cols-[200px_minmax(0,1fr)] sm:gap-6">
           <dt className="text-sm font-medium text-text">{item.term}</dt>
@@ -60,7 +60,7 @@ export function FieldGlossary({
 
 export function NotLegalAdvice() {
   return (
-    <p className="mt-14 rounded-xl border border-line bg-raised p-4 sm:p-6 text-sm leading-relaxed text-muted">
+    <p className="mt-14 rounded-xl border border-line bg-surface p-4 sm:p-6 text-sm leading-relaxed text-muted">
       <strong className="text-text">This is plain-English guidance, not legal advice.</strong>{" "}
       It explains what the fields on this site mean and how they are normally used in UK film,
       television and theatre. It is not a contract, and it does not replace an agreement between

@@ -11,7 +11,7 @@ import { ADULT_AGE, RESIDENCIES, type AskKey, type MediaSlot, type SpecialKind }
 import { formatSeconds, videoDuration } from "@/lib/video";
 
 import { useErrorFocus } from "./use-error-focus";
-import { cx, Button, ButtonLink, ErrorSummary, Field, Input, RequiredKey, RequiredMark, Select, Textarea } from "./ui";
+import { cx, Button, ButtonLink, ErrorSummary, Field, Input, Nudge, RequiredKey, RequiredMark, SPOTLIGHT, Select, Textarea } from "./ui";
 import { SubmitButton } from "./submit-button";
 
 type Uploaded = { url: string; name: string };
@@ -37,7 +37,7 @@ function TapeGuidance({ text }: { text: string }) {
           aria-label="Framing: landscape, head and shoulders, eyes a third of the way down"
           role="img"
           viewBox="0 0 96 64"
-          className="w-40 shrink-0 rounded-lg border border-line bg-raised stroke-text"
+          className="w-40 shrink-0 rounded-lg border border-line bg-surface stroke-text"
           fill="none"
           strokeWidth="2"
           strokeLinecap="round"
@@ -247,7 +247,7 @@ export function SubmissionForm({
 
   if (state.status === "success") {
     return (
-      <div className="rounded-2xl border border-line bg-surface p-7">
+      <div className="rounded-2xl border border-line-strong bg-raised p-7">
         <p className="text-xs font-semibold tracking-[0.18em] text-positive uppercase">
           Submission sent
         </p>
@@ -273,8 +273,11 @@ export function SubmissionForm({
 
   if (agentRoute && represented !== "no") {
     return (
-      <div className="rounded-2xl border border-line bg-surface p-7">
-        <h2 className="text-xl font-semibold tracking-tight">Before you start</h2>
+      <div className={cx(SPOTLIGHT, "p-7")}>
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 className="text-xl font-semibold tracking-tight">Before you start</h2>
+          <Nudge>Start here</Nudge>
+        </div>
         {represented === "yes" ? (
           <>
             <p className="mt-3 text-sm leading-relaxed whitespace-pre-line text-text">{agentRoute}</p>
@@ -309,9 +312,12 @@ export function SubmissionForm({
     <form
       ref={formRef}
       action={withUploads}
-      className="rounded-2xl border border-line bg-surface p-7"
+      className={cx(SPOTLIGHT, "p-7")}
     >
-      <h2 className="text-xl font-semibold tracking-tight">Submit for this role</h2>
+      <div className="flex flex-wrap items-center gap-3">
+        <h2 className="text-xl font-semibold tracking-tight">Submit for this role</h2>
+        <Nudge>Apply here</Nudge>
+      </div>
       <p className="mt-2 text-sm text-muted">
         Free to submit, and no agent needed. Everything here goes straight to the casting
         director.
@@ -610,7 +616,7 @@ export function SubmissionForm({
       ) : null}
 
       {special ? (
-        <div className="mt-6 rounded-xl border border-line-strong bg-raised p-4 sm:p-6">
+        <div className="mt-6 rounded-xl border border-line-strong bg-surface p-4 sm:p-6">
           <h3 className="text-sm font-semibold">One more question</h3>
           <p className="mt-2 text-sm leading-relaxed text-muted">
             This role is cast to a recorded occupational requirement, which is why it may ask about{" "}
@@ -657,7 +663,7 @@ export function SubmissionForm({
       ) : null}
 
       {disclaimer ? (
-        <div className="mt-6 rounded-xl border border-line-strong bg-raised p-4 sm:p-6">
+        <div className="mt-6 rounded-xl border border-line-strong bg-surface p-4 sm:p-6">
           <h3 className="text-sm font-semibold">Terms for this role</h3>
           <p className="mt-2 text-sm leading-relaxed whitespace-pre-line text-muted">
             {disclaimer}
@@ -693,7 +699,7 @@ export function SubmissionForm({
       ) : null}
 
       {uploads && (asked("photo") || asked("video")) ? (
-        <div className="mt-6 rounded-xl border border-line bg-raised p-4 sm:p-6">
+        <div className="mt-6 rounded-xl border border-line bg-surface p-4 sm:p-6">
           <h3 className="text-sm font-semibold tracking-tight">
             {asked("photo") && asked("video") ? "Photo and video" : asked("photo") ? "Photo" : "Video"}
           </h3>
@@ -767,7 +773,7 @@ export function SubmissionForm({
         </div>
       ) : null}
 
-      <div className="mt-6 rounded-xl border border-line bg-raised p-4 sm:p-6">
+      <div className="mt-6 rounded-xl border border-line bg-surface p-4 sm:p-6">
         <h3 className="text-sm font-semibold tracking-tight">Terms of Submission</h3>
         <p className="mt-2 text-sm leading-relaxed text-muted">
           You keep ownership of everything you send. Nothing is sold, and nothing is used to

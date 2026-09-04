@@ -28,7 +28,7 @@ export default async function GatePage({ searchParams }: PageProps<"/gate">) {
         enter it below.
       </p>
 
-      <div className="mt-8 rounded-2xl border border-line bg-surface p-7">
+      <div className="mt-8 rounded-2xl border border-line-strong bg-raised p-7">
         {gateOperable() ? (
           <GateForm next={next} />
         ) : (

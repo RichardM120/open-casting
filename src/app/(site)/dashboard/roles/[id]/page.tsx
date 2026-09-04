@@ -125,7 +125,7 @@ export default async function RoleSubmissionsPage({
       </div>
 
       {!open ? (
-        <p className="mt-6 rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">
+        <p className="mt-6 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
           {role.closedAt
             ? `Closed early on ${formatDateTime(role.closedAt)}. The role stays up for reference and takes no new submissions.`
             : role.session.closedAt
@@ -186,7 +186,7 @@ export default async function RoleSubmissionsPage({
       </section>
 
       {user.role === "admin" ? (
-        <details className="mt-10 rounded-2xl border border-danger/30 bg-surface p-6">
+        <details className="mt-10 rounded-2xl border border-danger/30 bg-raised p-6">
           <summary className="cursor-pointer text-sm font-medium text-danger">
             Remove this role
           </summary>
@@ -259,7 +259,7 @@ function SubmissionCard({
   const labelFor = (key: string) =>
     slots.find((slot) => slot.key === key)?.label ?? (key === "tape" ? "Self-tape or showreel" : "Video");
   return (
-    <li className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
+    <li className="rounded-2xl border border-line-strong bg-raised p-4 shadow-card sm:p-6">
       {/*
         On a phone the applicant comes first, across the whole card, and the
         status control sits on its own row beneath: beside the control and
@@ -302,7 +302,7 @@ function SubmissionCard({
       ) : null}
 
       {question && (special || answered) ? (
-        <div className="mt-4 max-w-prose rounded-xl border border-line-strong bg-raised p-4 text-sm">
+        <div className="mt-4 max-w-prose rounded-xl border border-line-strong bg-surface p-4 text-sm">
           <p className="text-xs font-medium text-muted">{question.question}</p>
           {special ? (
             <p className="mt-1 text-text">{special.answer}</p>
@@ -336,7 +336,7 @@ function SubmissionCard({
       ))}
 
       {submission.acceptedTerms ? (
-        <details className="mt-4 rounded-xl border border-line bg-raised p-4">
+        <details className="mt-4 rounded-xl border border-line bg-surface p-4">
           <summary className="cursor-pointer text-xs text-muted">
             Accepted your terms on {formatDate(submission.acceptedAt ?? submission.submittedAt)}
           </summary>

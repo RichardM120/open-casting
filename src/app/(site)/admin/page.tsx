@@ -79,7 +79,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
         </ButtonLink>
       </div>
 
-      <section className="mt-10 rounded-2xl border border-line bg-surface p-6">
+      <section className="mt-10 rounded-2xl border border-line-strong bg-raised p-6">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold tracking-tight">File store</h2>
@@ -142,7 +142,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
 
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-2xl border border-line bg-surface p-4 sm:p-6">
+    <div className="rounded-2xl border border-line-strong bg-raised p-4 sm:p-6">
       <dt className="text-sm text-muted">{label}</dt>
       <dd className="mt-1 text-2xl font-semibold tracking-tight">{value}</dd>
     </div>

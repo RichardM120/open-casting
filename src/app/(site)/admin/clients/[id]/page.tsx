@@ -65,7 +65,7 @@ export default async function ClientPage({
       {notice ? (
         <p
           role="status"
-          className="mt-6 rounded-2xl border border-line bg-surface p-4 text-sm text-muted"
+          className="mt-6 rounded-2xl border border-line-strong bg-raised p-4 text-sm text-muted"
         >
           {notice}
         </p>
@@ -104,7 +104,7 @@ export default async function ClientPage({
           Everyone signing in under this client. They inherit its plan and its ceilings.
         </p>
         {accounts.length === 0 ? (
-          <p className="mt-4 rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">
+          <p className="mt-4 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
             No accounts yet.{" "}
             <Link
               href="/admin/accounts"
@@ -119,7 +119,7 @@ export default async function ClientPage({
             {accounts.map((account) => (
               <li
                 key={account.id}
-                className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-line bg-surface px-4 py-3"
+                className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-line-strong bg-raised px-4 py-3"
               >
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium">{account.name}</p>
@@ -145,7 +145,7 @@ export default async function ClientPage({
       client.billingReference ||
       client.address ||
       client.notes ? (
-        <section className="mt-10 rounded-2xl border border-line bg-surface p-6">
+        <section className="mt-10 rounded-2xl border border-line-strong bg-raised p-6">
           <h2 className="text-lg font-semibold tracking-tight">Details</h2>
           <dl className="mt-4 grid gap-4 sm:grid-cols-2">
             <Detail label="Contact" value={client.contactName} />
@@ -166,7 +166,7 @@ export default async function ClientPage({
         </div>
       </section>
 
-      <section className="mt-12 rounded-2xl border border-line bg-raised p-6">
+      <section className="mt-12 rounded-2xl border border-line bg-surface p-6">
         <h2 className="text-lg font-semibold tracking-tight">Stopping this client</h2>
         <p className="mt-2 max-w-prose text-sm text-muted">
           Suspending locks every account under this client out at once, and is reversible.
@@ -202,7 +202,7 @@ export default async function ClientPage({
 
 function Stat({ label, value }: { label: string; value: number | string }) {
   return (
-    <div className="rounded-2xl border border-line bg-surface p-4 sm:p-6">
+    <div className="rounded-2xl border border-line-strong bg-raised p-4 sm:p-6">
       <dt className="text-sm text-muted">{label}</dt>
       <dd className="mt-1 text-2xl font-semibold tracking-tight">{value}</dd>
     </div>

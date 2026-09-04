@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
-import { ButtonLink, Eyebrow, cx } from "./ui";
+import { ButtonLink, Eyebrow, SPOTLIGHT, cx } from "./ui";
 
 /**
  * The five moves from a brief to a shortlist, each with a line drawing. From a
@@ -96,7 +96,7 @@ export function HowItWorks() {
   // heading is absolutely positioned, and without this it would hang off the
   // page beside the card and widen the page by the carousel's length.
   const card =
-    "relative flex shrink-0 snap-center flex-col gap-3 rounded-2xl border border-line bg-surface p-5 shadow-card lg:shrink lg:snap-align-none";
+    "relative flex shrink-0 snap-center flex-col gap-3 rounded-2xl border border-line-strong bg-raised p-5 shadow-card lg:shrink lg:snap-align-none";
 
   return (
     <section aria-labelledby="how-it-works">
@@ -128,7 +128,7 @@ export function HowItWorks() {
             >
               {i + 1}
             </span>
-            <div className="flex h-28 items-center justify-center rounded-xl bg-raised">
+            <div className="flex h-28 items-center justify-center rounded-xl bg-surface">
               <StepArt step={step.key} />
             </div>
             <h3 className="text-base font-semibold tracking-tight">
@@ -138,7 +138,7 @@ export function HowItWorks() {
             <p className="text-sm leading-relaxed text-muted">{step.body}</p>
           </li>
         ))}
-        <li className={cx(card, "w-[84%] justify-between bg-raised lg:hidden")}>
+        <li className={cx(card, "w-[84%] justify-between border-2 border-accent bg-surface lg:hidden")}>
           <div className="flex flex-col gap-3">
             <span
               aria-hidden="true"
@@ -176,7 +176,7 @@ export function HowItWorks() {
           onClick={() => go(index - 1)}
           disabled={index === 0}
           aria-label="Previous"
-          className="inline-flex size-11 items-center justify-center rounded-full border border-line-strong bg-raised text-text transition-colors hover:border-accent disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex size-11 items-center justify-center rounded-full border border-line-strong bg-surface text-text transition-colors hover:border-accent disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Chevron direction="left" />
         </button>
@@ -204,13 +204,13 @@ export function HowItWorks() {
           onClick={() => go(index + 1)}
           disabled={index === SLIDES - 1}
           aria-label="Next"
-          className="inline-flex size-11 items-center justify-center rounded-full border border-line-strong bg-raised text-text transition-colors hover:border-accent disabled:cursor-not-allowed disabled:opacity-40"
+          className="inline-flex size-11 items-center justify-center rounded-full border border-line-strong bg-surface text-text transition-colors hover:border-accent disabled:cursor-not-allowed disabled:opacity-40"
         >
           <Chevron direction="right" />
         </button>
       </div>
 
-      <div className="mt-8 hidden flex-col gap-4 rounded-2xl border border-line bg-raised p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:p-6 lg:flex">
+      <div className={cx(SPOTLIGHT, "mt-8 hidden flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:p-6 lg:flex")}>
         <div className="flex max-w-2xl flex-col gap-2 text-sm leading-relaxed text-muted">
           {CLOSING.map((line) => (
             <p key={line}>{line}</p>

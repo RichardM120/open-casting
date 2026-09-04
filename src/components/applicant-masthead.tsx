@@ -54,7 +54,7 @@ function Placeholder() {
     <div
       role="img"
       aria-label="No picture for this casting call yet"
-      className="flex h-44 items-center justify-center rounded-2xl border border-line bg-surface shadow-card sm:h-56"
+      className="flex h-44 items-center justify-center rounded-2xl border border-line-strong bg-raised shadow-card sm:h-56"
     >
       <svg
         aria-hidden="true"

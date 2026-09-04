@@ -42,7 +42,7 @@ export default function FaqPage() {
           <Link
             key={guide.href}
             href={guide.href}
-            className="group rounded-2xl border border-line bg-surface p-7 transition-colors hover:border-line-strong"
+            className="group rounded-2xl border border-line-strong bg-raised p-7 transition-colors hover:border-accent"
           >
             <Eyebrow>{guide.eyebrow}</Eyebrow>
             <h2 className="mt-3 text-xl font-semibold tracking-tight transition-colors group-hover:text-brand">

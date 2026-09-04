@@ -28,7 +28,7 @@ export default async function HomePage() {
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 md:py-16">
       <HowItWorks />
 
-      <div className="mt-16 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
+      <div className="mt-16 rounded-2xl border border-line-strong bg-raised p-4 shadow-card sm:p-6">
         <h2 className="text-lg font-semibold tracking-tight">Sent a casting link?</h2>
         <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
           Applicants never sign in. Open the link you were sent: it goes straight to the roles and

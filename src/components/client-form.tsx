@@ -72,7 +72,7 @@ export function ClientForm({ client }: { client?: Client }) {
       ) : null}
 
       <RequiredKey />
-      <fieldset className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
+      <fieldset className="rounded-2xl border border-line-strong bg-raised p-4 shadow-card sm:p-6">
         <legend className="mb-2 text-lg font-semibold tracking-tight">The company</legend>
         <p className="text-sm text-muted">
           The name their accounts sign in under. Changing it renames every account with them.
@@ -107,7 +107,7 @@ export function ClientForm({ client }: { client?: Client }) {
         </div>
       </fieldset>
 
-      <fieldset className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
+      <fieldset className="rounded-2xl border border-line-strong bg-raised p-4 shadow-card sm:p-6">
         <legend className="mb-2 text-lg font-semibold tracking-tight">Billing</legend>
         <p className="text-sm text-muted">
           Where invoices go, and whatever reference they need on them.
@@ -136,7 +136,7 @@ export function ClientForm({ client }: { client?: Client }) {
         </div>
       </fieldset>
 
-      <fieldset className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
+      <fieldset className="rounded-2xl border border-line-strong bg-raised p-4 shadow-card sm:p-6">
         <legend className="mb-2 text-lg font-semibold tracking-tight">What they bought</legend>
         <p className="max-w-prose text-sm text-muted">
           Every account under this client inherits these. Leave a ceiling blank for no limit,

@@ -85,7 +85,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
             <li key={role.id}>
               <Link
                 href={`/c/${token}/${role.slug}`}
-                className="group flex flex-col gap-3 rounded-2xl border border-line bg-surface p-5 shadow-card transition-colors hover:border-line-strong sm:p-6"
+                className="group flex flex-col gap-3 rounded-2xl border border-line-strong bg-raised p-5 shadow-card transition-colors hover:border-accent sm:p-6"
               >
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge tone="accent">{role.productionType}</Badge>
@@ -105,6 +105,9 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
                   <Meta label="Location" value={role.location} />
                   <Meta label="Playing age" value={ageRange(role.ageMin, role.ageMax)} />
                   <Meta label="Shoot dates" value={shootWindow(role)} />
+                  <div className="flex items-end justify-end text-sm font-medium text-brand">
+                    <span>Read the brief and apply&nbsp;&rarr;</span>
+                  </div>
                 </dl>
               </Link>
             </li>

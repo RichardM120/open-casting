@@ -10,7 +10,7 @@ import { ShareLink } from "@/components/share-link";
 import { PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
 import { ProfilePhoto } from "@/components/profile-photo";
 import { SubmissionStatusControl } from "@/components/submission-status-control";
-import { Badge, Button, ButtonLink, EmptyState, Eyebrow, buttonStyles } from "@/components/ui";
+import { Badge, Button, ButtonLink, EmptyState, Eyebrow, Nudge, SPOTLIGHT, buttonStyles, cx } from "@/components/ui";
 import {
   emailSubmissionsSheet,
   publishCastingSession,
@@ -169,7 +169,7 @@ export default async function SessionPage({
                 className={`inline-flex min-h-10 shrink-0 items-center rounded-full border px-4 py-2 whitespace-nowrap transition-colors ${
                   current
                     ? "border-accent bg-accent-soft font-medium text-text"
-                    : "border-line text-muted hover:border-line-strong hover:text-text"
+                    : "border-line text-muted hover:border-accent hover:text-text"
                 }`}
               >
                 {which ?? "All"} · {n}
@@ -181,7 +181,7 @@ export default async function SessionPage({
 
       {listed.length > 0 ? (
         <>
-        <div className="mt-4 overflow-x-auto rounded-2xl border border-line bg-surface">
+        <div className="mt-4 overflow-x-auto rounded-2xl border border-line-strong bg-raised">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line text-left text-xs text-muted">
@@ -244,11 +244,11 @@ export default async function SessionPage({
         <Pagination page={page} total={matching} pageSize={PAGE_SIZE} href={listHref} />
         </>
       ) : sessionCounts.total > 0 ? (
-        <p className="mt-4 rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">
+        <p className="mt-4 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
           Nothing is marked {status} at the moment.
         </p>
       ) : (
-        <p className="mt-4 rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">
+        <p className="mt-4 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
           Submissions appear here as they arrive, across every role in the call. Move each one
           through New, Shortlisted, Callback and Declined, and download the whole list as a
           spreadsheet or have it emailed to you.
@@ -267,7 +267,7 @@ export default async function SessionPage({
               <li key={role.id}>
                 <Link
                   href={`/dashboard/roles/${role.id}`}
-                  className="group flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-line bg-surface p-4 sm:p-6 transition-colors hover:border-line-strong"
+                  className="group flex flex-wrap items-center gap-x-6 gap-y-3 rounded-2xl border border-line-strong bg-raised p-4 sm:p-6 transition-colors hover:border-accent"
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate font-medium transition-colors group-hover:text-brand">
@@ -367,7 +367,7 @@ export default async function SessionPage({
         </div>
       </div>
 
-      <p className="mt-6 rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">
+      <p className="mt-6 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
         {session.closedAt
           ? `Closed early on ${formatDateTime(session.closedAt)}. Every role in this casting call stopped taking submissions at that moment.`
           : notYetOpen(session)
@@ -380,8 +380,11 @@ export default async function SessionPage({
       {draft ? rolesSection : null}
 
       {draft ? (
-        <section className="mt-8 rounded-2xl border border-accent/30 bg-accent-soft p-6">
-          <h2 className="text-lg font-semibold tracking-tight">Not published yet</h2>
+        <section className={cx(SPOTLIGHT, "mt-8 p-6")}>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-lg font-semibold tracking-tight">Not published yet</h2>
+            <Nudge>Next step</Nudge>
+          </div>
           <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
             Nobody can open this but you. Check it over as an applicant will see it, then
             publish: that is the moment the link starts working. Everything is saved as you go, so
@@ -434,8 +437,11 @@ export default async function SessionPage({
           </p>
         </section>
       ) : (
-        <section className="mt-8 rounded-2xl border border-accent/30 bg-accent-soft p-6">
-          <h2 className="text-lg font-semibold tracking-tight">The link for applicants</h2>
+        <section className={cx(SPOTLIGHT, "mt-8 p-6")}>
+          <div className="flex flex-wrap items-center gap-3">
+            <h2 className="text-lg font-semibold tracking-tight">The link for applicants</h2>
+            <Nudge>Share this</Nudge>
+          </div>
           <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
             Send this to anyone you want to submit: an Instagram post, a mailout, an agent
             circular. It opens {session.name} and nothing else. There is no listing on Open
@@ -459,7 +465,7 @@ export default async function SessionPage({
 
       <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">{session.synopsis}</p>
 
-      <p className="mt-4 max-w-prose rounded-xl border border-line bg-raised px-4 py-3 text-xs leading-relaxed text-muted">
+      <p className="mt-4 max-w-prose rounded-xl border border-line bg-surface px-4 py-3 text-xs leading-relaxed text-muted">
         {session.purgedAt
           ? `The applicants' details were removed on ${formatDate(session.purgedAt)}, ${RETENTION_DAYS} days after this casting call finished. The roles and the counts are kept; the names, addresses and notes are gone.`
           : `This production finishes on ${formatDate(session.productionEndsAt)}. Applicants' details are destroyed ${RETENTION_DAYS} days later, on ${formatDate(purgeDate(session.productionEndsAt))}${
@@ -474,7 +480,7 @@ export default async function SessionPage({
       {draft ? null : rolesSection}
 
       {user.role === "admin" ? (
-        <details className="mt-10 rounded-2xl border border-danger/30 bg-surface p-6">
+        <details className="mt-10 rounded-2xl border border-danger/30 bg-raised p-6">
           <summary className="cursor-pointer text-sm font-medium text-danger">
             Remove this casting call
           </summary>

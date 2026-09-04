@@ -46,7 +46,7 @@ export function ProfilePhoto({
       src={mediaSrc(url)}
       alt={`${name}'s photo`}
       onError={() => setFailed(true)}
-      className={`${shape} shrink-0 border border-line bg-raised object-cover`}
+      className={`${shape} shrink-0 border border-line bg-surface object-cover`}
     />
   );
 }
@@ -79,7 +79,7 @@ function Initials({
       aria-label={label}
       title={label}
       data-photo={kind}
-      className={`${shape} inline-flex shrink-0 items-center justify-center border border-line bg-raised font-semibold tracking-wide text-brand select-none`}
+      className={`${shape} inline-flex shrink-0 items-center justify-center border border-line bg-surface font-semibold tracking-wide text-brand select-none`}
     >
       {initials(name)}
     </span>

@@ -214,7 +214,7 @@ export function RoleForm({
 
       <RequiredKey />
 
-      <fieldset className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
+      <fieldset className="rounded-2xl border border-line-strong bg-raised p-4 shadow-card sm:p-6">
         <legend className="mb-2 text-lg font-semibold tracking-tight">The role</legend>
         <p className="text-sm text-muted">
           What the listing says: who you are looking for, where it shoots and when.
@@ -411,7 +411,7 @@ export function RoleForm({
                 <span
                   role="radiogroup"
                   aria-labelledby={`ask-${ask.key}`}
-                  className="inline-flex rounded-full border border-line-strong bg-raised p-0.5"
+                  className="inline-flex rounded-full border border-line-strong bg-surface p-0.5"
                 >
                   {ASK_OPTIONS.map((option) => (
                     <label
@@ -593,7 +593,7 @@ function Fold({
     <details
       data-more={id}
       open={open}
-      className="group rounded-2xl border border-line bg-surface shadow-card"
+      className="group rounded-2xl border border-line-strong bg-raised shadow-card"
     >
       <summary className="flex cursor-pointer list-none flex-wrap items-baseline gap-x-4 gap-y-1 p-4 sm:px-6 [&::-webkit-details-marker]:hidden">
         <span className="text-base font-semibold tracking-tight text-text">{title}</span>
@@ -665,7 +665,7 @@ function MediaSlotsEditor({
       {rows.map((row, index) => {
         const n = index + 1;
         return (
-          <div key={row.key} className="rounded-xl border border-line bg-raised p-4">
+          <div key={row.key} className="rounded-xl border border-line bg-surface p-4">
             <input type="hidden" name={`slot_${n}_key`} value={row.key} />
             <div className="grid gap-4 sm:grid-cols-2">
               <Field
