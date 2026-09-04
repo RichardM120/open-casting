@@ -323,3 +323,105 @@ export async function sweepOrphanedMedia(referencedUrls: Iterable<string>): Prom
   await deleteMedia(orphans);
   return orphans.length;
 }
+
+/** What the store holds under one prefix: how many files and how many bytes. */
+export type StoreSlice = { files: number; bytes: number };
+
+/** Everything the store holds, split by what it is. */
+export type StoreUsage = {
+  heroes: StoreSlice;
+  photos: StoreSlice;
+  videos: StoreSlice;
+  /** Anything under neither prefix: nothing writes here, so it should stay empty. */
+  other: StoreSlice;
+  total: StoreSlice;
+  /** The oldest and newest file, so a store that stopped being written to shows it. */
+  oldest: string | null;
+  newest: string | null;
+};
+
+const EMPTY_SLICE = (): StoreSlice => ({ files: 0, bytes: 0 });
+
+/**
+ * What the store is holding, counted by walking it. There is no size figure to
+ * ask for, so the pages are listed and added up; the store is small by design
+ * (a photo and up to three tapes per submission, deleted with them) and this
+ * runs on an admin page nobody loads in a loop.
+ */
+export async function storeUsage(): Promise<StoreUsage | null> {
+  if (!uploadsEnabled()) return null;
+
+  const usage: StoreUsage = {
+    heroes: EMPTY_SLICE(),
+    photos: EMPTY_SLICE(),
+    videos: EMPTY_SLICE(),
+    other: EMPTY_SLICE(),
+    total: EMPTY_SLICE(),
+    oldest: null,
+    newest: null,
+  };
+
+  try {
+    let cursor: string | undefined;
+    do {
+      const page = await list({ ...storeAuth(), cursor, limit: 1000 });
+      for (const blob of page.blobs) {
+        const slice = blob.pathname.startsWith("calls/")
+          ? usage.heroes
+          : /^submissions\/[^/]+\/[^/]+\/photo\//.test(blob.pathname)
+            ? usage.photos
+            : /^submissions\/[^/]+\/[^/]+\/video\//.test(blob.pathname)
+              ? usage.videos
+              : usage.other;
+        slice.files += 1;
+        slice.bytes += blob.size;
+        usage.total.files += 1;
+        usage.total.bytes += blob.size;
+
+        const at = blob.uploadedAt.toISOString();
+        if (usage.oldest === null || at < usage.oldest) usage.oldest = at;
+        if (usage.newest === null || at > usage.newest) usage.newest = at;
+      }
+      cursor = page.hasMore ? page.cursor : undefined;
+    } while (cursor);
+  } catch (error) {
+    console.error("[blob] could not measure the store", error);
+    return null;
+  }
+
+  return usage;
+}
+
+/**
+ * Files under submissions/ that no submission row points at. The nightly sweep
+ * deletes these; counting them here says whether it is keeping up, without
+ * deleting anything itself.
+ */
+export async function countOrphanedMedia(referencedUrls: Iterable<string>): Promise<number | null> {
+  if (!uploadsEnabled()) return null;
+
+  const referenced = new Set<string>();
+  for (const url of referencedUrls) {
+    try {
+      referenced.add(new URL(url).pathname.slice(1));
+    } catch {
+      // Not a URL, so not a file in the store either.
+    }
+  }
+
+  try {
+    let cursor: string | undefined;
+    let orphans = 0;
+    do {
+      const page = await list({ ...storeAuth(), prefix: MEDIA_ROOT, cursor, limit: 1000 });
+      for (const blob of page.blobs) {
+        if (!referenced.has(blob.pathname)) orphans += 1;
+      }
+      cursor = page.hasMore ? page.cursor : undefined;
+    } while (cursor);
+    return orphans;
+  } catch (error) {
+    console.error("[blob] could not count orphaned media", error);
+    return null;
+  }
+}

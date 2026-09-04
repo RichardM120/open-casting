@@ -168,7 +168,7 @@ export async function createAccount(adminPage, user) {
     accessUntil: user.accessUntil,
   });
 
-  await adminPage.goto(`${BASE}/admin/accounts`, { waitUntil: "networkidle" });
+  await adminPage.goto(`${BASE}/admin/accounts/new`, { waitUntil: "networkidle" });
   await adminPage.fill("#name", user.name);
   await adminPage.fill("#email", user.email);
   await adminPage.selectOption("#clientId", { label: user.company });

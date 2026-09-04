@@ -19,6 +19,7 @@ import {
   getClient,
   setClientSuspended,
   updateClient,
+  type NewClient,
 } from "./clients";
 import {
   createSession,
@@ -56,6 +57,7 @@ import {
   ROLE_LABELS,
   SUBMISSION_STATUSES,
   type SubmissionStatus,
+  type BillingPeriod,
   type Tier,
 } from "./types";
 import type { SubmissionVideo } from "./types";
@@ -72,13 +74,14 @@ import {
   clientSchema,
   fieldErrors,
   formEntries,
-  newAccountSchema,
+  accountSetupSchema,
   readAsks,
   readMediaSlots,
   roleSchema,
   sessionSchema,
   specialQuestionOf,
   submissionSchema,
+  type ClientInput,
   type FieldErrors,
 } from "./validation";
 
@@ -659,12 +662,12 @@ export async function createAccount(
   _previous: FormState,
   formData: FormData,
 ): Promise<FormState> {
-  const user = await requireUser("/admin/accounts");
+  const user = await requireUser("/admin/accounts/new");
   if (user.role !== "admin") {
     return invalid({}, "Only the administrator can create accounts.", formData);
   }
 
-  const parsed = newAccountSchema.safeParse(formEntries(formData));
+  const parsed = accountSetupSchema.safeParse(formEntries(formData));
   if (!parsed.success) {
     return invalid(
       fieldErrors(parsed.error),
@@ -685,12 +688,14 @@ export async function createAccount(
   }
 
   const password = generatePassword();
-  const { clientId, ...profile } = parsed.data;
+  const { clientId, name, email, role, ...money } = parsed.data;
 
   let created;
   try {
     created = await createUser({
-      ...profile,
+      name,
+      email,
+      role,
       company: client.name,
       clientId,
       password,
@@ -705,6 +710,16 @@ export async function createAccount(
     }
     throw error;
   }
+
+  // What they are invoiced belongs to the client, not the person: it is saved
+  // here so an account and the arrangement behind it are set up in one place,
+  // and every account under the client sees the same figures.
+  await updateClient(client.id, {
+    ...client,
+    ...money,
+    tier: (money.tier as Tier | undefined) ?? null,
+    billingPeriod: money.billingPeriod as BillingPeriod | "",
+  });
 
   await record({
     action: "account.created",
@@ -768,6 +783,19 @@ export async function testFileStore(): Promise<void> {
   );
 }
 
+/**
+ * What the client form posts, as the store takes it. The two enums arrive as
+ * plain strings because both forms offer "not set" as an empty option, which
+ * a bare enum cannot express.
+ */
+function asClient(data: ClientInput): NewClient {
+  return {
+    ...data,
+    tier: (data.tier as Tier | undefined) ?? null,
+    billingPeriod: data.billingPeriod as BillingPeriod | "",
+  };
+}
+
 export async function createClientRecord(
   _previous: FormState,
   formData: FormData,
@@ -786,7 +814,7 @@ export async function createClientRecord(
 
   let client;
   try {
-    client = await createClient({ ...parsed.data, tier: (parsed.data.tier as Tier | undefined) ?? null });
+    client = await createClient(asClient(parsed.data));
   } catch (error) {
     if ((error as { code?: string }).code === UNIQUE_VIOLATION) {
       return invalid(
@@ -830,7 +858,7 @@ export async function editClientRecord(
 
   let client;
   try {
-    client = await updateClient(id, { ...parsed.data, tier: (parsed.data.tier as Tier | undefined) ?? null });
+    client = await updateClient(id, asClient(parsed.data));
   } catch (error) {
     if ((error as { code?: string }).code === UNIQUE_VIOLATION) {
       return invalid(

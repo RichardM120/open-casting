@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 import { fromLocalInput, londonDate } from "./format";
-import { PRODUCTION_TYPES, SIGNUP_ROLES, TIER_KEYS, ADULT_AGE } from "./types";
+import { BILLING_PERIOD_KEYS, PRODUCTION_TYPES, SIGNUP_ROLES, TIER_KEYS, ADULT_AGE } from "./types";
 import { APPLICANT_ASKS, ASK_KEYS, DEFAULT_HIDDEN_FIELDS, DEFAULT_REQUIRED_FIELDS, MAX_MEDIA_SLOTS, RESIDENCIES, SPECIAL_KINDS, type AskKey, type MediaSlot, type SpecialQuestion } from "./types";
 import { parseHeight } from "./height";
 
@@ -297,6 +297,42 @@ const password = z
   .min(10, "Use at least 10 characters")
   .max(200, "Keep it under 200 characters");
 
+/**
+ * A figure in pounds, held as whole pence. Money never becomes a float: a
+ * rounding error on an invoice is worth more than the convenience.
+ */
+const optionalMoney = trimmed
+  .max(12)
+  .refine((value) => value === "" || /^\d{1,7}(\.\d{1,2})?$/.test(value), "Enter an amount in pounds, or leave blank")
+  .transform((value) => (value === "" ? null : Math.round(Number(value) * 100)));
+
+const optionalDays = trimmed
+  .max(4)
+  .refine((value) => value === "" || /^\d+$/.test(value), "Enter a number of days, or leave blank")
+  .refine((value) => value === "" || Number(value) <= 365, "Enter 365 days or fewer, or leave blank")
+  .transform((value) => (value === "" ? null : Number(value)));
+
+/** What the client is invoiced. Every part of it can be left unset. */
+export const billingSchema = z.object({
+  billingEmail: z
+    .string()
+    .trim()
+    .max(120)
+    .refine(
+      (value) => value === "" || z.email().safeParse(value).success,
+      "Enter a valid email address, or leave blank",
+    ),
+  billingReference: trimmed.max(80),
+  vatNumber: trimmed.max(40),
+  paymentTermsDays: optionalDays,
+  ratePence: optionalMoney,
+  billingPeriod: trimmed
+    .refine(
+      (value) => value === "" || (BILLING_PERIOD_KEYS as string[]).includes(value),
+      "Choose how often they are invoiced, or leave it unset",
+    ),
+});
+
 export const limitsSchema = z.object({
   tier: z.enum(TIER_KEYS as [string, ...string[]]).optional(),
   maxSessions: optionalCount,
@@ -317,15 +353,7 @@ export const clientSchema = z.object({
       "Enter a valid email address, or leave blank",
     ),
   contactPhone: trimmed.max(40),
-  billingEmail: z
-    .string()
-    .trim()
-    .max(120)
-    .refine(
-      (value) => value === "" || z.email().safeParse(value).success,
-      "Enter a valid email address, or leave blank",
-    ),
-  billingReference: trimmed.max(80),
+  ...billingSchema.shape,
   address: trimmed.max(300),
   notes: trimmed.max(1000, "Keep the notes under 1000 characters"),
   ...limitsSchema.shape,
@@ -357,6 +385,23 @@ export const newAccountSchema = z.object({
 });
 
 export type NewAccountInput = z.infer<typeof newAccountSchema>;
+
+/**
+ * Setting an account up: who they are, and what their client is invoiced. The
+ * money is the client's, not the person's, so the second half is saved onto
+ * the client every account under it shares.
+ */
+export const accountSetupSchema = newAccountSchema.extend({
+  ...billingSchema.shape,
+  ...limitsSchema.shape,
+  address: trimmed.max(300),
+  tier: trimmed
+    .refine(
+      (value) => value === "" || (TIER_KEYS as string[]).includes(value),
+      "Choose a plan, or leave it unset",
+    )
+    .transform((value) => (value === "" ? undefined : value)),
+});
 
 export const signUpSchema = z.object({
   name: trimmed.min(2, "Enter your name").max(80),

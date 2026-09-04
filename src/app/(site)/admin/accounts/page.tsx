@@ -3,67 +3,58 @@ import Link from "next/link";
 import { HelpNote } from "@/components/help-note";
 import { notFound } from "next/navigation";
 
-import { NewAccountForm } from "@/components/new-account-form";
-import { Badge, Button, CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
+import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
+import { Badge, Button, ButtonLink, CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
 import { toggleAccountSuspended } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
-import { listClients } from "@/lib/clients";
 import { ROLE_LABELS, TIERS, type Tier } from "@/lib/types";
-import { listAccounts } from "@/lib/users";
+import { countAccounts, countSuspendedAccounts, listAccounts } from "@/lib/users";
 import { Breadcrumb } from "@/components/breadcrumb";
+
+export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = { title: "Accounts" };
 
-export default async function AccountsPage() {
+export default async function AccountsPage({ searchParams }: PageProps<"/admin/accounts">) {
   const user = await requireUser("/admin/accounts");
 
   // A 404 rather than a message: a non-admin should not learn this page exists.
   if (user.role !== "admin") notFound();
 
-  const [accounts, clients] = await Promise.all([listAccounts(), listClients()]);
-  const suspended = accounts.filter((account) => account.suspended_at).length;
+  const [query, total, suspended] = await Promise.all([
+    searchParams,
+    countAccounts(),
+    countSuspendedAccounts(),
+  ]);
+
+  // Fifty a page, counted and fetched in the database: the list only grows.
+  const pages = Math.max(1, Math.ceil(total / LIST_PAGE_SIZE));
+  const page = Math.min(pageNumber(query.page), pages);
+  const accounts = await listAccounts(undefined, {
+    limit: LIST_PAGE_SIZE,
+    offset: (page - 1) * LIST_PAGE_SIZE,
+  });
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
       <Breadcrumb trail={[{ href: "/admin", label: "Admin" }, { label: "Accounts" }]} />
       <HelpNote title="What this screen is for">
-        <p dangerouslySetInnerHTML={{ __html: 'Accounts belong to a client and inherit its plan. The password is generated and shown once, so hand it over straight away: it cannot be retrieved.' }} />
+        <p dangerouslySetInnerHTML={{ __html: 'Every account here belongs to a client and inherits its plan. Set one up with New account, which asks for the person and what their client is invoiced.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'A director sees only the casting calls they open. A producer sees every call under their client.' }} />
       </HelpNote>
 
-      <div className="mt-6">
-        <Eyebrow>Admin</Eyebrow>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Accounts</h1>
-        <p className="mt-3 max-w-2xl text-muted">
-          {accounts.length} {accounts.length === 1 ? "account" : "accounts"}
-          {suspended > 0 ? `, ${suspended} suspended` : ""}. Nobody can register themselves, so
-          every account here was made on this page.
-        </p>
-      </div>
-
-      <section className={cx(CARD, "mt-8")} aria-labelledby="create-heading">
-        <SectionHead
-          id="create-heading"
-          title="Create an account"
-          line="For a casting director or a production team. The password is shown once, so pass it on straight away."
-        />
-        <div className="mt-5">
-          {clients.length === 0 ? (
-            <p className="rounded-xl border border-line bg-surface px-4 py-3 text-sm text-muted">
-              An account belongs to a client, so there is nothing to fill in yet.{" "}
-              <Link
-                href="/admin/clients/new"
-                className="text-brand underline-offset-4 hover:underline"
-              >
-                Take on the first client
-              </Link>
-              , then come back.
-            </p>
-          ) : (
-            <NewAccountForm clients={clients} />
-          )}
+      <div className="mt-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <Eyebrow>Admin</Eyebrow>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Accounts</h1>
+          <p className="mt-3 max-w-2xl text-muted">
+            {total} {total === 1 ? "account" : "accounts"}
+            {suspended > 0 ? `, ${suspended} suspended` : ""}. Nobody can register themselves, so
+            every account here was set up by an administrator.
+          </p>
         </div>
-      </section>
+        <ButtonLink href="/admin/accounts/new">New account</ButtonLink>
+      </div>
 
       <section className={cx(CARD, "mt-8")} aria-labelledby="accounts-heading">
       <SectionHead
@@ -138,6 +129,12 @@ export default async function AccountsPage() {
           );
         })}
       </ul>
+      <Pagination
+        page={page}
+        total={total}
+        pageSize={LIST_PAGE_SIZE}
+        href={(n) => (n > 1 ? `/admin/accounts?page=${n}` : "/admin/accounts")}
+      />
       </section>
     </div>
   );

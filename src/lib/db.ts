@@ -709,6 +709,30 @@ const SCHEMA = `
   UPDATE sessions_casting s SET client_id = c.id
     FROM clients c
    WHERE lower(c.name) = lower(s.company) AND s.client_id IS NULL;
+
+  -- What the client is invoiced: the figure, how often, their VAT number and
+  -- how long they have to pay. Money is whole pence, never a float, so a
+  -- rounding error cannot land on an invoice. NULL is "not set", which is not
+  -- the same as nothing to pay.
+  ALTER TABLE clients ADD COLUMN IF NOT EXISTS rate_pence integer;
+  ALTER TABLE clients ADD COLUMN IF NOT EXISTS billing_period text NOT NULL DEFAULT '';
+  ALTER TABLE clients ADD COLUMN IF NOT EXISTS vat_number text NOT NULL DEFAULT '';
+  ALTER TABLE clients ADD COLUMN IF NOT EXISTS payment_terms_days integer;
+
+  -- Every run of the nightly retention sweep, and what it did. Without this
+  -- there is nothing to look at to know the sweep is still running: it deletes
+  -- quietly, and a cron that stopped looks exactly like a quiet week.
+  CREATE TABLE IF NOT EXISTS sweeps (
+    id              bigserial PRIMARY KEY,
+    ran_at          timestamptz NOT NULL DEFAULT now(),
+    warned          integer NOT NULL DEFAULT 0,
+    sessions        integer NOT NULL DEFAULT 0,
+    submissions     integer NOT NULL DEFAULT 0,
+    special_answers integer NOT NULL DEFAULT 0,
+    orphaned_files  integer NOT NULL DEFAULT 0,
+    ms              integer NOT NULL DEFAULT 0
+  );
+  CREATE INDEX IF NOT EXISTS sweeps_recent_idx ON sweeps (ran_at DESC);
 `;
 
 /** Postgres error code for a unique constraint violation. */

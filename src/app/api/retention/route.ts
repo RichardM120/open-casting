@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { sweepOrphanedMedia } from "@/lib/blob";
 import { sendEmail } from "@/lib/email";
+import { recordSweep } from "@/lib/monitoring";
 import { claimPurgeWarnings, purgeExpiredSubmissions } from "@/lib/retention";
 import { purgeSpecialAnswers } from "@/lib/special";
 import { allMediaUrls } from "@/lib/submissions";
@@ -29,6 +30,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: false }, { status: 401 });
   }
 
+  const started = Date.now();
   // Warn before deleting, in that order: a production whose warning and purge
   // fall on the same sweep should still hear about it.
   const warnings = await claimPurgeWarnings();
@@ -58,15 +60,20 @@ export async function POST(request: Request) {
   // to a submission just deleted is not held for another day by a stale list.
   const orphanedFiles = await sweepOrphanedMedia(await allMediaUrls());
 
+  const ran = {
+    warned: warnings.length,
+    sessions: purged.length,
+    submissions: purged.reduce((total, entry) => total + entry.submissions, 0),
+    specialAnswers,
+    orphanedFiles,
+    ms: Date.now() - started,
+  };
+  // Recorded so the Storage page can say when this last ran. A sweep that
+  // stopped being called looks exactly like a quiet week without it.
+  await recordSweep(ran);
+
   return NextResponse.json(
-    {
-      ok: true,
-      warned: warnings.length,
-      sessions: purged.length,
-      submissions: purged.reduce((total, entry) => total + entry.submissions, 0),
-      specialAnswers,
-      orphanedFiles,
-    },
+    { ok: true, ...ran },
     { headers: { "cache-control": "no-store" } },
   );
 }

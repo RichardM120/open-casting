@@ -5,7 +5,8 @@ import { notFound } from "next/navigation";
 
 import { Badge, ButtonLink, CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
-import { clientUsage, listClients } from "@/lib/clients";
+import { clientUsage, countClients, listClients } from "@/lib/clients";
+import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
 import { formatDate } from "@/lib/format";
 import { TIERS } from "@/lib/types";
 import { Breadcrumb } from "@/components/breadcrumb";
@@ -26,13 +27,20 @@ export default async function ClientsPage({ searchParams }: PageProps<"/admin/cl
   const user = await requireUser("/admin/clients");
   if (user.role !== "admin") notFound();
 
-  const [clients, usage, params] = await Promise.all([
-    listClients(),
+  const [usage, params, counted] = await Promise.all([
     clientUsage(),
     searchParams,
+    countClients(),
   ]);
+  const { total, live } = counted;
 
-  const live = clients.filter((client) => client.suspendedAt === null).length;
+  // Fifty a page, as everywhere else a list can run long.
+  const pages = Math.max(1, Math.ceil(total / LIST_PAGE_SIZE));
+  const page = Math.min(pageNumber(params.page), pages);
+  const clients = await listClients({
+    limit: LIST_PAGE_SIZE,
+    offset: (page - 1) * LIST_PAGE_SIZE,
+  });
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
@@ -70,9 +78,9 @@ export default async function ClientsPage({ searchParams }: PageProps<"/admin/cl
           id="clients-heading"
           title="Clients"
           line={
-            clients.length === 0
+            total === 0
               ? "No clients yet. Take on the first company paying for Open Casting, then make its accounts."
-              : `${live} of ${clients.length} ${clients.length === 1 ? "client is" : "clients are"} active.`
+              : `${live} of ${total} ${total === 1 ? "client is" : "clients are"} active.`
           }
         />
         {clients.length > 0 ? (
@@ -119,6 +127,12 @@ export default async function ClientsPage({ searchParams }: PageProps<"/admin/cl
             })}
           </ul>
         ) : null}
+        <Pagination
+          page={page}
+          total={total}
+          pageSize={LIST_PAGE_SIZE}
+          href={(n) => (n > 1 ? `/admin/clients?page=${n}` : "/admin/clients")}
+        />
       </section>
     </div>
   );

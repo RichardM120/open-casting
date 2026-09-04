@@ -244,7 +244,20 @@ export async function clearFailedLogins(email: string): Promise<void> {
 export type Account = User & { roles: number; submissions: number; sessions: number };
 
 /** Every account, with how much each has posted. Admin only; enforce upstream. */
-export async function listAccounts(clientId?: string): Promise<Account[]> {
+export async function listAccounts(
+  clientId?: string,
+  { limit, offset }: { limit?: number; offset?: number } = {},
+): Promise<Account[]> {
+  const params: unknown[] = clientId ? [clientId] : [];
+  let tail = "";
+  if (limit !== undefined) {
+    params.push(limit);
+    tail += ` LIMIT $${params.length}`;
+  }
+  if (offset) {
+    params.push(offset);
+    tail += ` OFFSET $${params.length}`;
+  }
   return query<Account>(
     `SELECT u.id, u.email, u.name, u.company, u.role, u.suspended_at, u.onboarded_at,
             u.client_id,
@@ -259,9 +272,26 @@ export async function listAccounts(clientId?: string): Promise<Account[]> {
        LEFT JOIN submissions s      ON s.role_id = r.id
       ${clientId ? "WHERE u.client_id = $1" : ""}
       GROUP BY u.id
-      ORDER BY u.suspended_at IS NULL DESC, lower(u.company), lower(u.name)`,
+      ORDER BY u.suspended_at IS NULL DESC, lower(u.company), lower(u.name)${tail}`,
+    params,
+  );
+}
+
+/** How many accounts there are, for paging a list without loading all of it. */
+export async function countAccounts(clientId?: string): Promise<number> {
+  const rows = await query<{ count: string }>(
+    `SELECT count(*)::text AS count FROM users${clientId ? " WHERE client_id = $1" : ""}`,
     clientId ? [clientId] : [],
   );
+  return Number(rows[0]?.count ?? 0);
+}
+
+/** How many of them are suspended, for the line above the list. */
+export async function countSuspendedAccounts(): Promise<number> {
+  const rows = await query<{ count: string }>(
+    "SELECT count(*)::text AS count FROM users WHERE suspended_at IS NOT NULL",
+  );
+  return Number(rows[0]?.count ?? 0);
 }
 
 /**

@@ -3,7 +3,8 @@ import { HelpNote } from "@/components/help-note";
 
 import { ActivityList } from "@/components/activity-list";
 import { CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
-import { listActivity } from "@/lib/activity";
+import { countActivity, listActivity } from "@/lib/activity";
+import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
 import { requireUser } from "@/lib/auth";
 import { Breadcrumb } from "@/components/breadcrumb";
 
@@ -16,9 +17,20 @@ export const metadata: Metadata = { title: "Activity" };
  * is scoped by the viewer's role rather than by which page asked for it, so an
  * admin reaching it from here gets everything.
  */
-export default async function AdminActivityPage() {
+export default async function AdminActivityPage({
+  searchParams,
+}: PageProps<"/admin/activity">) {
   const user = await requireUser("/admin/activity");
-  const entries = await listActivity(user, { limit: 200 });
+  const [query, total] = await Promise.all([searchParams, countActivity(user)]);
+
+  // Fifty a page. A trail is only ever added to, so the whole of it would be
+  // one query that grows without limit and a page nobody can reach the end of.
+  const pages = Math.max(1, Math.ceil(total / LIST_PAGE_SIZE));
+  const page = Math.min(pageNumber(query.page), pages);
+  const entries = await listActivity(user, {
+    limit: LIST_PAGE_SIZE,
+    offset: (page - 1) * LIST_PAGE_SIZE,
+  });
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
@@ -36,13 +48,23 @@ export default async function AdminActivityPage() {
       </div>
 
       <section className={cx(CARD, "mt-8")} aria-labelledby="record-heading">
-        <SectionHead id="record-heading" title="The record" line="Newest first, and nothing here can be edited." />
+        <SectionHead
+          id="record-heading"
+          title="The record"
+          line={`${total} ${total === 1 ? "entry" : "entries"}, newest first, and nothing here can be edited.`}
+        />
         <div className="mt-5">
           <ActivityList
             entries={entries}
             emptyDescription="Nothing has happened on the site yet."
           />
         </div>
+        <Pagination
+          page={page}
+          total={total}
+          pageSize={LIST_PAGE_SIZE}
+          href={(n) => (n > 1 ? `/admin/activity?page=${n}` : "/admin/activity")}
+        />
       </section>
     </div>
   );

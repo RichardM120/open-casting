@@ -1,7 +1,7 @@
 import "server-only";
 
 import { query } from "./db";
-import type { Client, Tier } from "./types";
+import type { BillingPeriod, Client, Tier } from "./types";
 
 type Row = {
   id: string;
@@ -13,6 +13,10 @@ type Row = {
   billing_reference: string;
   address: string;
   notes: string;
+  rate_pence: number | null;
+  billing_period: string;
+  vat_number: string;
+  payment_terms_days: number | null;
   tier: string | null;
   max_sessions: number | null;
   max_roles_per_session: number | null;
@@ -24,7 +28,8 @@ type Row = {
 /** access_until is rendered in SQL so the driver's timezone cannot shift the day. */
 const CLIENT_COLUMNS = `
   id, name, contact_name, contact_email, contact_phone, billing_email,
-  billing_reference, address, notes, tier, max_sessions, max_roles_per_session,
+  billing_reference, address, notes, rate_pence, billing_period, vat_number,
+  payment_terms_days, tier, max_sessions, max_roles_per_session,
   to_char(access_until, 'YYYY-MM-DD') AS access_until,
   suspended_at, created_at
 `;
@@ -40,6 +45,10 @@ function toClient(row: Row): Client {
     billingReference: row.billing_reference,
     address: row.address,
     notes: row.notes,
+    ratePence: row.rate_pence,
+    billingPeriod: (row.billing_period as BillingPeriod | "") ?? "",
+    vatNumber: row.vat_number,
+    paymentTermsDays: row.payment_terms_days,
     tier: (row.tier as Tier | null) ?? null,
     maxSessions: row.max_sessions,
     maxRolesPerSession: row.max_roles_per_session,
@@ -54,11 +63,37 @@ function toClient(row: Row): Client {
  * but the owner: the pages that call this are admin-only, and the proxy refuses
  * a director before the page runs.
  */
-export async function listClients(): Promise<Client[]> {
+export async function listClients(
+  { limit, offset }: { limit?: number; offset?: number } = {},
+): Promise<Client[]> {
+  const params: unknown[] = [];
+  let tail = "";
+  if (limit !== undefined) {
+    params.push(limit);
+    tail += ` LIMIT $${params.length}`;
+  }
+  if (offset) {
+    params.push(offset);
+    tail += ` OFFSET $${params.length}`;
+  }
   const rows = await query<Row>(
-    `SELECT ${CLIENT_COLUMNS} FROM clients ORDER BY lower(name) ASC`,
+    `SELECT ${CLIENT_COLUMNS} FROM clients ORDER BY lower(name) ASC${tail}`,
+    params,
   );
   return rows.map(toClient);
+}
+
+/**
+ * How many clients there are and how many are still running, for paging a
+ * list and for the line above it, without loading every row to count them.
+ */
+export async function countClients(): Promise<{ total: number; live: number }> {
+  const rows = await query<{ total: string; live: string }>(
+    `SELECT count(*)::text AS total,
+            count(*) FILTER (WHERE suspended_at IS NULL)::text AS live
+       FROM clients`,
+  );
+  return { total: Number(rows[0]?.total ?? 0), live: Number(rows[0]?.live ?? 0) };
 }
 
 export async function getClient(id: string): Promise<Client | null> {
@@ -119,6 +154,10 @@ export type NewClient = {
   billingReference: string;
   address: string;
   notes: string;
+  ratePence: number | null;
+  billingPeriod: BillingPeriod | "";
+  vatNumber: string;
+  paymentTermsDays: number | null;
   tier: Tier | null;
   maxSessions: number | null;
   maxRolesPerSession: number | null;
@@ -128,13 +167,16 @@ export type NewClient = {
 const WRITABLE = `
   name = $2, contact_name = $3, contact_email = $4, contact_phone = $5,
   billing_email = $6, billing_reference = $7, address = $8, notes = $9,
-  tier = $10, max_sessions = $11, max_roles_per_session = $12, access_until = $13
+  rate_pence = $10, billing_period = $11, vat_number = $12,
+  payment_terms_days = $13, tier = $14, max_sessions = $15,
+  max_roles_per_session = $16, access_until = $17
 `;
 
 function writableValues(input: NewClient): unknown[] {
   return [
     input.name, input.contactName, input.contactEmail, input.contactPhone,
     input.billingEmail, input.billingReference, input.address, input.notes,
+    input.ratePence, input.billingPeriod, input.vatNumber, input.paymentTermsDays,
     input.tier, input.maxSessions, input.maxRolesPerSession,
     input.accessUntil || null,
   ];
@@ -144,9 +186,10 @@ export async function createClient(input: NewClient): Promise<Client> {
   const rows = await query<Row>(
     `INSERT INTO clients
        (id, name, contact_name, contact_email, contact_phone, billing_email,
-        billing_reference, address, notes, tier, max_sessions,
+        billing_reference, address, notes, rate_pence, billing_period,
+        vat_number, payment_terms_days, tier, max_sessions,
         max_roles_per_session, access_until)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16, $17)
      RETURNING ${CLIENT_COLUMNS}`,
     [`cl_${crypto.randomUUID().slice(0, 12)}`, ...writableValues(input)],
   );

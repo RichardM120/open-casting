@@ -1,0 +1,224 @@
+/**
+ * The administrator's own screens, as the owner uses them.
+ *
+ * Setting an account up is its own page now, and it asks for the money as well
+ * as the person: what the client is invoiced, what they pay and how often,
+ * which belong to the client every account under it shares. The long lists,
+ * which only ever grow, come in pages of fifty. And Storage says what the site
+ * is holding, what is due to be destroyed and whether the nightly sweep that
+ * does the destroying is still running.
+ */
+import pg from "pg";
+
+import {
+  BASE,
+  SHOTS,
+  adminSession,
+  at,
+  day,
+  launch,
+  openSession,
+  postRole,
+  provision,
+  publish,
+  reporter,
+  session,
+  shareToken,
+  signIn,
+  submit,
+} from "./_helpers.mjs";
+
+const { check, section, finish, errors } = reporter();
+const browser = await launch();
+const t = Date.now();
+const CO = `Ledger Co ${t}`;
+const pool = new pg.Pool({ connectionString: process.env.DATABASE_URL });
+
+const admin = await adminSession(browser, errors);
+
+section("1 the accounts page sends you to a page of its own to set one up");
+{
+  const { p } = admin;
+  await p.goto(`${BASE}/admin/accounts`, { waitUntil: "networkidle" });
+  check("no form on the list", (await p.locator("#clientId").count()) === 0);
+  const door = p.getByRole("link", { name: "New account", exact: true });
+  check("a button to set one up", (await door.count()) === 1 && (await door.getAttribute("href")) === "/admin/accounts/new");
+  await door.click();
+  await p.waitForURL(/\/admin\/accounts\/new$/, { timeout: 20000 });
+  check("which is the setup page", (await p.getByRole("heading", { name: "Set up an account", level: 1 }).count()) === 1);
+}
+
+section("2 setting an account up asks for the person and the money");
+// A client to hang the account on, with nothing financial set yet.
+await admin.p.goto(`${BASE}/admin/clients/new`, { waitUntil: "networkidle" });
+await admin.p.fill("#name", CO);
+await admin.p.fill("#contactName", "Fin Ance");
+await admin.p.getByRole("button", { name: "Take on the client" }).click();
+await admin.p.waitForURL(/\/admin\/clients\/cl_/, { timeout: 20000 });
+const clientId = admin.p.url().match(/clients\/(cl_[^?]+)/)[1];
+
+let password = "";
+{
+  const { p } = admin;
+  await p.goto(`${BASE}/admin/accounts/new`, { waitUntil: "networkidle" });
+  check("the person and the money are asked for together", (await p.locator("#name").count()) === 1 && (await p.locator("#billingEmail").count()) === 1 && (await p.locator("#ratePence").count()) === 1);
+  check("it names the client the money belongs to", (await p.getByText(new RegExp(`Invoiced to ${CO}`)).count()) === 1);
+
+  await p.fill("#name", "Ledger Director");
+  await p.fill("#email", `led${t}@example.com`);
+  await p.selectOption("#clientId", clientId);
+  await p.selectOption("#role", "director");
+  await p.fill("#billingEmail", `accounts${t}@example.com`);
+  await p.fill("#billingReference", "PO-4471");
+  await p.fill("#vatNumber", "GB123456789");
+  await p.fill("#paymentTermsDays", "30");
+  await p.fill("#ratePence", "450.50");
+  await p.selectOption("#billingPeriod", "monthly");
+  await p.fill("#address", "1 Quayside, Newcastle upon Tyne");
+  await p.selectOption("#tier", "commercial");
+  await p.fill("#maxSessions", "4");
+  await p.getByRole("button", { name: "Create the account" }).click();
+  await p.getByText("Account created", { exact: true }).waitFor({ timeout: 20000 });
+  password = (await p.locator("dd.select-all").textContent()).trim();
+  check("the password is shown once, on the same page", password.length > 8);
+  check("with a way back to the list", (await p.getByRole("link", { name: "Back to accounts" }).count()) === 1);
+  await p.screenshot({ path: `${SHOTS}/account-setup.png`, fullPage: true });
+}
+{
+  const { rows } = await pool.query(
+    "SELECT billing_email, billing_reference, vat_number, payment_terms_days, rate_pence, billing_period, address, tier, max_sessions FROM clients WHERE id = $1",
+    [clientId],
+  );
+  const saved = rows[0];
+  check(
+    "the money was saved onto the client, in whole pence",
+    saved.billing_email === `accounts${t}@example.com` &&
+      saved.billing_reference === "PO-4471" &&
+      saved.vat_number === "GB123456789" &&
+      saved.payment_terms_days === 30 &&
+      saved.rate_pence === 45050 &&
+      saved.billing_period === "monthly" &&
+      saved.address === "1 Quayside, Newcastle upon Tyne" &&
+      saved.tier === "commercial" &&
+      saved.max_sessions === 4,
+    JSON.stringify(saved),
+  );
+}
+{
+  const { p } = admin;
+  await p.goto(`${BASE}/admin/clients/${clientId}`, { waitUntil: "networkidle" });
+  check("and it reads back on the client, as pounds", (await p.getByText("£450.50 monthly").count()) === 1);
+  check("with the terms in days", (await p.getByText("30 days from the invoice").count()) === 1);
+  check("and the VAT number", (await p.getByText("GB123456789").count()) === 1);
+}
+{
+  // The account itself works, which is the point of setting one up.
+  const dir = await session(browser, errors);
+  await signIn(dir.p, `led${t}@example.com`, password);
+  await dir.p.waitForURL("**/welcome**", { timeout: 20000 });
+  check("the account can sign in with the password it was given", dir.p.url().includes("/welcome"));
+  await dir.c.close();
+}
+
+section("3 a second account on the same client comes filled in with what they are on");
+{
+  const { p } = admin;
+  await p.goto(`${BASE}/admin/accounts/new`, { waitUntil: "networkidle" });
+  await p.selectOption("#clientId", clientId);
+  check("the invoicing is already there", (await p.inputValue("#billingEmail")) === `accounts${t}@example.com` && (await p.inputValue("#billingReference")) === "PO-4471");
+  check("and what they pay", (await p.inputValue("#ratePence")) === "450.50" && (await p.inputValue("#maxSessions")) === "4");
+}
+
+section("4 the long lists come in pages of fifty");
+{
+  // Enough accounts to need a second page, put straight in: the point under
+  // test is the paging, not the form, which section 2 covers.
+  await pool.query(
+    `INSERT INTO users (id, email, name, company, client_id, password_hash, role, onboarded_at)
+     SELECT 'usr_pg' || $2 || '_' || n, 'page' || $2 || '-' || n || '@example.com',
+            'Paged Person ' || n, $3, $1, 'x', 'director', now()
+       FROM generate_series(1, 60) AS n`,
+    [clientId, String(t), CO],
+  );
+  const { p } = admin;
+  await p.goto(`${BASE}/admin/accounts`, { waitUntil: "networkidle" });
+  const rows = p.locator("main section[aria-labelledby='accounts-heading'] > ul > li");
+  check("fifty on the first page", (await rows.count()) === 50, String(await rows.count()));
+  check("and it says how many there are in all", (await p.getByText(/Showing 1 to 50 of \d+/).count()) === 1);
+  await p.getByRole("link", { name: "Next", exact: true }).click();
+  await p.waitForURL(/page=2/, { timeout: 20000 });
+  await p.waitForLoadState("networkidle");
+  check("the rest are on the second", (await p.getByText(/Showing 51 to \d+ of \d+/).count()) === 1);
+  check("the current page is marked", (await p.locator('nav[aria-label="Pages"] [aria-current="page"]').innerText()) === "2");
+}
+{
+  // The trail pages the same way. Sixty entries is more than one page of it.
+  await pool.query(
+    `INSERT INTO activity (action, actor_name, detail)
+     SELECT 'account.created', 'Someone', 'Paged entry ' || n FROM generate_series(1, 60) AS n`,
+  );
+  const { p } = admin;
+  await p.goto(`${BASE}/admin/activity`, { waitUntil: "networkidle" });
+  check("fifty entries to a page", (await p.getByText(/Showing 1 to 50 of \d+/).count()) === 1);
+  check("and the heading counts the whole trail", (await p.getByText(/\d+ entries, newest first/).count()) === 1);
+  await p.goto(`${BASE}/admin/activity?page=2`, { waitUntil: "networkidle" });
+  check("page two follows", (await p.getByText(/Showing 51 to \d+ of \d+/).count()) === 1);
+}
+
+section("5 Storage says what is held and what is due to go");
+const dir = await provision(browser, errors, admin.p, { name: "Store Dir", company: `Store Co ${t}`, email: `st${t}@example.com`, role: "director" });
+// It closes before the production finishes, which is the only order the form
+// takes, and the details go 30 days after that: 33 days from today.
+const sessionId = await openSession(dir.p, { name: `Stored ${t}`, company: `Store Co ${t}`, opensAt: at(-1), closesAt: at(2, "23:59"), productionEndsAt: day(3) });
+const roleId = await postRole(dir.p, { sessionId, title: "Kept role", company: `Store Co ${t}` });
+await publish(dir.p, sessionId);
+{
+  const token = await shareToken(dir.p, sessionId);
+  const applicant = await session(browser, errors);
+  await submit(applicant.p, token, roleId, { name: "Sam Stored", email: `sam${t}@example.com` });
+  await applicant.p.getByText("Submission sent").waitFor({ timeout: 20000 });
+  await applicant.c.close();
+}
+{
+  const { p } = admin;
+  await p.goto(`${BASE}/admin/storage`, { waitUntil: "networkidle" });
+  check("the page is the administrator's", (await p.getByRole("heading", { name: "Storage", level: 1 }).count()) === 1);
+  check("the database is measured by table", (await p.getByRole("cell", { name: "Submissions", exact: true }).count()) === 1);
+  check("and the casting call is listed with the day its applicants' details go", (await p.getByRole("cell", { name: new RegExp(`Stored ${t}`) }).count()) === 1);
+  check("with how long that is away", (await p.getByText(/in 33 days/).count()) >= 1);
+  // Exact: the sentence under Needs attention says "has never run" too.
+  check("the nightly sweep says it has never run", (await p.getByText("Never run", { exact: true }).count()) === 1);
+  check("and that is called out as needing attention", (await p.getByRole("heading", { name: "Needs attention" }).count()) === 1 && (await p.getByText(/retention sweep has never run/).count()) === 1);
+  check("with no store connected, that is called out too", (await p.getByText(/No file store is connected/).count()) === 1);
+  check("what a client is using against what they bought", (await p.getByRole("heading", { name: "Against what they bought" }).count()) === 1 && (await p.getByText(/0 of 4 casting calls/).count()) === 1);
+  await p.screenshot({ path: `${SHOTS}/storage.png`, fullPage: true });
+}
+
+section("6 the sweep records itself, and Storage says when it last ran");
+{
+  const response = await fetch(`${BASE}/api/retention`, {
+    method: "POST",
+    headers: { authorization: `Bearer ${process.env.CRON_SECRET}` },
+  });
+  check("the sweep runs", response.status === 200, String(response.status));
+  const { p } = admin;
+  await p.goto(`${BASE}/admin/storage`, { waitUntil: "networkidle" });
+  check("and it now says it ran today", (await p.getByText("Ran today").count()) === 1);
+  check("with what it did", (await p.getByText(/casting calls destroyed, .* stray files cleared/).count()) === 1);
+  check("so the sweep is off the attention list", (await p.getByText(/retention sweep has never run/).count()) === 0);
+}
+
+section("7 a director cannot reach any of it");
+{
+  const paths = ["/admin/storage", "/admin/accounts/new"];
+  for (const path of paths) {
+    const response = await dir.p.goto(BASE + path, { waitUntil: "networkidle" });
+    check(`${path} is a 404 for a director`, response.status() === 404, String(response.status()));
+  }
+}
+
+await pool.end();
+await dir.c.close();
+await admin.c.close();
+await browser.close();
+finish();

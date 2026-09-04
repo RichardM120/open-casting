@@ -182,3 +182,21 @@ export function initials(name: string): string {
     .map((part) => part[0]?.toUpperCase() ?? "")
     .join("");
 }
+
+/** A figure in pence as pounds: 45000 as "£450", 45050 as "£450.50". */
+export function formatMoney(pence: number): string {
+  return `£${pence % 100 === 0 ? (pence / 100).toLocaleString("en-GB") : (pence / 100).toFixed(2)}`;
+}
+
+/** A size in bytes as a person reads it: "0 bytes", "812 KB", "1.4 GB". */
+export function formatBytes(bytes: number): string {
+  if (bytes < 1024) return `${bytes} ${bytes === 1 ? "byte" : "bytes"}`;
+  const units = ["KB", "MB", "GB", "TB"];
+  let value = bytes / 1024;
+  let unit = 0;
+  while (value >= 1024 && unit < units.length - 1) {
+    value /= 1024;
+    unit += 1;
+  }
+  return `${value >= 100 || Number.isInteger(value) ? Math.round(value) : value.toFixed(1)} ${units[unit]}`;
+}

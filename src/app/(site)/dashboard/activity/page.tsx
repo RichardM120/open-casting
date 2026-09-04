@@ -3,7 +3,8 @@ import { HelpNote } from "@/components/help-note";
 
 import { ActivityList } from "@/components/activity-list";
 import { CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
-import { listActivity } from "@/lib/activity";
+import { countActivity, listActivity } from "@/lib/activity";
+import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
 import { requireUser } from "@/lib/auth";
 import { Breadcrumb } from "@/components/breadcrumb";
 
@@ -15,9 +16,19 @@ const SCOPE = {
   admin: "Everything on the site, including account changes.",
 } as const;
 
-export default async function ActivityPage() {
+export default async function ActivityPage({
+  searchParams,
+}: PageProps<"/dashboard/activity">) {
   const user = await requireUser("/dashboard/activity");
-  const entries = await listActivity(user, { limit: 200 });
+  const [query, total] = await Promise.all([searchParams, countActivity(user)]);
+
+  // Fifty a page, as everywhere else a list can run long.
+  const pages = Math.max(1, Math.ceil(total / LIST_PAGE_SIZE));
+  const page = Math.min(pageNumber(query.page), pages);
+  const entries = await listActivity(user, {
+    limit: LIST_PAGE_SIZE,
+    offset: (page - 1) * LIST_PAGE_SIZE,
+  });
 
   return (
     <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
@@ -33,13 +44,23 @@ export default async function ActivityPage() {
       </div>
 
       <section className={cx(CARD, "mt-8")} aria-labelledby="record-heading">
-        <SectionHead id="record-heading" title="The record" line="Newest first, and nothing here can be edited." />
+        <SectionHead
+          id="record-heading"
+          title="The record"
+          line={`${total} ${total === 1 ? "entry" : "entries"}, newest first, and nothing here can be edited.`}
+        />
         <div className="mt-5">
           <ActivityList
             entries={entries}
             emptyDescription="Open a casting call, and everything that happens to it is recorded here."
           />
         </div>
+        <Pagination
+          page={page}
+          total={total}
+          pageSize={LIST_PAGE_SIZE}
+          href={(n) => (n > 1 ? `/dashboard/activity?page=${n}` : "/dashboard/activity")}
+        />
       </section>
     </div>
   );

@@ -4,7 +4,7 @@ import { useActionState } from "react";
 
 import { createClientRecord, editClientRecord } from "@/lib/actions";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
-import { TIERS, TIER_KEYS, type Client } from "@/lib/types";
+import { BILLING_PERIODS, BILLING_PERIOD_KEYS, TIERS, TIER_KEYS, type Client } from "@/lib/types";
 
 import { DateTimeField } from "./date-time-field";
 import { useErrorFocus } from "./use-error-focus";
@@ -16,8 +16,12 @@ const LABELS: Record<string, string> = {
   contactName: "Contact",
   contactEmail: "Contact email",
   contactPhone: "Phone",
-  billingEmail: "Billing email",
-  billingReference: "Billing reference",
+  billingEmail: "Where the invoice goes",
+  billingReference: "Purchase order or reference",
+  vatNumber: "VAT number",
+  paymentTermsDays: "Payment terms",
+  ratePence: "What they pay",
+  billingPeriod: "How often",
   address: "Address",
   notes: "Notes",
   tier: "Plan",
@@ -25,6 +29,12 @@ const LABELS: Record<string, string> = {
   maxRolesPerSession: "Roles per casting call",
   accessUntil: "Access until",
 };
+
+/** Pence as the pounds a person types: 45000 as "450", 45050 as "450.50". */
+function pounds(pence: number | null): string {
+  if (pence === null) return "";
+  return pence % 100 === 0 ? String(pence / 100) : (pence / 100).toFixed(2);
+}
 
 /** One form for taking on a client and for changing what they are on. */
 export function ClientForm({ client }: { client?: Client }) {
@@ -44,6 +54,11 @@ export function ClientForm({ client }: { client?: Client }) {
           contactPhone: client.contactPhone,
           billingEmail: client.billingEmail,
           billingReference: client.billingReference,
+          vatNumber: client.vatNumber,
+          paymentTermsDays:
+            client.paymentTermsDays === null ? "" : String(client.paymentTermsDays),
+          ratePence: pounds(client.ratePence),
+          billingPeriod: client.billingPeriod,
           address: client.address,
           notes: client.notes,
           tier: client.tier ?? "",
@@ -108,12 +123,12 @@ export function ClientForm({ client }: { client?: Client }) {
       </fieldset>
 
       <fieldset className="rounded-2xl border border-line-strong bg-raised p-4 shadow-card sm:p-6">
-        <legend className="mb-2 text-lg font-semibold tracking-tight">Billing</legend>
+        <legend className="mb-2 text-lg font-semibold tracking-tight">Invoicing</legend>
         <p className="text-sm text-muted">
-          Where invoices go, and whatever reference they need on them.
+          Where invoices go, what has to be on them, and how long they have to pay.
         </p>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
-          <Field label="Billing email" htmlFor="billingEmail" error={errors.billingEmail}>
+          <Field label="Where the invoice goes" htmlFor="billingEmail" error={errors.billingEmail}>
             <Input
               id="billingEmail"
               name="billingEmail"
@@ -122,15 +137,39 @@ export function ClientForm({ client }: { client?: Client }) {
             />
           </Field>
           <Field
-            label="Billing reference"
+            label="Purchase order or reference"
             htmlFor="billingReference"
-            hint="A purchase order number, or whatever they quote."
+            hint="Whatever they need quoted on it."
             error={errors.billingReference}
           >
             <Input
               id="billingReference"
               name="billingReference"
               defaultValue={values.billingReference ?? ""}
+            />
+          </Field>
+          <Field label="VAT number" htmlFor="vatNumber" error={errors.vatNumber}>
+            <Input
+              id="vatNumber"
+              name="vatNumber"
+              placeholder="GB123456789"
+              defaultValue={values.vatNumber ?? ""}
+            />
+          </Field>
+          <Field
+            label="Payment terms"
+            htmlFor="paymentTermsDays"
+            hint="Days from the invoice to the due date."
+            error={errors.paymentTermsDays}
+          >
+            <Input
+              id="paymentTermsDays"
+              name="paymentTermsDays"
+              type="number"
+              min="0"
+              max="365"
+              placeholder="30"
+              defaultValue={values.paymentTermsDays ?? ""}
             />
           </Field>
         </div>
@@ -143,6 +182,34 @@ export function ClientForm({ client }: { client?: Client }) {
           and the date blank for no end.
         </p>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
+          <Field
+            label="What they pay"
+            htmlFor="ratePence"
+            hint="In pounds, before VAT."
+            error={errors.ratePence}
+          >
+            <Input
+              id="ratePence"
+              name="ratePence"
+              inputMode="decimal"
+              placeholder="450"
+              defaultValue={values.ratePence ?? ""}
+            />
+          </Field>
+          <Field label="How often" htmlFor="billingPeriod" error={errors.billingPeriod}>
+            <Select
+              id="billingPeriod"
+              name="billingPeriod"
+              defaultValue={values.billingPeriod ?? ""}
+            >
+              <option value="">Not set</option>
+              {BILLING_PERIOD_KEYS.map((period) => (
+                <option key={period} value={period}>
+                  {BILLING_PERIODS[period].label}
+                </option>
+              ))}
+            </Select>
+          </Field>
           <Field label="Plan" htmlFor="tier" error={errors.tier}>
             <Select id="tier" name="tier" defaultValue={values.tier ?? ""}>
               <option value="">No plan set</option>

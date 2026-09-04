@@ -9,7 +9,15 @@ import type { SessionUser } from "@/lib/auth";
 import { Lockup } from "./logo";
 import { ButtonLink, cx } from "./ui";
 
-type IconName = "calls" | "activity" | "faq" | "new" | "overview" | "clients" | "accounts";
+type IconName =
+  | "calls"
+  | "activity"
+  | "faq"
+  | "new"
+  | "overview"
+  | "clients"
+  | "accounts"
+  | "storage";
 
 type Item = {
   href: string;
@@ -51,6 +59,7 @@ const ADMIN_NAV: Item[] = [
   { href: "/admin", label: "Overview", icon: "overview" },
   { href: "/admin/clients", label: "Clients", icon: "clients" },
   { href: "/admin/accounts", label: "Accounts", icon: "accounts" },
+  { href: "/admin/storage", label: "Storage", icon: "storage" },
   { href: "/admin/activity", label: "Activity", icon: "activity" },
 ];
 
@@ -188,6 +197,7 @@ function Icon({ name }: { name: IconName }) {
     overview: "M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4zM14 14h6v6h-6z",
     clients: "M4 21V5a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v16M9 8h2M13 8h2M9 12h2M13 12h2M9 16h2M13 16h2M3 21h18",
     accounts: "M9 11.5a3.5 3.5 0 1 0 0-7 3.5 3.5 0 0 0 0 7zM2.5 20a6.5 6.5 0 0 1 13 0M17 11.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zM21.5 19a5 5 0 0 0-5.5-4.8",
+    storage: "M4 7c0-1.7 3.6-3 8-3s8 1.3 8 3-3.6 3-8 3-8-1.3-8-3zM4 7v10c0 1.7 3.6 3 8 3s8-1.3 8-3V7M4 12c0 1.7 3.6 3 8 3s8-1.3 8-3",
   };
   return (
     <svg

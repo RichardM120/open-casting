@@ -73,7 +73,7 @@ check("and the way to open another is withdrawn",
 
 section("5 a director cannot reach the admin side");
 {
-  const paths = ["/admin", "/admin/clients", `/admin/clients/${clientId}`, "/admin/clients/new", "/admin/accounts", "/admin/activity"];
+  const paths = ["/admin", "/admin/clients", `/admin/clients/${clientId}`, "/admin/clients/new", "/admin/accounts", "/admin/accounts/new", "/admin/storage", "/admin/activity"];
   for (const path of paths) {
     const res = await dir.p.goto(`${BASE}${path}`, { waitUntil: "domcontentloaded" });
     check(`${path} refuses a director (${res.status()})`, res.status() === 404);

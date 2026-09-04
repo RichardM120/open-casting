@@ -5,6 +5,13 @@ import { cx } from "./ui";
 /** How many submissions a page shows. A casting call can run to hundreds. */
 export const PAGE_SIZE = 25;
 
+/**
+ * How many rows a long administrative list shows: accounts, clients, the
+ * activity trail. Longer than a page of submissions because the rows are one
+ * line each, and short enough that a list of hundreds is not one scroll.
+ */
+export const LIST_PAGE_SIZE = 50;
+
 /** The page asked for in a query string: a whole number from one, or one. */
 export function pageNumber(raw: unknown): number {
   const n = typeof raw === "string" ? Number.parseInt(raw, 10) : Number.NaN;

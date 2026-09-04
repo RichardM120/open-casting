@@ -77,6 +77,9 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
               <ButtonLink href="/admin/accounts" variant="secondary" size="sm">
                 Accounts
               </ButtonLink>
+              <ButtonLink href="/admin/storage" variant="secondary" size="sm">
+                Storage
+              </ButtonLink>
               <ButtonLink href="/admin/activity" variant="secondary" size="sm">
                 Activity
               </ButtonLink>
@@ -103,13 +106,18 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
                 : `Not connected: ${describeStore()}.`
           }
           aside={
-            store ? (
-              <form action={testFileStore}>
-                <Button type="submit" variant="secondary" size="sm">
-                  Test the store
-                </Button>
-              </form>
-            ) : null
+            <>
+              <ButtonLink href="/admin/storage" variant="secondary" size="sm">
+                What is stored
+              </ButtonLink>
+              {store ? (
+                <form action={testFileStore}>
+                  <Button type="submit" variant="secondary" size="sm">
+                    Test the store
+                  </Button>
+                </form>
+              ) : null}
+            </>
           }
         />
         {query.store === "ok" ? (

@@ -109,7 +109,7 @@ export async function record(entry: {
  */
 export async function listActivity(
   viewer: SessionUser,
-  options: { roleId?: string; limit?: number } = {},
+  options: { roleId?: string; limit?: number; offset?: number } = {},
 ): Promise<ActivityEntry[]> {
   const { where, params } = visibility(viewer);
   const conditions = where ? [where] : [];
@@ -120,15 +120,41 @@ export async function listActivity(
   }
 
   params.push(options.limit ?? 50);
+  let tail = ` LIMIT $${params.length}`;
+  if (options.offset) {
+    params.push(options.offset);
+    tail += ` OFFSET $${params.length}`;
+  }
   const rows = await query<ActivityRow>(
     `SELECT id, created_at, action, actor_name, role_id, role_title, detail
        FROM activity
       ${conditions.length ? `WHERE ${conditions.join(" AND ")}` : ""}
-      ORDER BY created_at DESC, id DESC
-      LIMIT $${params.length}`,
+      ORDER BY created_at DESC, id DESC${tail}`,
     params,
   );
   return rows.map(toEntry);
+}
+
+/**
+ * How many entries this account may see, for paging the trail without
+ * loading it. The same visibility rule as the list itself.
+ */
+export async function countActivity(
+  viewer: SessionUser,
+  options: { roleId?: string } = {},
+): Promise<number> {
+  const { where, params } = visibility(viewer);
+  const conditions = where ? [where] : [];
+  if (options.roleId) {
+    params.push(options.roleId);
+    conditions.push(`role_id = $${params.length}`);
+  }
+  const rows = await query<{ count: string }>(
+    `SELECT count(*)::text AS count FROM activity
+      ${conditions.length ? `WHERE ${conditions.join(" AND ")}` : ""}`,
+    params,
+  );
+  return Number(rows[0]?.count ?? 0);
 }
 
 /**

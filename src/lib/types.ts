@@ -36,6 +36,13 @@ export type Client = {
   billingReference: string;
   address: string;
   notes: string;
+  /** What they are invoiced each period, in whole pence. Null means not set. */
+  ratePence: number | null;
+  /** How often that figure is invoiced. Empty means not set. */
+  billingPeriod: BillingPeriod | "";
+  vatNumber: string;
+  /** Days from the invoice to the due date. Null means not set. */
+  paymentTermsDays: number | null;
   tier: Tier | null;
   /** Null means no ceiling, as it does on an account. */
   maxSessions: number | null;
@@ -365,6 +372,17 @@ export const SIGNUP_ROLES = ["director", "producer"] as const;
 export type SignupRole = (typeof SIGNUP_ROLES)[number];
 
 /** The MSA's fee schedule, as the thing an account is actually sold. */
+/** How often a client is invoiced, as it reads on the page and on an invoice. */
+export const BILLING_PERIODS = {
+  monthly: { label: "Monthly", each: "a month" },
+  quarterly: { label: "Quarterly", each: "a quarter" },
+  annually: { label: "Annually", each: "a year" },
+  per_call: { label: "Per casting call", each: "casting call" },
+} as const;
+
+export type BillingPeriod = keyof typeof BILLING_PERIODS;
+export const BILLING_PERIOD_KEYS = Object.keys(BILLING_PERIODS) as BillingPeriod[];
+
 export const TIERS = {
   indie: { label: "Indie", submissions: 500 },
   commercial: { label: "Commercial", submissions: 2500 },

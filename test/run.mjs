@@ -123,7 +123,7 @@ async function resetDatabase() {
   const pool = new Pool({ connectionString: process.env.DATABASE_URL });
   await pool.query(
     "DROP TABLE IF EXISTS activity, rate_limits, submissions, sessions, sessions_casting, "
-      + "login_attempts, roles, users, clients, production_companies, schema_migrations CASCADE",
+      + "login_attempts, roles, users, clients, production_companies, sweeps, schema_migrations CASCADE",
   );
   await pool.end();
 }

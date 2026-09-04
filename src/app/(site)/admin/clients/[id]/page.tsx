@@ -8,8 +8,8 @@ import { Badge, Button, ButtonLink, CARD, cx, Eyebrow, SectionHead } from "@/com
 import { removeClient, toggleClientSuspended } from "@/lib/actions";
 import { currentUser, requireUser } from "@/lib/auth";
 import { clientUsage, getClient } from "@/lib/clients";
-import { formatDate } from "@/lib/format";
-import { ROLE_LABELS, TIERS } from "@/lib/types";
+import { formatDate, formatMoney } from "@/lib/format";
+import { BILLING_PERIODS, ROLE_LABELS, TIERS } from "@/lib/types";
 import { listAccounts } from "@/lib/users";
 import { Breadcrumb } from "@/components/breadcrumb";
 
@@ -147,16 +147,42 @@ export default async function ClientPage({
       client.contactPhone ||
       client.billingEmail ||
       client.billingReference ||
+      client.vatNumber ||
+      client.ratePence !== null ||
+      client.paymentTermsDays !== null ||
       client.address ||
       client.notes ? (
         <section className={cx(CARD, "mt-8")} aria-labelledby="details-heading">
-          <SectionHead id="details-heading" title="Details" line="Who to talk to, and where the invoice goes." />
+          <SectionHead
+            id="details-heading"
+            title="Details"
+            line="Who to talk to, where the invoice goes, and what is on it."
+          />
           <dl className="mt-5 grid gap-4 sm:grid-cols-2">
             <Detail label="Contact" value={client.contactName} />
             <Detail label="Contact email" value={client.contactEmail} />
             <Detail label="Phone" value={client.contactPhone} />
-            <Detail label="Billing email" value={client.billingEmail} />
-            <Detail label="Billing reference" value={client.billingReference} />
+            <Detail label="Where the invoice goes" value={client.billingEmail} />
+            <Detail label="Purchase order or reference" value={client.billingReference} />
+            <Detail label="VAT number" value={client.vatNumber} />
+            <Detail
+              label="What they pay"
+              value={
+                client.ratePence === null
+                  ? ""
+                  : `${formatMoney(client.ratePence)}${
+                      client.billingPeriod ? ` ${BILLING_PERIODS[client.billingPeriod].label.toLowerCase()}` : ""
+                    }`
+              }
+            />
+            <Detail
+              label="Payment terms"
+              value={
+                client.paymentTermsDays === null
+                  ? ""
+                  : `${client.paymentTermsDays} days from the invoice`
+              }
+            />
             <Detail label="Address" value={client.address} />
             <Detail label="Notes" value={client.notes} wide />
           </dl>

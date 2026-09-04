@@ -713,6 +713,48 @@ Suspending an account deletes its sessions, so somebody signed in is out at
 once; `currentUser()` re-checks suspension on every request in case a session
 was created in between. Their casting calls stay up. An admin cannot suspend themselves.
 
+### Setting an account up
+
+**New account** on `/admin/accounts` opens `/admin/accounts/new`, which asks
+for the person and the money in one go: their name, email, client and what they
+can see, then where the invoice goes, the purchase order or reference, the VAT
+number and the payment terms, then what they pay, how often, the plan, the
+ceilings and the access date. The password is generated and shown once on the
+same page, so it is handed over from there and never stored anywhere readable.
+
+Only the first block belongs to the person. Everything under **The money** is
+the client's, since the client is who is invoiced: the fields fill with what
+that client is already on, changing as another client is chosen, and saving
+writes them back to the client, where they can be changed again on its own
+page. The page says so rather than leaving it to be discovered. Money is held
+as whole pence (`rate_pence`), never a float, so a rounding error cannot reach
+an invoice.
+
+### Long lists
+
+Accounts, clients and both activity trails come in pages of fifty
+(`LIST_PAGE_SIZE`, `?page=`), counted and fetched in the database rather than
+loaded whole, as submissions do at twenty-five. A trail is only ever added to,
+so loading all of it was a query with no ceiling on it.
+
+### Storage
+
+`/admin/storage` is what to open to ask whether the site is still working. It
+measures the file store by walking it, split into header images, applicants'
+photos, applicants' tapes and anything under neither prefix, which should
+always be nothing; the database by table, with the rows that matter counted
+exactly rather than taken from Postgres's own estimate; every casting call
+still holding applicants' details with the day they are destroyed and how far
+away that is; and the last few runs of the nightly sweep, which is recorded in
+`sweeps` when it runs. A sweep that stopped being called looks exactly like a
+quiet week, so without that record there was nothing to look at.
+
+Anything worth acting on today is gathered at the top under **Needs
+attention**: no store, no mail provider, a sweep that has not run for two days
+or has never run, a casting call past the day its details should have gone,
+files in the store with no submission pointing at them. An empty list is the
+page saying everything is in order.
+
 `src/lib/roles.ts` exports a single `visibility()` function returning a SQL
 fragment. The role listing, a single role, the submission counts and the status
 update all scope through it, so the rule cannot drift apart between the page
