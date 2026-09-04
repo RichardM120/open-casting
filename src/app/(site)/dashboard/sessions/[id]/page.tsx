@@ -346,7 +346,7 @@ export default async function SessionPage({
 
       {listed.length > 0 ? (
         <>
-          <div className="mt-4 overflow-x-auto rounded-xl border border-line bg-surface">
+          <div className="relative mt-4 overflow-x-auto rounded-xl border border-line bg-surface">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line text-left text-xs text-muted">

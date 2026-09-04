@@ -77,7 +77,9 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
           <ButtonLink href={single ? `/c/${token}/${roles[0].slug}` : "#roles"}>
             {single ? "Read the brief and apply" : "Choose a role and apply"}
           </ButtonLink>
-          <p className="text-sm text-muted">One submission per person, whichever role you choose.</p>
+          <p className="text-sm text-muted">
+            {single ? "One submission per person." : "One submission per person, whichever role you choose."}
+          </p>
         </div>
       ) : (
         <p className="mt-6 max-w-prose leading-relaxed text-text">
