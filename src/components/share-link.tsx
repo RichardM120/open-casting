@@ -28,7 +28,7 @@ export function ShareLink({ url }: { url: string }) {
       <code className="min-w-0 flex-1 overflow-x-auto rounded-lg border border-line bg-ink px-3 py-2.5 font-mono text-xs break-all select-all">
         {url}
       </code>
-      <Button type="button" variant="secondary" size="sm" onClick={copy}>
+      <Button type="button" size="md" onClick={copy}>
         {copied ? "Copied" : "Copy link"}
       </Button>
     </div>

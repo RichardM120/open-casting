@@ -92,6 +92,9 @@ export function Badge({
 
 /* --------------------------------------------------------------- layout -- */
 
+/** The shape of a section's container: cream, a line, soft corners. For a <section>, which Card's div cannot be. */
+export const CARD = "rounded-2xl border border-line-strong bg-raised p-4 shadow-card sm:p-6";
+
 export function Card({
   children,
   className,
@@ -99,16 +102,7 @@ export function Card({
   children: ReactNode;
   className?: string;
 }) {
-  return (
-    <div
-      className={cx(
-        "rounded-2xl border border-line-strong bg-raised p-4 shadow-card sm:p-6",
-        className,
-      )}
-    >
-      {children}
-    </div>
-  );
+  return <div className={cx(CARD, className)}>{children}</div>;
 }
 
 /**
@@ -136,6 +130,43 @@ export function Eyebrow({ children, className }: { children: ReactNode; classNam
     <p className={cx("text-xs font-semibold tracking-[0.18em] text-brand uppercase", className)}>
       {children}
     </p>
+  );
+}
+
+/**
+ * How a section opens: a short heading, one line under it saying what the
+ * section holds, and to the right whatever acts on the section as a whole.
+ * The line is what lets a page be skimmed heading by heading; a tag names
+ * the one section that is the next thing to do.
+ */
+export function SectionHead({
+  id,
+  title,
+  line,
+  tag,
+  aside,
+  className,
+}: {
+  id?: string;
+  title: string;
+  line?: string;
+  tag?: string;
+  aside?: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div className={cx("flex flex-wrap items-end justify-between gap-x-6 gap-y-3", className)}>
+      <div className="min-w-0 flex-1">
+        <div className="flex flex-wrap items-center gap-3">
+          <h2 id={id} className="text-2xl font-semibold tracking-tight">
+            {title}
+          </h2>
+          {tag ? <Nudge>{tag}</Nudge> : null}
+        </div>
+        {line ? <p className="mt-1 text-sm text-muted">{line}</p> : null}
+      </div>
+      {aside ? <div className="flex flex-wrap items-center gap-2">{aside}</div> : null}
+    </div>
   );
 }
 

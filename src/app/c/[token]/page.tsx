@@ -6,7 +6,7 @@ import { ApplicantMasthead } from "@/components/applicant-masthead";
 import { InclusionStatement, YourData } from "@/components/applicant-notices";
 import { reportAddress } from "@/lib/site";
 import { DeadlineBadge } from "@/components/deadline-badge";
-import { Badge } from "@/components/ui";
+import { Badge, ButtonLink, Eyebrow, SectionHead, cx } from "@/components/ui";
 import { ageRange, formatDateTime, isOpen, notYetOpen, roleWindow, shootWindow } from "@/lib/format";
 import { canPreview } from "@/lib/preview";
 import { listSessionRoles } from "@/lib/roles";
@@ -42,6 +42,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
 
   const roles = await listSessionRoles(session.id);
   const open = isOpen(session);
+  const single = roles.length === 1;
 
   return (
     <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
@@ -53,71 +54,91 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
         </p>
       ) : null}
 
-      <h1 className="text-3xl font-semibold tracking-tight text-balance md:text-4xl">
+      <Eyebrow>
+        {session.productionType} · {session.company}
+      </Eyebrow>
+      <h1 className="mt-3 text-3xl font-semibold tracking-tight text-balance md:text-4xl">
         {session.name}
       </h1>
-      <p className="mt-2 text-lg text-text">{session.company}</p>
 
-      <div className="mt-6 flex flex-wrap items-center gap-2">
+      <div className="mt-4 flex flex-wrap items-center gap-2">
         <DeadlineBadge session={session} />
         <Badge tone="outline">
           {roles.length} {roles.length === 1 ? "role" : "roles"}
         </Badge>
       </div>
 
-      <p className="mt-6 max-w-prose text-lg leading-relaxed text-text">{session.synopsis}</p>
+      <p className="mt-5 max-w-prose text-lg leading-relaxed text-text">{session.synopsis}</p>
 
-      <p className="mt-6 max-w-prose leading-relaxed text-text">
-        {preview
-          ? "Not published. Publish it from your dashboard and this link starts working."
-          : session.closedAt
-            ? `Casting closed on ${formatDateTime(session.closedAt)}. The brief stays up for reference.`
-            : notYetOpen(session)
-              ? `Submissions open on ${formatDateTime(session.opensAt)}. Read the roles now and have a tape ready.`
-              : open
-                ? `Submissions are open until ${formatDateTime(session.closesAt)}. Pick the one role that fits you best: it is one submission per person, whichever role you choose.`
-                : `Submissions closed on ${formatDateTime(session.closesAt)}. The brief stays up for reference.`}
-      </p>
-
-      {roles.length > 0 ? (
-        <ul className="mt-10 flex flex-col gap-4">
-          {roles.map((role) => (
-            <li key={role.id}>
-              <Link
-                href={`/c/${token}/${role.slug}`}
-                className="group flex flex-col gap-3 rounded-2xl border border-line-strong bg-raised p-5 shadow-card transition-colors hover:border-accent sm:p-6"
-              >
-                <div className="flex flex-wrap items-center gap-2">
-                  <Badge tone="accent">{role.productionType}</Badge>
-                  <Badge tone={role.paid ? "positive" : "amber"}>{role.paid ? "Paid" : "Unpaid"}</Badge>
-                  {role.selfTape ? <Badge tone="outline">Self-tape</Badge> : null}
-                  <DeadlineBadge session={roleWindow(role)} />
-                </div>
-
-                <h2 className="text-lg font-semibold tracking-tight transition-colors group-hover:text-brand">
-                  {role.title}
-                </h2>
-                <p className="line-clamp-3 leading-relaxed text-text">
-                  {role.characterBrief}
-                </p>
-
-                <dl className="mt-1 grid grid-cols-2 gap-x-6 gap-y-2 border-t border-line pt-4 text-sm sm:grid-cols-4">
-                  <Meta label="Location" value={role.location} />
-                  <Meta label="Playing age" value={ageRange(role.ageMin, role.ageMax)} />
-                  <Meta label="Shoot dates" value={shootWindow(role)} />
-                  <div className="flex items-end justify-end text-sm font-medium text-brand">
-                    <span>Read the brief and apply&nbsp;&rarr;</span>
-                  </div>
-                </dl>
-              </Link>
-            </li>
-          ))}
-        </ul>
+      {!preview && open && roles.length > 0 ? (
+        // The one thing to do on this page, as a button: with one role it goes
+        // straight to the brief, with more it goes to the roles below.
+        <div className="mt-6 flex flex-wrap items-center gap-x-4 gap-y-3">
+          <ButtonLink href={single ? `/c/${token}/${roles[0].slug}` : "#roles"}>
+            {single ? "Read the brief and apply" : "Choose a role and apply"}
+          </ButtonLink>
+          <p className="text-sm text-muted">One submission per person, whichever role you choose.</p>
+        </div>
       ) : (
-        <p className="mt-10 rounded-2xl border border-dashed border-line-strong p-6 text-text">
-          The roles have not been posted yet. Keep the link: they will appear here.
+        <p className="mt-6 max-w-prose leading-relaxed text-text">
+          {preview
+            ? "Not published. Publish it from your dashboard and this link starts working."
+            : session.closedAt
+              ? `Casting closed on ${formatDateTime(session.closedAt)}. The brief stays up for reference.`
+              : notYetOpen(session)
+                ? `Submissions open on ${formatDateTime(session.opensAt)}. Read the roles now and have a tape ready.`
+                : open
+                  ? `Submissions are open until ${formatDateTime(session.closesAt)}. Pick the one role that fits you best: it is one submission per person, whichever role you choose.`
+                  : `Submissions closed on ${formatDateTime(session.closesAt)}. The brief stays up for reference.`}
         </p>
       )}
+
+      <section id="roles" aria-labelledby="roles-heading" className="mt-12 scroll-mt-24">
+        <SectionHead
+          id="roles-heading"
+          title={single ? "The role" : "The roles"}
+          line={
+            roles.length > 1
+              ? "Pick the one that fits you best. Each brief says what to send."
+              : "The brief says what to send."
+          }
+        />
+        {roles.length > 0 ? (
+          <ul className={cx("mt-5 grid gap-4", roles.length > 1 ? "sm:grid-cols-2" : "")}>
+            {roles.map((role) => (
+              <li key={role.id}>
+                <Link
+                  href={`/c/${token}/${role.slug}`}
+                  className="group flex h-full flex-col gap-3 rounded-2xl border border-line-strong bg-raised p-5 shadow-card transition-colors hover:border-accent sm:p-6"
+                >
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Badge tone="accent">{role.productionType}</Badge>
+                    <Badge tone={role.paid ? "positive" : "amber"}>{role.paid ? "Paid" : "Unpaid"}</Badge>
+                    {role.selfTape ? <Badge tone="outline">Self-tape</Badge> : null}
+                    <DeadlineBadge session={roleWindow(role)} />
+                  </div>
+
+                  <h3 className="text-lg font-semibold tracking-tight transition-colors group-hover:text-brand">
+                    {role.title}
+                  </h3>
+                  <p className="line-clamp-3 leading-relaxed text-text">{role.characterBrief}</p>
+
+                  <dl className="mt-auto grid grid-cols-3 gap-x-4 gap-y-2 border-t border-line pt-4 text-sm">
+                    <Meta label="Location" value={role.location} />
+                    <Meta label="Playing age" value={ageRange(role.ageMin, role.ageMax)} />
+                    <Meta label="Shoot dates" value={shootWindow(role)} />
+                  </dl>
+                  <p className="text-sm font-medium text-brand">Read the brief and apply&nbsp;&rarr;</p>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="mt-5 rounded-2xl border border-dashed border-line-strong p-6 text-text">
+            The roles have not been posted yet. Keep the link: they will appear here.
+          </p>
+        )}
+      </section>
 
       <InclusionStatement session={session} />
       <YourData session={session} reportTo={reportAddress()} />

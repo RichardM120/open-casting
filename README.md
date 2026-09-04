@@ -439,6 +439,18 @@ that the casting director uploads on the casting call form, offered only when
 a store is connected. The same URL is the director's preview and the
 applicants' page.
 
+A page is a run of sections, each one container with the same shape: cream,
+a line, soft corners, and inside it white for anything you act on. Every
+section opens the same way (`SectionHead` in `src/components/ui.tsx`): a
+short heading, one line under it saying what the section holds, and to the
+right whatever acts on the section as a whole. One button on a page is gold,
+the thing to do next; the rest are outlined pills grouped with their section.
+Details go in a key-and-value grid like a spec sheet, not in boxes of prose.
+The casting call's page runs, in the order set on the design canvas: the link
+to share (on a draft, the publish panel), About this call, Roles, then
+Submissions; the applicant's page runs title, the one button, the roles, who
+can apply, and their data.
+
 The casting calls list is a traffic light. Live and about-to-open calls are
 green and come first; a call closed to submissions and being reviewed is
 amber; a call whose production has finished is red, with the deletion date on

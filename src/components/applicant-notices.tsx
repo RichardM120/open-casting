@@ -3,14 +3,17 @@ import Link from "next/link";
 import { formatDate } from "@/lib/format";
 import { DEFAULT_INCLUSION_STATEMENT, type CastingSession } from "@/lib/types";
 
+import { CARD, SectionHead, cx } from "./ui";
+
 /** The casting call's inclusive casting statement, or the default one; nothing when cleared. */
 export function InclusionStatement({ session }: { session: CastingSession }) {
   const text = session.inclusionStatement ?? DEFAULT_INCLUSION_STATEMENT;
   if (!text) return null;
   return (
-    <p className="mt-10 max-w-prose rounded-2xl border border-line-strong bg-raised p-5 leading-relaxed text-text shadow-card sm:p-6">
-      {text}
-    </p>
+    <section aria-labelledby="who-can-apply" className={cx(CARD, "mt-10")}>
+      <SectionHead id="who-can-apply" title="Who can apply" />
+      <p className="mt-4 max-w-prose leading-relaxed text-text">{text}</p>
+    </section>
   );
 }
 
@@ -34,14 +37,9 @@ export function YourData({
     new Date(Date.parse(`${session.productionEndsAt}T12:00:00Z`) + 30 * 86400000).toISOString(),
   );
   return (
-    <section
-      aria-labelledby="your-data"
-      className="mt-12 rounded-2xl border border-line-strong bg-raised p-5 shadow-card sm:p-6"
-    >
-      <h2 id="your-data" className="text-lg font-semibold tracking-tight">
-        Your data
-      </h2>
-      <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
+    <section aria-labelledby="your-data" className={cx(CARD, "mt-8")}>
+      <SectionHead id="your-data" title="Your data" />
+      <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
         {session.company} holds what you send and uses it only to consider you for this call. It
         is destroyed on {purge}, 30 days after the production finishes, and you can see it, correct
         it or have it deleted at any time.

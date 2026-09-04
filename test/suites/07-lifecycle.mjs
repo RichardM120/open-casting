@@ -119,7 +119,7 @@ check("with a reason given", (await dir.p.getByText(/used them all/).count()) > 
 
 section("6 the retention promise is stated where it matters");
 await dir.p.goto(`${BASE}/dashboard/sessions/${first}`, { waitUntil: "networkidle" });
-check("names the date the details go", (await dir.p.getByText(/destroyed 30 days later/).count()) > 0);
+check("names the date the details go", (await dir.p.getByText(/details destroyed/).count()) > 0 && (await dir.p.getByText(/30 days later/).count()) > 0);
 {
   const { c, p } = await ctx();
   await p.goto(`${BASE}/faq/applicants`, { waitUntil: "networkidle" });
