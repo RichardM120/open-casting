@@ -11,6 +11,7 @@
 import pg from "pg";
 
 import {
+  ADMIN,
   BASE,
   SHOTS,
   adminSession,
@@ -468,6 +469,39 @@ section("16 a director cannot reach Privacy");
     const response = await dir.p.goto(BASE + path, { waitUntil: "networkidle" });
     check(`${path} is a 404 for a director`, response.status() === 404, String(response.status()));
   }
+}
+
+section("17 the audit log is the record, searchable and unscoped");
+{
+  const { p } = admin;
+  await p.goto(`${BASE}/admin/audit-logs`, { waitUntil: "networkidle" });
+  check("the page is the administrator's", (await p.getByRole("heading", { name: "Audit log", level: 1 }).count()) === 1);
+  check("it carries the columns the record needs", (await p.getByRole("columnheader", { name: "Who" }).count()) === 1 && (await p.getByRole("columnheader", { name: "To what" }).count()) === 1 && (await p.getByRole("columnheader", { name: "From" }).count()) === 1);
+  check("and shows what has happened", (await p.locator("tbody tr").count()) > 0);
+
+  await p.fill("#q", ADMIN.email);
+  await Promise.all([p.waitForNavigation({ timeout: 20000 }), p.getByRole("button", { name: "Search" }).click()]);
+  check("searching by an email finds that account's actions", (await p.locator("tbody tr").count()) > 0 && (await p.getByText(ADMIN.email).first().count()) === 1);
+  check("and says how many match", (await p.getByText(/entries match|entry matches/).count()) === 1);
+
+  await p.goto(`${BASE}/admin/audit-logs?action=media.flagged`, { waitUntil: "networkidle" });
+  check("filtering by action narrows it", (await p.locator("tbody tr").count()) >= 1 && (await p.getByText("media.flagged").first().count()) === 1);
+
+  await p.goto(`${BASE}/admin/audit-logs?q=nothing-matches-this-at-all`, { waitUntil: "networkidle" });
+  check("a search that matches nothing says so", (await p.getByText(/Nothing matches/).count()) === 1);
+  await p.goto(`${BASE}/admin/audit-logs`, { waitUntil: "networkidle" });
+  await p.screenshot({ path: `${SHOTS}/audit-log.png`, fullPage: true });
+}
+{
+  // The address is on every entry the app recorded.
+  const { rows } = await pool.query("SELECT count(*)::int AS n FROM activity WHERE actor_ip IS NOT NULL");
+  check("entries carry the address they came from", rows[0].n > 0, String(rows[0].n));
+}
+
+section("18 a director cannot reach the audit log");
+{
+  const response = await dir.p.goto(`${BASE}/admin/audit-logs`, { waitUntil: "networkidle" });
+  check("/admin/audit-logs is a 404 for a director", response.status() === 404, String(response.status()));
 }
 
 await pool.end();

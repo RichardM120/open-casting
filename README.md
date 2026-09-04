@@ -778,6 +778,20 @@ row and every file with it, which cannot be undone. Both are recorded in the
 activity trail against the administrator who did them, as `media.flagged`,
 `media.cleared` and `submission.removed`.
 
+### The audit log
+
+`/admin/audit-logs` is the same trail as everywhere else, unscoped: every
+action in the order it happened, with who took it, what they took it on and
+the address it came from. `activity` carries `actor_ip` and `subject_id` for
+that, and one search box answers all three questions, matching an email
+against the account, an id against the actor, the subject or the role, and
+anything else against the words.
+
+Watching an applicant's tape is recorded as `media.viewed`, once a day per
+person per file. Loading the photos on a list of two hundred submissions is
+not a view and is not recorded: a trail nobody can read is not a record of
+anything.
+
 ### Privacy
 
 `/admin/privacy` is for doing what the law requires when somebody asks.

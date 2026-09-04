@@ -92,6 +92,9 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
               <ButtonLink href="/admin/activity" variant="secondary" size="sm">
                 Activity
               </ButtonLink>
+              <ButtonLink href="/admin/audit-logs" variant="secondary" size="sm">
+                Audit
+              </ButtonLink>
             </>
           }
         />

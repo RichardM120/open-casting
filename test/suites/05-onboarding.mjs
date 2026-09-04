@@ -109,7 +109,7 @@ section("6b the two sections each carry their own navigation");
   await admin.p.goto(`${BASE}/admin`, { waitUntil: "networkidle" });
   const adminOrder = await admin.p.locator("header nav").first().locator("a").allTextContents();
   check(`admin nav in order: ${JSON.stringify(adminOrder)}`,
-    JSON.stringify(adminOrder) === JSON.stringify(["Overview", "Clients", "Projects", "Submissions", "Accounts", "Storage", "Privacy", "Activity", "FAQ"]));
+    JSON.stringify(adminOrder) === JSON.stringify(["Overview", "Clients", "Projects", "Submissions", "Accounts", "Storage", "Privacy", "Activity", "Audit", "FAQ"]));
   await admin.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 
   await half.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });

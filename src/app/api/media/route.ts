@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 
+import { noteMediaView } from "@/lib/activity";
 import { currentUser } from "@/lib/auth";
 import { readBlob, uploadsEnabled } from "@/lib/blob";
 import { getVisibleRole } from "@/lib/roles";
@@ -42,7 +43,14 @@ export async function GET(request: Request) {
     return new NextResponse(null, { status: 404 });
   }
 
+  // Watching somebody's tape is worth a line in the trail; loading the photos
+  // on a list of two hundred submissions is not, so only a video counts, and
+  // only once a day per person per file. A player asking for the next part of
+  // the same tape sends a Range header, and those are not views either.
   const range = request.headers.get("range");
+  if (!range && url !== submission.photoUrl) {
+    await noteMediaView({ user, submissionId: submission.id, name: submission.name, url });
+  }
   let file: Awaited<ReturnType<typeof readBlob>>;
   try {
     file = await readBlob(url, { range });

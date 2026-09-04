@@ -763,6 +763,16 @@ const SCHEMA = `
   CREATE INDEX IF NOT EXISTS access_requests_open_idx
     ON access_requests (requested_at DESC) WHERE closed_at IS NULL;
   CREATE INDEX IF NOT EXISTS access_requests_email_idx ON access_requests (lower(email));
+
+  -- Where the request came from, and what it was about. The address is on the
+  -- entry because "who did this" is not always answered by an account: two
+  -- people can share one, and an audit that cannot say where from is thin.
+  ALTER TABLE activity ADD COLUMN IF NOT EXISTS actor_ip text;
+  -- The thing acted on, when it is not a role: a submission, a client, an
+  -- account. Kept as plain text with no foreign key, so the trail outlives it.
+  ALTER TABLE activity ADD COLUMN IF NOT EXISTS subject_id text;
+  CREATE INDEX IF NOT EXISTS activity_subject_idx ON activity (subject_id);
+  CREATE INDEX IF NOT EXISTS activity_actor_idx ON activity (actor_id, created_at DESC);
 `;
 
 /** Postgres error code for a unique constraint violation. */
