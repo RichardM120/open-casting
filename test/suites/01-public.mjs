@@ -34,6 +34,7 @@ section("1 the home page is the way in, and nothing else");
   check("the page leads with the five steps, no hero above them", (await p.locator("main h1").first().innerText()).includes("Five steps"));
   check("and ends on the sign-up button", (await p.locator("main").getByRole("link", { name: "Sign up" }).count()) >= 1);
   check("no separate admin door", (await p.getByRole("link", { name: /sign in as admin/i }).count()) === 0);
+  check("the footer offers the administrator the same door, pointed at their section", (await p.locator("footer").getByRole("link", { name: "Admin", exact: true }).getAttribute("href")) === "/login?next=%2Fadmin");
   check("explains what you see follows from the account", (await p.getByText(/follows from your\s+account/).count()) > 0);
   check("explains applicants use a link", (await p.getByText(/Sent a casting link/).count()) > 0);
   check("no browse anywhere on it", (await p.getByRole("link", { name: /browse/i }).count()) === 0);

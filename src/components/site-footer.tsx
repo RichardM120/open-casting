@@ -12,8 +12,9 @@ import { Logo } from "./logo";
  * terracotta would not show against this ground.
  *
  * The footer shows the way on from wherever the reader is. Signed out that is
- * the way in; signed in it is the work, and the admin's section as well when
- * they have one. It never offers a link that would turn them away at the door.
+ * the way in, the casting team's and the administrator's; signed in it is the
+ * work, and the admin's section as well when they have one. It never offers a
+ * link that would turn them away at the door: a director sees no Admin.
  */
 const LINK =
   "inline-flex min-h-10 items-center rounded-sm transition-colors hover:text-white focus-visible:outline-accent";
@@ -37,6 +38,8 @@ function columnsFor(user: SessionUser | null): Column[] {
         links: [
           { href: "/login", label: "Sign in" },
           { href: "/faq/casting-directors", label: "How it works" },
+          // The administrator's door, straight to the sign-in that opens it.
+          { href: "/login?next=%2Fadmin", label: "Admin" },
         ],
       };
 
