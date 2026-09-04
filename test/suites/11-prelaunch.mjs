@@ -165,6 +165,33 @@ section("9 and it does not hand out admin");
   await pool.end();
 }
 
+section("10 the footer's Admin is one click into the admin overview, as a stand-in administrator");
+{
+  const { p } = inside;
+  await p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
+  const door = p.locator("footer").getByRole("link", { name: "Admin", exact: true });
+  check("a director behind the wall is offered Admin in the footer", (await door.count()) === 1 && (await door.getAttribute("href")) === "/login/preview");
+  await door.click();
+  await p.waitForURL(/\/admin$/, { timeout: 20000 });
+  check("one click lands on the admin overview", new URL(p.url()).pathname === "/admin", p.url());
+  check("as the stand-in administrator", (await p.locator('header [title="preview-admin@opencasting.app"]').count()) === 1);
+  await p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
+  check("who sees every client's casting calls", (await p.getByText("Saltmarsh").count()) > 0 && (await p.getByText("Northbank").count()) > 0 && (await p.getByText("Kestrel").count()) > 0);
+  await p.goto(`${BASE}/admin/clients`, { waitUntil: "networkidle" });
+  check("and the clients", (await p.getByRole("heading", { name: "Clients" }).count()) > 0);
+
+  await p.getByRole("button", { name: "Sign out" }).click();
+  await p.waitForURL((url) => !url.pathname.startsWith("/admin"), { timeout: 20000 });
+  await p.goto(`${BASE}/login/preview`, { waitUntil: "networkidle" });
+  check("signed out, the same door opens the same way", new URL(p.url()).pathname === "/admin", p.url());
+
+  const { Pool } = await import("pg");
+  const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+  const rows = await pool.query("SELECT name, role FROM users WHERE lower(email) = lower($1)", ["preview-admin@opencasting.app"]);
+  check("one made-up account, an admin, called Preview Admin", rows.rows.length === 1 && rows.rows[0].role === "admin" && rows.rows[0].name === "Preview Admin", JSON.stringify(rows.rows));
+  await pool.end();
+}
+
 await inside.c.close();
 await browser.close();
 finish();

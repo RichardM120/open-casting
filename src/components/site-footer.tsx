@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { gateEnabled } from "@/lib/gate";
 import { companyDetails, reportAddress } from "@/lib/site";
 import type { SessionUser } from "@/lib/auth";
 
@@ -14,15 +15,23 @@ import { Logo } from "./logo";
  * The footer shows the way on from wherever the reader is. Signed out that is
  * the way in, the casting team's and the administrator's; signed in it is the
  * work, and the admin's section as well when they have one. It never offers a
- * link that would turn them away at the door: a director sees no Admin.
+ * link that would turn them away at the door: a director sees no Admin. Behind
+ * the pre-launch wall, where sign-in checks nothing, Admin is one click into
+ * the admin overview for anyone who got past the passcode.
  */
 const LINK =
   "inline-flex min-h-10 items-center rounded-sm transition-colors hover:text-white focus-visible:outline-accent";
 
-type Column = { title: string; links: { href: string; label: string }[] };
+/** `plain` marks a link the browser must follow itself: the router's prefetch would open the door on sight. */
+type Column = { title: string; links: { href: string; label: string; plain?: boolean }[] };
 
 /** The columns for whoever is reading: the casting side first, then help, then legal. */
-function columnsFor(user: SessionUser | null): Column[] {
+function columnsFor(user: SessionUser | null, walled: boolean): Column[] {
+  // The administrator's door: behind the wall, straight in as the stand-in
+  // administrator; otherwise the sign-in that opens it.
+  const admin = walled
+    ? { href: "/login/preview", label: "Admin", plain: true }
+    : { href: "/login?next=%2Fadmin", label: "Admin" };
   const casting: Column = user
     ? {
         title: "Your casting",
@@ -30,7 +39,7 @@ function columnsFor(user: SessionUser | null): Column[] {
           { href: "/dashboard", label: "Casting calls" },
           { href: "/dashboard/sessions/new", label: "New casting call" },
           { href: "/dashboard/activity", label: "Activity" },
-          ...(user.role === "admin" ? [{ href: "/admin", label: "Admin" }] : []),
+          ...(user.role === "admin" ? [{ href: "/admin", label: "Admin" }] : walled ? [admin] : []),
         ],
       }
     : {
@@ -38,8 +47,7 @@ function columnsFor(user: SessionUser | null): Column[] {
         links: [
           { href: "/login", label: "Sign in" },
           { href: "/faq/casting-directors", label: "How it works" },
-          // The administrator's door, straight to the sign-in that opens it.
-          { href: "/login?next=%2Fadmin", label: "Admin" },
+          admin,
         ],
       };
 
@@ -70,7 +78,7 @@ export function SiteFooter({
   user?: SessionUser | null;
   padForTabs?: boolean;
 }) {
-  const columns = columnsFor(user);
+  const columns = columnsFor(user, gateEnabled());
   const contact = reportAddress();
   const company = companyDetails();
 
@@ -117,9 +125,15 @@ export function SiteFooter({
                   <ul aria-labelledby={id} className="mt-2 flex flex-col">
                     {column.links.map((link) => (
                       <li key={link.href}>
-                        <Link href={link.href} className={LINK}>
-                          {link.label}
-                        </Link>
+                        {link.plain ? (
+                          <a href={link.href} className={LINK}>
+                            {link.label}
+                          </a>
+                        ) : (
+                          <Link href={link.href} className={LINK}>
+                            {link.label}
+                          </Link>
+                        )}
                       </li>
                     ))}
                   </ul>

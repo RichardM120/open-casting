@@ -7,6 +7,7 @@ import { redirect } from "next/navigation";
 import { cache } from "react";
 
 import { query } from "./db";
+import { gateEnabled, isPreviewAdmin } from "./gate";
 import { signContext } from "./token";
 import type { UserRole } from "./types";
 
@@ -176,6 +177,9 @@ export const currentUser = cache(async (): Promise<SessionUser | null> => {
   );
 
   const row = rows[0];
+  // The stand-in administrator the walled-off footer signs a reader in as
+  // means nothing once the wall is down: its sessions end with the wall.
+  if (row && isPreviewAdmin(row.email) && !gateEnabled()) return null;
   return row
     ? {
         id: row.id,

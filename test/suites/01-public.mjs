@@ -39,6 +39,10 @@ section("1 the home page is the way in, and nothing else");
   check("explains applicants use a link", (await p.getByText(/Sent a casting link/).count()) > 0);
   check("no browse anywhere on it", (await p.getByRole("link", { name: /browse/i }).count()) === 0);
   await p.screenshot({ path: `${SHOTS}/home.png`, fullPage: true });
+  // The walled-off door is shut with the wall down: it is the sign-in itself.
+  await p.goto(`${BASE}/login/preview`, { waitUntil: "networkidle" });
+  check("with the wall down, the one-click admin door is the sign-in", p.url().endsWith("/login?next=%2Fadmin"), p.url());
+  check("and hands out no session", !(await p.context().cookies()).some((cookie) => cookie.name === "oc_session"));
   await c.close();
 }
 

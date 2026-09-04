@@ -1,6 +1,7 @@
 import "server-only";
 
 import { UNIQUE_VIOLATION, query } from "./db";
+import { PREVIEW_ADMIN_EMAIL, PREVIEW_ADMIN_NAME } from "./gate";
 import { hashPassword } from "./password";
 import type { SignupRole, UserRole } from "./types";
 
@@ -324,4 +325,33 @@ export async function updateProfile(
 
 export async function markOnboarded(id: string): Promise<void> {
   await query("UPDATE users SET onboarded_at = now() WHERE onboarded_at IS NULL AND id = $1", [id]);
+}
+
+/**
+ * The stand-in administrator the walled-off footer signs a reader in as (see
+ * gate.ts). Made once, with a name that says what it is and a password nobody
+ * holds, and kept an admin: sign-in never touches it, so nothing demotes it.
+ */
+export async function ensurePreviewAdmin(): Promise<User> {
+  const existing = await findUserByEmail(PREVIEW_ADMIN_EMAIL);
+  if (existing) {
+    if (existing.role !== "admin" || existing.suspended_at) {
+      await query("UPDATE users SET role = 'admin', suspended_at = NULL WHERE id = $1", [existing.id]);
+    }
+    return (await findAccount(existing.id)) as User;
+  }
+  const rows = await query<User>(
+    `INSERT INTO users (id, email, name, company, password_hash, role, onboarded_at)
+     VALUES ($1, $2, $3, 'Open Casting', $4, 'admin', now())
+     ON CONFLICT DO NOTHING
+     RETURNING ${COLUMNS}`,
+    [
+      `usr_${crypto.randomUUID().slice(0, 12)}`,
+      PREVIEW_ADMIN_EMAIL,
+      PREVIEW_ADMIN_NAME,
+      await hashPassword(`${crypto.randomUUID()}${crypto.randomUUID()}`),
+    ],
+  );
+  // Two first clicks at once: the other one's row is the account.
+  return rows[0] ?? ((await findUserByEmail(PREVIEW_ADMIN_EMAIL)) as User);
 }

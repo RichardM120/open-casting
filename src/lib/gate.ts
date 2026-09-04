@@ -54,3 +54,17 @@ export function gateExempt(pathname: string): boolean {
 export function gateOperable(): boolean {
   return (process.env.AUTH_SECRET?.trim().length ?? 0) >= 32;
 }
+
+/**
+ * The stand-in administrator the walled-off footer signs a reader in as: a
+ * made-up account, made on first use, with a password nobody holds, whose
+ * sessions end with the wall. Behind the wall sign-in checks nothing anyway,
+ * so one click into the admin overview is the same permission spelled
+ * shorter; it is bound to the same variable so it cannot outlive it.
+ */
+export const PREVIEW_ADMIN_EMAIL = "preview-admin@opencasting.app";
+export const PREVIEW_ADMIN_NAME = "Preview Admin";
+
+export function isPreviewAdmin(email: string): boolean {
+  return email.trim().toLowerCase() === PREVIEW_ADMIN_EMAIL;
+}

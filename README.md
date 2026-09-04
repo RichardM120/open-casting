@@ -77,6 +77,8 @@ words for the same places. The footer shows each reader their own way on:
 signed out, **Sign in** for a casting team and **Admin** for the administrator,
 which goes to the sign-in and from there to the admin overview; signed in, the
 casting calls, and Admin as well for an administrator, never for a director.
+Behind the pre-launch wall, Admin is one click into the admin overview for
+anyone who got past the passcode, signed in or not (see Before launch).
 `/dashboard/sessions` still answers, with a permanent
 redirect to `/dashboard`, and `/faq/performers` redirects to `/faq/applicants`,
 so an old bookmark lands in the right place.
@@ -180,6 +182,12 @@ One variable. With `SITE_PASSCODE` set:
   password gets a session, and an account is created on the spot for an address
   that has none. Google sign-in is withdrawn while the wall is up, because it is
   the one way in that really does authenticate;
+- the footer's **Admin** is one click into the admin overview, as a stand-in
+  administrator called Preview Admin, made on first use with a password nobody
+  holds. Sign-in checks nothing behind the wall anyway, so this is the same
+  permission spelled shorter. It is bound to the same variable: with the wall
+  down the link is the real sign-in, `/login/preview` sends there too, and the
+  stand-in's sessions end;
 - a banner sits above every page saying so, and `/api/health` reports it.
 
 The two go together on purpose. Sign-in that authenticates nobody is only
