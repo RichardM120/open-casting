@@ -46,7 +46,7 @@ export function FieldGlossary({
   items: { term: string; means: ReactNode }[];
 }) {
   return (
-    <dl className="mt-5 divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
+    <dl className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
       {items.map((item) => (
         <div key={item.term} className="grid gap-1.5 p-4 sm:p-6 sm:grid-cols-[200px_minmax(0,1fr)] sm:gap-6">
           <dt className="text-sm font-medium text-text">{item.term}</dt>

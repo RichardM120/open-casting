@@ -160,64 +160,62 @@ export default function CastingDirectorFaqPage() {
         title="What each field commits you to"
         intro="Applicants make real decisions on the strength of these: turning down other work, travelling, spending an evening on a tape."
       >
-        <div />
-      </FaqSection>
-
-      <FieldGlossary
+        <FieldGlossary
         items={[
-          {
-            term: "Casting call and synopsis",
-            means:
-              "Set once, on the casting call, and shown on every role in it. Give enough for someone to decide whether it is for them: a synopsis that says nothing gets submissions from people who have not read it.",
-          },
-          {
-            term: "Character brief",
-            means:
-              "Who they are, not just what they look like. This is the field that decides the quality of what you get back.",
-          },
-          {
-            term: "Requirements",
-            means:
-              "Anything genuinely non-negotiable: a skill, a licence, availability for a specific block. Listing preferences here as requirements narrows your pool for no gain.",
-          },
-          {
-            term: "Playing age",
-            means:
-              "The range you would believe on screen or stage. It is not a proxy for actual age, and framing it as one will lose you people who could play it.",
-          },
-          {
-            term: "Self-tape",
-            means:
-              "Ticking this says you will accept a tape instead of an in-person audition. If you will only see people in the room, leave it off rather than disappoint someone who has made one.",
-          },
-          {
-            term: "Shoot dates",
-            means:
-              "Real dates, including any fitting or rehearsal day. People turn down other work on the strength of this.",
-          },
-          {
-            term: "Opens and closes",
-            means: (
-              <>
-                These belong to the casting call, so a role has no window of its own: it opens
-                and closes with everything else on the call, at the times you set, in UK time.
-                Allow enough time for a tape to be made &mdash; a three-day window on a self-tape
-                role gets you whoever happened to be free.
-              </>
-            ),
-          },
-          {
-            term: "Terms for applicants",
-            means: (
-              <>
-                Optional. Where you set them, applicants tick to accept before they can submit,
-                and the wording is stored against their submission exactly as it read then, so
-                editing the role later cannot change what somebody agreed to.
-              </>
-            ),
-          },
-        ]}
-      />
+            {
+              term: "Casting call and synopsis",
+              means:
+                "Set once, on the casting call, and shown on every role in it. Give enough for someone to decide whether it is for them: a synopsis that says nothing gets submissions from people who have not read it.",
+            },
+            {
+              term: "Character brief",
+              means:
+                "Who they are, not just what they look like. This is the field that decides the quality of what you get back.",
+            },
+            {
+              term: "Requirements",
+              means:
+                "Anything genuinely non-negotiable: a skill, a licence, availability for a specific block. Listing preferences here as requirements narrows your pool for no gain.",
+            },
+            {
+              term: "Playing age",
+              means:
+                "The range you would believe on screen or stage. It is not a proxy for actual age, and framing it as one will lose you people who could play it.",
+            },
+            {
+              term: "Self-tape",
+              means:
+                "Ticking this says you will accept a tape instead of an in-person audition. If you will only see people in the room, leave it off rather than disappoint someone who has made one.",
+            },
+            {
+              term: "Shoot dates",
+              means:
+                "Real dates, including any fitting or rehearsal day. People turn down other work on the strength of this.",
+            },
+            {
+              term: "Opens and closes",
+              means: (
+                <>
+                  These belong to the casting call, so a role has no window of its own: it opens
+                  and closes with everything else on the call, at the times you set, in UK time.
+                  Allow enough time for a tape to be made &mdash; a three-day window on a self-tape
+                  role gets you whoever happened to be free.
+                </>
+              ),
+            },
+            {
+              term: "Terms for applicants",
+              means: (
+                <>
+                  Optional. Where you set them, applicants tick to accept before they can submit,
+                  and the wording is stored against their submission exactly as it read then, so
+                  editing the role later cannot change what somebody agreed to.
+                </>
+              ),
+            },
+          ]}
+        />
+      </FaqSection>
 
       <FaqSection title="Writing the terms">
         <FaqItem q="What should I put in them?">

@@ -97,124 +97,120 @@ export default function ApplicantFaqPage() {
         title="What the casting call is telling you"
         intro="These are the fields on every role, and what they commit the production to."
       >
-        <div />
-      </FaqSection>
-
-      <FieldGlossary
+        <FieldGlossary
         items={[
-          {
-            term: "Playing age",
-            means:
-              "The range they believe you could convincingly play, not your actual age. Submit if you are inside it, whatever your date of birth.",
-          },
-          {
-            term: "Self-tape",
-            means:
-              "You may record and send your audition rather than attend in person. You are not usually paid for the time or cost of making one.",
-          },
-          {
-            term: "Shoot dates",
-            means:
-              "When the work happens. Only submit if you are genuinely free for all of it.",
-          },
-          {
-            term: "Opens and closes",
-            means:
-              "The production's casting window, in UK time. The form appears at the opening time and goes at the closing time \u2014 the moment your submission has to have arrived, not the moment you start it, so give a video a few minutes. A casting director may also close early, and the roles then stay up for reference without a form.",
-          },
-        ]}
-      />
+            {
+              term: "Playing age",
+              means:
+                "The range they believe you could convincingly play, not your actual age. Submit if you are inside it, whatever your date of birth.",
+            },
+            {
+              term: "Self-tape",
+              means:
+                "You may record and send your audition rather than attend in person. You are not usually paid for the time or cost of making one.",
+            },
+            {
+              term: "Shoot dates",
+              means:
+                "When the work happens. Only submit if you are genuinely free for all of it.",
+            },
+            {
+              term: "Opens and closes",
+              means:
+                "The production's casting window, in UK time. The form appears at the opening time and goes at the closing time \u2014 the moment your submission has to have arrived, not the moment you start it, so give a video a few minutes. A casting director may also close early, and the roles then stay up for reference without a form.",
+            },
+          ]}
+        />
+      </FaqSection>
 
       <FaqSection
         title="What you are filling in"
         intro="Every field on the submission form, and why it is being asked for."
       >
-        <div />
-      </FaqSection>
-
-      <FieldGlossary
+        <FieldGlossary
         items={[
-          {
-            term: "Full name",
-            means: "As you would be credited. Use your professional name if you have one.",
-          },
-          {
-            term: "Email",
-            means:
-              "How they contact you, and how the site stops one person submitting twice for the same production.",
-          },
-          {
-            term: "Phone",
-            means: "Used for recalls and last-minute schedule changes, which are common.",
-          },
-          {
-            term: "Based in",
-            means:
-              "Whether you can work as a local. Some productions cover travel and accommodation, some do not; the role should say.",
-          },
-          {
-            term: "Where you are resident",
-            means:
-              "Asked only when a role needs it: the country you live in, because some castings are open to residents of one country only. Not your address.",
-          },
-          {
-            term: "Height",
-            means:
-              "Asked only when a role needs it. Give it in centimetres or in feet and inches; the casting team sees both.",
-          },
-          {
-            term: "Age",
-            means: (
-              <>
-                Your actual age in years, not your playing age. If you are under 16, a parent or
-                guardian must submit for you, and the production needs a local authority licence
-                and a chaperone before you can work.
-              </>
-            ),
-          },
-          {
-            term: "Showreel link",
-            means:
-              "Optional. A link to footage on Vimeo, YouTube, or anywhere else. Make sure it is not private or password-locked.",
-          },
-          { term: "Profile link", means: "Optional. Spotlight, Backstage, or your own site." },
-          {
-            term: "Cover note",
-            means:
-              "A short paragraph on why you, for this part. Specific beats general, so refer to the brief.",
-          },
-          {
-            term: "Videos",
-            means:
-              "Some roles ask for one or more videos, each with its own brief and sometimes a length limit. A tape over the limit is refused when you choose it, before anything is sent. Filming guidance sits beside the upload.",
-          },
-          {
-            term: "Available for the shoot dates",
-            means:
-              "A role with shoot dates asks you to confirm you are free for all of them. Only tick it if you are: pulling out late is what makes casting directors stop running open calls.",
-          },
-          {
-            term: "A question about heritage, faith or health",
-            means:
-              "A few parts are written for someone of a particular heritage, faith or disability, and the law allows those roles to ask. The question carries its own consent, separate from the terms. The answer is held apart from the rest of your submission, read only by the casting director who posted the role and the site administrator, and deleted 30 days after casting closes.",
-          },
-          {
-            term: "Do you have an agent?",
-            means:
-              "Some calls ask this first. If you are represented and the call is for unrepresented actors, you are pointed to your agent, and nothing about you is taken.",
-          },
-          {
-            term: "Terms for this role",
-            means: (
-              <>
-                Some roles carry terms set by the casting director. You tick to accept before
-                submitting, and the wording is recorded against your submission exactly as it read
-                then, so it cannot be changed afterwards.
-              </>
-            ),
-          },
-        ]}
-      />
+            {
+              term: "Full name",
+              means: "As you would be credited. Use your professional name if you have one.",
+            },
+            {
+              term: "Email",
+              means:
+                "How they contact you, and how the site stops one person submitting twice for the same production.",
+            },
+            {
+              term: "Phone",
+              means: "Used for recalls and last-minute schedule changes, which are common.",
+            },
+            {
+              term: "Based in",
+              means:
+                "Whether you can work as a local. Some productions cover travel and accommodation, some do not; the role should say.",
+            },
+            {
+              term: "Where you are resident",
+              means:
+                "Asked only when a role needs it: the country you live in, because some castings are open to residents of one country only. Not your address.",
+            },
+            {
+              term: "Height",
+              means:
+                "Asked only when a role needs it. Give it in centimetres or in feet and inches; the casting team sees both.",
+            },
+            {
+              term: "Age",
+              means: (
+                <>
+                  Your actual age in years, not your playing age. If you are under 16, a parent or
+                  guardian must submit for you, and the production needs a local authority licence
+                  and a chaperone before you can work.
+                </>
+              ),
+            },
+            {
+              term: "Showreel link",
+              means:
+                "Optional. A link to footage on Vimeo, YouTube, or anywhere else. Make sure it is not private or password-locked.",
+            },
+            { term: "Profile link", means: "Optional. Spotlight, Backstage, or your own site." },
+            {
+              term: "Cover note",
+              means:
+                "A short paragraph on why you, for this part. Specific beats general, so refer to the brief.",
+            },
+            {
+              term: "Videos",
+              means:
+                "Some roles ask for one or more videos, each with its own brief and sometimes a length limit. A tape over the limit is refused when you choose it, before anything is sent. Filming guidance sits beside the upload.",
+            },
+            {
+              term: "Available for the shoot dates",
+              means:
+                "A role with shoot dates asks you to confirm you are free for all of them. Only tick it if you are: pulling out late is what makes casting directors stop running open calls.",
+            },
+            {
+              term: "A question about heritage, faith or health",
+              means:
+                "A few parts are written for someone of a particular heritage, faith or disability, and the law allows those roles to ask. The question carries its own consent, separate from the terms. The answer is held apart from the rest of your submission, read only by the casting director who posted the role and the site administrator, and deleted 30 days after casting closes.",
+            },
+            {
+              term: "Do you have an agent?",
+              means:
+                "Some calls ask this first. If you are represented and the call is for unrepresented actors, you are pointed to your agent, and nothing about you is taken.",
+            },
+            {
+              term: "Terms for this role",
+              means: (
+                <>
+                  Some roles carry terms set by the casting director. You tick to accept before
+                  submitting, and the wording is recorded against your submission exactly as it read
+                  then, so it cannot be changed afterwards.
+                </>
+              ),
+            },
+          ]}
+        />
+      </FaqSection>
 
       <FaqSection title="Being careful">
         <FaqItem q="Why can I not search for other roles?">
