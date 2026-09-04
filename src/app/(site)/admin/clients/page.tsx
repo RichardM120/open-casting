@@ -38,7 +38,7 @@ export default async function ClientsPage({ searchParams }: PageProps<"/admin/cl
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
       <Breadcrumb trail={[{ href: "/admin", label: "Admin" }, { label: "Clients" }]} />
       <HelpNote title="What this screen is for">
-        <p dangerouslySetInnerHTML={{ __html: 'One row per company paying for Open Casting. Open a client to see its accounts, what it is using against what it bought, and to suspend or restore it.' }} />
+        <p dangerouslySetInnerHTML={{ __html: 'One row per company paying for Open Casting. Open one to see its accounts, what it is using against what it bought, and to suspend or restore it.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'Take on a new client before making its accounts; an account cannot exist without one.' }} />
       </HelpNote>
 
@@ -58,8 +58,8 @@ export default async function ClientsPage({ searchParams }: PageProps<"/admin/cl
             Who pays for Open Casting
           </h1>
           <p className="mt-3 max-w-2xl text-muted">
-            One row per company on the service. Open a client to see its accounts, what it is
-            using against what it bought, and to stop or restart it.
+            One row per company on the service. Open one to see its accounts, what it is using
+            against what it bought, and to stop or restart it.
           </p>
         </div>
         <ButtonLink href="/admin/clients/new">New client</ButtonLink>

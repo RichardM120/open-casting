@@ -371,8 +371,8 @@ export function SubmissionForm({
             This applicant is under {ADULT_AGE}
           </h3>
           <p className="mt-2 text-sm leading-relaxed text-muted">
-            A submission for a child has to be made by a parent or someone with legal parental
-            responsibility. Please fill this in yourself rather than passing it to them.
+            A submission for a child must be made by a parent or someone with legal parental
+            responsibility. Fill this in yourself rather than passing it to them.
           </p>
 
           <div className="mt-4 grid gap-6 sm:grid-cols-2">

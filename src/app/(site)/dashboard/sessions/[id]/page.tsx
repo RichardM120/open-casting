@@ -249,9 +249,9 @@ export default async function SessionPage({
         </p>
       ) : (
         <p className="mt-4 rounded-xl border border-line bg-raised px-4 py-3 text-sm text-muted">
-          Submissions appear here as they arrive, across every role in the casting call. Each one
-          can be moved through New, Shortlisted, Callback and Declined from here, and the whole
-          list can be downloaded as a spreadsheet or emailed to you.
+          Submissions appear here as they arrive, across every role in the call. Move each one
+          through New, Shortlisted, Callback and Declined, and download the whole list as a
+          spreadsheet or have it emailed to you.
         </p>
       )}
     </section>
@@ -383,9 +383,9 @@ export default async function SessionPage({
         <section className="mt-8 rounded-2xl border border-accent/30 bg-accent-soft p-6">
           <h2 className="text-lg font-semibold tracking-tight">Not published yet</h2>
           <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
-            Nobody can open this but you. Check it over as an applicant will see it, and publish
-            when you are happy. That is the moment the link starts working. Everything here is
-            saved as you go, so you can leave and come back from Casting calls whenever you like.
+            Nobody can open this but you. Check it over as an applicant will see it, then
+            publish: that is the moment the link starts working. Everything is saved as you go, so
+            you can leave and come back from Casting calls whenever you like.
           </p>
           <ul className="mt-4 flex flex-col gap-2 text-sm text-muted">
             <Ready done={roles.length > 0}>
@@ -428,9 +428,9 @@ export default async function SessionPage({
             </ButtonLink>
           </div>
           <p className="mt-4 text-xs leading-relaxed text-faint">
-            Publishing cannot be undone. Once the link is out on a post or in a mailout it is out
-            of your hands, and unpublishing would only break it for the people who already have
-            it. To stop a call, use <strong className="text-muted">Close early</strong> instead.
+            Publishing cannot be undone. Once the link is out in a post or a mailout it is out of
+            your hands, and unpublishing would only break it for the people who have it. To stop a
+            call, use <strong className="text-muted">Close early</strong> instead.
           </p>
         </section>
       ) : (
@@ -466,7 +466,7 @@ export default async function SessionPage({
               daysUntilPurge(session.productionEndsAt) <= 14
                 ? `, which is ${daysUntilPurge(session.productionEndsAt)} days away`
                 : ""
-            }. Export anything you need before then. The casting call and its roles are kept.`}
+            }. Export anything you need first. The casting call and its roles are kept.`}
       </p>
 
       {draft ? null : submissionsSection}

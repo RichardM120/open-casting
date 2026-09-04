@@ -461,7 +461,7 @@ export function RoleForm({
             htmlFor="disclaimer"
             hint={
               role
-                ? "Shown on the listing, and applicants tick to accept them. Changing them does not alter what anyone has already accepted, as that was recorded with their submission."
+                ? "Shown on the listing, and applicants tick to accept them. Changing them does not alter what anyone has already accepted: that was recorded with their submission."
                 : "Shown on the listing, and applicants tick to accept them before they can submit. Usage and buyout, what submitting commits either side to, how long you keep their details."
             }
             error={errors.disclaimer}
@@ -489,10 +489,10 @@ export function RoleForm({
           open={open.special}
         >
           <p className="text-sm text-muted sm:col-span-2">
-            A role cast to an ethnicity, a faith or a disability, say. The law allows the
-            question where there is an occupational requirement, so the requirement is recorded
-            here with the question. The answer is held apart from the rest of a submission, seen
-            only by you and the site administrator, and deleted 30 days after casting closes.
+            A role cast to an ethnicity, a faith or a disability, say. The law allows the question
+            where there is an occupational requirement, so it is recorded here alongside it. The
+            answer is held apart from the rest of the submission, seen only by you and the site
+            administrator, and deleted 30 days after casting closes.
           </p>
           <Field
             label="What it is about"
@@ -535,7 +535,7 @@ export function RoleForm({
               <Field
                 label="The occupational requirement"
                 htmlFor="specialJustification"
-                hint="Why this role may ask: the requirement of the part, under Schedule 9 of the Equality Act 2010, that makes the characteristic essential to it. Kept as the record of the decision. Applicants are told the question is asked under a recorded requirement, not this wording."
+                hint="Why this role may ask: the requirement of the part, under Schedule 9 of the Equality Act 2010, that makes the characteristic essential. Kept as the record of the decision; applicants see only that a requirement was recorded, not this wording."
                 error={errors.specialJustification}
                 className="sm:col-span-2"
               >
@@ -656,10 +656,10 @@ function MediaSlotsEditor({
       <div>
         <p className="text-sm font-medium text-text">The videos</p>
         <p className="mt-1 text-xs leading-relaxed text-muted">
-          Leave this empty to ask for one video, &ldquo;Self-tape or showreel&rdquo;, with no limit
-          on its length. Or set out up to three, each with its own brief and limit: a monologue
-          and a piece to camera, say. A limit is checked before the upload starts, so nobody sends
-          a tape that is too long.
+          Leave empty to ask for one video, &ldquo;Self-tape or showreel&rdquo;, with no limit. Or
+          set out up to three, each with its own brief and limit &mdash; a monologue and a piece to
+          camera, say. A limit is checked before the upload starts, so nobody sends a tape that is
+          too long.
         </p>
       </div>
       {rows.map((row, index) => {

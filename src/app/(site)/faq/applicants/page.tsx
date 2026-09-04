@@ -30,73 +30,65 @@ export default function ApplicantFaqPage() {
       <FaqSection title="The basics">
         <FaqItem q="Do I need an account?">
           <p>
-            No, and there is nothing to register for. You submit through the link the production
-            sent you, and that link is all you need. Accounts are only for the people casting, so
-            they can post roles and read what comes in.
+            No. You submit through the link the production sent you, and that is all you need.
+            Accounts are only for the people casting.
           </p>
         </FaqItem>
         <FaqItem q="Does it cost anything?">
           <p>
-            No. There is no fee to submit and no subscription. If anyone ever asks you to pay to
-            be seen for a role you found here, that is not us. Tell us.
+            No, ever. If anyone asks you to pay to be seen for a role you found here, it is not
+            us. Tell us.
           </p>
         </FaqItem>
         <FaqItem q="Do I need an agent?">
           <p>
-            No. You submit directly, and the casting director sees your submission alongside
-            everyone else&rsquo;s. If you do have an agent, tell them you have submitted so you
-            do not go in twice.
+            No. You submit directly, and the casting director reads your submission alongside
+            everyone else&rsquo;s. If you do have one, tell them you have submitted so you do not
+            go in twice.
           </p>
         </FaqItem>
         <FaqItem q="Can I submit more than once for the same production?">
           <p>
-            No. It is one submission per email address per production. If a production has five
-            roles up, you pick the one that fits you best and submit for that. Submitting for all
-            five is not possible, and would not help if it were.
-          </p>
-          <p>
-            If you need to correct something, email the casting director directly rather than
+            No: one submission per email address per production. If five roles are up, pick the
+            one that fits you best. To correct something, email the casting director rather than
             submitting again.
           </p>
         </FaqItem>
         <FaqItem q="A role is listed but there is no form. Why?">
           <p>
-            The production has not opened for submissions yet, or it has closed. The page tells
-            you which, and gives the date and time submissions open if that is still to come.
-            Roles go up before they open on purpose, so you have time to read the brief and
-            prepare a tape.
+            It has not opened for submissions yet, or it has closed; the page says which, with
+            the opening time if that is still to come. Roles go up early on purpose, so you have
+            time to read the brief and prepare a tape.
           </p>
         </FaqItem>
         <FaqItem q="Will I hear back?">
           <p>
             Only if they want to take it further. Casting directors read every submission but
-            almost never reply to all of them. That is normal and is not a judgement on your
-            work. Every role shows when its production opens and closes.
+            rarely reply to all of them. That is normal, and not a judgement on your work.
           </p>
         </FaqItem>
         <FaqItem q="How long do you keep my details?">
           <p>
-            Thirty days after the production finishes, and not when casting closes, your name,
-            email, phone number, location, age, links and cover note are deleted. Not hidden,
-            deleted. What survives is the production and its roles, so the casting director
-            keeps a record of what they ran, with nobody&rsquo;s personal data in it.
+            Thirty days after the production finishes &mdash; not when casting closes &mdash;
+            your name, email, phone, location, age, links and cover note are deleted. Not hidden,
+            deleted. The production and its roles survive, so the casting director keeps a record
+            of what they ran with nobody&rsquo;s details in it.
           </p>
           <p>
-            That happens whether or not anyone remembers to do it, because it is on a schedule.
-            You can also ask for your data to be erased sooner. See{" "}
+            It runs on a schedule, so it happens whether or not anyone remembers. You can also ask
+            to be erased sooner: see{" "}
             <Link href="/legal/submission-terms">the Terms of Submission</Link>.
           </p>
         </FaqItem>
         <FaqItem q="What happens to my details?">
           <p>
-            Your name, email, phone number, location, age, links and cover note go to the casting
-            director who posted the role, and to anyone at their company with access to their
-            dashboard. They are not sold, not shared with other productions, and not used to
-            market anything to you.
+            They go to the casting director who posted the role, and to anyone at their company
+            with access to their dashboard. Never sold, never shared with other productions,
+            never used to market anything to you.
           </p>
           <p>
-            The production decides how long it keeps them. A well-written set of terms will say
-            so. Look for it on the role before you submit.
+            The production decides how long it keeps them, and good terms say so. Look on the role
+            before you submit.
           </p>
         </FaqItem>
       </FaqSection>
@@ -123,12 +115,12 @@ export default function ApplicantFaqPage() {
           {
             term: "Shoot dates",
             means:
-              "When the work happens. Only submit if you are genuinely free for all of it. Pulling out late is what makes casting directors stop using open calls.",
+              "When the work happens. Only submit if you are genuinely free for all of it.",
           },
           {
             term: "Opens and closes",
             means:
-              "The production's casting window, in UK time. The form appears at the opening time and goes at the closing time, which is the moment a submission has to have arrived, not the moment you start it: a form or an upload still going at the closing time is refused, so give a video a few minutes. A casting director may also close early once they have what they need, and the roles then stay up for reference without a form.",
+              "The production's casting window, in UK time. The form appears at the opening time and goes at the closing time \u2014 the moment your submission has to have arrived, not the moment you start it, so give a video a few minutes. A casting director may also close early, and the roles then stay up for reference without a form.",
           },
         ]}
       />
@@ -149,7 +141,7 @@ export default function ApplicantFaqPage() {
           {
             term: "Email",
             means:
-              "How they will contact you, and how the site stops one person submitting twice for the same production.",
+              "How they contact you, and how the site stops one person submitting twice for the same production.",
           },
           {
             term: "Phone",
@@ -158,12 +150,12 @@ export default function ApplicantFaqPage() {
           {
             term: "Based in",
             means:
-              "Whether you can work as a local. Some productions cover travel and accommodation and some do not. The role should say.",
+              "Whether you can work as a local. Some productions cover travel and accommodation, some do not; the role should say.",
           },
           {
             term: "Where you are resident",
             means:
-              "Asked only when a role needs it: the country you live in, because some castings are open to residents of one country only. It is not your address.",
+              "Asked only when a role needs it: the country you live in, because some castings are open to residents of one country only. Not your address.",
           },
           {
             term: "Height",
@@ -194,30 +186,30 @@ export default function ApplicantFaqPage() {
           {
             term: "Videos",
             means:
-              "Some roles ask for one or more videos, each with its own brief and sometimes a limit on its length. A tape over the limit is refused when you choose it, before anything is sent, and filming guidance sits beside the upload.",
+              "Some roles ask for one or more videos, each with its own brief and sometimes a length limit. A tape over the limit is refused when you choose it, before anything is sent. Filming guidance sits beside the upload.",
           },
           {
             term: "Available for the shoot dates",
             means:
-              "A role with shoot dates asks you to confirm you are free for all of them before you can submit. Only tick it if you are: pulling out late is what makes casting directors stop running open calls.",
+              "A role with shoot dates asks you to confirm you are free for all of them. Only tick it if you are: pulling out late is what makes casting directors stop running open calls.",
           },
           {
             term: "A question about heritage, faith or health",
             means:
-              "A few roles are cast to an occupational requirement, a part written for someone of a particular heritage, faith or disability, and the law allows those roles to ask. The question comes with its own consent, separate from the terms; the answer is held apart from the rest of your submission, read only by the casting director who posted the role and the site administrator, and deleted 30 days after casting closes.",
+              "A few parts are written for someone of a particular heritage, faith or disability, and the law allows those roles to ask. The question carries its own consent, separate from the terms. The answer is held apart from the rest of your submission, read only by the casting director who posted the role and the site administrator, and deleted 30 days after casting closes.",
           },
           {
             term: "Do you have an agent?",
             means:
-              "Some casting calls ask this first. If you are represented and the call is for unrepresented actors, you are pointed to your agent instead, and nothing about you is taken.",
+              "Some calls ask this first. If you are represented and the call is for unrepresented actors, you are pointed to your agent, and nothing about you is taken.",
           },
           {
             term: "Terms for this role",
             means: (
               <>
-                Some roles carry terms set by the casting director. Where they do, you must tick
-                to accept before submitting, and the wording is recorded against your submission
-                exactly as it read at that moment, so it cannot be changed afterwards.
+                Some roles carry terms set by the casting director. You tick to accept before
+                submitting, and the wording is recorded against your submission exactly as it read
+                then, so it cannot be changed afterwards.
               </>
             ),
           },
@@ -227,14 +219,11 @@ export default function ApplicantFaqPage() {
       <FaqSection title="Being careful">
         <FaqItem q="Why can I not search for other roles?">
           <p>
-            Because Open Casting is not a job board. It is the tool a production uses to run its
-            own casting, so there is no index of everything on it and no way to browse from one
-            production to another. A casting call reaches you because someone circulated it.
+            Because Open Casting is not a job board. It is the tool a production runs its own
+            casting with, so there is no index and no way to browse from one production to
+            another. A call reaches you because someone circulated it.
           </p>
-          <p>
-            That also means the link is worth keeping. If you lose it, ask whoever sent it. We
-            cannot look it up for you.
-          </p>
+          <p>So keep the link. If you lose it, ask whoever sent it: we cannot look it up.</p>
         </FaqItem>
         <FaqItem q="How do I know a casting call is genuine?">
           <p>
@@ -245,17 +234,16 @@ export default function ApplicantFaqPage() {
         </FaqItem>
         <FaqItem q="What if a role asks for nudity or intimate content?">
           <p>
-            That must be stated in the brief up front, never sprung on you later. On a
-            professional production there will be an intimacy coordinator and a nudity rider in
-            the contract. If it is not in the brief, ask before you tape.
+            It must be in the brief up front, never sprung on you later. A professional
+            production will have an intimacy coordinator and a nudity rider in the contract. If it
+            is not in the brief, ask before you tape.
           </p>
         </FaqItem>
         <FaqItem q="I am under 18, or submitting for someone who is">
           <p>
-            A parent or guardian submits and must be present throughout. The production is
-            responsible for obtaining a child performance licence from the local authority and
-            for providing a registered chaperone. If a production seems unaware of this, that
-            tells you something.
+            A parent or guardian submits and must be present throughout. The production must get
+            a child performance licence from the local authority and provide a registered
+            chaperone. If they seem unaware of that, it tells you something.
           </p>
         </FaqItem>
       </FaqSection>

@@ -50,35 +50,33 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
           One casting call, run from one place.
         </h2>
         <p className="mt-4 max-w-prose leading-relaxed text-muted">
-          Open Casting is the tool a casting call uses to run its own open call. It is not a job
-          board: there is no listing to browse and nothing for applicants to join. You post the
-          roles, send out one link, and read everything that comes back in a single list.
+          Open Casting is the tool a casting team runs an open call with. It is not a job board:
+          nothing to browse, nothing to join. Post the roles, send one link, and read everything
+          that comes back in one list.
         </p>
 
         <dl className="mt-8 flex flex-col gap-6">
           <Point term="A casting call at a time">
-            Open a casting call, post its roles, and set the times once. Every role in it opens
-            and closes together, and an applicant submits to the casting call once, not once per
-            part.
+            Open a call, post its roles, set the times once. Every role opens and closes together,
+            and an applicant submits once, not once per part.
           </Point>
           <Point term="One link to circulate">
-            Publishing gives you a link with an unguessable token. Put it on a post, in a mailout,
-            wherever the call should reach. It opens your casting call and nothing else.
+            Publishing gives you one unguessable link. Put it in a post, a mailout, wherever the
+            call should reach. It opens your casting call and nothing else.
           </Point>
           <Point term="Nothing to join">
-            Applicants do not register and do not sign in. Under-18s go through a parent or
-            guardian, who confirms it on the form.
+            Applicants never register or sign in. Under-18s go through a parent or guardian, who
+            confirms it on the form.
           </Point>
           <Point term="Deleted when it is done">
             Submissions are destroyed thirty days after the production finishes: names, numbers,
-            notes. You keep the record of what you ran, and nobody keeps the people&rsquo;s
-            details.
+            notes. You keep the record of what you ran, not the people&rsquo;s details.
           </Point>
         </dl>
 
         <p className="mt-8 text-sm leading-relaxed text-faint">
-          Accounts are created by the administrator, so there is nothing to register for here. If
-          you need one, ask whoever runs the casting for your casting call.
+          Accounts are made by the administrator, so there is nothing to register for. If you
+          need one, ask whoever runs your casting.
         </p>
       </aside>
     </div>

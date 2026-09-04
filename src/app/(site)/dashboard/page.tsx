@@ -61,7 +61,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   return (
     <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
       <HelpNote title="What this screen is for" faq="/faq/casting-directors">
-        <p dangerouslySetInnerHTML={{ __html: 'Every casting call you can see, with its numbers: how many have submitted, how many are still to review, and how many are shortlisted, called back or declined. Open one to post roles, publish it, and read the submissions themselves.' }} />
+        <p dangerouslySetInnerHTML={{ __html: 'Every casting call you can see, with its numbers: submitted, still to review, shortlisted, called back, declined. Open one to post roles, publish it and read the submissions.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'Start a new one from <strong>New casting call</strong> in the navigation.' }} />
       </HelpNote>
       {user.onboardedAt ? null : (
@@ -89,8 +89,8 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
           role="status"
           className="mb-8 rounded-2xl border border-accent/30 bg-accent-soft p-4 text-sm text-text"
         >
-          Saved as a draft. Nothing is shown to applicants until you publish it, and you can pick
-          it up again from the list below whenever you like.
+          Saved as a draft. Nothing is shown to applicants until you publish, and you can pick it
+          up again from the list below.
         </p>
       ) : null}
 

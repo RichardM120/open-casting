@@ -32,12 +32,12 @@ export default function CastingDirectorFaqPage() {
           <p>There are three kinds of account, and they see different things:</p>
           <ul className="ml-4 list-disc space-y-1.5">
             <li>
-              <strong className="text-text">Casting director:</strong> only the productions and
+              <strong className="text-text">Casting director:</strong> only the casting calls and
               roles you posted, and the submissions against them.
             </li>
             <li>
-              <strong className="text-text">Producer:</strong> every production posted under the
-              same company name, whoever posted it.
+              <strong className="text-text">Producer:</strong> every casting call posted under
+              the same company name, whoever posted it.
             </li>
             <li>
               <strong className="text-text">Admin:</strong> everything on the site, and the only
@@ -45,8 +45,8 @@ export default function CastingDirectorFaqPage() {
             </li>
           </ul>
           <p>
-            A colleague at your company with a casting director account cannot see your
-            productions. If you need them to, they need a producer account.
+            A colleague with a casting director account cannot see your casting calls. If you
+            need them to, they need a producer account.
           </p>
         </FaqItem>
         <FaqItem q="Do applicants need an account?">
@@ -57,45 +57,43 @@ export default function CastingDirectorFaqPage() {
         </FaqItem>
         <FaqItem q="How do applicants find my roles?">
           <p>
-            You send them the link. Every production has one, on its page in your dashboard, and
-            it opens that production and nothing else. There is no public listing on Open Casting
-            and no search, so the call goes exactly as far as you circulate it: an agent mailout,
-            a social post, a notice board, whatever you would normally use.
+            You send them the link. Every casting call has one, on its page in your dashboard, and
+            it opens that call and nothing else. There is no public listing and no search, so a
+            call goes exactly as far as you circulate it: an agent mailout, a social post, a
+            notice board.
           </p>
           <p>
-            Anyone holding the link can submit while the production is open. Treat it as you would
-            the call sheet. It is not secret, but it is not something to leave lying about either.
+            Anyone holding the link can submit while the call is open. Treat it as you would a
+            call sheet: not secret, but not for leaving lying about.
           </p>
         </FaqItem>
         <FaqItem q="Who can get an account?">
           <p>
             Whoever the administrator sets one up for. Nobody can register themselves, which keeps
-            the account list to the people actually working on your productions. Ask the
-            administrator and they will send you the details.
+            the list to the people actually working on your casting. Ask the administrator for the
+            details.
           </p>
         </FaqItem>
         <FaqItem q="Can I edit or take down a role after posting?">
           <p>
-            Yes. Edit a role from its page on your dashboard, and use{" "}
-            <strong className="text-text">Close early</strong> on its production to stop
-            submissions before the closing time. Closing deletes nothing. The roles stay visible
-            for reference and the submissions stay in your dashboard.
+            Yes. Edit a role from its page, and use{" "}
+            <strong className="text-text">Close early</strong> on its casting call to stop
+            submissions before the closing time. Closing deletes nothing: the roles stay up for
+            reference and the submissions stay in your dashboard.
           </p>
         </FaqItem>
       </FaqSection>
 
       <FaqSection
-        title="Productions"
-        intro="A production is one project with however many roles in it. It holds the times submissions run between, and its roles open and close with it."
+        title="Casting calls"
+        intro="A casting call is one project with however many roles in it. It holds the times submissions run between, and its roles open and close with it."
       >
         <FaqItem q="Why do I open a casting call before posting a role?">
           <p>
-            Because a production casts as a unit. It holds the name, the synopsis, the
-            production company and the opening and closing times, and every role you post into
-            it follows them. That
-            is one thing to change when a schedule moves, not one per role, and it makes it
-            impossible for two roles on the same production to disagree about when casting
-            closes.
+            Because a project casts as a unit. The call holds the name, the synopsis, the
+            production company and the opening and closing times, and every role in it follows
+            them. When a schedule moves that is one thing to change, not one per role, and two
+            roles can never disagree about when casting closes.
           </p>
           <p>
             <Link href="/dashboard/sessions/new">Open a casting call</Link>, then post its roles.
@@ -103,60 +101,57 @@ export default function CastingDirectorFaqPage() {
         </FaqItem>
         <FaqItem q="When does my link start working?">
           <p>
-            When you publish. A new casting call is a draft: you post its roles, open the link
-            yourself to check it reads the way you want, and publish when you are happy. Until
-            then the link opens for you and for nobody else.
+            When you publish. A new call is a draft: post its roles, open the link yourself to
+            check it reads the way you want, then publish. Until then it opens for you and nobody
+            else.
           </p>
           <p>
-            Publishing cannot be undone, because once a link is on a post or in a mailout it is
-            out of your hands. To stop a call, use <strong className="text-text">Close early</strong>{" "}
-            instead. The roles stay up and the submissions stay yours.
+            Publishing cannot be undone: once a link is in a mailout it is out of your hands. To
+            stop a call, use <strong className="text-text">Close early</strong>. The roles stay up
+            and the submissions stay yours.
           </p>
         </FaqItem>
         <FaqItem q="How long do you keep the submissions?">
           <p>
-            Thirty days after the production finishes, the applicants&rsquo; details are deleted:
-            names, email addresses, phone numbers, links, cover notes. The clock runs from the
-            production end date you set, not from when casting closed, because a shoot can run for
-            months after the call shut. The production, its roles and the counts are kept.
+            Thirty days after the production finishes, applicants&rsquo; details are deleted:
+            names, emails, phone numbers, links, cover notes. The clock runs from the production
+            end date you set, not from when casting closed, because a shoot can run for months
+            after the call shuts. The call, its roles and the counts are kept.
           </p>
           <p>
             It runs on a schedule rather than waiting for anyone to remember, and the date is on
-            the production&rsquo;s page. You are emailed 14 days and 48 hours beforehand. Take
-            what you need before then, because it cannot be recovered afterwards.
+            the call&rsquo;s page. You are emailed 14 days and 48 hours beforehand. Take what you
+            need first: it cannot be recovered.
           </p>
         </FaqItem>
         <FaqItem q="When is the submission form actually shown?">
           <p>
-            Only while the production is open: from its opening time to its closing time, both in
-            UK time, and only if it has not been closed early. Before the opening time the roles
-            are listed and readable, so applicants can prepare, but the form is not there. After
-            it closes, the same.
+            Only while the call is open: from its opening time to its closing time, both in UK
+            time, and only if it has not been closed early. Before and after, the roles stay
+            readable so applicants can prepare, but the form is not there.
           </p>
         </FaqItem>
-        <FaqItem q="Can somebody submit for two roles on the same production?">
+        <FaqItem q="Can somebody submit for two roles on the same casting call?">
           <p>
-            No. One submission per email address per production, whichever role they go for. It
-            is the same rule a production would apply in the room, and it stops one person filling
-            a shortlist.
+            No. One submission per email address per casting call, whichever role they go for. It
+            stops one person filling a shortlist.
           </p>
           <p>
             The database enforces it, not the form, so it holds even if two submissions arrive at
             the same moment.
           </p>
         </FaqItem>
-        <FaqItem q="Can I move a role to a different production?">
+        <FaqItem q="Can I move a role to a different casting call?">
           <p>
-            No. Moving one would change the times a role was posted under and separate it from
-            the submissions already made to its production. Post the role again on the right
-            production, and close the old one if it should not be up.
+            No. Moving one would change the times it was posted under and separate it from the
+            submissions already made. Post it again on the right call, and close the old one if it
+            should not be up.
           </p>
         </FaqItem>
-        <FaqItem q="What does changing a production's times do?">
+        <FaqItem q="What does changing a casting call's times do?">
           <p>
-            It moves every role in that production at once. Extending is safe. Shortening takes
-            the form away from anyone part-way through filling it in, so give notice where you
-            can.
+            It moves every role in that call at once. Extending is safe; shortening takes the form
+            away from anyone part-way through filling it in, so give notice where you can.
           </p>
         </FaqItem>
       </FaqSection>
@@ -171,9 +166,9 @@ export default function CastingDirectorFaqPage() {
       <FieldGlossary
         items={[
           {
-            term: "Production and synopsis",
+            term: "Casting call and synopsis",
             means:
-              "Set once, on the production, and shown on every role in it. Give enough for someone to decide whether it is for them. A synopsis that says nothing gets submissions from people who have not read it.",
+              "Set once, on the casting call, and shown on every role in it. Give enough for someone to decide whether it is for them: a synopsis that says nothing gets submissions from people who have not read it.",
           },
           {
             term: "Character brief",
@@ -193,7 +188,7 @@ export default function CastingDirectorFaqPage() {
           {
             term: "Self-tape",
             means:
-              "Ticking this says you will accept a tape instead of an in-person audition. If you will only see people in the room, leave it off rather than disappoint people who have made one.",
+              "Ticking this says you will accept a tape instead of an in-person audition. If you will only see people in the room, leave it off rather than disappoint someone who has made one.",
           },
           {
             term: "Shoot dates",
@@ -204,9 +199,9 @@ export default function CastingDirectorFaqPage() {
             term: "Opens and closes",
             means: (
               <>
-                These belong to the production, so a role has no window of its own. It opens and
-                closes with everything else on that production, at the times you set, in UK
-                time. Allow enough time for a tape to be made: a three-day window on a self-tape
+                These belong to the casting call, so a role has no window of its own: it opens
+                and closes with everything else on the call, at the times you set, in UK time.
+                Allow enough time for a tape to be made &mdash; a three-day window on a self-tape
                 role gets you whoever happened to be free.
               </>
             ),
@@ -215,9 +210,9 @@ export default function CastingDirectorFaqPage() {
             term: "Terms for applicants",
             means: (
               <>
-                Optional. Where you set them, applicants must tick to accept before they can
-                submit, and the wording is stored against their submission exactly as it read at
-                that moment, so editing the role later cannot change what somebody agreed to.
+                Optional. Where you set them, applicants tick to accept before they can submit,
+                and the wording is stored against their submission exactly as it read then, so
+                editing the role later cannot change what somebody agreed to.
               </>
             ),
           },
@@ -257,9 +252,9 @@ export default function CastingDirectorFaqPage() {
         </FaqItem>
         <FaqItem q="What about applicants under 18?">
           <p>
-            You are responsible for obtaining a child performance licence from the relevant local
-            authority and for providing a registered chaperone. Say so in the terms, and expect a
-            parent or guardian to submit on the applicant&rsquo;s behalf.
+            You must get a child performance licence from the local authority and provide a
+            registered chaperone. Say so in the terms, and expect a parent or guardian to submit
+            on the applicant&rsquo;s behalf.
           </p>
         </FaqItem>
       </FaqSection>
@@ -267,15 +262,13 @@ export default function CastingDirectorFaqPage() {
       <FaqSection title="The submissions you receive">
         <FaqItem q="What are my obligations for the data?">
           <p>
-            Submissions contain names, email addresses, phone numbers and ages. That is personal
-            data, and under UK GDPR your production is the controller of it. In practice that
-            means using it only for this casting, not passing it to other productions, keeping it
-            no longer than you need it, and being able to delete someone&rsquo;s details if they
-            ask.
+            Submissions carry names, emails, phone numbers and ages. That is personal data, and
+            under UK GDPR your production is its controller: use it only for this casting, do not
+            pass it to other productions, keep it no longer than you need, and delete
+            someone&rsquo;s details if they ask.
           </p>
           <p>
-            Saying in your terms how long you keep it is the simplest way to be straight about
-            this.
+            Saying in your terms how long you keep it is the simplest way to be straight about it.
           </p>
         </FaqItem>
         <FaqItem q="What do the statuses mean?">
@@ -283,15 +276,15 @@ export default function CastingDirectorFaqPage() {
             <strong className="text-text">New</strong> is unread.{" "}
             <strong className="text-text">Shortlisted</strong>,{" "}
             <strong className="text-text">Callback</strong> and{" "}
-            <strong className="text-text">Declined</strong> are yours to use as you work through.
-            They are for your own tracking. Nothing is sent to the applicant when you change one.
+            <strong className="text-text">Declined</strong> are yours to use as you work through,
+            for your own tracking. Nothing is sent to the applicant when you change one.
           </p>
         </FaqItem>
         <FaqItem q="Are applicants told when they are declined?">
           <p>
-            No. Nothing on this site emails applicants. If you want to let people know, do it
-            yourself. The email address is on every submission, and it is the single thing
-            applicants most often say they wish happened.
+            No. Nothing on this site emails applicants. If you want to tell people, do it
+            yourself: the address is on every submission. It is the thing applicants most often
+            say they wish happened.
           </p>
         </FaqItem>
       </FaqSection>

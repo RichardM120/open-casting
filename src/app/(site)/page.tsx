@@ -9,7 +9,7 @@ export const dynamic = "force-dynamic";
 
 export const metadata: Metadata = {
   title: { absolute: "Open Casting" },
-  description: "The private tool a casting call uses to run its casting.",
+  description: "The private tool a casting team runs an open call with.",
   robots: { index: false, follow: false },
 };
 
@@ -31,9 +31,9 @@ export default async function HomePage() {
       <div className="mt-16 rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
         <h2 className="text-lg font-semibold tracking-tight">Sent a casting link?</h2>
         <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
-          Applicants do not sign in and do not need an account. Open the link the casting call sent
-          you and it goes straight to their roles and the submission form. There is no listing
-          here to search, by design: a casting call is circulated by the people casting it.
+          Applicants never sign in. Open the link you were sent: it goes straight to the roles and
+          the form. There is nothing here to search, by design. A call is only circulated by the
+          team casting it.
         </p>
         <p className="mt-4 text-sm">
           <Link href="/faq/applicants" className="text-brand underline-offset-4 hover:underline">

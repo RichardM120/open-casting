@@ -48,8 +48,8 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
       <ApplicantMasthead heroUrl={session.heroUrl} heroKind={session.heroKind} name={session.name} />
       {preview ? (
         <p className="mb-8 rounded-xl border border-accent/40 bg-accent-soft px-4 py-3 text-sm leading-relaxed text-text">
-          <strong>Draft preview.</strong> This is exactly what an applicant sees, except that the
-          form is not there. Nobody else can open this link until you publish it.
+          <strong>Draft preview.</strong> This is what an applicant sees, without the form.
+          Nobody else can open this link until you publish.
         </p>
       ) : null}
 
@@ -75,7 +75,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
             : notYetOpen(session)
               ? `Submissions open on ${formatDateTime(session.opensAt)}. Read the roles now and have a tape ready.`
               : open
-                ? `Submissions are open until ${formatDateTime(session.closesAt)}. Pick the one role that fits you best. It is one submission per person for this casting call, whichever role you go for.`
+                ? `Submissions are open until ${formatDateTime(session.closesAt)}. Pick the one role that fits you best: it is one submission per person, whichever role you choose.`
                 : `Submissions closed on ${formatDateTime(session.closesAt)}. The brief stays up for reference.`}
       </p>
 
@@ -112,8 +112,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
         </ul>
       ) : (
         <p className="mt-10 rounded-2xl border border-dashed border-line-strong p-6 text-text">
-          The roles for this casting call have not been posted yet. Keep the link, because they
-          will appear here.
+          The roles have not been posted yet. Keep the link: they will appear here.
         </p>
       )}
 
@@ -121,9 +120,9 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
       <YourData session={session} reportTo={reportAddress()} />
 
       <p className="mt-12 border-t border-line pt-6 text-sm leading-relaxed text-muted">
-        You were sent this link by the casting call casting it. It is not listed anywhere and there
-        is nothing else to browse. Open Casting is the tool they use to run this call, not a job
-        board.
+        You were sent this link by the team casting this call. It is not listed anywhere and
+        there is nothing else to browse: Open Casting is the tool they run the call with, not a
+        job board.
       </p>
     </div>
   );

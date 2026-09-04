@@ -16,7 +16,7 @@ const WHAT_YOU_SEE: Record<UserRole, { heading: string; points: string[]; cta: {
   director: {
     heading: "You will see the casting calls you open, and nothing else",
     points: [
-      "Start by opening a casting call. It holds the opening and closing times, and the roles you post into it open and close with it.",
+      "Start by opening a casting call. It holds the opening and closing times, and its roles follow them.",
       "Every submission made to your roles lands in one list, newest first.",
       "Move people through New, Shortlisted, Callback and Declined as you work.",
       "Colleagues with a casting director account cannot see your casting calls. A producer at your company can.",
@@ -28,10 +28,10 @@ const WHAT_YOU_SEE: Record<UserRole, { heading: string; points: string[]; cta: {
     heading: "You will see every casting call under your company",
     points: [
       "Casting calls from all your casting directors, and the roles in them, in one place.",
-      "Each casting call owns its opening and closing times, and its roles open and close together.",
+      "Each call owns its opening and closing times, and its roles follow them.",
       "You can read and act on their submissions, and edit or close their roles.",
       "Matching is on the company name, so it has to be spelled the same way.",
-      "You can open casting calls and post roles of your own too.",
+      "You can open calls and post roles of your own too.",
     ],
     cta: { href: "/dashboard", label: "Go to the dashboard" },
   },
@@ -40,7 +40,7 @@ const WHAT_YOU_SEE: Record<UserRole, { heading: string; points: string[]; cta: {
     points: [
       "Every casting call, every role in it, and every submission made to them.",
       "Suspend an account and they are signed out at once and cannot sign back in. Their casting calls stay up.",
-      "Removing a role, or a whole casting call, permanently deletes the applicants' contact details with it. Closing early is the reversible option.",
+      "Removing a role, or a whole casting call, permanently deletes the applicants' details with it. Closing early is the reversible option.",
       "Every action is recorded in the activity trail, including yours.",
     ],
     cta: { href: "/admin/accounts", label: "Review the accounts" },
@@ -93,9 +93,9 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
               Your agreement with opencasting.app
             </h2>
             <p className="mt-2 mb-6 max-w-prose text-sm leading-relaxed text-muted">
-              Before anything else. This sets out who owns what, who is responsible for the
-              submissions you collect, and how long applicants&rsquo; details are kept. You are
-              the data controller for everything applicants send you; we process it for you.
+              This sets out who owns what, who is responsible for the submissions you collect,
+              and how long applicants&rsquo; details are kept. You are the data controller for
+              everything applicants send you; we process it for you.
             </p>
             <AgreementStep nextStep={offset + 1}>
               <LegalScroller document={MSA} />
@@ -144,13 +144,13 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
               >
                 casting director guide
               </Link>{" "}
-              covers what each field on a role commits you to, including the buyout
-              and usage, and how to write terms applicants will actually read.
+              covers what each field commits you to, including buyout and usage, and how to write
+              terms applicants will actually read.
             </p>
             <p className="mt-3 text-sm leading-relaxed text-muted">
               One thing to know now: submissions carry names, emails and phone numbers. Under UK
-              GDPR your casting call is the controller of that data. Say in your role&rsquo;s terms
-              how long you keep it.
+              GDPR you are the controller of that data, so say in your role&rsquo;s terms how long
+              you keep it.
             </p>
             <div className="mt-7">
               <FinishStep to={guide.cta.href} label={guide.cta.label} />

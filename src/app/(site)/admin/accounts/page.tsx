@@ -27,7 +27,7 @@ export default async function AccountsPage() {
     <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
       <Breadcrumb trail={[{ href: "/admin", label: "Admin" }, { label: "Accounts" }]} />
       <HelpNote title="What this screen is for">
-        <p dangerouslySetInnerHTML={{ __html: 'Accounts belong to a client and inherit its plan. The password is generated and shown once, so hand it over straight away; it cannot be retrieved afterwards.' }} />
+        <p dangerouslySetInnerHTML={{ __html: 'Accounts belong to a client and inherit its plan. The password is generated and shown once, so hand it over straight away: it cannot be retrieved.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'A director sees only the casting calls they open. A producer sees every call under their client.' }} />
       </HelpNote>
 

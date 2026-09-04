@@ -22,7 +22,7 @@ export const metadata: Metadata = {
     template: "%s | Open Casting",
   },
   description:
-    "The private tool a casting call uses to run its casting. Post the roles, send one link, and read every submission in one place.",
+    "The private tool a casting team runs an open call with. Post the roles, send one link, read every submission in one place.",
 };
 
 /**

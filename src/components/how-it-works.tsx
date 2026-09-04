@@ -41,6 +41,12 @@ const STEPS: { key: StepKey; title: string; body: string }[] = [
 
 type StepKey = "setup" | "roles" | "publish" | "share" | "read";
 
+/** The closing note, shown on the phone's last slide and in the desktop panel. */
+const CLOSING = [
+  "Everything applicants send is deleted 30 days after the production finishes. Your casting calls and roles stay, so the record of what you ran is yours.",
+  "One sign-in for everyone on the casting side: what you can see follows from your account, not from which door you came through.",
+];
+
 /** The step cards plus, on a phone, the closing slide. */
 const SLIDES = STEPS.length + 1;
 
@@ -151,14 +157,11 @@ export function HowItWorks() {
               </svg>
             </span>
             <h3 className="text-lg font-semibold tracking-tight">Ready when you are.</h3>
-            <p className="text-sm leading-relaxed text-muted">
-              Everything applicants send is deleted 30 days after the production finishes. The
-              casting call and its roles are kept, so the record of what you ran stays with you.
-            </p>
-            <p className="text-sm leading-relaxed text-muted">
-              One sign-in for everyone on the casting side. What you can see follows from your
-              account, not from which door you came through.
-            </p>
+            {CLOSING.map((line) => (
+              <p key={line} className="text-sm leading-relaxed text-muted">
+                {line}
+              </p>
+            ))}
           </div>
           <ButtonLink href="/login" variant="signup" className="self-start">
             Sign up
@@ -209,15 +212,9 @@ export function HowItWorks() {
 
       <div className="mt-8 hidden flex-col gap-4 rounded-2xl border border-line bg-raised p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:p-6 lg:flex">
         <div className="flex max-w-2xl flex-col gap-2 text-sm leading-relaxed text-muted">
-          <p>
-            Everything applicants send is deleted 30 days after the production finishes. The
-            casting call and its roles are kept, so the record of what you ran stays with you.
-          </p>
-          <p>
-            One sign-in for everyone on the casting side. What you can see follows from your
-            account, not from which door you came through: an administrator lands on every casting
-            call on the system, a casting director on their own.
-          </p>
+          {CLOSING.map((line) => (
+            <p key={line}>{line}</p>
+          ))}
         </div>
         <ButtonLink href="/login" variant="signup" size="lg" className="shrink-0 self-start sm:self-auto">
           Sign up

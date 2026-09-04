@@ -382,8 +382,8 @@ export const ROLE_LABELS: Record<UserRole, string> = {
 };
 
 export const ROLE_DESCRIPTIONS: Record<SignupRole, string> = {
-  director: "Runs productions, posts roles into them and reviews what comes in.",
-  producer: "Sees every production under the company, and everything posted into them.",
+  director: "Opens casting calls, posts roles into them and reviews what comes in.",
+  producer: "Sees every casting call under the company, and everything posted into them.",
 };
 
 export type Database = {

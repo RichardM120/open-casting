@@ -49,8 +49,8 @@ export function SiteFooter({ padForTabs = false }: { padForTabs?: boolean }) {
           <p className="flex max-w-sm items-start gap-3 text-ink/85">
             <Logo tone="onLight" size="sm" />
             <span>
-              Open Casting is the tool a casting call runs its casting with. The sample casting
-              calls on it are invented.
+              Open Casting is the tool a casting team runs an open call with. The sample
+              casting calls on it are invented.
             </span>
           </p>
           <div className="grid grid-cols-2 gap-8 sm:grid-cols-3">

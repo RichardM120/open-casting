@@ -27,14 +27,14 @@ export default async function NewRolePage({ searchParams }: PageProps<"/dashboar
         <Breadcrumb trail={[{ href: "/dashboard", label: "Casting calls" }, { label: "New role" }]} />
         <SetupProgress stage={2} />
         <HelpNote title="What this screen is for" faq="/faq/casting-directors">
-          <p dangerouslySetInnerHTML={{ __html: 'A role is the brief and the practicalities: who you are looking for, where it shoots and when. The dates it takes submissions between come from the casting call, not from here.' }} />
+          <p dangerouslySetInnerHTML={{ __html: 'A role is the brief and the practicalities: who you are looking for, where it shoots and when. Its submission dates come from the casting call, not from here.' }} />
           <p dangerouslySetInnerHTML={{ __html: 'Terms you set here must be accepted by everyone who submits to this role.' }} />
         </HelpNote>
         <h1 className="mt-6 text-3xl font-semibold tracking-tight md:text-4xl">Post a role</h1>
         <div className="mt-10">
           <EmptyState
             title="Open a casting call first"
-            description="Roles belong to a casting call, which holds the dates they take submissions between. Open one and you can post its roles straight afterwards."
+            description="Roles belong to a casting call, which holds the dates they take submissions between. Open one and you can post its roles straight after."
             action={<ButtonLink href="/dashboard/sessions/new">New casting call</ButtonLink>}
           />
         </div>
@@ -53,7 +53,7 @@ export default async function NewRolePage({ searchParams }: PageProps<"/dashboar
       <Breadcrumb trail={[{ href: "/dashboard", label: "Casting calls" }, { href: `/dashboard/sessions/${production.id}`, label: production.name }, { label: "New role" }]} />
       <SetupProgress stage={2} sessionId={requested} />
       <HelpNote title="What this screen is for" faq="/faq/casting-directors">
-        <p dangerouslySetInnerHTML={{ __html: 'A role is the brief and the practicalities: who you are looking for, where it shoots and when. The dates it takes submissions between come from the casting call, not from here.' }} />
+        <p dangerouslySetInnerHTML={{ __html: 'A role is the brief and the practicalities: who you are looking for, where it shoots and when. Its submission dates come from the casting call, not from here.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'Terms you set here must be accepted by everyone who submits to this role.' }} />
       </HelpNote>
       <h1 className="mt-6 text-3xl font-semibold tracking-tight md:text-4xl">Post a role</h1>

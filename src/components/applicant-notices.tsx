@@ -41,21 +41,20 @@ export function YourData({
       </h2>
       <dl className="mt-4 grid gap-x-8 gap-y-4 text-sm sm:grid-cols-2">
         <Row term="Who holds it">
-          {session.company}, the casting team running this call, is the data controller. Open
-          Casting keeps it for them and does nothing else with it.
+          {session.company}, the team running this call, is the data controller. Open Casting
+          stores it for them and does nothing else with it.
         </Row>
         <Row term="What it is for">
-          Considering you for the roles in this casting call, and nothing else. It is never sold,
-          never used for marketing and never used to train AI.
+          Considering you for the roles in this call, and nothing else. Never sold, never used for
+          marketing, never used to train AI.
         </Row>
         <Row term="The basis for keeping it">
-          Your consent, given when you send the form. For an applicant under 18 it is given by
-          their parent or legal guardian. Withdraw it at any time by asking, and your submission
-          is deleted.
+          Your consent, given when you send the form; for an applicant under 18, their parent or
+          guardian gives it. Withdraw it at any time and your submission is deleted.
         </Row>
         <Row term="How long it is kept">
-          Until 30 days after the production finishes. On {purge} everything you sent is
-          destroyed automatically, unless you have asked for it to go sooner.
+          Until 30 days after the production finishes. On {purge} everything you sent is destroyed
+          automatically, unless you ask for it sooner.
         </Row>
         <Row term="Your rights">
           To see what is held about you, correct it, have it deleted, restrict or object to its

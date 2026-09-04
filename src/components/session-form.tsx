@@ -124,7 +124,7 @@ function HeroUpload({
       <Field
         label="Header image or logo"
         htmlFor="hero"
-        hint="Optional. A wide picture runs across the top of the page applicants see; a squarer one, or a logo, sits centred. JPEG, PNG, WebP or SVG. Pictures are shrunk to 1600 pixels and compressed before they are sent, so they cost little to keep and load fast on a phone."
+        hint="Optional. A wide picture runs across the top of the applicant's page; a squarer one, or a logo, sits centred. JPEG, PNG, WebP or SVG, shrunk and compressed before sending so it loads fast on a phone."
         error={error ?? problem ?? undefined}
       >
         <Input
@@ -311,8 +311,8 @@ export function SessionForm({
       <fieldset className="rounded-2xl border border-line bg-surface p-4 shadow-card sm:p-6">
         <legend className="mb-2 text-lg font-semibold tracking-tight">The casting window</legend>
         <p className="text-sm text-muted">
-          Every role in this casting call takes submissions from the opening time until the
-          closing time, and at no other time. Times are UK time.
+          Every role in this casting call takes submissions between these times, and at no other
+          time. UK time.
         </p>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <Field
@@ -361,8 +361,8 @@ export function SessionForm({
         </legend>
         <p className="max-w-prose text-sm text-muted">
           The date the shoot or run wraps, not the date casting closes. Everything applicants
-          send you is deleted 30 days after it, which is what your agreement and their terms
-          both promise. You will get an email 14 days and 48 hours beforehand.
+          send is deleted 30 days later, as your agreement and their terms both promise. You are
+          emailed 14 days and 48 hours beforehand.
         </p>
         <div className="mt-6 grid gap-4 sm:grid-cols-2">
           <Field
@@ -405,7 +405,7 @@ export function SessionForm({
           <Field
             label="If they have an agent"
             htmlFor="agentRoute"
-            hint="Shown to anyone who says they are represented, instead of the form: where they should apply instead. Leave blank to take submissions from everyone, represented or not."
+            hint="Shown instead of the form to anyone who says they are represented: where they should apply. Leave blank to take submissions from everyone."
             error={errors.agentRoute}
           >
             <Textarea

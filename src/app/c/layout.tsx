@@ -30,7 +30,7 @@ export default function ApplicantLayout({ children }: { children: ReactNode }) {
         */}
         <p className="max-w-prose font-medium leading-relaxed text-text">
           Free to apply. Nobody is ever charged to submit through Open Casting, and this page is
-          the only place to apply for this casting call.
+          the only place to apply for this call.
         </p>
         <p className="mt-1 max-w-prose leading-relaxed text-muted">
           If you find this call somewhere else, or anyone asks you for a fee to apply, it is not
@@ -49,14 +49,14 @@ export default function ApplicantLayout({ children }: { children: ReactNode }) {
         </p>
         <p className="mt-6 font-semibold tracking-[0.08em] text-text uppercase">Open Casting</p>
         <p className="mt-2 max-w-prose leading-relaxed text-muted">
-          Every submission made through this page is covered by UK GDPR and by the{" "}
+          Every submission made through this page is covered by UK GDPR and the{" "}
           <Link
             href="/legal/submission-terms"
             className="text-brand underline-offset-4 hover:underline"
           >
             Terms of Submission
           </Link>
-          , the legal terms and conditions that apply to it.
+          .
         </p>
       </footer>
     </div>
