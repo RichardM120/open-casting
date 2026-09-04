@@ -217,6 +217,73 @@ section("7 a director cannot reach any of it");
   }
 }
 
+section("8 Projects lists every casting call, and the administrator can pause one");
+{
+  const { p } = admin;
+  await p.goto(`${BASE}/admin/projects`, { waitUntil: "networkidle" });
+  check("the page lists calls across clients", (await p.getByRole("heading", { name: "Projects", level: 1 }).count()) === 1);
+  const row = p.locator("tbody tr").filter({ hasText: `Stored ${t}` });
+  check("the call that was opened above is on it", (await row.count()) === 1);
+  check("with its client", (await row.getByText(`Store Co ${t}`).count()) >= 1);
+  check("and its state", (await row.getByText("Open", { exact: true }).count()) === 1);
+  check("one submission against no cap", (await row.getByText("1", { exact: true }).count()) >= 1);
+
+  await row.getByRole("button", { name: "Pause" }).click();
+  await p.waitForURL(/changed=1/, { timeout: 20000 });
+  check("pausing says so", (await p.getByText(/on its new footing/).count()) === 1);
+  const paused = p.locator("tbody tr").filter({ hasText: `Stored ${t}` });
+  check("and the call reads as closed", (await paused.getByText("Closed", { exact: true }).count()) === 1);
+  check("with a way to put it back", (await paused.getByRole("button", { name: "Reopen" }).count()) === 1);
+  await Promise.all([
+    p.waitForNavigation({ timeout: 20000 }),
+    paused.getByRole("button", { name: "Reopen" }).click(),
+  ]);
+  const reopened = p.locator("tbody tr").filter({ hasText: `Stored ${t}` });
+  await reopened.getByText("Open", { exact: true }).waitFor({ timeout: 20000 }).catch(() => {});
+  check("reopening puts it back", (await reopened.getByText("Open", { exact: true }).count()) === 1);
+  await p.screenshot({ path: `${SHOTS}/projects.png`, fullPage: true });
+}
+
+section("9 a cap closes a casting call once it is met");
+{
+  const { p } = admin;
+  await p.goto(`${BASE}/admin/projects`, { waitUntil: "networkidle" });
+  const row = p.locator("tbody tr").filter({ hasText: `Stored ${t}` });
+  await row.locator("details summary").click();
+  await row.locator('input[name="submissionCap"]').fill("1");
+  await Promise.all([
+    p.waitForNavigation({ timeout: 20000 }),
+    row.getByRole("button", { name: "Save" }).click(),
+  ]);
+  const capped = p.locator("tbody tr").filter({ hasText: `Stored ${t}` });
+  await capped.getByText("Full", { exact: true }).waitFor({ timeout: 20000 }).catch(() => {});
+  check("the cap shows against what has come in", (await capped.getByText("1 / 1").count()) === 1);
+  check("and the call reads as full", (await capped.getByText("Full", { exact: true }).count()) === 1);
+  check("filtering by full finds it", (await p.getByRole("link", { name: /^Full · 1$/ }).count()) === 1);
+}
+{
+  // The applicant's side: a full call offers no form and says why.
+  const token = await shareToken(dir.p, sessionId);
+  const applicant = await session(browser, errors);
+  await applicant.p.goto(`${BASE}/c/${token}`, { waitUntil: "networkidle" });
+  check("the call's page says it is full", (await applicant.p.getByText(/taken all the submissions it can/).count()) === 1);
+  await applicant.p.goto(`${BASE}/c/${token}/${roleId}`, { waitUntil: "networkidle" });
+  check("the role offers no form", (await applicant.p.locator("#coverNote").count()) === 0);
+  check("and says why", (await applicant.p.getByRole("heading", { name: "This casting call is full" }).count()) === 1);
+  await applicant.c.close();
+}
+{
+  // And the casting team sees the cap on their own page.
+  await dir.p.goto(`${BASE}/dashboard/sessions/${sessionId}`, { waitUntil: "networkidle" });
+  check("the casting call's own page carries the cap", (await dir.p.getByText("1 of 1, so it is closed to new ones").count()) === 1);
+}
+
+section("10 a director cannot reach Projects");
+{
+  const response = await dir.p.goto(`${BASE}/admin/projects`, { waitUntil: "networkidle" });
+  check("/admin/projects is a 404 for a director", response.status() === 404, String(response.status()));
+}
+
 await pool.end();
 await dir.c.close();
 await admin.c.close();

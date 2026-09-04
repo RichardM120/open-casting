@@ -733,6 +733,10 @@ const SCHEMA = `
     ms              integer NOT NULL DEFAULT 0
   );
   CREATE INDEX IF NOT EXISTS sweeps_recent_idx ON sweeps (ran_at DESC);
+
+  -- The most submissions a casting call will take before it stops accepting
+  -- them. NULL is no cap, which is what every call had before this existed.
+  ALTER TABLE sessions_casting ADD COLUMN IF NOT EXISTS submission_cap integer;
 `;
 
 /** Postgres error code for a unique constraint violation. */

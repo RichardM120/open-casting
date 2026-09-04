@@ -25,6 +25,7 @@ import { canPreview } from "@/lib/preview";
 import { ShareLink } from "@/components/share-link";
 import { getSessionRole, slotsFor } from "@/lib/roles";
 import { getSessionByToken, shareSlug } from "@/lib/sessions";
+import { countsForSession } from "@/lib/submissions";
 import { Breadcrumb } from "@/components/breadcrumb";
 
 export const dynamic = "force-dynamic";
@@ -58,7 +59,11 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
   const shareUrl = owner ? `${await requestOrigin()}/c/${shareSlug(session)}` : null;
 
   const window = roleWindow(role);
-  const open = isOpen(window);
+  // A capped call stops taking submissions once it is met, whatever its
+  // closing time says, so the form goes and the reason is given.
+  const counts = session.submissionCap === null ? null : await countsForSession(session.id);
+  const full = counts !== null && counts.total >= session.submissionCap!;
+  const open = isOpen(window) && !full;
   const upcoming = notYetOpen(window);
 
   return (
@@ -209,6 +214,7 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
             <SubmissionsClosed
               session={role.session.name}
               opensOn={upcoming ? formatDateTime(role.session.opensAt) : undefined}
+              full={full}
               backTo={`/c/${token}`}
             />
           )}

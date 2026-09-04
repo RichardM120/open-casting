@@ -208,6 +208,14 @@ export default async function SessionPage({
         <Fact term="Closes" value={formatDateTime(session.closesAt)} />
         <Fact term="Production finishes" value={formatDate(session.productionEndsAt)} />
         <Fact term="Applicants' details destroyed" value={deletion} />
+        {session.submissionCap === null ? null : (
+          <Fact
+            term="Submission cap"
+            value={`${sessionCounts.total} of ${session.submissionCap}${
+              sessionCounts.total >= session.submissionCap ? ", so it is closed to new ones" : ""
+            }`}
+          />
+        )}
       </dl>
       {session.purgedAt ? null : (
         <p className="mt-4 text-xs leading-relaxed text-faint">

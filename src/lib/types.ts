@@ -74,6 +74,8 @@ export type CastingSession = {
   company: string;
   /** Who is making it. A line on the form, never shown to an applicant. */
   productionCompany: string;
+  /** The most submissions it will take, across its roles. Null is no cap. */
+  submissionCap: number | null;
   /** An optional image on the applicant's page, or null. */
   heroUrl: string | null;
   /** How that image is shown: across the top as a banner, or centred as a logo. */
@@ -353,7 +355,7 @@ export type SeedRole = Omit<
  */
 export type SeedSession = Omit<
   CastingSession,
-  "ownerId" | "closedAt" | "createdAt" | "publishedAt" | "purgedAt"
+  "ownerId" | "closedAt" | "createdAt" | "publishedAt" | "purgedAt" | "submissionCap"
 >;
 
 /**

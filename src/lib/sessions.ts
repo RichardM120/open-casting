@@ -25,6 +25,7 @@ type Row = {
   purged_at: Date | null;
   production_ends_at: string;
   public_token: string;
+  submission_cap: number | null;
   created_at: Date;
 };
 
@@ -37,7 +38,7 @@ export const SESSION_COLUMNS = `
   id, slug, name, production_type, synopsis, owner_id, company, production_company, hero_url,
   hero_kind, inclusion_statement, agent_route, tape_guidance, opens_at, closes_at,
   to_char(production_ends_at, 'YYYY-MM-DD') AS production_ends_at,
-  closed_at, published_at, purged_at, public_token, created_at
+  closed_at, published_at, purged_at, public_token, submission_cap, created_at
 `;
 
 export function toSession(row: Row): CastingSession {
@@ -50,6 +51,7 @@ export function toSession(row: Row): CastingSession {
     ownerId: row.owner_id,
     company: row.company,
     productionCompany: row.production_company,
+    submissionCap: row.submission_cap,
     heroUrl: row.hero_url,
     heroKind: row.hero_kind === "logo" ? "logo" : "banner",
     inclusionStatement: row.inclusion_statement,
@@ -355,4 +357,189 @@ function slugify(value: string): string {
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "")
     .slice(0, 60);
+}
+
+/** Where a casting call is in its life, as one word for a filter and a badge. */
+export type CallState = "draft" | "scheduled" | "open" | "full" | "closed" | "purged";
+
+export function callState(
+  session: Pick<CastingSession, "publishedAt" | "purgedAt" | "closedAt" | "opensAt" | "closesAt" | "submissionCap">,
+  submissions: number,
+): CallState {
+  if (session.purgedAt) return "purged";
+  if (session.publishedAt === null) return "draft";
+  if (session.closedAt) return "closed";
+  if (Date.parse(session.opensAt) > Date.now()) return "scheduled";
+  if (Date.parse(session.closesAt) < Date.now()) return "closed";
+  if (session.submissionCap !== null && submissions >= session.submissionCap) return "full";
+  return "open";
+}
+
+/** One row of the administrator's list of every casting call on the site. */
+export type AdminCall = CastingSession & {
+  clientId: string | null;
+  clientName: string | null;
+  ownerName: string | null;
+  roles: number;
+  submissions: number;
+  state: CallState;
+};
+
+export type CallFilter = {
+  clientId?: string | null;
+  state?: CallState | null;
+  /** yyyy-mm-dd, matched against the closing time. */
+  from?: string | null;
+  to?: string | null;
+  limit?: number;
+  offset?: number;
+};
+
+/**
+ * Every casting call on the site, whoever runs it, with its client, its
+ * counts and where it is in its life. The administrator's view only: there is
+ * no visibility clause here because the page that calls it is admin-only and
+ * refuses anyone else before it runs.
+ *
+ * The state is worked out in SQL as well as in `callState`, because filtering
+ * by it has to happen in the database, and paging a list filtered in the page
+ * would page the wrong thing.
+ */
+const STATE_SQL = `
+  CASE
+    WHEN s.purged_at IS NOT NULL THEN 'purged'
+    WHEN s.published_at IS NULL THEN 'draft'
+    WHEN s.closed_at IS NOT NULL THEN 'closed'
+    WHEN s.opens_at > now() THEN 'scheduled'
+    WHEN s.closes_at < now() THEN 'closed'
+    WHEN s.submission_cap IS NOT NULL AND subs.n >= s.submission_cap THEN 'full'
+    ELSE 'open'
+  END
+`;
+
+function callWhere(filter: CallFilter): { where: string; params: unknown[] } {
+  const conditions: string[] = [];
+  const params: unknown[] = [];
+  if (filter.clientId) {
+    params.push(filter.clientId);
+    conditions.push(`s.client_id = $${params.length}`);
+  }
+  if (filter.from) {
+    params.push(filter.from);
+    conditions.push(`s.closes_at >= $${params.length}::date`);
+  }
+  if (filter.to) {
+    params.push(filter.to);
+    conditions.push(`s.closes_at < $${params.length}::date + 1`);
+  }
+  if (filter.state) {
+    params.push(filter.state);
+    conditions.push(`${STATE_SQL} = $${params.length}`);
+  }
+  return { where: conditions.length ? `WHERE ${conditions.join(" AND ")}` : "", params };
+}
+
+/** SESSION_COLUMNS again, qualified: this query joins tables that share names. */
+const PREFIXED_COLUMNS = `
+  s.id, s.slug, s.name, s.production_type, s.synopsis, s.owner_id, s.company,
+  s.production_company, s.hero_url, s.hero_kind, s.inclusion_statement,
+  s.agent_route, s.tape_guidance, s.opens_at, s.closes_at,
+  to_char(s.production_ends_at, 'YYYY-MM-DD') AS production_ends_at,
+  s.closed_at, s.published_at, s.purged_at, s.public_token, s.submission_cap,
+  s.created_at
+`;
+
+const CALL_SOURCE = `
+  FROM sessions_casting s
+  LEFT JOIN clients c ON c.id = s.client_id
+  LEFT JOIN users u   ON u.id = s.owner_id
+  LEFT JOIN LATERAL (
+    SELECT count(*)::int AS n FROM submissions sub WHERE sub.session_id = s.id
+  ) subs ON true
+  LEFT JOIN LATERAL (
+    SELECT count(*)::int AS n FROM roles r WHERE r.session_id = s.id
+  ) rls ON true
+`;
+
+export async function listAllCalls(filter: CallFilter = {}): Promise<AdminCall[]> {
+  const { where, params } = callWhere(filter);
+  let tail = "";
+  if (filter.limit !== undefined) {
+    params.push(filter.limit);
+    tail += ` LIMIT $${params.length}`;
+  }
+  if (filter.offset) {
+    params.push(filter.offset);
+    tail += ` OFFSET $${params.length}`;
+  }
+  const rows = await query<
+    Row & {
+      client_id: string | null;
+      client_name: string | null;
+      owner_name: string | null;
+      roles: number;
+      submissions: number;
+      state: CallState;
+    }
+  >(
+    `SELECT ${PREFIXED_COLUMNS},
+            s.client_id, c.name AS client_name, u.name AS owner_name,
+            rls.n AS roles, subs.n AS submissions,
+            ${STATE_SQL} AS state
+       ${CALL_SOURCE}
+       ${where}
+      ORDER BY s.closes_at DESC, s.id${tail}`,
+    params,
+  );
+  return rows.map((row) => ({
+    ...toSession(row),
+    clientId: row.client_id,
+    clientName: row.client_name,
+    ownerName: row.owner_name,
+    roles: row.roles,
+    submissions: row.submissions,
+    state: row.state,
+  }));
+}
+
+/** How many calls match, and how they break down by state, for the filter bar. */
+export async function countAllCalls(
+  filter: CallFilter = {},
+): Promise<{ total: number; byState: Record<CallState, number> }> {
+  const { where, params } = callWhere({ ...filter, state: null });
+  const rows = await query<{ state: CallState; count: string }>(
+    `SELECT ${STATE_SQL} AS state, count(*)::text AS count
+       ${CALL_SOURCE}
+       ${where}
+      GROUP BY 1`,
+    params,
+  );
+  const byState: Record<CallState, number> = {
+    draft: 0,
+    scheduled: 0,
+    open: 0,
+    full: 0,
+    closed: 0,
+    purged: 0,
+  };
+  let total = 0;
+  for (const row of rows) {
+    byState[row.state] = Number(row.count);
+    total += Number(row.count);
+  }
+  return { total, byState };
+}
+
+/** Sets or clears the cap on a casting call, and its closing time with it. */
+export async function setCallLimits(
+  id: string,
+  limits: { submissionCap: number | null; closesAt?: string },
+): Promise<boolean> {
+  const rows = await query<{ id: string }>(
+    limits.closesAt
+      ? `UPDATE sessions_casting SET submission_cap = $2, closes_at = $3 WHERE id = $1 RETURNING id`
+      : `UPDATE sessions_casting SET submission_cap = $2 WHERE id = $1 RETURNING id`,
+    limits.closesAt ? [id, limits.submissionCap, limits.closesAt] : [id, limits.submissionCap],
+  );
+  return rows.length > 0;
 }

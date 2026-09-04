@@ -27,10 +27,11 @@ import {
   getSession,
   getVisibleSession,
   publishSession,
+  setCallLimits,
   setSessionClosed,
   updateSession,
 } from "./sessions";
-import { formatDate, formatDateTime, isOpen, notYetOpen, roleWindow } from "./format";
+import { formatDate, formatDateTime, fromLocalInput, isOpen, notYetOpen, roleWindow } from "./format";
 import { clientAddress, overLimit } from "./rate-limit";
 import { submittedValues, type FormState } from "./form-state";
 import {
@@ -45,6 +46,7 @@ import {
 } from "./roles";
 import {
   DuplicateSubmissionError,
+  countsForSession,
   createSubmission,
   setSubmissionStatus,
   submissionContext,
@@ -121,6 +123,20 @@ export async function submitApplication(
         : "This role is no longer accepting submissions.",
       formData,
     );
+  }
+
+  // A cap the casting team set on the whole call: once it is met the call
+  // stops taking submissions, whatever its closing time says. Checked here
+  // against the database rather than against anything the form carried.
+  if (role.session.submissionCap !== null) {
+    const taken = await countsForSession(role.sessionId);
+    if (taken.total >= role.session.submissionCap) {
+      return invalid(
+        {},
+        `${role.session.name} has taken all the submissions it can. It is closed to new ones.`,
+        formData,
+      );
+    }
   }
 
   if (await overLimit("submission", await clientAddress())) {
@@ -1143,4 +1159,89 @@ export async function removeSession(formData: FormData): Promise<void> {
   await deleteMedia(sessionMedia);
   revalidateEverything();
   redirect("/dashboard?removed=1");
+}
+
+/* ------------------------------------------------------- admin: projects -- */
+
+/**
+ * The administrator publishing, pausing or reopening any casting call on the
+ * site, from the projects page. The owner can already do all three on their
+ * own call; this is the same thing without having to be them, for the moment
+ * a call is running away and the person who opened it is not around.
+ */
+export async function adminSetCallState(formData: FormData): Promise<void> {
+  const user = await requireUser("/admin/projects");
+  if (user.role !== "admin") return;
+
+  const id = String(formData.get("sessionId") ?? "");
+  const to = String(formData.get("to") ?? "");
+  const session = id ? await getSession(id) : null;
+  if (!session) return;
+
+  if (to === "publish") {
+    if (session.publishedAt) return;
+    const published = await publishSession(id, user);
+    if (!published) return;
+    await record({
+      action: "session.published",
+      actorId: user.id,
+      actorName: user.name,
+      ownerId: published.ownerId,
+      company: published.company,
+      detail: `${published.name} · published by the administrator`,
+    });
+  } else if (to === "pause" || to === "reopen") {
+    const closed = to === "pause";
+    if (!(await setSessionClosed(id, closed, user))) return;
+    await record({
+      action: closed ? "session.closed" : "session.reopened",
+      actorId: user.id,
+      actorName: user.name,
+      ownerId: session.ownerId,
+      company: session.company,
+      detail: `${session.name} · ${closed ? "paused" : "reopened"} by the administrator`,
+    });
+  } else {
+    return;
+  }
+
+  revalidateEverything();
+  redirect("/admin/projects?changed=1");
+}
+
+/**
+ * The cap and the closing time, changed together from the projects page. A
+ * cap that is already met closes the call to new submissions at once, which
+ * is the point of having one: a call taking more than anybody can read.
+ */
+export async function adminSetCallLimits(formData: FormData): Promise<void> {
+  const user = await requireUser("/admin/projects");
+  if (user.role !== "admin") return;
+
+  const id = String(formData.get("sessionId") ?? "");
+  const session = id ? await getSession(id) : null;
+  if (!session) return;
+
+  const rawCap = String(formData.get("submissionCap") ?? "").trim();
+  if (rawCap !== "" && !/^\d{1,7}$/.test(rawCap)) redirect("/admin/projects?bad=cap");
+  const submissionCap = rawCap === "" ? null : Number(rawCap);
+
+  const rawCloses = String(formData.get("closesAt") ?? "").trim();
+  const closesAt = rawCloses ? fromLocalInput(rawCloses) : undefined;
+  if (rawCloses && !closesAt) redirect("/admin/projects?bad=closes");
+
+  if (!(await setCallLimits(id, { submissionCap, closesAt }))) return;
+
+  await record({
+    action: "session.edited",
+    actorId: user.id,
+    actorName: user.name,
+    ownerId: session.ownerId,
+    company: session.company,
+    detail: `${session.name} · ${submissionCap === null ? "no cap" : `cap ${submissionCap}`}${
+      closesAt ? `, closes ${formatDateTime(closesAt)}` : ""
+    } · set by the administrator`,
+  });
+  revalidateEverything();
+  redirect("/admin/projects?changed=1");
 }

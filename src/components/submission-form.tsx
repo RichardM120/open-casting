@@ -851,23 +851,35 @@ export function SubmissionForm({
 export function SubmissionsClosed({
   session,
   opensOn,
+  full = false,
   backTo,
 }: {
   session: string;
   /** Set when the casting call has not opened yet, as a formatted date and time. */
   opensOn?: string;
+  /** Whether it stopped because it took every submission it was set to take. */
+  full?: boolean;
   backTo: string;
 }) {
   return (
     <div className="rounded-2xl border border-dashed border-line-strong p-7">
       <h2 className="text-lg font-semibold tracking-tight">
-        {opensOn ? "Submissions have not opened yet" : "Submissions have closed"}
+        {opensOn
+          ? "Submissions have not opened yet"
+          : full
+            ? "This casting call is full"
+            : "Submissions have closed"}
       </h2>
       <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
         {opensOn ? (
           <>
             {session} takes submissions from <strong className="text-text">{opensOn}</strong>. The
             role is up now so you can prepare. Come back then and the form will be here.
+          </>
+        ) : full ? (
+          <>
+            {session} has taken all the submissions it can and is closed to new ones. The call is
+            kept up so you can see what was asked for.
           </>
         ) : (
           <>

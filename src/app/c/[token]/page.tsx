@@ -11,6 +11,7 @@ import { ageRange, formatDateTime, isOpen, notYetOpen, roleWindow, shootWindow }
 import { canPreview } from "@/lib/preview";
 import { listSessionRoles } from "@/lib/roles";
 import { getSessionByToken } from "@/lib/sessions";
+import { countsForSession } from "@/lib/submissions";
 
 export const dynamic = "force-dynamic";
 
@@ -41,7 +42,12 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
   if (preview && !(await canPreview(session))) notFound();
 
   const roles = await listSessionRoles(session.id);
-  const open = isOpen(session);
+  // A casting call can be capped at a number of submissions. Once it is met it
+  // takes no more, whatever its closing time says, so the page says so rather
+  // than offering a form that would refuse.
+  const counts = session.submissionCap === null ? null : await countsForSession(session.id);
+  const full = counts !== null && counts.total >= session.submissionCap!;
+  const open = isOpen(session) && !full;
   const single = roles.length === 1;
 
   return (
@@ -85,7 +91,9 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
         <p className="mt-6 max-w-prose leading-relaxed text-text">
           {preview
             ? "Not published. Publish it from your dashboard and this link starts working."
-            : session.closedAt
+            : full
+              ? "This casting call has taken all the submissions it can and is closed to new ones. The brief stays up for reference."
+              : session.closedAt
               ? `Casting closed on ${formatDateTime(session.closedAt)}. The brief stays up for reference.`
               : notYetOpen(session)
                 ? `Submissions open on ${formatDateTime(session.opensAt)}. Read the roles now and have a tape ready.`
