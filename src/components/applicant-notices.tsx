@@ -18,7 +18,9 @@ export function InclusionStatement({ session }: { session: CastingSession }) {
  * What an applicant is entitled to be told before they send anything, in the
  * words that apply to this casting call rather than a link to a policy: who
  * holds their details, what for, on what basis, for how long, and what they
- * can do about it.
+ * can do about it. Two sentences say the whole of it; the six points are
+ * behind a "more" control, a native <details>, so the page stays short and
+ * the detail is one tap away rather than a link away.
  */
 export function YourData({
   session,
@@ -39,7 +41,18 @@ export function YourData({
       <h2 id="your-data" className="text-lg font-semibold tracking-tight">
         Your data
       </h2>
-      <dl className="mt-4 grid gap-x-8 gap-y-4 text-sm sm:grid-cols-2">
+      <p className="mt-2 max-w-prose text-sm leading-relaxed text-muted">
+        {session.company} holds what you send and uses it only to consider you for this call. It
+        is destroyed on {purge}, 30 days after the production finishes, and you can see it, correct
+        it or have it deleted at any time.
+      </p>
+      <details className="group mt-1 text-sm" data-more="your-data">
+        <summary className="inline-flex min-h-10 cursor-pointer list-none items-center font-medium text-brand underline-offset-4 hover:underline [&::-webkit-details-marker]:hidden">
+          <span className="group-open:hidden">&hellip; more</span>
+          <span className="hidden group-open:inline">Less</span>
+          <span className="sr-only"> about your data</span>
+        </summary>
+        <dl className="mt-3 grid gap-x-8 gap-y-4 sm:grid-cols-2">
         <Row term="Who holds it">
           {session.company}, the team running this call, is the data controller. Open Casting
           stores it for them and does nothing else with it.
@@ -72,14 +85,15 @@ export function YourData({
           . If you are not satisfied you can complain to the Information Commissioner&apos;s
           Office at ico.org.uk.
         </Row>
-      </dl>
-      <p className="mt-4 text-sm text-muted">
-        The full{" "}
-        <Link href="/legal/submission-terms" className="text-brand underline-offset-4 hover:underline">
-          Terms of Submission
-        </Link>{" "}
-        say the same at length.
-      </p>
+        </dl>
+        <p className="mt-4 text-muted">
+          The full{" "}
+          <Link href="/legal/submission-terms" className="text-brand underline-offset-4 hover:underline">
+            Terms of Submission
+          </Link>{" "}
+          say the same at length.
+        </p>
+      </details>
     </section>
   );
 }

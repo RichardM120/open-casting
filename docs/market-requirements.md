@@ -41,7 +41,7 @@ role form. Every schema change is an idempotent statement in
 | MR-16 separate consent for special category data | Done | Its own checkbox, apart from the terms, with the sentence stored alongside the answer and hashed. The browser holds the submit button quiet until it is ticked; the server refuses without it. |
 | MR-17 availability attestation | Done | See MR-05. |
 | MR-18 free to apply | Done | In the footer of every casting page: free to apply, and this page is the only place to apply. |
-| MR-19 Article 13 notice | Done | A "Your data" section on every casting page, in the call's own words: the controller by name, the purpose, the basis, the day the data is destroyed, the rights, and where to ask or complain, with the ICO named. |
+| MR-19 Article 13 notice | Done | A "Your data" section on every casting page, in the call's own words. Two sentences carry the controller, the purpose, the day the data is destroyed and the rights; a "more" control opens the six points in full, including the basis and where to ask or complain, with the ICO named. |
 
 ## 4.3 Director console and operator tooling
 
