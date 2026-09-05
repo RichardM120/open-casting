@@ -31,7 +31,7 @@ section("1 health reports what the operator has set");
 {
   const operator = health.operator;
   check("there is an operator block", operator !== undefined, JSON.stringify(Object.keys(health)));
-  check("the report address is given in full, because the footer prints it anyway",
+  check("the report address is given in full, because every page links to it anyway",
     operator.reportTo === "report@example.co.uk", operator.reportTo);
   check("and says which variable it came from", operator.reportFrom === "REPORT_EMAIL", operator.reportFrom);
   check("the company name", operator.companyName === "Example Casting Limited", operator.companyName);
@@ -56,8 +56,12 @@ section("2 and never the values of anything that is not already public");
 
 section("3 what health says is what the footer prints");
 {
-  check("the report address is the one offered to applicants",
-    footer.includes("report@example.co.uk"), footer.slice(0, 200));
+  // The address is the link's target, not its words: an address set in the
+  // footer of every page is an address that gets scraped.
+  check("the footer offers a way to write rather than an address",
+    footer.includes("Contact us"), footer.slice(0, 200));
+  check("and does not print the address itself",
+    !footer.includes("report@example.co.uk"), footer.slice(0, 300));
   check("the company owns the page", footer.includes("Example Casting Limited"));
   check("the number is disclosed", /Registered in England and Wales no\. 01234567/.test(footer), footer);
   check("with the registered office", footer.includes("1 Example Street, Leeds, LS1 1AA"));
@@ -68,8 +72,10 @@ section("3 what health says is what the footer prints");
 section("4 a mailto a person can actually click");
 {
   const link = p.locator('footer a[href^="mailto:"]');
-  check("the address is a link", (await link.count()) === 1);
-  check("to the address health reported",
+  check("there is one, and one only", (await link.count()) === 1);
+  check("reading as an invitation", (await link.innerText()).trim() === "Contact us",
+    await link.innerText());
+  check("and opening a mail to the address health reported",
     (await link.getAttribute("href")) === "mailto:report@example.co.uk",
     await link.getAttribute("href"));
 }

@@ -1127,11 +1127,12 @@ export async function resetToSeed(): Promise<void> {
  * The settings that decide what the footer can say, reported so a deployment
  * can be checked without signing in to it.
  *
- * The report address is given in full because it is published on every page
- * already, and reading it back is the only way to catch the kind of mistake
- * that does not break anything: an address that is a valid address and
- * belongs to nobody. The rest are set or missing, never their values, in
- * keeping with the rule this endpoint is built on.
+ * The report address is given in full because every page already carries it
+ * as the target of the footer's Contact us link — the words are not the
+ * address, but the markup is — and reading it back is the only way to catch
+ * the kind of mistake that does not break anything: an address that is a
+ * valid address and belongs to nobody. The rest are set or missing, never
+ * their values, in keeping with the rule this endpoint is built on.
  */
 export type OperatorSettings = {
   /** As the footer prints it, or null when neither REPORT_EMAIL nor ADMIN_EMAILS is set. */

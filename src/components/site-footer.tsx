@@ -101,11 +101,16 @@ export function SiteFooter({
               The tool a casting team runs an open call with. The sample casting calls on it are
               invented.
             </p>
+            {/* The address opens the reader's mail app, but it is not printed:
+                an address set in the footer of every page is an address that
+                gets scraped, and "Contact us" is what a person is looking for
+                anyway. It is still in the markup as the link's target, so
+                anyone who wants it can have it. */}
             {contact ? (
               <p className="mt-3 text-ink/85">
                 Something wrong with a call?{" "}
                 <a href={`mailto:${contact}`} className={`${LINK} underline underline-offset-4`}>
-                  {contact}
+                  Contact us
                 </a>
               </p>
             ) : null}
