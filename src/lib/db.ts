@@ -5,6 +5,7 @@ import { randomBytes } from "node:crypto";
 import { Pool, type PoolClient, type QueryResultRow } from "pg";
 
 import { describeStore, uploadsEnabled } from "./blob";
+import { companyDetails, reportAddress } from "./site";
 import { hashPassword, unusablePassword } from "./password";
 import { seedDatabase } from "./seed-data";
 
@@ -1122,6 +1123,72 @@ export async function resetToSeed(): Promise<void> {
  * endpoint. Deliberately reports the environment variable's *name* and never
  * its value, and counts rather than any data.
  */
+/**
+ * The settings that decide what the footer can say, reported so a deployment
+ * can be checked without signing in to it.
+ *
+ * The report address is given in full because it is published on every page
+ * already, and reading it back is the only way to catch the kind of mistake
+ * that does not break anything: an address that is a valid address and
+ * belongs to nobody. The rest are set or missing, never their values, in
+ * keeping with the rule this endpoint is built on.
+ */
+export type OperatorSettings = {
+  /** As the footer prints it, or null when neither REPORT_EMAIL nor ADMIN_EMAILS is set. */
+  reportTo: string | null;
+  /** Where that address came from, so a fallback is not mistaken for a decision. */
+  reportFrom: "REPORT_EMAIL" | "ADMIN_EMAILS" | "unset";
+  companyName: string;
+  companyNumber: "set" | "missing";
+  registeredOffice: "set" | "missing";
+  vatNumber: "set" | "missing";
+  icoRegistration: "set" | "missing";
+  /** What is not right yet, said as the thing to do. Empty when nothing is. */
+  gaps: string[];
+};
+
+/** An address that at least parses. It cannot tell a real domain from a typo. */
+const LOOKS_LIKE_EMAIL = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
+
+function operatorSettings(): OperatorSettings {
+  const company = companyDetails();
+  const reportTo = reportAddress();
+  const reportFrom: OperatorSettings["reportFrom"] = process.env.REPORT_EMAIL?.trim()
+    ? "REPORT_EMAIL"
+    : reportTo
+      ? "ADMIN_EMAILS"
+      : "unset";
+  const flag = (value: string | null): "set" | "missing" => (value ? "set" : "missing");
+
+  const gaps: string[] = [];
+  if (!reportTo) {
+    gaps.push("Set REPORT_EMAIL: applicants have nowhere to report a fake casting call.");
+  } else if (!LOOKS_LIKE_EMAIL.test(reportTo)) {
+    gaps.push(`REPORT_EMAIL is not an email address: ${reportTo}`);
+  } else if (reportFrom === "ADMIN_EMAILS") {
+    gaps.push("REPORT_EMAIL is unset, so the footer is showing the first administrator's address.");
+  }
+  if (!company.number) gaps.push("Set COMPANY_NUMBER: a limited company has to show it.");
+  if (!company.office) gaps.push("Set REGISTERED_OFFICE: a limited company has to show it.");
+  if (!company.ico) {
+    gaps.push("Set ICO_REGISTRATION: a data controller holding applicants' details should show it.");
+  }
+  if (!company.vat) {
+    gaps.push("Set VAT_NUMBER, or leave it unset if the company is not VAT registered.");
+  }
+
+  return {
+    reportTo,
+    reportFrom,
+    companyName: company.name,
+    companyNumber: flag(company.number),
+    registeredOffice: flag(company.office),
+    vatNumber: flag(company.vat),
+    icoRegistration: flag(company.ico),
+    gaps,
+  };
+}
+
 export async function databaseStatus(): Promise<{
   ok: boolean;
   connectionVariable: string | null;
@@ -1133,6 +1200,17 @@ export async function databaseStatus(): Promise<{
   store: string;
   /** Pre-launch switches. Both must read "off" before this is a live service. */
   site: "walled off: passcode, and sign-in checks nothing" | "open to the public";
+  /**
+   * What the operator has told the deployment about itself: the address an
+   * applicant reports an imitation to, and the four disclosures a limited
+   * company owes its website under the Companies (Trading Disclosures)
+   * Regulations 2008 and, where they apply, the VAT and ICO registrations.
+   *
+   * None of it is secret — every one of these is printed in the footer of
+   * every page — but a missing or mistyped one is invisible from the outside
+   * until somebody tries to use it, which is the wrong time to find out.
+   */
+  operator: OperatorSettings;
   schema: "ready" | "unavailable";
   roles?: number;
   sessions?: number;
@@ -1154,6 +1232,7 @@ export async function databaseStatus(): Promise<{
     process.env.SITE_PASSCODE?.trim()
       ? "walled off: passcode, and sign-in checks nothing"
       : "open to the public";
+  const operator = operatorSettings();
   if (!variable) {
     return {
       ok: false,
@@ -1163,6 +1242,7 @@ export async function databaseStatus(): Promise<{
       uploads,
       store,
       site,
+      operator,
       schema: "unavailable",
       error:
         "No connection string. Set DATABASE_URL (or POSTGRES_URL) in the deployment's environment and redeploy.",
@@ -1182,6 +1262,7 @@ export async function databaseStatus(): Promise<{
       uploads,
       store,
       site,
+      operator,
       schema: "ready",
       roles: Number(roles[0]?.count ?? 0),
       sessions: Number(sessions[0]?.count ?? 0),
@@ -1197,6 +1278,7 @@ export async function databaseStatus(): Promise<{
       uploads,
       store,
       site,
+      operator,
       schema: "unavailable",
       error: error instanceof Error ? error.message : String(error),
     };

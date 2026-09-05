@@ -156,6 +156,24 @@ section("11 the deployment can report whether any of this will work");
   check("and no file store", body.uploads === "off", JSON.stringify(body.uploads));
   check("and whether email is configured", body.email === "configured", JSON.stringify(body));
   check("without leaking a connection string", !JSON.stringify(body).includes("postgresql://"));
+
+  // A deployment nobody has told about itself, which is what a fresh one is.
+  // Nothing here breaks a page; it decides what the footer may say, and a
+  // silent absence is how a company ends up disclosing nothing.
+  const operator = body.operator;
+  check("the company number is not set", operator.companyNumber === "missing", operator.companyNumber);
+  check("nor the registered office", operator.registeredOffice === "missing");
+  check("nor the VAT or ICO registrations",
+    operator.vatNumber === "missing" && operator.icoRegistration === "missing");
+  check("the report address falls back to the first administrator",
+    operator.reportFrom === "ADMIN_EMAILS" && operator.reportTo === process.env.ADMIN_EMAIL,
+    JSON.stringify(operator));
+  check(`and every gap is named as the thing to do: ${operator.gaps.length}`,
+    operator.gaps.length === 5, JSON.stringify(operator.gaps));
+  check("including that the footer is showing an administrator's address",
+    operator.gaps.some((gap) => /REPORT_EMAIL is unset/.test(gap)), JSON.stringify(operator.gaps));
+  check("each gap says what to set",
+    operator.gaps.every((gap) => /^Set [A-Z_]+|REPORT_EMAIL/.test(gap)), JSON.stringify(operator.gaps));
 }
 
 await pool.end();

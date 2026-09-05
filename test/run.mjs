@@ -43,6 +43,17 @@ const SUITE_ENV = {
   // The wall with its signing key missing: the one misconfiguration that
   // leaves a right passcode unable to open it.
   "12-unconfigured.mjs": { SITE_PASSCODE: "test-site-passcode", AUTH_SECRET: "" },
+  // A deployment whose operator has filled everything in, which is the shape
+  // the footer and the health check are meant to reach. Every other suite
+  // runs with none of it set, which is the other shape they have to survive.
+  "25-operator.mjs": {
+    REPORT_EMAIL: "report@example.co.uk",
+    COMPANY_NAME: "Example Casting Limited",
+    COMPANY_NUMBER: "01234567",
+    REGISTERED_OFFICE: "1 Example Street, Leeds, LS1 1AA",
+    VAT_NUMBER: "GB123456789",
+    ICO_REGISTRATION: "ZA123456",
+  },
 };
 const MAIL_PORT = PORT + 1;
 const MAILBOX = path.join(here, "mailbox.json");
