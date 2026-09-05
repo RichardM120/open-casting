@@ -6,7 +6,7 @@ import { Breadcrumb } from "@/components/breadcrumb";
 import { AdminTabs } from "@/components/admin-tabs";
 import { adminTrail } from "@/lib/admin-nav";
 import { HelpNote } from "@/components/help-note";
-import { Badge, Button, CARD, CARD_GROUP, Eyebrow, Field, Input, STACK, SectionHead, Select, Textarea, cx } from "@/components/ui";
+import { Badge, Button, CARD, CARD_GROUP, cx, Eyebrow, Field, Input, ROW_MAIN, SectionHead, Select, STACK, Textarea } from "@/components/ui";
 import { closeAccessRequest, eraseApplicant, logAccessRequest, runRetentionSweep } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
 import { formatDate, formatDateTime, formatRelative } from "@/lib/format";
@@ -113,7 +113,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/admin/pr
             {open.map((request) => (
               <li key={request.id} className="rounded-xl border border-line bg-surface p-4">
                 <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-                  <div className="min-w-0 flex-1">
+                  <div className={ROW_MAIN}>
                     <p className="font-medium wrap-anywhere">{request.email}</p>
                     <p className="mt-1 text-sm text-muted">
                       {REQUEST_KINDS[request.kind].label} · asked{" "}

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { HelpNote } from "@/components/help-note";
 import { notFound } from "next/navigation";
 
-import { Badge, ButtonLink, CARD_GROUP, Eyebrow, STACK, SectionHead, cx } from "@/components/ui";
+import { Badge, ButtonLink, CARD_GROUP, cx, Eyebrow, ROW_MAIN, SectionHead, STACK } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { clientUsage, countClients, listClients } from "@/lib/clients";
 import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
@@ -96,7 +96,7 @@ export default async function ClientsPage({ searchParams }: PageProps<"/admin/cl
                   className="relative rounded-xl border border-line bg-surface p-4 transition-colors hover:border-accent sm:p-5"
                 >
                   <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-                    <div className="min-w-0 flex-1">
+                    <div className={ROW_MAIN}>
                       {/* The name's link is stretched over the card, so the
                           target under a thumb is the whole row rather than
                           one line of text in it. */}

@@ -257,6 +257,15 @@ export async function saveProfile(
   }
 
   await updateProfile(user.id, parsed.data);
+  // Details are the last thing setup asks, so saving them finishes it and
+  // drops the person where they can start rather than on another screen
+  // whose only control is Continue.
+  const to = String(formData.get("to") ?? "").trim();
+  if (to) {
+    await markOnboarded(user.id);
+    revalidatePath("/", "layout");
+    redirect(to);
+  }
   revalidatePath("/", "layout");
   redirect(`/welcome?step=${String(formData.get("nextStep") ?? "2")}`);
 }
@@ -286,12 +295,4 @@ export async function acceptAgreement(
   await recordAcceptance(user.id, MSA);
   revalidatePath("/", "layout");
   redirect(`/welcome?step=${String(formData.get("nextStep") ?? "2")}`);
-}
-
-/** Marks setup done and drops the person where they can actually start. */
-export async function finishSetup(formData: FormData): Promise<void> {
-  const user = await requireUser("/welcome");
-  await markOnboarded(user.id);
-  revalidatePath("/", "layout");
-  redirect(String(formData.get("to") ?? "/dashboard"));
 }

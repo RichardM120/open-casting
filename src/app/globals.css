@@ -55,6 +55,53 @@
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
 }
 
+/*
+ * The administrator's section, in the other palette.
+ *
+ * Front of house is warm: cream ground, terracotta bar, gold for the one
+ * action. Back of house is cool: slate paper, a deep petrol bar, and the
+ * teal the homepage already uses for anything actionable. Nothing about the
+ * layout changes, so an owner who has both sections open knows which is
+ * which before reading a word — and a director never sees this palette at
+ * all, which is the point of alternating them.
+ *
+ * It is the same set of tokens with different values rather than a second set
+ * of classes, so every component, present and future, follows without knowing
+ * this exists. Contrast was checked against WCAG 2.2 AA on each pairing the
+ * components actually make: white on the bar 9.6:1, dark ink on the action
+ * 7.2:1, body copy 13.2:1, the quietest text 4.7:1, and borders past 3:1,
+ * which is better than the warm palette manages.
+ */
+.section-admin {
+  --color-ink: #E3E8EC;
+  --color-surface: #FFFFFF;
+  --color-raised: #EEF2F5;
+  --color-line: #C2CCD3;
+  --color-line-strong: #78868F;
+  --color-text: #16212A;
+  --color-muted: #3E4B55;
+  --color-faint: #586873;
+  --color-accent: #4AB9D0;
+  --color-accent-hover: #37A6BE;
+  --color-accent-ink: #10202A;
+  --color-accent-soft: #DCF0F5;
+  --color-positive: #146B45;
+  --color-positive-soft: #DCEFE6;
+  --color-positive-line: #8FBCA7;
+  --color-danger: #A8231C;
+  --color-danger-soft: #F8E2E0;
+  --color-brand: #2F4858;
+  --color-brand-hover: #263B48;
+  --color-brand-ink: #FFFFFF;
+  --color-brand-soft: #D7E2E9;
+  --color-amber: #7A5100;
+  --color-amber-soft: #F2E6D2;
+  /* Every other row of a long table, so an eye keeps its place across it,
+     and the row under the pointer, a step further on again. */
+  --color-stripe: #EEF3F6;
+  --color-stripe-hover: #DDE6EC;
+}
+
 @layer base {
   html {
     color-scheme: light;
@@ -166,6 +213,31 @@
   }
   .control.control[aria-invalid="true"] {
     border-color: var(--color-danger);
+  }
+
+  /*
+   * The administrator's tables are the long ones — fifty accounts, fifty
+   * audit entries, every casting call on the site — and they are read across,
+   * not down. Alternate rows keep the eye on its line at that width; the
+   * pointer's row lights a step further so it is obvious which one is under
+   * the cursor. A step of 1.12:1 off white is enough to follow and quiet
+   * enough not to read as a state, and every pairing on it stays past 7:1.
+   *
+   * Rows only: a head row is already told apart by its size and its rule.
+   */
+  .section-admin tbody > tr:nth-child(even) {
+    background-color: var(--color-stripe);
+  }
+  @media (hover: hover) {
+    .section-admin tbody > tr:hover {
+      background-color: var(--color-stripe-hover);
+    }
+  }
+
+  /* The chevron's warm grey belongs to the warm palette; this one is the cool
+     palette's own line colour, or a select reads as borrowed from elsewhere. */
+  .section-admin .select-chevron {
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%233E4B55' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m4 6 4 4 4-4'/%3E%3C/svg%3E");
   }
 }
 

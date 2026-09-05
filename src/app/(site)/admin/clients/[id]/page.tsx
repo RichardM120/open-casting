@@ -4,7 +4,7 @@ import { HelpNote } from "@/components/help-note";
 import { notFound } from "next/navigation";
 
 import { ClientForm } from "@/components/client-form";
-import { Badge, Button, ButtonLink, CARD, Eyebrow, STACK, SectionHead, cx } from "@/components/ui";
+import { Badge, Button, ButtonLink, CARD, cx, Eyebrow, ROW_MAIN, SectionHead, STACK } from "@/components/ui";
 import { removeClient, toggleClientSuspended } from "@/lib/actions";
 import { currentUser, requireUser } from "@/lib/auth";
 import { clientUsage, getClient } from "@/lib/clients";
@@ -131,7 +131,7 @@ export default async function ClientPage({
                 key={account.id}
                 className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-line bg-surface px-4 py-3"
               >
-                <div className="min-w-0 flex-1">
+                <div className={ROW_MAIN}>
                   <p className="truncate text-sm font-medium">{account.name}</p>
                   <p className="truncate text-sm text-muted">{account.email}</p>
                 </div>

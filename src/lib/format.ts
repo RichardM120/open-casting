@@ -53,6 +53,32 @@ export function toLocalInput(iso: string): string {
   return wallClock(new Date(iso)).slice(0, 16);
 }
 
+/**
+ * What a new casting call's dates start as, so a director changes what they
+ * care about instead of filling three empty pickers.
+ *
+ * Opens now, takes submissions for three weeks and closes at six, and the
+ * production finishes three months out — the shape of most open calls, and
+ * all three are moved by typing over them. Worked out on the server so the
+ * form does not render one clock and hydrate to another.
+ */
+export function suggestedWindow(): {
+  opensAt: string;
+  closesAt: string;
+  productionEndsAt: string;
+} {
+  const now = new Date();
+  const day = 86_400_000;
+  // The next whole hour: a call that opens at 14:23 reads as an accident.
+  const opens = new Date(Math.ceil(now.getTime() / 3_600_000) * 3_600_000);
+  const closes = `${wallClock(new Date(now.getTime() + 21 * day)).slice(0, 10)}T18:00`;
+  return {
+    opensAt: wallClock(opens).slice(0, 16),
+    closesAt: closes,
+    productionEndsAt: wallClock(new Date(now.getTime() + 90 * day)).slice(0, 10),
+  };
+}
+
 /** The UK calendar date of an instant, yyyy-mm-dd. */
 export function londonDate(iso: string): string {
   return wallClock(new Date(iso)).slice(0, 10);

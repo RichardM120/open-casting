@@ -214,9 +214,23 @@ for (const person of [
     && (await p.locator("#where").count()) === 1
     && (await p.locator("#free").count()) === 1);
 
+  // Four fields open is the whole of a phone screen, so they start as one
+  // control the height of a chip and the submissions stay in view.
+  const fold = p.locator('details[data-more="filters"]');
+  check("but folded away behind one control", (await fold.getAttribute("open")) === null);
+  check("which says what it is", (await fold.getByText("Filter").count()) > 0);
+  check("and nothing in it is on screen yet", !(await p.locator("#ageMin").isVisible()));
+  await fold.getByText("Filter").click();
+  check("opening it brings the fields out", await p.locator("#ageMin").isVisible());
+  check("with the button that applies them", await p.getByRole("button", { name: "Narrow the list" }).isVisible());
+
   // 12, 19, 29 and 41 are in. Ends included: 19 and 29 both count.
   await p.goto(`${list}?ageMin=19&ageMax=29`, { waitUntil: "networkidle" });
   check("an age range narrows it", (await p.getByText(/2 of 4 match/).count()) > 0);
+  // A list quietly hiding people is worse than a tall page, so a narrowing
+  // that is already in force opens itself and says what it is.
+  check("a narrowed list opens the filters itself", (await fold.getAttribute("open")) !== null);
+  check("and counts what is set as one thing, an age range", (await fold.locator("summary").getByText("1", { exact: true }).count()) === 1);
   check("with both ends counted", (await p.getByText("Cy Younger").count()) > 0 && (await p.getByText("Ben Middle").count()) > 0);
   check("and nobody out of it", (await p.getByText("Ada Older").count()) === 0 && (await p.getByText("Kit Younger").count()) === 0);
 
@@ -232,6 +246,7 @@ for (const person of [
   await p.goto(`${list}?ageMin=30&where=leeds`, { waitUntil: "networkidle" });
   check("two filters narrow together", (await p.getByText(/1 of 4 match/).count()) > 0);
   check("to the one who is both", (await p.getByText("Ada Older").count()) > 0);
+  check("and the control counts both", (await fold.locator("summary").getByText("2", { exact: true }).count()) === 1);
 
   await p.goto(`${list}?ageMin=99`, { waitUntil: "networkidle" });
   check("a filter that matches nobody says so", (await p.getByText(/0 of 4 match/).count()) > 0);
@@ -251,6 +266,35 @@ section("8 narrowing keeps the status it was on");
   const chip = p.getByRole("link", { name: /^Shortlisted/ });
   check("and a status chip carries the narrowing with it",
     (await chip.getAttribute("href")).includes("where=leeds"));
+}
+
+section("9 on a phone the submissions stay in view");
+{
+  // The complaint this was built for: four filter fields open is the whole of
+  // a phone screen, and the list the director came for is below all of it.
+  const { c, p } = await session(browser, errors, { width: 390, height: 844 }, { hasTouch: true });
+  await p.context().addCookies(await owner.c.cookies());
+  await p.goto(`${BASE}/dashboard/sessions/${call}`, { waitUntil: "networkidle" });
+
+  // Measured against the list, not the top of the page: what went wrong was
+  // the filters standing between the heading and the first submission, so
+  // that is the gap to measure. Four fields open runs to about 500px.
+  const gap = await p.evaluate(() => {
+    const filters = document.querySelector('details[data-more="filters"]');
+    const table = document.querySelector("table");
+    return {
+      tall: Math.round(filters.getBoundingClientRect().height),
+      to: Math.round(table.getBoundingClientRect().top - filters.getBoundingClientRect().top),
+    };
+  });
+  check(`the filter control is one row, not a screenful (${gap.tall}px tall)`, gap.tall <= 100);
+  check(`and the submissions start right under it (${gap.to}px below its top)`, gap.to <= 140);
+  check("nothing spills sideways", (await p.evaluate(() =>
+    document.documentElement.scrollWidth - document.documentElement.clientWidth)) === 0);
+  check("the control is big enough for a thumb", (await p.locator('details[data-more="filters"] summary span').first()
+    .evaluate((el) => el.getBoundingClientRect().height)) >= 44);
+  await p.screenshot({ path: `${SHOTS}/submission-filters-phone.png`, fullPage: false });
+  await c.close();
 }
 
 await pool.end();

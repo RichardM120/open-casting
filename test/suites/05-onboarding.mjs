@@ -21,38 +21,45 @@ const dir = await provisionOnly(browser, errors, admin.p, {
 });
 check("lands on /welcome", dir.p.url().includes("/welcome"), dir.p.url());
 check("greets by first name", (await dir.p.getByText("Welcome, Ada").count()) > 0);
-check("shows a 4-step indicator", (await dir.p.getByLabel(/Step 1 of 4/).count()) > 0);
+// Two screens, not four. The two that only read things out and offered a
+// Continue are gone; what they said sits beside the form on the last one.
+check("shows a 2-step indicator", (await dir.p.getByLabel(/Step 1 of 2/).count()) > 0);
 check("step 1 is the agreement", (await dir.p.locator('input[name="accept"]').count()) === 1);
+check("and asks for nothing else yet", (await dir.p.locator("#company").count()) === 0);
 await dir.p.locator('input[name="accept"]').check();
 await dir.p.getByRole("button", { name: "Accept and continue" }).click();
 await dir.p.waitForURL(/welcome\?step=2/, { timeout: 20000 });
-check("then the profile", (await dir.p.locator("#company").count()) === 1);
+check("then the details", (await dir.p.locator("#company").count()) === 1);
+check("which are the last thing asked", (await dir.p.getByLabel(/Step 2 of 2/).count()) > 0);
 await dir.p.screenshot({ path: `${SHOTS}/wizard-1.png`, fullPage: true });
 
-section("2 step 1 validates and saves");
-await dir.p.fill("#company", "X");
-await dir.p.getByRole("button", { name: "Save and continue" }).click();
-await dir.p.locator("[data-error-summary]").waitFor({ timeout: 20000 });
-check("rejects a too-short company", true);
-await dir.p.fill("#company", `Wiz Co ${t}`);
-await dir.p.fill("#name", "Ada Director");
-await dir.p.getByRole("button", { name: "Save and continue" }).click();
-await dir.p.waitForURL("**step=3**", { timeout: 20000 });
-check("moves on", true);
-check("name saved into the header", (await dir.p.locator("header").textContent()).includes(`Wiz Co ${t}`));
-
-section("3 step 2 explains the director's own scope");
+section("2 the last step says what the account can see, beside the form");
 check("director wording", (await dir.p.getByText(/casting calls you open, and nothing else/).count()) > 0);
 check("warns colleagues cannot see it", (await dir.p.getByText(/cannot see your casting calls/).count()) > 0);
 check(
   "explains casting calls come first",
   (await dir.p.getByText(/Start by opening a casting call/).count()) > 0,
 );
-await dir.p.screenshot({ path: `${SHOTS}/wizard-2.png`, fullPage: true });
-await dir.p.getByRole("link", { name: "Continue" }).click();
-await dir.p.waitForURL("**step=4**", { timeout: 20000 });
-check("the last step mentions the data duty", (await dir.p.getByText(/UK GDPR/).count()) > 0);
 check("links the casting guide", (await dir.p.getByRole("link", { name: /casting director guide/ }).count()) > 0);
+check(
+  "and lets anyone who would rather look around go straight to the dashboard",
+  (await dir.p.getByRole("link", { name: "Skip to the dashboard" }).count()) === 1,
+);
+await dir.p.screenshot({ path: `${SHOTS}/wizard-2.png`, fullPage: true });
+
+section("3 saving the details validates, and finishes setup in one go");
+const finish1 = () => dir.p.getByRole("button", { name: "Open your first casting call" });
+await dir.p.fill("#company", "X");
+await finish1().click();
+await dir.p.locator("[data-error-summary]").waitFor({ timeout: 20000 });
+check("rejects a too-short company", true);
+check("and setup is not finished on a rejection", dir.p.url().includes("/welcome"), dir.p.url());
+await dir.p.fill("#company", `Wiz Co ${t}`);
+await dir.p.fill("#name", "Ada Director");
+await finish1().click();
+await dir.p.waitForURL("**/dashboard/sessions/new", { timeout: 20000 });
+check("lands on the casting call form", true);
+check("name saved into the header", (await dir.p.locator("header").textContent()).includes(`Wiz Co ${t}`));
 
 section("3b accounts cannot be self-registered");
 {
@@ -64,10 +71,7 @@ section("3b accounts cannot be self-registered");
   await c.close();
 }
 
-section("4 finishing sends a director to open a casting call");
-await dir.p.getByRole("button", { name: "Open your first casting call" }).click();
-await dir.p.waitForURL("**/dashboard/sessions/new", { timeout: 20000 });
-check("lands on the casting call form", true);
+section("4 setup stays finished");
 await dir.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 check("the nudge banner is gone", (await dir.p.getByText(/setup is not finished/).count()) === 0);
 
@@ -87,13 +91,19 @@ await half.p.waitForTimeout(1500);
 await half.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 check("banner shown once past the agreement", (await half.p.getByText(/setup is not finished/).count()) > 0);
 
-await half.p.goto(`${BASE}/welcome?step=3`, { waitUntil: "networkidle" });
+await half.p.goto(`${BASE}/welcome?step=2`, { waitUntil: "networkidle" });
 check("producer gets company-wide wording", (await half.p.getByText(/every casting call under your company/i).count()) > 0);
+// A step past the end is clamped rather than shown empty.
+await half.p.goto(`${BASE}/welcome?step=9`, { waitUntil: "networkidle" });
+check("a step that does not exist lands on the last one", (await half.p.locator("#company").count()) === 1);
 
 section("6 an admin is told what admin actually means");
 await admin.p.goto(`${BASE}/welcome`, { waitUntil: "networkidle" });
 check("says the role came from the admin list", (await admin.p.getByText(/admin list, not from anything you chose/).count()) > 0);
-await admin.p.goto(`${BASE}/welcome?step=2`, { waitUntil: "networkidle" });
+// There is no agreement for the service provider to accept, so setup is one
+// screen and a progress bar counting to one would be noise.
+check("no agreement for the administrator", (await admin.p.locator('input[name="accept"]').count()) === 0);
+check("and no step indicator on a single step", (await admin.p.getByLabel(/Step \d of \d/).count()) === 0);
 check("warns removal is permanent", (await admin.p.getByText(/permanently deletes/).count()) > 0);
 check("warns their own actions are logged", (await admin.p.getByText(/including yours/).count()) > 0);
 await admin.p.screenshot({ path: `${SHOTS}/wizard-admin.png`, fullPage: true });

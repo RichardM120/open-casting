@@ -9,8 +9,9 @@ import { DeadlineBadge } from "@/components/deadline-badge";
 import { ShareLink } from "@/components/share-link";
 import { PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
 import { ProfilePhoto } from "@/components/profile-photo";
+import { SubmissionFilters } from "@/components/submission-filters";
 import { SubmissionStatusControl } from "@/components/submission-status-control";
-import { Badge, Button, ButtonLink, CARD, CARD_GROUP, Eyebrow, Field, Input, SPOTLIGHT, STACK, SectionHead, Select, buttonStyles, cx } from "@/components/ui";
+import { Badge, Button, ButtonLink, buttonStyles, CARD, CARD_GROUP, cx, Eyebrow, ROW_MAIN, SectionHead, SPOTLIGHT, STACK } from "@/components/ui";
 import {
   emailSubmissionsSheet,
   publishCastingSession,
@@ -395,76 +396,17 @@ export default async function SessionPage({
       ) : null}
 
       {sessionCounts.total > 0 ? (
-        /*
-          The narrowing a director actually does: what the part needs. It is a
-          plain GET form, so it works with no script, the result is a URL that
-          can be sent to a colleague, and the back button undoes it. The
-          filtering happens in the database, so this holds at a thousand
-          submissions as well as at ten.
-        */
-        <form
-          method="get"
+        <SubmissionFilters
           action={`/dashboard/sessions/${session.id}`}
-          className="mt-4 grid gap-4 rounded-xl border border-line bg-surface p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-4"
-        >
-          {status ? <input type="hidden" name="status" value={status} /> : null}
-          <Field label="Age from" htmlFor="ageMin" required={false}>
-            <Input
-              id="ageMin"
-              name="ageMin"
-              type="number"
-              inputMode="numeric"
-              min={0}
-              max={120}
-              defaultValue={ageMin === null ? "" : String(ageMin)}
-            />
-          </Field>
-          <Field label="Age to" htmlFor="ageMax" required={false}>
-            <Input
-              id="ageMax"
-              name="ageMax"
-              type="number"
-              inputMode="numeric"
-              min={0}
-              max={120}
-              defaultValue={ageMax === null ? "" : String(ageMax)}
-            />
-          </Field>
-          <Field
-            label="Based near"
-            htmlFor="where"
-            hint="Part of a town or city is enough."
-            required={false}
-          >
-            <Input id="where" name="where" defaultValue={location} maxLength={60} />
-          </Field>
-          <Field label="Free for the shoot" htmlFor="free" required={false}>
-            <Select id="free" name="free" defaultValue={query.free === "yes" || query.free === "no" ? query.free : ""}>
-              <option value="">Anyone</option>
-              <option value="yes">Confirmed the dates</option>
-              <option value="no">Did not</option>
-            </Select>
-          </Field>
-          <div className="flex flex-wrap items-center gap-3 sm:col-span-2 lg:col-span-4">
-            <Button type="submit" size="sm">
-              Narrow the list
-            </Button>
-            {narrowed ? (
-              <>
-                <ButtonLink
-                  href={withFilter({ ageMin: null, ageMax: null, where: null, free: null })}
-                  variant="secondary"
-                  size="sm"
-                >
-                  Clear
-                </ButtonLink>
-                <p role="status" className="text-sm text-muted">
-                  {matching} of {status ? byStatus(status) : sessionCounts.total} match.
-                </p>
-              </>
-            ) : null}
-          </div>
-        </form>
+          status={status}
+          ageMin={ageMin}
+          ageMax={ageMax}
+          location={location}
+          free={query.free === "yes" || query.free === "no" ? query.free : null}
+          matching={matching}
+          total={status ? byStatus(status) : sessionCounts.total}
+          clearHref={withFilter({ ageMin: null, ageMax: null, where: null, free: null })}
+        />
       ) : null}
 
       {listed.length > 0 ? (
@@ -577,7 +519,7 @@ export default async function SessionPage({
 
       {/* The title, one line under it, where the call stands, and the two actions on the call itself. */}
       <div className="mt-8 flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
+        <div className={ROW_MAIN}>
           <Eyebrow>{session.productionType}</Eyebrow>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">{session.name}</h1>
           <p className="mt-2 text-muted">

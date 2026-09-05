@@ -211,11 +211,17 @@ export function SessionForm({
   session,
   uploads,
   userId,
+  suggested,
 }: {
   session?: CastingSession;
   /** Whether a file store is connected, which is what makes a header image possible. */
   uploads: boolean;
   userId: string;
+  /**
+   * What a new call's dates start as. Worked out on the server, so the form
+   * cannot render one clock and hydrate to another.
+   */
+  suggested?: { opensAt: string; closesAt: string; productionEndsAt: string };
 }) {
   const [state, formAction, pending] = useActionState(
     session ? editCastingSession : createCastingSession,
@@ -245,7 +251,9 @@ export function SessionForm({
           closesAt: toLocalInput(session.closesAt),
           productionEndsAt: session.productionEndsAt,
         }
-      : submitted;
+      : // A new call starts with a window rather than three empty pickers.
+        // Anything already typed wins, so a failed save discards nothing.
+        { ...(session ? {} : (suggested ?? {})), ...submitted };
 
   // What the folds hold, kept up to date as it is changed, for their summaries.
   const [company, setCompany] = useState(values.productionCompany ?? "");

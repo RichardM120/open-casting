@@ -133,7 +133,27 @@ async function measure(url) {
         nested.push(name(el));
       }
 
-      return { spill, small, tiny, nested, width: doc.clientWidth, scroll: doc.scrollWidth };
+      // A row that wraps — a heading with buttons beside it, a name with its
+      // counts and a Suspend button — puts the identity in a column that must
+      // take the whole row on a phone. A column allowed to shrink instead
+      // ends up a sliver: a name cut to three letters, a heading one word a
+      // line, badges painted over the text beside them. `basis-full` is what
+      // makes it wrap, so its absence is the bug, and its presence with less
+      // than the full row means something on the row will not let it wrap.
+      const squeezed = [];
+      for (const el of document.querySelectorAll('main [class~="basis-full"]')) {
+        const parent = el.parentElement;
+        if (!parent || !getComputedStyle(parent).display.includes("flex")) continue;
+        const style = getComputedStyle(parent);
+        const room =
+          parent.getBoundingClientRect().width -
+          parseFloat(style.paddingLeft) -
+          parseFloat(style.paddingRight);
+        const got = el.getBoundingClientRect().width;
+        if (got < room - 1) squeezed.push(`${name(el)} ${Math.round(got)} of ${Math.round(room)}`);
+      }
+
+      return { spill, small, tiny, nested, squeezed, width: doc.clientWidth, scroll: doc.scrollWidth };
     },
     { TARGET, TYPE },
   );
@@ -183,6 +203,12 @@ section("4 no card is drawn inside another card");
 for (const [label] of PAGES) {
   const found = measured.get(label);
   check(`${label}`, found.nested.length === 0, found.nested.slice(0, 3).join(" | "));
+}
+
+section("4b no section heading is squeezed into a sliver beside its buttons");
+for (const [label] of PAGES) {
+  const found = measured.get(label);
+  check(`${label}`, found.squeezed.length === 0, found.squeezed.slice(0, 3).join(" | "));
 }
 
 section("5 the gap between cards is the phone's, and widens with the screen");

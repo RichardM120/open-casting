@@ -7,7 +7,7 @@ import { ActivityList } from "@/components/activity-list";
 import { DeadlineBadge } from "@/components/deadline-badge";
 import { StatusBadge } from "@/components/status-badge";
 import { SubmissionStatusControl } from "@/components/submission-status-control";
-import { Badge, Button, ButtonLink, CARD, Eyebrow, STACK, SectionHead, cx } from "@/components/ui";
+import { Badge, Button, ButtonLink, CARD, cx, Eyebrow, ROW_MAIN, SectionHead, STACK } from "@/components/ui";
 import { removeRole, toggleRoleClosed } from "@/lib/actions";
 import { listActivity } from "@/lib/activity";
 import { currentUser, requireUser } from "@/lib/auth";
@@ -94,7 +94,7 @@ export default async function RoleSubmissionsPage({
       ) : null}
 
       <div className="mt-8 flex flex-wrap items-start justify-between gap-4">
-        <div className="min-w-0 flex-1">
+        <div className={ROW_MAIN}>
           <Eyebrow>{role.production}</Eyebrow>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">{role.title}</h1>
           <p className="mt-2 text-muted">

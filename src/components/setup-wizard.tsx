@@ -3,12 +3,12 @@
 import Link from "next/link";
 import { useActionState, type ReactNode } from "react";
 
-import { acceptAgreement, finishSetup, saveProfile } from "@/lib/auth-actions";
+import { acceptAgreement, saveProfile } from "@/lib/auth-actions";
 import type { SessionUser } from "@/lib/auth";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
 
 import { useErrorFocus } from "./use-error-focus";
-import { Button, ErrorSummary, Field, Input, cx } from "./ui";
+import { ErrorSummary, Field, Input, cx } from "./ui";
 import { SubmitButton } from "./submit-button";
 
 const LABELS = { name: "Your name", company: "Company or agency" };
@@ -77,8 +77,23 @@ export function AgreementStep({ nextStep, children }: { nextStep: number; childr
   );
 }
 
-/** Step one. Also where a Google sign-up gets a real company name for the first time. */
-export function ProfileStep({ user, nextStep }: { user: SessionUser; nextStep: number }) {
+/**
+ * The last thing setup asks, and where a Google sign-up gets a real company
+ * name for the first time. Saving it finishes setup.
+ */
+export function ProfileStep({
+  user,
+  nextStep,
+  done,
+}: {
+  user: SessionUser;
+  nextStep: number;
+  /**
+   * When given, this is the last step: saving marks setup finished and goes
+   * here, rather than on to another screen whose only control is Continue.
+   */
+  done?: { to: string; label: string };
+}) {
   const [state, formAction, pending] = useActionState(saveProfile, IDLE_FORM_STATE);
   const { errors, values } = state;
   const formRef = useErrorFocus(state.status, errors);
@@ -86,6 +101,7 @@ export function ProfileStep({ user, nextStep }: { user: SessionUser; nextStep: n
   return (
     <form ref={formRef} action={formAction} className="flex flex-col gap-4">
       <input type="hidden" name="nextStep" value={nextStep} />
+      {done ? <input type="hidden" name="to" value={done.to} /> : null}
       {state.status === "error" ? <ErrorSummary errors={errors} labels={LABELS} /> : null}
 
       <Field label="Your name" htmlFor="name" error={errors.name}>
@@ -112,23 +128,19 @@ export function ProfileStep({ user, nextStep }: { user: SessionUser; nextStep: n
         />
       </Field>
 
-      <div className="mt-2">
+      <div className="mt-2 flex flex-wrap items-center gap-3">
         <SubmitButton disabled={pending}>
-          {pending ? "Saving…" : "Save and continue"}
+          {pending ? "Saving…" : (done?.label ?? "Save and continue")}
         </SubmitButton>
+        {done ? (
+          <Link
+            href="/dashboard"
+            className="text-sm text-muted underline-offset-4 hover:text-text hover:underline"
+          >
+            Skip to the dashboard
+          </Link>
+        ) : null}
       </div>
-    </form>
-  );
-}
-
-export function FinishStep({ to, label }: { to: string; label: string }) {
-  return (
-    <form action={finishSetup} className="flex flex-wrap items-center gap-3">
-      <input type="hidden" name="to" value={to} />
-      <Button type="submit">{label}</Button>
-      <Link href="/dashboard" className="text-sm text-muted underline-offset-4 hover:text-text hover:underline">
-        Skip to the dashboard
-      </Link>
     </form>
   );
 }

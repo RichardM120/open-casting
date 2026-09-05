@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 
-import { AgreementStep, FinishStep, ProfileStep, StepIndicator } from "@/components/setup-wizard";
+import { AgreementStep, ProfileStep, StepIndicator } from "@/components/setup-wizard";
 import { LegalScroller } from "@/components/legal-document";
 import { MSA } from "@/content/legal";
 import { hasAccepted } from "@/lib/agreements";
-import { ButtonLink, CARD, Eyebrow, STACK, SectionHead, cx } from "@/components/ui";
+import { CARD, Eyebrow, STACK, SectionHead, cx } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { ROLE_LABELS, type UserRole } from "@/lib/types";
 
@@ -55,7 +55,11 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
   // The administrator is the service provider, not a customer of it, so there is
   // no agreement for them to accept. Everyone else starts there.
   const needsAgreement = user.role !== "admin" && !(await hasAccepted(user.id, MSA));
-  const total = user.role === "admin" ? 3 : 4;
+  // Two steps for a customer, one for the administrator. What used to be two
+  // more — a list of what the role lets you do, and a page pointing at the
+  // guide — were screens whose only control was Continue. What they said is
+  // beside the form now, and in the guide, which is linked from every page.
+  const total = user.role === "admin" ? 1 : 2;
   const offset = user.role === "admin" ? 0 : 1;
 
   const asked = Math.min(total, Math.max(1, Number(Array.isArray(raw) ? raw[0] : raw) || 1));
@@ -66,13 +70,7 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
     <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-16">
       <Eyebrow>Setting up</Eyebrow>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
-        {needsAgreement
-          ? `Welcome, ${user.name.split(" ")[0]}`
-          : step === offset + 1
-            ? `Welcome, ${user.name.split(" ")[0]}`
-            : step === offset + 2
-              ? guide.heading
-              : "One last thing"}
+        Welcome, {user.name.split(" ")[0]}
       </h1>
       <p className="mt-3 text-muted">
         You are set up as a{" "}
@@ -82,9 +80,11 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
           : ""}
       </p>
 
-      <div className="mt-8">
-        <StepIndicator step={step} total={total} />
-      </div>
+      {total > 1 ? (
+        <div className="mt-8">
+          <StepIndicator step={step} total={total} />
+        </div>
+      ) : null}
 
       <div className={cx(CARD, STACK)}>
         {needsAgreement ? (
@@ -101,63 +101,48 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
           </>
         ) : null}
 
-        {!needsAgreement && step === offset + 1 ? (
+        {!needsAgreement ? (
           <>
             <SectionHead
               title="Check your details"
               line="These appear on the roles you post, so applicants know who is casting."
             />
             <div className="mt-5">
-              <ProfileStep user={user} nextStep={offset + 2} />
-            </div>
-          </>
-        ) : null}
-
-        {!needsAgreement && step === offset + 2 ? (
-          <>
-            <SectionHead title="What that means" line="What your role lets you see and do." />
-            <ul className="mt-5 flex flex-col gap-3">
-              {guide.points.map((point) => (
-                <li key={point} className="flex gap-3 text-sm leading-relaxed text-muted">
-                  <span aria-hidden="true" className="mt-2 size-1.5 shrink-0 rounded-full bg-accent" />
-                  {point}
-                </li>
-              ))}
-            </ul>
-            <div className="mt-7 flex flex-wrap gap-3">
-              <ButtonLink href={`/welcome?step=${offset + 3}`}>Continue</ButtonLink>
-              <ButtonLink href={`/welcome?step=${offset + 1}`} variant="ghost" size="sm">
-                Back
-              </ButtonLink>
-            </div>
-          </>
-        ) : null}
-
-        {!needsAgreement && step === offset + 3 ? (
-          <>
-            <SectionHead title="Worth reading first" line="Two things before you start." />
-            <p className="mt-4 text-sm leading-relaxed text-muted">
-              The{" "}
-              <Link
-                href="/faq/casting-directors"
-                className="text-brand underline underline-offset-4 hover:text-brand-hover"
-              >
-                casting director guide
-              </Link>{" "}
-              covers what each field commits you to, including buyout and usage, and how to write
-              terms applicants will actually read.
-            </p>
-            <p className="mt-3 text-sm leading-relaxed text-muted">
-              One thing to know now: submissions carry names, emails and phone numbers. Under UK
-              GDPR you are the controller of that data, so say in your role&rsquo;s terms how long
-              you keep it.
-            </p>
-            <div className="mt-7">
-              <FinishStep to={guide.cta.href} label={guide.cta.label} />
+              <ProfileStep
+                user={user}
+                nextStep={offset + 1}
+                done={{ to: guide.cta.href, label: guide.cta.label }}
+              />
             </div>
           </>
         ) : null}
       </div>
+
+      {/* What the account can see, said once, next to the form rather than on
+          a screen of its own with nothing on it but Continue. */}
+      {!needsAgreement ? (
+        <div className={cx(CARD, STACK)}>
+          <SectionHead title={guide.heading} line="What your account lets you see and do." />
+          <ul className="mt-5 flex flex-col gap-3">
+            {guide.points.map((point) => (
+              <li key={point} className="flex gap-3 text-sm leading-relaxed text-muted">
+                <span aria-hidden="true" className="mt-2 size-1.5 shrink-0 rounded-full bg-accent" />
+                {point}
+              </li>
+            ))}
+          </ul>
+          <p className="mt-5 text-sm leading-relaxed text-muted">
+            The{" "}
+            <Link
+              href="/faq/casting-directors"
+              className="text-brand underline underline-offset-4 hover:text-brand-hover"
+            >
+              casting director guide
+            </Link>{" "}
+            covers what each field commits you to. It is in the navigation on every page.
+          </p>
+        </div>
+      ) : null}
 
       {user.onboardedAt ? null : (
         <p className="mt-6 text-center text-xs text-faint">

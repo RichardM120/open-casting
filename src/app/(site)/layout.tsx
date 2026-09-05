@@ -1,15 +1,19 @@
 import type { ReactNode } from "react";
 
+import { SectionShell } from "@/components/section-shell";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { currentUser } from "@/lib/auth";
 
-/** Everything but the applicant's pages: the header, the page, the footer. */
+/**
+ * Everything but the applicant's pages: the header, the page, the footer, in
+ * the palette of whichever section the reader is in.
+ */
 export default async function SiteLayout({ children }: { children: ReactNode }) {
   const user = await currentUser();
 
   return (
-    <>
+    <SectionShell>
       {/* Lets a keyboard past the header, which otherwise has to be tabbed
           through on every page. Visible only once focused. */}
       <a
@@ -24,6 +28,6 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
       </main>
       {/* Signed in, a phone has a tab bar along the bottom; the footer keeps clear of it. */}
       <SiteFooter user={user} padForTabs={user !== null} />
-    </>
+    </SectionShell>
   );
 }

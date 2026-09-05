@@ -4,7 +4,7 @@ import { HelpNote } from "@/components/help-note";
 import { notFound } from "next/navigation";
 
 import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
-import { Badge, Button, ButtonLink, CARD_GROUP, Eyebrow, STACK, SectionHead, cx } from "@/components/ui";
+import { Badge, Button, ButtonLink, CARD_GROUP, cx, Eyebrow, ROW_MAIN, SectionHead, STACK } from "@/components/ui";
 import { toggleAccountSuspended } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
 import { ROLE_LABELS, TIERS, type Tier } from "@/lib/types";
@@ -74,9 +74,10 @@ export default async function AccountsPage({ searchParams }: PageProps<"/admin/a
               className="rounded-xl border border-line bg-surface p-4 sm:p-5"
             >
               <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
-              <div className="min-w-0 flex-1">
+              <div className={ROW_MAIN}>
                 <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-                  <p className="truncate font-medium">{account.name}</p>
+                  {/* A name is wrapped, never cut: "ric…" names nobody. */}
+                  <p className="min-w-0 font-medium wrap-anywhere">{account.name}</p>
                   <Badge tone={account.role === "admin" ? "accent" : "outline"}>
                     {ROLE_LABELS[account.role]}
                   </Badge>

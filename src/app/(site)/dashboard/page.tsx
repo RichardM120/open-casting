@@ -3,7 +3,7 @@ import Link from "next/link";
 import { HelpNote } from "@/components/help-note";
 
 import { ActivityList } from "@/components/activity-list";
-import { Badge, ButtonLink, CARD_GROUP, Eyebrow, STACK, SectionHead, cx } from "@/components/ui";
+import { Badge, ButtonLink, CARD_GROUP, cx, Eyebrow, ROW_MAIN, SectionHead, STACK } from "@/components/ui";
 import { listActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
 import { formatDateTime, isOpen } from "@/lib/format";
@@ -58,6 +58,18 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
     .sort((a, b) => a.state.rank - b.state.rank);
   const atLimit = user.maxSessions !== null && sessions.length >= user.maxSessions;
 
+  // What actually wants the director today, said in one line above the list.
+  // The states and the counts are already worked out; this only reads them,
+  // in the order they matter: a deadline passing, then unread submissions,
+  // then a draft that never went live.
+  const closing = ordered.filter((entry) => entry.state.key === "closing").length;
+  const toRead = totals.toRead;
+  const needs = [
+    closing > 0 && `${closing} ${closing === 1 ? "call is" : "calls are"} counting down to deletion`,
+    toRead > 0 && `${toRead} ${toRead === 1 ? "submission is" : "submissions are"} unread`,
+    drafts > 0 && `${drafts} ${drafts === 1 ? "call is" : "calls are"} still a draft`,
+  ].filter((line): line is string => typeof line === "string");
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
       <HelpNote title="What this screen is for" faq="/faq/casting-directors">
@@ -95,7 +107,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
       ) : null}
 
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <div className="min-w-0 flex-1">
+        <div className={ROW_MAIN}>
           <Eyebrow>Casting calls</Eyebrow>
           <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
             Your casting calls
@@ -110,6 +122,16 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         </div>
         {atLimit ? null : <ButtonLink href="/dashboard/sessions/new">New casting call</ButtonLink>}
       </div>
+
+      {needs.length > 0 ? (
+        <p
+          role="status"
+          className="mt-6 rounded-2xl border border-accent/40 bg-accent-soft px-4 py-3 text-sm text-text"
+        >
+          <strong className="font-semibold">Needs you:</strong>{" "}
+          {needs.join(", ").replace(/,([^,]*)$/, " and$1")}.
+        </p>
+      ) : null}
 
       <section className={cx(CARD_GROUP, STACK)} aria-labelledby="calls-heading">
         <SectionHead
@@ -147,7 +169,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                   className={`relative rounded-xl border border-line p-4 transition-colors hover:border-accent sm:p-5 ${cardTone(state)}`}
                 >
                   <div className="flex flex-wrap items-start justify-between gap-x-6 gap-y-3">
-                    <div className="min-w-0 flex-1">
+                    <div className={ROW_MAIN}>
                       <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                         <Link
                           href={`/dashboard/sessions/${session.id}`}

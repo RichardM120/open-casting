@@ -116,3 +116,13 @@ export function adminTrail(
   }
   return [...trail, ...deeper];
 }
+
+/**
+ * Whether a path is inside the administrator's section. The header and the
+ * shell around it both need to know — one to swap the navigation, the other
+ * to swap the palette — and a section that disagreed with itself about where
+ * it starts would show one section's colours around the other's links.
+ */
+export function isAdminPath(pathname: string): boolean {
+  return pathname === "/admin" || pathname.startsWith("/admin/");
+}

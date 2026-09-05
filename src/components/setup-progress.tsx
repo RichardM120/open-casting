@@ -101,10 +101,13 @@ export function SetupProgress({
       </ol>
 
       <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        {/* The bar above already names the step and marks where you are, so
+            this says the one thing it cannot: what this step is for. On a
+            phone the bar's names are read out rather than shown, so the
+            step's own name comes back there. */}
         <p className="min-w-0 text-sm text-muted">
-          Step {stage} of {SETUP_STEPS.length} ·{" "}
-          <strong className="font-semibold text-text">{current.label}</strong>
-          <span className="hidden sm:inline"> · {current.point}</span>
+          <strong className="font-semibold text-text sm:hidden">{current.label}: </strong>
+          {current.point}
         </p>
         {next ? (
           nextHref ? (

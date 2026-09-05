@@ -198,6 +198,10 @@ check(
 section("12 the date picker asks before it commits");
 {
   await dir.p.goto(`${BASE}/dashboard/sessions/new`, { waitUntil: "networkidle" });
+  // A new call opens with a suggested window already in it, so what this
+  // proves is that the picker leaves the field alone, not that it is empty.
+  const before = await dir.p.inputValue("#opensAt");
+  check("a new casting call comes with a window already suggested", /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(before), before);
   const opener = dir.p.getByRole("button", { name: "Pick a date and time for Submissions open" });
   await opener.click();
   const dialog = dir.p.getByRole("dialog", { name: "Pick a date and time for Submissions open" });
@@ -205,7 +209,7 @@ section("12 the date picker asks before it commits");
   await dialog.getByRole("button", { name: /\b15 \w+ \d{4}$/ }).click();
   await dir.p.selectOption("#opensAt-hour", "10");
   await dir.p.selectOption("#opensAt-minute", "30");
-  check("nothing reaches the field before Confirm", (await dir.p.inputValue("#opensAt")) === "");
+  check("nothing reaches the field before Confirm", (await dir.p.inputValue("#opensAt")) === before);
   await dialog.getByRole("button", { name: "Confirm" }).click();
   const picked = await dir.p.inputValue("#opensAt");
   check("Confirm commits the day and the time", /^\d{4}-\d{2}-15T10:30$/.test(picked), picked);

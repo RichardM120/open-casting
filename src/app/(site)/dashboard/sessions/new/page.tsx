@@ -6,6 +6,7 @@ import { SessionForm } from "@/components/session-form";
 import { Eyebrow } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { uploadsEnabled } from "@/lib/blob";
+import { suggestedWindow } from "@/lib/format";
 import { Breadcrumb } from "@/components/breadcrumb";
 
 export const metadata: Metadata = {
@@ -38,7 +39,7 @@ export default async function NewSessionPage() {
       </div>
 
       <div className="mt-10">
-        <SessionForm uploads={uploadsEnabled()} userId={user.id} />
+        <SessionForm uploads={uploadsEnabled()} userId={user.id} suggested={suggestedWindow()} />
       </div>
     </div>
   );

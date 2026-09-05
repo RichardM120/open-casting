@@ -121,6 +121,21 @@ export const CARD_GROUP =
  */
 export const STACK = "mt-6 sm:mt-8";
 
+/**
+ * The identity column of a row that wraps: a name, the badges that say what it
+ * is, and a line under them, with counts or a button beside it.
+ *
+ * `min-w-0 flex-1` on its own is `flex-basis: 0`, which lets this column
+ * shrink to nothing rather than push what sits beside it onto the next line.
+ * On a phone that truncated names to three letters and painted badges over
+ * the text next to them. So it takes the whole row below `sm`, and from there
+ * asks for 256px before anything may share it — under that, the rest wraps.
+ *
+ * Only for a row that wraps. A row that is a photo beside its text is not
+ * this: there, shrinking is the point.
+ */
+export const ROW_MAIN = "min-w-0 flex-1 basis-full sm:basis-64";
+
 export function Card({
   children,
   className,
@@ -185,12 +200,18 @@ export function SectionHead({
     // hanging off the bottom of a wrapped heading reads as an accident:
     // below `sm` everything is aligned to the left edge instead.
     <div
+      data-head=""
       className={cx(
         "flex flex-wrap items-start justify-between gap-x-6 gap-y-3 sm:items-end",
         className,
       )}
     >
-      <div className="min-w-0 flex-1">
+      {/* `flex-1` alone lets this column shrink to nothing rather than push
+          the aside onto the next line, which on a phone squeezed a heading
+          into one word per line beside a row of tabs. It takes the whole row
+          below `sm`, and from there asks for 256px before the aside may
+          share it — under that the aside wraps, as the comment above says. */}
+      <div data-head-main="" className="min-w-0 flex-1 basis-full sm:basis-64">
         <div className="flex flex-wrap items-center gap-3">
           {/* 24px is a lot of a 288px card. It steps down to 20 on a phone,
               which still reads as the heading of the section it opens. */}
