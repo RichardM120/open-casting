@@ -1,11 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { HelpNote } from "@/components/help-note";
+import { AdminAlertBar } from "@/components/admin-alert-bar";
 import { notFound } from "next/navigation";
 
 import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
 import { Badge, Button, ButtonLink, CARD_GROUP, cx, Eyebrow, ROW_MAIN, SectionHead, STACK } from "@/components/ui";
 import { toggleAccountSuspended } from "@/lib/actions";
+import { adminAlerts, alertsFor } from "@/lib/admin-alerts";
 import { requireUser } from "@/lib/auth";
 import { ROLE_LABELS, TIERS, type Tier } from "@/lib/types";
 import { countAccounts, countSuspendedAccounts, listAccounts } from "@/lib/users";
@@ -19,6 +20,7 @@ export const metadata: Metadata = { title: "Accounts" };
 
 export default async function AccountsPage({ searchParams }: PageProps<"/admin/accounts">) {
   const user = await requireUser("/admin/accounts");
+  const alerts = await adminAlerts(user);
 
   // A 404 rather than a message: a non-admin should not learn this page exists.
   if (user.role !== "admin") notFound();
@@ -40,11 +42,8 @@ export default async function AccountsPage({ searchParams }: PageProps<"/admin/a
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={adminTrail("/admin/accounts")} />
-      <AdminTabs pathname="/admin/accounts" />
-      <HelpNote title="What this screen is for">
-        <p dangerouslySetInnerHTML={{ __html: 'Every account here belongs to a client and inherits its plan. Set one up with New account, which asks for the person and what their client is invoiced.' }} />
-        <p dangerouslySetInnerHTML={{ __html: 'A director sees only the casting calls they open. A producer sees every call under their client.' }} />
-      </HelpNote>
+      <AdminTabs pathname="/admin/accounts" alerts={alerts} />
+      <AdminAlertBar alerts={alertsFor(alerts, "/admin/accounts")} scope="accounts" />
 
       <div className="mt-6 flex flex-wrap items-end justify-between gap-4">
         <div>

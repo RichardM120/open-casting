@@ -3,6 +3,7 @@ import type { ReactNode } from "react";
 import { SectionShell } from "@/components/section-shell";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
+import { adminAlerts } from "@/lib/admin-alerts";
 import { currentUser } from "@/lib/auth";
 
 /**
@@ -11,6 +12,10 @@ import { currentUser } from "@/lib/auth";
  */
 export default async function SiteLayout({ children }: { children: ReactNode }) {
   const user = await currentUser();
+  // What is waiting behind the administrator's groups, for the dots on the
+  // bar. Only for an administrator, and only counts — a director has no admin
+  // section for it to describe, and there is one administrator, not a crowd.
+  const alerts = user?.role === "admin" ? await adminAlerts(user) : null;
 
   return (
     <SectionShell>
@@ -22,7 +27,10 @@ export default async function SiteLayout({ children }: { children: ReactNode }) 
       >
         Skip to content
       </a>
-      <SiteHeader user={user} />
+      <SiteHeader
+        user={user}
+        alerts={alerts ? Object.fromEntries(alerts.groups) : null}
+      />
       <main id="main" className="flex-1">
         {children}
       </main>

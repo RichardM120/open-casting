@@ -11,12 +11,26 @@
  * the client-side header can read it too.
  */
 
+/** The nine marks in `admin-icons.tsx`, one per page in the section. */
+export type AdminIconName =
+  | "clients"
+  | "accounts"
+  | "projects"
+  | "submissions"
+  | "storage"
+  | "privacy"
+  | "notifications"
+  | "activity"
+  | "audit";
+
 export type AdminPage = {
   href: string;
   /** As it reads in the tab row and at the end of a breadcrumb. */
   label: string;
   /** One line saying what the page is for, under the group's heading. */
   line: string;
+  /** Which mark leads its tile on the summary. */
+  icon: AdminIconName;
 };
 
 export type AdminGroup = {
@@ -41,8 +55,8 @@ export const ADMIN_GROUPS: AdminGroup[] = [
     label: "Clients",
     icon: "clients",
     pages: [
-      { href: "/admin/clients", label: "Clients", line: "The companies paying, and what each is on." },
-      { href: "/admin/accounts", label: "Accounts", line: "Who signs in, under which client." },
+      { href: "/admin/clients", label: "Clients", line: "The companies paying, and what each is on.", icon: "clients" },
+      { href: "/admin/accounts", label: "Accounts", line: "Who signs in, under which client.", icon: "accounts" },
     ],
   },
   {
@@ -50,8 +64,8 @@ export const ADMIN_GROUPS: AdminGroup[] = [
     label: "Casting",
     icon: "projects",
     pages: [
-      { href: "/admin/projects", label: "Projects", line: "Every casting call on the site, and what state it is in." },
-      { href: "/admin/submissions", label: "Submissions", line: "Everything that has come in, and the media with it." },
+      { href: "/admin/projects", label: "Projects", line: "Every casting call on the site, and what state it is in.", icon: "projects" },
+      { href: "/admin/submissions", label: "Submissions", line: "Everything that has come in, and the media with it.", icon: "submissions" },
     ],
   },
   {
@@ -59,11 +73,11 @@ export const ADMIN_GROUPS: AdminGroup[] = [
     label: "System",
     icon: "system",
     pages: [
-      { href: "/admin/storage", label: "Storage", line: "What is held, and what is due to be deleted." },
-      { href: "/admin/privacy", label: "Privacy", line: "Requests about somebody's own data, and erasure." },
-      { href: "/admin/notifications", label: "Notifications", line: "What the app sends, and what became of it." },
-      { href: "/admin/activity", label: "Activity", line: "What has happened, as the people doing it see it." },
-      { href: "/admin/audit-logs", label: "Audit log", line: "The same record with the address and the target." },
+      { href: "/admin/storage", label: "Storage", line: "What is held, and what is due to be deleted.", icon: "storage" },
+      { href: "/admin/privacy", label: "Privacy", line: "Requests about somebody's own data, and erasure.", icon: "privacy" },
+      { href: "/admin/notifications", label: "Notifications", line: "What the app sends, and what became of it.", icon: "notifications" },
+      { href: "/admin/activity", label: "Activity", line: "What has happened, as the people doing it see it.", icon: "activity" },
+      { href: "/admin/audit-logs", label: "Audit log", line: "The same record with the address and the target.", icon: "audit" },
     ],
   },
 ];

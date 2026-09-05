@@ -140,6 +140,43 @@ export async function retentionSchedule(): Promise<{ due: Retention[]; purged: R
   return { due, purged };
 }
 
+/**
+ * The retention schedule as three numbers rather than a list: how many calls
+ * still hold applicants' details, how many are past the date those details
+ * were promised to go, and how many go within the week.
+ *
+ * The same arithmetic as `retentionSchedule`, done in the database, because
+ * the summary and the navigation want it on every page view and the rows
+ * themselves belong only on the page that acts on them.
+ */
+export async function retentionCounts(): Promise<{
+  held: number;
+  overdue: number;
+  withinAWeek: number;
+}> {
+  const [row] = await query<{ held: string; overdue: string; soon: string }>(
+    `SELECT count(*)::text AS held,
+            count(*) FILTER (
+              WHERE s.production_ends_at
+                    + make_interval(days => coalesce(s.retention_days, ${RETENTION_DAYS}))
+                    < (now() AT TIME ZONE 'utc')::date
+            )::text AS overdue,
+            count(*) FILTER (
+              WHERE s.production_ends_at
+                    + make_interval(days => coalesce(s.retention_days, ${RETENTION_DAYS}))
+                    BETWEEN (now() AT TIME ZONE 'utc')::date
+                        AND (now() AT TIME ZONE 'utc')::date + 7
+            )::text AS soon
+       FROM sessions_casting s
+      WHERE s.production_ends_at IS NOT NULL AND s.purged_at IS NULL`,
+  );
+  return {
+    held: Number(row?.held ?? 0),
+    overdue: Number(row?.overdue ?? 0),
+    withinAWeek: Number(row?.soon ?? 0),
+  };
+}
+
 /** What one run of the nightly sweep did. */
 export type Sweep = {
   ranAt: string;

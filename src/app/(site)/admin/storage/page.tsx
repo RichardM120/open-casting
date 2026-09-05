@@ -5,8 +5,9 @@ import { notFound } from "next/navigation";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { AdminTabs } from "@/components/admin-tabs";
 import { adminTrail } from "@/lib/admin-nav";
-import { HelpNote } from "@/components/help-note";
+import { AdminAlertBar } from "@/components/admin-alert-bar";
 import { Badge, CARD, CARD_GROUP, Eyebrow, STACK, SectionHead, cx } from "@/components/ui";
+import { adminAlerts, alertsFor } from "@/lib/admin-alerts";
 import { requireUser } from "@/lib/auth";
 import { countOrphanedMedia, describeStore, storeUsage, uploadsEnabled } from "@/lib/blob";
 import { clientUsage, listClients } from "@/lib/clients";
@@ -50,6 +51,7 @@ const NAMED: Record<string, string> = {
  */
 export default async function StoragePage() {
   const user = await requireUser("/admin/storage");
+  const alerts = await adminAlerts(user);
   if (user.role !== "admin") notFound();
 
   const [store, database, counts, schedule, sweeps, clients, usage] = await Promise.all([
@@ -110,21 +112,8 @@ export default async function StoragePage() {
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={adminTrail("/admin/storage")} />
-      <AdminTabs pathname="/admin/storage" />
-      <HelpNote title="What this screen is for">
-        <p
-          dangerouslySetInnerHTML={{
-            __html:
-              'What the site is holding, in files and in the database, and the day each casting call&rsquo;s applicants&rsquo; details are destroyed.',
-          }}
-        />
-        <p
-          dangerouslySetInnerHTML={{
-            __html:
-              'The nightly sweep does the deleting. If it stops, this page says so: everything else here is a number, and that one is a fault.',
-          }}
-        />
-      </HelpNote>
+      <AdminTabs pathname="/admin/storage" alerts={alerts} />
+      <AdminAlertBar alerts={alertsFor(alerts, "/admin/storage")} scope="what is stored" />
 
       <div className="mt-6">
         <Eyebrow>Admin</Eyebrow>

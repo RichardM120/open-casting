@@ -5,11 +5,12 @@ import { notFound } from "next/navigation";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { AdminTabs } from "@/components/admin-tabs";
 import { adminTrail } from "@/lib/admin-nav";
-import { HelpNote } from "@/components/help-note";
+import { AdminAlertBar } from "@/components/admin-alert-bar";
 import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
 import { ProfilePhoto } from "@/components/profile-photo";
 import { Badge, Button, CARD_GROUP, Eyebrow, Field, Input, STACK, SectionHead, cx } from "@/components/ui";
 import { removeSubmission, setSubmissionMediaFlagged } from "@/lib/actions";
+import { adminAlerts, alertsFor } from "@/lib/admin-alerts";
 import { requireUser } from "@/lib/auth";
 import { formatDateTime, formatRelative } from "@/lib/format";
 import { mediaSrc } from "@/lib/media";
@@ -42,6 +43,7 @@ export default async function AdminSubmissionsPage({
   searchParams,
 }: PageProps<"/admin/submissions">) {
   const user = await requireUser("/admin/submissions");
+  const alerts = await adminAlerts(user);
   if (user.role !== "admin") notFound();
 
   const query = await searchParams;
@@ -110,21 +112,8 @@ export default async function AdminSubmissionsPage({
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={adminTrail("/admin/submissions")} />
-      <AdminTabs pathname="/admin/submissions" />
-      <HelpNote title="What this screen is for">
-        <p
-          dangerouslySetInnerHTML={{
-            __html:
-              'Every submission on the site, newest first. Open one to see the photo and the tapes, the applicant&rsquo;s details, and their guardian&rsquo;s where they are under 18.',
-          }}
-        />
-        <p
-          dangerouslySetInnerHTML={{
-            __html:
-              'Holding a photo or tape back stops the casting team fetching it. Nothing is moved or deleted, so clearing the flag puts it back.',
-          }}
-        />
-      </HelpNote>
+      <AdminTabs pathname="/admin/submissions" alerts={alerts} />
+      <AdminAlertBar alerts={alertsFor(alerts, "/admin/submissions")} scope="submissions" />
 
       {query.done ? (
         <p

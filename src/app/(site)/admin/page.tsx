@@ -1,16 +1,17 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { HelpNote } from "@/components/help-note";
 
 import { ActivityList } from "@/components/activity-list";
+import { AdminAlertBar } from "@/components/admin-alert-bar";
+import { AdminIcon } from "@/components/admin-icons";
+import { AlertDot } from "@/components/alert-dot";
 import { Button, ButtonLink, CARD, CARD_GROUP, Eyebrow, STACK, SectionHead, cx } from "@/components/ui";
 import { testFileStore } from "@/lib/actions";
 import { ADMIN_GROUPS } from "@/lib/admin-nav";
+import { adminAlerts } from "@/lib/admin-alerts";
 import { listActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
 import { describeStore, uploadsEnabled } from "@/lib/blob";
-import { clientUsage, listClients } from "@/lib/clients";
-import { listAccounts } from "@/lib/users";
 
 export const dynamic = "force-dynamic";
 
@@ -19,37 +20,30 @@ export const metadata: Metadata = {
   description: "The clients paying for Open Casting, the accounts under them, and the trail.",
 };
 
-/** Where the owner starts: the state of the service, rather than one casting. */
+/**
+ * Where the owner starts.
+ *
+ * Two questions, in that order. Is there anything for me to do — answered by
+ * the bar at the top before anything is opened, which is why it stands where
+ * the "what this screen is for" note used to. And, if not, how is the service
+ * doing — answered by a tile per page, each led by its own mark, carrying the
+ * one figure that page is worth opening for and a dot when something behind
+ * it is waiting. Nine screens, read at a glance, without opening any of them.
+ */
 export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
   const user = await requireUser("/admin");
-  const [clients, usage, accounts, activity, query] = await Promise.all([
-    listClients(),
-    clientUsage(),
-    listAccounts(),
+  const [alerts, activity, query] = await Promise.all([
+    adminAlerts(user),
     listActivity(user, { limit: 8 }),
     searchParams,
   ]);
   const store = uploadsEnabled();
   const why = typeof query.why === "string" ? query.why : "";
 
-  const totals = clients.reduce(
-    (running, client) => {
-      const used = usage.get(client.id);
-      return {
-        live: running.live + (client.suspendedAt === null ? 1 : 0),
-        productions: running.productions + (used?.productions ?? 0),
-        submissions: running.submissions + (used?.submissions ?? 0),
-      };
-    },
-    { live: 0, productions: 0, submissions: 0 },
-  );
-
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
-      <HelpNote title="What this screen is for">
-        <p dangerouslySetInnerHTML={{ __html: 'The service as a whole: who is paying, what they are using, and what has happened. Your own casting work lives in the casting director section.' }} />
-        <p dangerouslySetInnerHTML={{ __html: 'The file store card says whether applicants can attach photos and videos, and can prove the store works from this deployment.' }} />
-      </HelpNote>
+      <AdminAlertBar alerts={alerts.all} scope="the service" />
+
       <div className="mt-6">
         <Eyebrow>Admin</Eyebrow>
         <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
@@ -65,32 +59,74 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
         </p>
       </div>
 
-      <section className={cx(CARD, STACK)} aria-labelledby="service-heading">
-        <SectionHead
-          id="service-heading"
-          title="The service"
-          line="Clients, the accounts under them, and what has come through."
-          aside={
-            <>
-              <ButtonLink href="/admin/clients" size="sm">
-                Clients
-              </ButtonLink>
-              <ButtonLink href="/admin/projects" variant="secondary" size="sm">
-                Casting
-              </ButtonLink>
-              <ButtonLink href="/admin/storage" variant="secondary" size="sm">
-                System
-              </ButtonLink>
-            </>
-          }
-        />
-        <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
-          <Stat label="Clients" value={`${totals.live} of ${clients.length} active`} />
-          <Stat label="Accounts" value={accounts.length} />
-          <Stat label="Casting calls" value={totals.productions} />
-          <Stat label="Submissions" value={totals.submissions} />
-        </dl>
-      </section>
+      {/* Every page in the section as a tile, in the order of the bar above,
+          so the two agree about where things are. */}
+      {ADMIN_GROUPS.filter((group) => group.pages.length > 0).map((group) => (
+        <section
+          key={group.href}
+          className={cx(CARD_GROUP, STACK)}
+          aria-labelledby={`group-${group.label.toLowerCase()}`}
+        >
+          <SectionHead
+            id={`group-${group.label.toLowerCase()}`}
+            title={group.label}
+            line={group.pages.map((page) => page.label).join(" · ")}
+          />
+          <ul className="mt-5 grid gap-3 sm:grid-cols-2">
+            {group.pages.map((page) => {
+              const insight = alerts.pages.get(page.href);
+              return (
+                <li key={page.href}>
+                  <Link
+                    href={page.href}
+                    data-tile={page.href}
+                    className={cx(
+                      "group flex h-full items-start gap-4 rounded-xl border bg-surface p-4 transition-colors sm:p-5",
+                      insight?.urgency === "now"
+                        ? "border-danger/50 hover:border-danger"
+                        : insight?.urgency === "soon"
+                          ? "border-amber/50 hover:border-amber"
+                          : "border-line hover:border-accent",
+                    )}
+                  >
+                    <span
+                      className={cx(
+                        "relative inline-flex size-11 shrink-0 items-center justify-center rounded-full transition-colors",
+                        insight?.urgency === "now"
+                          ? "bg-danger-soft text-danger"
+                          : insight?.urgency === "soon"
+                            ? "bg-amber-soft text-amber"
+                            : "bg-accent-soft text-brand",
+                      )}
+                    >
+                      <AdminIcon name={page.icon} className="size-5" />
+                      {insight?.urgency ? (
+                        <AlertDot
+                          on="corner"
+                          count={insight.alerts}
+                          urgency={insight.urgency}
+                          label={`${insight.alerts} waiting on ${page.label}`}
+                        />
+                      ) : null}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block font-semibold tracking-tight transition-colors group-hover:text-brand">
+                        {page.label}
+                      </span>
+                      <span className="mt-0.5 block text-sm font-medium text-text">
+                        {insight?.figure ?? ""}
+                      </span>
+                      <span className="mt-1 block text-sm leading-relaxed text-muted">
+                        {page.line}
+                      </span>
+                    </span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      ))}
 
       <section className={cx(CARD, STACK)} aria-labelledby="store-heading">
         <SectionHead
@@ -138,39 +174,6 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
         ) : null}
       </section>
 
-      {/* Every page in the section, said in one line each. The bar above holds
-          four groups; this is where to find what is inside one without going
-          looking for it. */}
-      <section className={cx(CARD_GROUP, STACK)} aria-labelledby="everything-heading">
-        <SectionHead
-          id="everything-heading"
-          title="Everything here"
-          line="Four groups. Each page says what it is for."
-        />
-        <div className="mt-5 grid gap-4 sm:grid-cols-2">
-          {ADMIN_GROUPS.filter((group) => group.pages.length > 0).map((group) => (
-            <div key={group.href} className="rounded-xl border border-line bg-surface p-4">
-              <h3 className="text-sm font-semibold tracking-tight">{group.label}</h3>
-              <ul className="mt-3 flex flex-col gap-2">
-                {group.pages.map((page) => (
-                  <li key={page.href}>
-                    {/* The line under the name is part of the link, so the
-                        target is the whole entry rather than one word of it. */}
-                    <Link
-                      href={page.href}
-                      className="block rounded-sm py-1 underline-offset-4 hover:underline"
-                    >
-                      <span className="text-sm font-medium text-brand">{page.label}</span>
-                      <span className="block text-xs leading-relaxed text-muted">{page.line}</span>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
-        </div>
-      </section>
-
       <section className={cx(CARD_GROUP, STACK)} aria-labelledby="latest-heading">
         <SectionHead
           id="latest-heading"
@@ -189,15 +192,6 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
           />
         </div>
       </section>
-    </div>
-  );
-}
-
-function Stat({ label, value }: { label: string; value: number | string }) {
-  return (
-    <div className="rounded-xl border border-line bg-surface p-4">
-      <dt className="text-sm text-muted">{label}</dt>
-      <dd className="mt-1 text-2xl font-semibold tracking-tight">{value}</dd>
     </div>
   );
 }

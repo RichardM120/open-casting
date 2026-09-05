@@ -5,10 +5,11 @@ import { notFound } from "next/navigation";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { AdminTabs } from "@/components/admin-tabs";
 import { adminTrail } from "@/lib/admin-nav";
-import { HelpNote } from "@/components/help-note";
+import { AdminAlertBar } from "@/components/admin-alert-bar";
 import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
 import { Badge, Button, CARD, Eyebrow, Field, Input, STACK, SectionHead, Select, cx } from "@/components/ui";
 import { adminSetCallLimits, adminSetCallState } from "@/lib/actions";
+import { adminAlerts, alertsFor } from "@/lib/admin-alerts";
 import { requireUser } from "@/lib/auth";
 import { listClients } from "@/lib/clients";
 import { formatDateTime, toLocalInput } from "@/lib/format";
@@ -50,6 +51,7 @@ const isDate = (value: unknown): value is string =>
  */
 export default async function ProjectsPage({ searchParams }: PageProps<"/admin/projects">) {
   const user = await requireUser("/admin/projects");
+  const alerts = await adminAlerts(user);
   if (user.role !== "admin") notFound();
 
   const [query, clients] = await Promise.all([searchParams, listClients()]);
@@ -95,21 +97,8 @@ export default async function ProjectsPage({ searchParams }: PageProps<"/admin/p
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={adminTrail("/admin/projects")} />
-      <AdminTabs pathname="/admin/projects" />
-      <HelpNote title="What this screen is for">
-        <p
-          dangerouslySetInnerHTML={{
-            __html:
-              'Every casting call on the site, whoever opened it, with what it has taken against its cap and when it closes.',
-          }}
-        />
-        <p
-          dangerouslySetInnerHTML={{
-            __html:
-              'Pause one that is taking more than its team can read, or set a cap so it stops on its own. Both are recorded in the activity trail against you.',
-          }}
-        />
-      </HelpNote>
+      <AdminTabs pathname="/admin/projects" alerts={alerts} />
+      <AdminAlertBar alerts={alertsFor(alerts, "/admin/projects")} scope="the casting calls" />
 
       {query.changed === "1" ? (
         <p

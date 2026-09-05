@@ -568,31 +568,46 @@ section("20 a director cannot reach the notifications");
 section("21 the admin section is four groups, with tabs inside each");
 {
   const { p } = admin;
+  // A link's own words, without the alert dot's number and the label it
+  // carries for a screen reader: a count is not a destination.
+  const names = (locator) =>
+    locator.evaluateAll((links) =>
+      links.map((link) =>
+        [...link.childNodes]
+          .filter((node) => node.nodeType === 3)
+          .map((node) => node.textContent)
+          .join("")
+          .trim(),
+      ),
+    );
+  const lit = async () =>
+    (await names(p.locator('header nav a[aria-current="page"]')))[0];
+
   await p.goto(`${BASE}/admin`, { waitUntil: "networkidle" });
-  const bar = await p.locator("header nav").first().locator("a").allTextContents();
+  const bar = await names(p.locator("header nav").first().locator("a"));
   check(`the bar holds four groups and the FAQ: ${JSON.stringify(bar)}`, JSON.stringify(bar) === JSON.stringify(["Overview", "Clients", "Casting", "System", "FAQ"]));
-  // Each entry is one link over both its name and the line under it, so the
-  // target is the whole entry and a screen reader hears where it goes and
-  // what it is for in one go.
-  const entry = p.getByRole("link", { name: /^Audit log/ });
+  // One tile per page, each a link over its mark, its name, the figure it is
+  // worth opening for and the line saying what it is: the target is the whole
+  // tile and a screen reader hears all four in one go.
+  const entry = p.locator('a[data-tile="/admin/audit-logs"]');
   check("the overview says what is in each group",
-    (await p.getByRole("heading", { name: "Everything here" }).count()) === 1
-      && (await entry.count()) >= 1
-      && /the address and the target/.test(await entry.first().innerText()));
+    (await p.locator("a[data-tile]").count()) === 9
+      && (await entry.count()) === 1
+      && /the address and the target/.test(await entry.innerText()));
 
   await p.goto(`${BASE}/admin/storage`, { waitUntil: "networkidle" });
-  const tabs = await p.locator('nav[aria-label="System pages"] a').allTextContents();
+  const tabs = await names(p.locator('nav[aria-label="System pages"] a'));
   check(`System carries its five pages as tabs: ${JSON.stringify(tabs)}`, JSON.stringify(tabs) === JSON.stringify(["Storage", "Privacy", "Notifications", "Activity", "Audit log"]));
-  check("the tab you are on is marked", (await p.locator('nav[aria-label="System pages"] [aria-current="page"]').innerText()) === "Storage");
-  check("and the group is lit in the bar", (await p.locator('header nav a[aria-current="page"]').first().innerText()) === "System");
+  check("the tab you are on is marked", (await names(p.locator('nav[aria-label="System pages"] [aria-current="page"]')))[0] === "Storage");
+  check("and the group is lit in the bar", (await lit()) === "System");
 
-  await p.locator('nav[aria-label="System pages"]').getByRole("link", { name: "Privacy" }).click();
+  await p.locator('nav[aria-label="System pages"]').getByRole("link", { name: /^Privacy/ }).click();
   await p.waitForURL(/\/admin\/privacy$/, { timeout: 20000 });
   check("a tab moves between the pages in a group", (await p.getByRole("heading", { name: "Privacy", level: 1 }).count()) === 1);
-  check("with the group still lit", (await p.locator('header nav a[aria-current="page"]').first().innerText()) === "System");
+  check("with the group still lit", (await lit()) === "System");
 
   await p.goto(`${BASE}/admin/accounts`, { waitUntil: "networkidle" });
-  check("Clients carries its two", JSON.stringify(await p.locator('nav[aria-label="Clients pages"] a').allTextContents()) === JSON.stringify(["Clients", "Accounts"]));
+  check("Clients carries its two", JSON.stringify(await names(p.locator('nav[aria-label="Clients pages"] a'))) === JSON.stringify(["Clients", "Accounts"]));
   check("and the breadcrumb names the group and the page", (await p.locator('nav[aria-label="Breadcrumb"]').innerText()).replace(/\s+/g, " ").trim() === "Admin Clients Accounts");
 
   await p.goto(`${BASE}/admin/accounts/new`, { waitUntil: "networkidle" });

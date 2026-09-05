@@ -110,20 +110,33 @@ await admin.p.screenshot({ path: `${SHOTS}/wizard-admin.png`, fullPage: true });
 
 section("6b the two sections each carry their own navigation");
 {
+  // The link's own words, without the alert dot's number and the label it
+  // carries for a screen reader: those are a count, not a destination.
+  const navNames = (page) =>
+    page.locator("header nav").first().locator("a").evaluateAll((links) =>
+      links.map((link) =>
+        [...link.childNodes]
+          .filter((node) => node.nodeType === 3)
+          .map((node) => node.textContent)
+          .join("")
+          .trim(),
+      ),
+    );
+
   // The casting director's section, which an admin is in when doing their own
   // casting: no admin links, because that is a different section.
-  const order = await admin.p.locator("header nav").first().locator("a").allTextContents();
+  const order = await navNames(admin.p);
   check(`casting nav in order: ${JSON.stringify(order)}`,
     JSON.stringify(order) === JSON.stringify(["Casting calls", "Activity", "FAQ", "New casting call"]));
 
   await admin.p.goto(`${BASE}/admin`, { waitUntil: "networkidle" });
-  const adminOrder = await admin.p.locator("header nav").first().locator("a").allTextContents();
+  const adminOrder = await navNames(admin.p);
   check(`admin nav in order: ${JSON.stringify(adminOrder)}`,
     JSON.stringify(adminOrder) === JSON.stringify(["Overview", "Clients", "Casting", "System", "FAQ"]));
   await admin.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 
   await half.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
-  const theirs = await half.p.locator("header nav").first().locator("a").allTextContents();
+  const theirs = await navNames(half.p);
   check(`a producer gets no Accounts: ${JSON.stringify(theirs)}`, !theirs.includes("Accounts"));
   check("and the page itself still refuses",
     (await half.p.goto(`${BASE}/admin/accounts`, { waitUntil: "networkidle" })).status() === 404);

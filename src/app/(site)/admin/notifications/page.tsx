@@ -5,10 +5,11 @@ import { notFound } from "next/navigation";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { AdminTabs } from "@/components/admin-tabs";
 import { adminTrail } from "@/lib/admin-nav";
-import { HelpNote } from "@/components/help-note";
+import { AdminAlertBar } from "@/components/admin-alert-bar";
 import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
 import { Badge, Button, CARD, cx, Eyebrow, Field, Input, SectionHead, Textarea } from "@/components/ui";
 import { saveEmailTemplate } from "@/lib/actions";
+import { adminAlerts, alertsFor } from "@/lib/admin-alerts";
 import { requireUser } from "@/lib/auth";
 import { emailConfigured } from "@/lib/email";
 import { formatDateTime } from "@/lib/format";
@@ -39,6 +40,7 @@ export default async function NotificationsPage({
   searchParams,
 }: PageProps<"/admin/notifications">) {
   const user = await requireUser("/admin/notifications");
+  const alerts = await adminAlerts(user);
   if (user.role !== "admin") notFound();
 
   const query = await searchParams;
@@ -55,21 +57,8 @@ export default async function NotificationsPage({
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={adminTrail("/admin/notifications")} />
-      <AdminTabs pathname="/admin/notifications" />
-      <HelpNote title="What this screen is for">
-        <p
-          dangerouslySetInnerHTML={{
-            __html:
-              'Three emails the app sends on its own: a receipt to the applicant, an update when their status changes, and a warning to the casting team when a call is nearly full.',
-          }}
-        />
-        <p
-          dangerouslySetInnerHTML={{
-            __html:
-              'The wording can be changed here and put back. The log below is every message the app tried to send and whether it got there.',
-          }}
-        />
-      </HelpNote>
+      <AdminTabs pathname="/admin/notifications" alerts={alerts} />
+      <AdminAlertBar alerts={alertsFor(alerts, "/admin/notifications")} scope="notifications" />
 
       {query.done ? (
         <p role="status" className="mt-6 rounded-2xl border border-line bg-positive-soft px-4 py-3 text-sm text-positive">

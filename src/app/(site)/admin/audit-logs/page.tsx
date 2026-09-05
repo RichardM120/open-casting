@@ -5,10 +5,11 @@ import { notFound } from "next/navigation";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { AdminTabs } from "@/components/admin-tabs";
 import { adminTrail } from "@/lib/admin-nav";
-import { HelpNote } from "@/components/help-note";
+import { AdminAlertBar } from "@/components/admin-alert-bar";
 import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
 import { Badge, Button, CARD, Eyebrow, Field, Input, STACK, SectionHead, Select, cx } from "@/components/ui";
 import { ACTIONS, countAudit, listAudit, type Action } from "@/lib/activity";
+import { adminAlerts, alertsFor } from "@/lib/admin-alerts";
 import { requireUser } from "@/lib/auth";
 import { formatDateTime } from "@/lib/format";
 
@@ -33,6 +34,7 @@ const isAction = (value: unknown): value is Action =>
  */
 export default async function AuditLogPage({ searchParams }: PageProps<"/admin/audit-logs">) {
   const user = await requireUser("/admin/audit-logs");
+  const alerts = await adminAlerts(user);
   if (user.role !== "admin") notFound();
 
   const query = await searchParams;
@@ -61,21 +63,8 @@ export default async function AuditLogPage({ searchParams }: PageProps<"/admin/a
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={adminTrail("/admin/audit-logs")} />
-      <AdminTabs pathname="/admin/audit-logs" />
-      <HelpNote title="What this screen is for">
-        <p
-          dangerouslySetInnerHTML={{
-            __html:
-              'Everything anyone did, in the order it happened, with who did it, what they did it to, and the address it came from. Nothing here can be edited or removed.',
-          }}
-        />
-        <p
-          dangerouslySetInnerHTML={{
-            __html:
-              'One box searches it: an email finds that account&rsquo;s actions, an id finds everything done to that thing, and anything else is matched against the words.',
-          }}
-        />
-      </HelpNote>
+      <AdminTabs pathname="/admin/audit-logs" alerts={alerts} />
+      <AdminAlertBar alerts={alertsFor(alerts, "/admin/audit-logs")} scope="the audit log" />
 
       <div className="mt-6">
         <Eyebrow>Admin</Eyebrow>

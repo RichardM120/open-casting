@@ -83,6 +83,24 @@ export async function listRequests({ open = true }: { open?: boolean } = {}): Pr
   return rows.map(toRequest);
 }
 
+/**
+ * How many requests are open, and how many of those are already past the
+ * month the law allows. Counted rather than listed: the summary and the
+ * navigation want the numbers on every page view, and the rows themselves
+ * only on the page that answers them.
+ */
+export async function countOpenRequests(): Promise<{ open: number; late: number }> {
+  const [row] = await query<{ open: string; late: string }>(
+    `SELECT count(*)::text AS open,
+            count(*) FILTER (
+              WHERE requested_at < now() - make_interval(days => ${RESPONSE_DAYS})
+            )::text AS late
+       FROM access_requests
+      WHERE closed_at IS NULL`,
+  );
+  return { open: Number(row?.open ?? 0), late: Number(row?.late ?? 0) };
+}
+
 export async function closeRequest(id: string, by: string): Promise<AccessRequest | null> {
   const rows = await query<Row>(
     `UPDATE access_requests SET closed_at = now(), closed_by = $2

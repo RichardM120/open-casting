@@ -5,9 +5,10 @@ import { notFound } from "next/navigation";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { AdminTabs } from "@/components/admin-tabs";
 import { adminTrail } from "@/lib/admin-nav";
-import { HelpNote } from "@/components/help-note";
+import { AdminAlertBar } from "@/components/admin-alert-bar";
 import { Badge, Button, CARD, CARD_GROUP, cx, Eyebrow, Field, Input, ROW_MAIN, SectionHead, Select, STACK, Textarea } from "@/components/ui";
 import { closeAccessRequest, eraseApplicant, logAccessRequest, runRetentionSweep } from "@/lib/actions";
+import { adminAlerts, alertsFor } from "@/lib/admin-alerts";
 import { requireUser } from "@/lib/auth";
 import { formatDate, formatDateTime, formatRelative } from "@/lib/format";
 import { RETENTION_DAYS, recentSweeps, sweepAge, sweepDryRun } from "@/lib/monitoring";
@@ -32,6 +33,7 @@ export const metadata: Metadata = {
  */
 export default async function PrivacyPage({ searchParams }: PageProps<"/admin/privacy">) {
   const user = await requireUser("/admin/privacy");
+  const alerts = await adminAlerts(user);
   if (user.role !== "admin") notFound();
 
   const query = await searchParams;
@@ -51,21 +53,8 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/admin/pr
   return (
     <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={adminTrail("/admin/privacy")} />
-      <AdminTabs pathname="/admin/privacy" />
-      <HelpNote title="What this screen is for">
-        <p
-          dangerouslySetInnerHTML={{
-            __html:
-              'Somebody may ask what is held about them, and may ask for it to go. Both arrive by email, so they are logged here: there is a month to answer, and a request nobody wrote down is one nobody can show they answered.',
-          }}
-        />
-        <p
-          dangerouslySetInnerHTML={{
-            __html:
-              'Erasing is real and immediate. The casting teams lose the submission too, which is what erasure means.',
-          }}
-        />
-      </HelpNote>
+      <AdminTabs pathname="/admin/privacy" alerts={alerts} />
+      <AdminAlertBar alerts={alertsFor(alerts, "/admin/privacy")} scope="privacy" />
 
       {query.logged ? (
         <Note tone="good">Logged. There are {RESPONSE_DAYS} days to answer it.</Note>

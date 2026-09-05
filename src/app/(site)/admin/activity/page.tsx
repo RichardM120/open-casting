@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { HelpNote } from "@/components/help-note";
+import { AdminAlertBar } from "@/components/admin-alert-bar";
 
 import { ActivityList } from "@/components/activity-list";
 import { CARD_GROUP, Eyebrow, STACK, SectionHead, cx } from "@/components/ui";
 import { countActivity, listActivity } from "@/lib/activity";
 import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
+import { adminAlerts, alertsFor } from "@/lib/admin-alerts";
 import { requireUser } from "@/lib/auth";
 import { Breadcrumb } from "@/components/breadcrumb";
 import { AdminTabs } from "@/components/admin-tabs";
@@ -23,6 +24,7 @@ export default async function AdminActivityPage({
   searchParams,
 }: PageProps<"/admin/activity">) {
   const user = await requireUser("/admin/activity");
+  const alerts = await adminAlerts(user);
   const [query, total] = await Promise.all([searchParams, countActivity(user)]);
 
   // Fifty a page. A trail is only ever added to, so the whole of it would be
@@ -37,10 +39,8 @@ export default async function AdminActivityPage({
   return (
     <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={adminTrail("/admin/activity")} />
-      <AdminTabs pathname="/admin/activity" />
-      <HelpNote title="What this screen is for">
-        <p dangerouslySetInnerHTML={{ __html: 'Everything on the site, across every client, including account changes. It is the record, and it is not editable.' }} />
-      </HelpNote>
+      <AdminTabs pathname="/admin/activity" alerts={alerts} />
+      <AdminAlertBar alerts={alertsFor(alerts, "/admin/activity")} scope="the activity trail" />
 
       <div className="mt-6">
         <Eyebrow>History</Eyebrow>

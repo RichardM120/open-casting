@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { HelpNote } from "@/components/help-note";
+import { AdminAlertBar } from "@/components/admin-alert-bar";
 import { notFound } from "next/navigation";
 
 import { Badge, ButtonLink, CARD_GROUP, cx, Eyebrow, ROW_MAIN, SectionHead, STACK } from "@/components/ui";
+import { adminAlerts, alertsFor } from "@/lib/admin-alerts";
 import { requireUser } from "@/lib/auth";
 import { clientUsage, countClients, listClients } from "@/lib/clients";
 import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
@@ -27,6 +28,7 @@ export const metadata: Metadata = {
  */
 export default async function ClientsPage({ searchParams }: PageProps<"/admin/clients">) {
   const user = await requireUser("/admin/clients");
+  const alerts = await adminAlerts(user);
   if (user.role !== "admin") notFound();
 
   const [usage, params, counted] = await Promise.all([
@@ -47,11 +49,8 @@ export default async function ClientsPage({ searchParams }: PageProps<"/admin/cl
   return (
     <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={adminTrail("/admin/clients")} />
-      <AdminTabs pathname="/admin/clients" />
-      <HelpNote title="What this screen is for">
-        <p dangerouslySetInnerHTML={{ __html: 'One row per company paying for Open Casting. Open one to see its accounts, what it is using against what it bought, and to suspend or restore it.' }} />
-        <p dangerouslySetInnerHTML={{ __html: 'Take on a new client before making its accounts; an account cannot exist without one.' }} />
-      </HelpNote>
+      <AdminTabs pathname="/admin/clients" alerts={alerts} />
+      <AdminAlertBar alerts={alertsFor(alerts, "/admin/clients")} scope="clients" />
 
       {params.removed ? (
         <p

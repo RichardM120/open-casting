@@ -4,11 +4,16 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import { ADMIN_GROUPS, groupFor } from "@/lib/admin-nav";
+import type { Urgency } from "@/lib/admin-alerts";
 import { signOut } from "@/lib/auth-actions";
 import type { SessionUser } from "@/lib/auth";
 
+import { AlertDot } from "./alert-dot";
 import { Lockup } from "./logo";
 import { ButtonLink, cx } from "./ui";
+
+/** How many things wait behind each admin group, keyed by the group's href. */
+export type NavAlerts = Record<string, { alerts: number; urgency: Urgency | null }>;
 
 type IconName = "calls" | "activity" | "faq" | "new" | "overview" | "clients" | "projects" | "system";
 
@@ -70,7 +75,17 @@ const FOCUS = "focus-visible:outline-white";
  * along the bottom of the screen, within reach of a thumb, and the bar above
  * keeps to one row so it does not take the screen with it as it sticks.
  */
-export function SiteHeader({ user }: { user: SessionUser | null }) {
+export function SiteHeader({
+  user,
+  alerts,
+}: {
+  user: SessionUser | null;
+  /**
+   * What is waiting behind each admin group, so the bar can carry a dot. Only
+   * an administrator has one; everyone else is given null.
+   */
+  alerts?: NavAlerts | null;
+}) {
   const pathname = usePathname();
 
   // Two sections, and the nav shows the one you are in rather than both at
@@ -117,9 +132,10 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
               key={item.href}
               href={item.href}
               aria-current={current === item.href ? "page" : undefined}
-              className={linkClass(item)}
+              className={cx(linkClass(item), "relative")}
             >
               {item.label}
+              <Dot item={item} alerts={alerts} />
             </Link>
           ))}
         </nav>
@@ -172,11 +188,12 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
               >
                 <span
                   className={cx(
-                    "flex h-7 w-12 items-center justify-center rounded-full transition-colors",
+                    "relative flex h-7 w-12 items-center justify-center rounded-full transition-colors",
                     item.action ? "bg-accent text-accent-ink" : active ? "bg-white/20" : "",
                   )}
                 >
                   <Icon name={item.icon} />
+                  <Dot item={item} alerts={alerts} />
                 </span>
                 <span className="max-w-full truncate">{item.short ?? item.label}</span>
               </Link>
@@ -185,6 +202,25 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
         </nav>
       ) : null}
     </header>
+  );
+}
+
+/**
+ * The dot on a navigation item, when something behind it is waiting. Only the
+ * administrator's groups ever carry one: the casting side has its own line on
+ * the dashboard saying what needs the director, and a badge on a bar you look
+ * at on every page has to mean something or it means nothing.
+ */
+function Dot({ item, alerts }: { item: Item; alerts?: NavAlerts | null }) {
+  const waiting = alerts?.[item.href];
+  if (!waiting?.urgency) return null;
+  return (
+    <AlertDot
+      on="corner"
+      count={waiting.alerts}
+      urgency={waiting.urgency}
+      label={`${waiting.alerts} waiting under ${item.label}`}
+    />
   );
 }
 
