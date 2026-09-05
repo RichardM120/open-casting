@@ -314,6 +314,14 @@ export const ADULT_AGE = 18;
 export const DEFAULT_RETENTION_DAYS = 30;
 
 /**
+ * How long a child's submission waits for the named guardian to confirm it
+ * from their own mailbox. A week covers a missed email and a holiday; past
+ * that the consent is not coming and the photographs should not still be
+ * here. Stated on the form, in the email and on the guardian's own page.
+ */
+export const GUARDIAN_CONFIRM_DAYS = 7;
+
+/**
  * How long one casting call keeps them, which is the site's rule unless the
  * client bought something else when the call was opened.
  */
@@ -359,6 +367,13 @@ export type Submission = {
   guardianName: string | null;
   guardianEmail: string | null;
   guardianConsentAt: string | null;
+  /**
+   * When the named guardian confirmed from their own mailbox. Null on a
+   * child's submission that is still waiting, which the casting team never
+   * sees; always null where there is no guardian, because there is nothing to
+   * confirm.
+   */
+  guardianConfirmedAt: string | null;
   /**
    * Set when an administrator held the photo and tapes back from the casting
    * team pending a look. The rest of the submission is unaffected.

@@ -42,6 +42,12 @@ export async function GET(request: Request) {
   if (submission.mediaFlaggedAt && user.role !== "admin") {
     return new NextResponse(null, { status: 404 });
   }
+  // A child's photo or tape, on a consent the named guardian has not yet
+  // given. The lists already hide the submission; this is the file behind it,
+  // and it stays shut to everyone until the guardian says so.
+  if (submission.guardianEmail && !submission.guardianConfirmedAt) {
+    return new NextResponse(null, { status: 404 });
+  }
 
   // Watching somebody's tape is worth a line in the trail; loading the photos
   // on a list of two hundred submissions is not, so only a video counts, and

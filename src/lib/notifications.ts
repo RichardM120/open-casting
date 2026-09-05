@@ -5,7 +5,7 @@ import { query } from "./db";
 /**
  * The messages the app sends on its own, and the record of what it sent.
  *
- * Three of them, each with wording that can be changed without a deployment.
+ * Four of them, each with wording that can be changed without a deployment.
  * The defaults live here rather than in the database, so a fresh deployment
  * sends sensible words with nothing to set up, and a row exists only for a
  * template somebody has edited.
@@ -22,6 +22,9 @@ export const PLACEHOLDERS = {
   count: "How many submissions have come in",
   cap: "The cap on the casting call",
   closes: "When the casting call closes",
+  guardian: "The parent or guardian's name",
+  confirm: "The one-time link the guardian confirms with",
+  days: "How many days the link lasts",
 } as const;
 
 export type Placeholder = keyof typeof PLACEHOLDERS;
@@ -53,6 +56,25 @@ export const TEMPLATES = {
       "{{company}} has moved your submission for {{role}} on {{call}} to {{status}}.",
       "",
       "They will be in touch through this address if there is anything else to do.",
+    ].join("\n"),
+  },
+  guardian_confirm: {
+    label: "A child's submission needs its guardian",
+    who: "To the parent or guardian named on an under-18's submission, as soon as it arrives.",
+    placeholders: ["applicant", "guardian", "role", "call", "company", "confirm", "days"] as Placeholder[],
+    subject: "Confirm {{applicant}}'s submission for {{role}}",
+    body: [
+      "Hello {{guardian}},",
+      "",
+      "A submission for {{role}} on {{call}} has been made in {{applicant}}'s name, and you have been named as their parent or guardian.",
+      "",
+      "Nothing has been shown to {{company}} and nothing will be until you confirm it. Open this link to see what was sent and decide:",
+      "",
+      "{{confirm}}",
+      "",
+      "If you do not confirm within {{days}} days, everything sent — the details, the photograph and any tape — is deleted automatically.",
+      "",
+      "If you did not expect this, do nothing. It will be deleted on its own, and you can reply to this message to have it removed sooner.",
     ].join("\n"),
   },
   cap_warning: {

@@ -4,6 +4,7 @@ import { sweepOrphanedMedia } from "@/lib/blob";
 import { sendEmail } from "@/lib/email";
 import { recordSweep } from "@/lib/monitoring";
 import { claimPurgeWarnings, purgeExpiredSubmissions } from "@/lib/retention";
+import { purgeUnconfirmed } from "@/lib/guardian";
 import { purgeSpecialAnswers } from "@/lib/special";
 import { allMediaUrls } from "@/lib/submissions";
 
@@ -51,6 +52,10 @@ export async function POST(request: Request) {
     });
   }
 
+  // A child's submission nobody stood behind. Before the rest, because its
+  // files should not survive into the orphan sweep below as a stale entry.
+  const unconfirmed = await purgeUnconfirmed();
+
   const purged = await purgeExpiredSubmissions();
   // Answers about a protected characteristic go sooner: their clock runs
   // from casting closing, not the production finishing.
@@ -65,6 +70,7 @@ export async function POST(request: Request) {
     sessions: purged.length,
     submissions: purged.reduce((total, entry) => total + entry.submissions, 0),
     specialAnswers,
+    unconfirmed: unconfirmed.length,
     orphanedFiles,
     ms: Date.now() - started,
   };

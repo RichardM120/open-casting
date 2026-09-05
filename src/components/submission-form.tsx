@@ -7,7 +7,7 @@ import { useActionState, useState } from "react";
 import { submitApplication } from "@/lib/actions";
 import { SUBMISSION_TERMS } from "@/content/legal";
 import { IDLE_FORM_STATE } from "@/lib/form-state";
-import { ADULT_AGE, RESIDENCIES, type AskKey, type MediaSlot, type SpecialKind } from "@/lib/types";
+import { ADULT_AGE, GUARDIAN_CONFIRM_DAYS, RESIDENCIES, type AskKey, type MediaSlot, type SpecialKind } from "@/lib/types";
 import { formatSeconds, videoDuration } from "@/lib/video";
 
 import { useErrorFocus } from "./use-error-focus";
@@ -400,6 +400,11 @@ export function SubmissionForm({
             A submission for a child must be made by a parent or someone with legal parental
             responsibility. Fill this in yourself rather than passing it to them.
           </p>
+          <p className="mt-2 text-sm leading-relaxed text-muted">
+            We will email the address below to confirm. Nothing is shown to the casting team
+            until that is done, and if it is not done within {GUARDIAN_CONFIRM_DAYS} days everything sent
+            is deleted.
+          </p>
 
           <div className="mt-4 grid gap-6 sm:grid-cols-2">
             <Field
@@ -451,7 +456,7 @@ export function SubmissionForm({
               defaultChecked={values.guardianConsent === "on"}
               aria-invalid={errors.guardianConsent ? true : undefined}
               aria-describedby={errors.guardianConsent ? "guardianConsent-error" : undefined}
-              className="mt-0.5 size-4 shrink-0 accent-accent"
+              className="mt-0.5 size-5 shrink-0 accent-accent sm:size-4"
             />
             <span>
               I am the parent or legal guardian of this applicant, and I consent to their name, age,

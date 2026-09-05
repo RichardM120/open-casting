@@ -510,8 +510,11 @@ section("19 the automated emails: wording, sending, and the delivery log");
   const { p } = admin;
   await p.goto(`${BASE}/admin/notifications`, { waitUntil: "networkidle" });
   check("the page is the administrator's", (await p.getByRole("heading", { name: "Notifications", level: 1 }).count()) === 1);
-  check("all three are listed", (await p.getByRole("heading", { name: "A submission arrives" }).count()) === 1 && (await p.getByRole("heading", { name: "A submission's status changes" }).count()) === 1 && (await p.getByRole("heading", { name: "A casting call is nearly full" }).count()) === 1);
-  check("each starts as the wording that ships", (await p.getByText("As it ships").count()) === 3);
+  check("all four are listed", (await p.getByRole("heading", { name: "A submission arrives" }).count()) === 1
+    && (await p.getByRole("heading", { name: "A submission's status changes" }).count()) === 1
+    && (await p.getByRole("heading", { name: "A child's submission needs its guardian" }).count()) === 1
+    && (await p.getByRole("heading", { name: "A casting call is nearly full" }).count()) === 1);
+  check("each starts as the wording that ships", (await p.getByText("As it ships").count()) === 4);
 
   await p.fill("#subject-submission_received", "We have your submission for {{role}}");
   await Promise.all([

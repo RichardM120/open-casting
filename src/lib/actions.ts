@@ -17,6 +17,8 @@ import {
 } from "./blob";
 import { UNIQUE_VIOLATION } from "./db";
 import { emailConfigured, replyToFor, sendEmail } from "./email";
+import { CONFIRM_DAYS, confirm as confirmGuardian, mintToken } from "./guardian";
+import { requestOrigin } from "./origin";
 import {
   TEMPLATES,
   TEMPLATE_KEYS,
@@ -343,6 +345,9 @@ export async function submitApplication(
 
   // Kept from inside the try, so what was made can be told about afterwards.
   let made: { id: string; email: string } | null = null;
+  // A child's submission carries a one-time link for the named guardian. It
+  // is minted here so it goes into the row and into the email as one value.
+  const guardianToken = minor ? mintToken() : null;
 
   try {
     const created = await createSubmission({
@@ -366,6 +371,10 @@ export async function submitApplication(
       guardianName: minor ? (guardianName ?? null) : null,
       guardianEmail: minor ? (guardianEmail ?? null) : null,
       guardianConsentAt: minor ? new Date().toISOString() : null,
+      // Ticked on the form is not confirmed by the guardian. Null until they
+      // open their own link, and the casting team sees nothing before that.
+      guardianConfirmedAt: null,
+      guardianToken,
     });
     made = { id: created.id, email: created.email };
     if (role.specialQuestion && specialAnswer) {
@@ -409,7 +418,23 @@ export async function submitApplication(
   // Told they were heard, and the team told when the call is nearly full.
   // Neither can fail the submission: it is already in, and an email that did
   // not send is a line in the delivery log, not a lost application.
-  if (made) {
+  if (made && guardianToken) {
+    // Not a receipt: a request. Nothing has been shown to anybody, and the
+    // adult named on the form is the only one who can change that.
+    await tellApplicant("guardian_confirm", {
+      to: made.email,
+      roleId: role.id,
+      values: {
+        applicant: submission.name,
+        guardian: guardianName ?? "",
+        role: role.title,
+        call: role.session.name,
+        company: role.company,
+        confirm: `${await requestOrigin()}/c/guardian/${guardianToken}`,
+        days: String(CONFIRM_DAYS),
+      },
+    });
+  } else if (made) {
     await tellApplicant("submission_received", {
       to: made.email,
       roleId: role.id,
@@ -423,13 +448,17 @@ export async function submitApplication(
       },
     });
   }
-  await warnIfNearlyFull(role.session, role.sessionId);
+  // A submission still waiting on a guardian is not one yet, so it cannot be
+  // what fills a call.
+  if (!guardianToken) await warnIfNearlyFull(role.session, role.sessionId);
 
   revalidateEverything();
 
   return {
     status: "success",
-    message: `Thanks, ${submission.name.split(" ")[0]}. Your submission is with ${role.castingDirector}.`,
+    message: minor
+      ? `Thanks. We have emailed ${guardianName} at ${guardianEmail} to confirm this. Nothing goes to ${role.company} until they do, and if they do not within ${CONFIRM_DAYS} days everything sent is deleted.`
+      : `Thanks, ${submission.name.split(" ")[0]}. Your submission is with ${role.castingDirector}.`,
     errors: {},
     values: {},
   };
@@ -855,6 +884,34 @@ async function requireOwner(back: string): Promise<SessionUser | FormState> {
 }
 
 /** The owner proving the file store works from this deployment. */
+/**
+ * A guardian saying yes, from their own mailbox.
+ *
+ * Open to anyone holding the link, because that is the whole point: the
+ * person confirming has no account and never will. The token is the
+ * authorisation and it is spent here, so a link cannot be replayed.
+ */
+export async function confirmGuardianSubmission(formData: FormData): Promise<void> {
+  const token = String(formData.get("token") ?? "").trim();
+  const confirmed = await confirmGuardian(token);
+  // Already used, already swept, or never real — one answer for all three, so
+  // nothing is confirmed to somebody guessing.
+  if (!confirmed) redirect("/c/guardian/done?state=gone");
+
+  await record({
+    action: "submission.guardian_confirmed",
+    actorId: null,
+    actorName: confirmed.guardianName,
+    ownerId: null,
+    company: confirmed.company,
+    subjectId: confirmed.id,
+    detail: `${confirmed.name}, ${confirmed.roleTitle}`,
+  });
+
+  revalidateEverything();
+  redirect(`/c/guardian/done?state=confirmed&company=${encodeURIComponent(confirmed.company)}`);
+}
+
 export async function testFileStore(): Promise<void> {
   const user = await requireOwner("/admin");
   if ("status" in user) redirect("/admin");

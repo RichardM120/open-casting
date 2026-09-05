@@ -41,6 +41,7 @@ export const ACTIONS = [
   "role.reopened",
   "role.removed",
   "submission.received",
+  "submission.guardian_confirmed",
   "submission.status",
   "submission.removed",
   "media.flagged",

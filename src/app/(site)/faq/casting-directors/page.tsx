@@ -254,6 +254,13 @@ export default function CastingDirectorFaqPage() {
             registered chaperone. Say so in the terms, and expect a parent or guardian to submit
             on the applicant&rsquo;s behalf.
           </p>
+          <p>
+            A child&rsquo;s submission does not reach you straight away. The guardian named on the
+            form is emailed to confirm it, and until they do it is not on your list, not in your
+            counts and not in an export. If nobody confirms within a week it is deleted and you
+            never see it. So a submission you were told about but cannot find is usually one
+            waiting on a parent.
+          </p>
         </FaqItem>
       </FaqSection>
 

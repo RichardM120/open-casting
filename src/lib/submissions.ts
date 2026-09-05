@@ -51,6 +51,7 @@ type SubmissionRow = {
   guardian_name: string | null;
   guardian_email: string | null;
   guardian_consent_at: Date | null;
+  guardian_confirmed_at: Date | null;
   photo_url: string | null;
   video_url: string | null;
   videos: unknown;
@@ -62,9 +63,20 @@ type SubmissionRow = {
 const COLUMNS = `
   id, role_id, session_id, name, email, phone, location, age, reel_url,
   profile_url, cover_note, status, accepted_terms, accepted_at, terms_version,
-  guardian_name, guardian_email, guardian_consent_at, photo_url, video_url, videos,
+  guardian_name, guardian_email, guardian_consent_at, guardian_confirmed_at,
+  photo_url, video_url, videos,
   height_cm, residency, available, media_flagged_at, media_flag_reason, submitted_at
 `;
+
+/**
+ * A child's submission is not a submission until the named guardian has said
+ * so from their own mailbox. Every read the casting team makes goes through
+ * this, so an unconfirmed one is invisible to them, uncounted against a cap,
+ * and unexportable — it is waiting, not pending review.
+ */
+export const CONFIRMED = "(guardian_email IS NULL OR guardian_confirmed_at IS NOT NULL)";
+/** The same rule where the query aliases the table. */
+const CONFIRMED_S = CONFIRMED.replace(/guardian_/g, "s.guardian_");
 
 function toSubmission(row: SubmissionRow): Submission {
   return {
@@ -89,6 +101,7 @@ function toSubmission(row: SubmissionRow): Submission {
     guardianName: row.guardian_name,
     guardianEmail: row.guardian_email,
     guardianConsentAt: row.guardian_consent_at?.toISOString() ?? null,
+    guardianConfirmedAt: row.guardian_confirmed_at?.toISOString() ?? null,
     photoUrl: row.photo_url,
     videoUrl: row.video_url,
     videos: readVideos(row.videos),
@@ -118,9 +131,50 @@ function readVideos(value: unknown): SubmissionVideo[] {
 /** How a list is narrowed and paged. Without a limit it is everything. */
 export type SubmissionListOptions = {
   status?: SubmissionStatus | null;
+  /** Inclusive. What the part needs, rather than what came in. */
+  ageMin?: number | null;
+  ageMax?: number | null;
+  /** Matched loosely and case-insensitively: "leeds" finds "Leeds, UK". */
+  location?: string | null;
+  /** True for those who confirmed the shoot dates; false for those who did not. */
+  available?: boolean | null;
   limit?: number;
   offset?: number;
 };
+
+/**
+ * The narrowing a casting call's list is under, as SQL.
+ *
+ * Filtering here rather than in the page is what lets a call with a thousand
+ * submissions answer in one query: the database counts and pages the matching
+ * set, and the browser is sent twenty-five rows.
+ */
+function narrow(options: SubmissionListOptions, params: unknown[]): string {
+  let where = "";
+  if (options.status) {
+    params.push(options.status);
+    where += ` AND s.status = $${params.length}`;
+  }
+  if (typeof options.ageMin === "number") {
+    params.push(options.ageMin);
+    where += ` AND s.age >= $${params.length}`;
+  }
+  if (typeof options.ageMax === "number") {
+    params.push(options.ageMax);
+    where += ` AND s.age <= $${params.length}`;
+  }
+  if (options.location) {
+    // A director types a town, not a formatted address. % either side, and the
+    // applicant's own wording decides the rest.
+    params.push(`%${options.location}%`);
+    where += ` AND s.location ILIKE $${params.length}`;
+  }
+  if (typeof options.available === "boolean") {
+    params.push(options.available);
+    where += ` AND s.available IS NOT DISTINCT FROM $${params.length}`;
+  }
+  return where;
+}
 
 /** The LIMIT and OFFSET a list asked for, placed after its own parameters. */
 function pageClause(options: SubmissionListOptions, params: unknown[]): string {
@@ -153,7 +207,7 @@ export async function listSubmissions(
 ): Promise<Submission[]> {
   const params: unknown[] = [roleId];
   const rows = await query<SubmissionRow>(
-    `SELECT ${COLUMNS} FROM submissions WHERE role_id = $1
+    `SELECT ${COLUMNS} FROM submissions WHERE role_id = $1 AND ${CONFIRMED}
       ORDER BY submitted_at DESC, id${pageClause(options, params)}`,
     params,
   );
@@ -164,7 +218,8 @@ export async function listSubmissions(
 export async function countsForRole(roleId: string): Promise<SubmissionCounts> {
   return tally(
     await query<{ status: string; count: string }>(
-      "SELECT status, count(*)::text AS count FROM submissions WHERE role_id = $1 GROUP BY status",
+      `SELECT status, count(*)::text AS count FROM submissions
+         WHERE role_id = $1 AND ${CONFIRMED} GROUP BY status`,
       [roleId],
     ),
   );
@@ -174,7 +229,8 @@ export async function countsForRole(roleId: string): Promise<SubmissionCounts> {
 export async function countsForSession(sessionId: string): Promise<SubmissionCounts> {
   return tally(
     await query<{ status: string; count: string }>(
-      "SELECT status, count(*)::text AS count FROM submissions WHERE session_id = $1 GROUP BY status",
+      `SELECT status, count(*)::text AS count FROM submissions
+         WHERE session_id = $1 AND ${CONFIRMED} GROUP BY status`,
       [sessionId],
     ),
   );
@@ -193,11 +249,7 @@ export async function listSessionSubmissions(
   options: SubmissionListOptions = {},
 ): Promise<SessionSubmission[]> {
   const params: unknown[] = [sessionId];
-  let where = "s.session_id = $1";
-  if (options.status) {
-    params.push(options.status);
-    where += ` AND s.status = $${params.length}`;
-  }
+  const where = `s.session_id = $1 AND ${CONFIRMED_S}${narrow(options, params)}`;
   const rows = await query<SubmissionRow & { role_title: string }>(
     `SELECT s.*, r.title AS role_title
        FROM submissions s
@@ -209,6 +261,23 @@ export async function listSessionSubmissions(
   return rows.map((row) => ({ ...toSubmission(row), roleTitle: row.role_title }));
 }
 
+/**
+ * How many of a casting call's submissions match the narrowing, so the list
+ * can be paged without loading the rest of them.
+ */
+export async function countSessionSubmissions(
+  sessionId: string,
+  options: SubmissionListOptions = {},
+): Promise<number> {
+  const params: unknown[] = [sessionId];
+  const where = `s.session_id = $1 AND ${CONFIRMED_S}${narrow(options, params)}`;
+  const rows = await query<{ count: string }>(
+    `SELECT count(*)::text AS count FROM submissions s WHERE ${where}`,
+    params,
+  );
+  return Number(rows[0]?.count ?? 0);
+}
+
 /** Counts keyed by casting call id, across whatever this account may see. */
 export async function countsBySession(
   viewer: SessionUser,
@@ -218,7 +287,7 @@ export async function countsBySession(
     `SELECT s.session_id, s.status, count(*)::text AS count
        FROM submissions s
        JOIN roles r ON r.id = s.role_id
-      ${where ? `WHERE ${where}` : ""}
+      WHERE ${CONFIRMED_S}${where ? ` AND ${where}` : ""}
       GROUP BY s.session_id, s.status`,
     params,
   );
@@ -244,7 +313,7 @@ export async function countsByRole(viewer: SessionUser): Promise<Map<string, Sub
     `SELECT s.role_id, s.status, count(*)::text AS count
        FROM submissions s
        JOIN roles r ON r.id = s.role_id
-      ${where ? `WHERE ${where}` : ""}
+      WHERE ${CONFIRMED_S}${where ? ` AND ${where}` : ""}
       GROUP BY s.role_id, s.status`,
     params,
   );
@@ -282,7 +351,10 @@ export function summarise(submissions: Submission[]): SubmissionCounts {
 export type NewSubmission = Omit<
   Submission,
   "id" | "status" | "submittedAt" | "mediaFlaggedAt" | "mediaFlagReason"
->;
+> & {
+  /** The guardian's one-time link, for a child's submission. Null otherwise. */
+  guardianToken: string | null;
+};
 
 /**
  * Throws `DuplicateSubmissionError` if this email has already submitted into
@@ -296,9 +368,9 @@ export async function createSubmission(input: NewSubmission): Promise<Submission
       `INSERT INTO submissions (
          id, role_id, session_id, name, email, phone, location, age, reel_url,
          profile_url, cover_note, accepted_terms, accepted_at, terms_version,
-         guardian_name, guardian_email, guardian_consent_at, photo_url, video_url,
-         height_cm, residency, available, videos
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23)
+         guardian_name, guardian_email, guardian_consent_at, guardian_token,
+         photo_url, video_url, height_cm, residency, available, videos
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21,$22,$23,$24)
        RETURNING ${COLUMNS}`,
       [
         `sub_${crypto.randomUUID().slice(0, 12)}`,
@@ -318,6 +390,7 @@ export async function createSubmission(input: NewSubmission): Promise<Submission
         input.guardianName,
         input.guardianEmail,
         input.guardianConsentAt,
+        input.guardianToken,
         input.photoUrl,
         input.videoUrl,
         input.heightCm,
@@ -449,8 +522,13 @@ export type FeedSubmission = Submission & {
 
 export type FeedFilter = {
   status?: SubmissionStatus | null;
-  /** "flagged" for held media, "minors" for applicants under 18, "media" for anything with a file. */
-  only?: "flagged" | "minors" | "media" | null;
+  /**
+   * "flagged" for held media, "minors" for applicants under 18, "media" for
+   * anything with a file, "waiting" for a child's submission whose guardian
+   * has not confirmed it — the only place those are visible, so somebody can
+   * answer a parent who says the email never arrived.
+   */
+  only?: "flagged" | "minors" | "media" | "waiting" | null;
   clientId?: string | null;
   sessionId?: string | null;
   limit?: number;
@@ -476,6 +554,9 @@ function feedWhere(filter: FeedFilter): { where: string; params: unknown[] } {
   if (filter.only === "minors") conditions.push(`s.age < ${ADULT_AGE}`);
   if (filter.only === "media") {
     conditions.push("(s.photo_url IS NOT NULL OR s.video_url IS NOT NULL OR jsonb_array_length(s.videos) > 0)");
+  }
+  if (filter.only === "waiting") {
+    conditions.push("s.guardian_email IS NOT NULL AND s.guardian_confirmed_at IS NULL");
   }
   return { where: conditions.length ? `WHERE ${conditions.join(" AND ")}` : "", params };
 }
@@ -529,19 +610,29 @@ export async function listAllSubmissions(filter: FeedFilter = {}): Promise<FeedS
 /** How the feed breaks down, for the filter bar and for paging it. */
 export async function countAllSubmissions(
   filter: FeedFilter = {},
-): Promise<{ total: number; flagged: number; minors: number; withMedia: number; byStatus: SubmissionCounts }> {
+): Promise<{
+  total: number;
+  flagged: number;
+  minors: number;
+  withMedia: number;
+  waiting: number;
+  byStatus: SubmissionCounts;
+}> {
   const { where, params } = feedWhere({ ...filter, status: null, only: null });
   const [row] = await query<{
     total: string;
     flagged: string;
     minors: string;
     with_media: string;
+    waiting: string;
   }>(
     `SELECT count(*)::text AS total,
             count(*) FILTER (WHERE s.media_flagged_at IS NOT NULL)::text AS flagged,
             count(*) FILTER (WHERE s.age < ${ADULT_AGE})::text AS minors,
             count(*) FILTER (WHERE s.photo_url IS NOT NULL OR s.video_url IS NOT NULL
-                               OR jsonb_array_length(s.videos) > 0)::text AS with_media
+                               OR jsonb_array_length(s.videos) > 0)::text AS with_media,
+            count(*) FILTER (WHERE s.guardian_email IS NOT NULL
+                               AND s.guardian_confirmed_at IS NULL)::text AS waiting
        ${FEED_SOURCE}
        ${where}`,
     params,
@@ -555,6 +646,7 @@ export async function countAllSubmissions(
     flagged: Number(row?.flagged ?? 0),
     minors: Number(row?.minors ?? 0),
     withMedia: Number(row?.with_media ?? 0),
+    waiting: Number(row?.waiting ?? 0),
     byStatus: tally(statusRows),
   };
 }

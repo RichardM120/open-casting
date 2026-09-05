@@ -572,6 +572,14 @@ const SCHEMA = `
   ALTER TABLE submissions ADD COLUMN IF NOT EXISTS guardian_name text;
   ALTER TABLE submissions ADD COLUMN IF NOT EXISTS guardian_email text;
   ALTER TABLE submissions ADD COLUMN IF NOT EXISTS guardian_consent_at timestamptz;
+  -- A tick on a form says only that somebody at the keyboard ticked it. For a
+  -- child, the named guardian is emailed a one-time link and has to say so
+  -- themselves; until they do the submission exists but is not one, and the
+  -- casting team never sees it. The token is spent on confirmation.
+  ALTER TABLE submissions ADD COLUMN IF NOT EXISTS guardian_token text;
+  ALTER TABLE submissions ADD COLUMN IF NOT EXISTS guardian_confirmed_at timestamptz;
+  CREATE UNIQUE INDEX IF NOT EXISTS submissions_guardian_token_idx
+    ON submissions (guardian_token) WHERE guardian_token IS NOT NULL;
   -- A profile photo and a video, uploaded straight to the store. Private, and
   -- deleted with the submission.
   ALTER TABLE submissions ADD COLUMN IF NOT EXISTS photo_url text;

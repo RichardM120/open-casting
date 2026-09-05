@@ -10,7 +10,7 @@ import { ShareLink } from "@/components/share-link";
 import { PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
 import { ProfilePhoto } from "@/components/profile-photo";
 import { SubmissionStatusControl } from "@/components/submission-status-control";
-import { Badge, Button, ButtonLink, CARD, CARD_GROUP, Eyebrow, SPOTLIGHT, STACK, SectionHead, buttonStyles, cx } from "@/components/ui";
+import { Badge, Button, ButtonLink, CARD, CARD_GROUP, Eyebrow, Field, Input, SPOTLIGHT, STACK, SectionHead, Select, buttonStyles, cx } from "@/components/ui";
 import {
   emailSubmissionsSheet,
   publishCastingSession,
@@ -25,7 +25,12 @@ import { requestOrigin } from "@/lib/origin";
 import { callState } from "@/lib/rag";
 import { daysUntilPurge, purgeDate } from "@/lib/retention";
 import { getVisibleSession, shareSlug } from "@/lib/sessions";
-import { countsByRole, countsForSession, listSessionSubmissions } from "@/lib/submissions";
+import {
+  countSessionSubmissions,
+  countsByRole,
+  countsForSession,
+  listSessionSubmissions,
+} from "@/lib/submissions";
 import { SUBMISSION_STATUSES, retentionOf, type SubmissionStatus } from "@/lib/types";
 import { Breadcrumb } from "@/components/breadcrumb";
 
@@ -82,22 +87,55 @@ export default async function SessionPage({
       : null;
   const byStatus = (which: SubmissionStatus) => sessionCounts[which];
 
+  // What the part needs, rather than what came in. A number that is not one,
+  // or an age outside a human range, narrows nothing rather than erroring.
+  const readAge = (value: unknown): number | null => {
+    const n = Number(typeof value === "string" ? value : NaN);
+    return Number.isInteger(n) && n >= 0 && n <= 120 ? n : null;
+  };
+  const ageMin = readAge(query.ageMin);
+  const ageMax = readAge(query.ageMax);
+  const location = typeof query.where === "string" ? query.where.trim().slice(0, 60) : "";
+  const available =
+    query.free === "yes" ? true : query.free === "no" ? false : null;
+  const filter = { status, ageMin, ageMax, location: location || null, available };
+  const narrowed = ageMin !== null || ageMax !== null || location !== "" || available !== null;
+
   // Pages of twenty-five, newest first. A page past the end shows the last
   // one rather than nothing.
-  const matching = status ? byStatus(status) : sessionCounts.total;
+  const matching = narrowed
+    ? await countSessionSubmissions(id, filter)
+    : status
+      ? byStatus(status)
+      : sessionCounts.total;
   const pages = Math.max(1, Math.ceil(matching / PAGE_SIZE));
   const page = Math.min(pageNumber(query.page), pages);
   const listed = await listSessionSubmissions(id, {
-    status,
+    ...filter,
     limit: PAGE_SIZE,
     offset: (page - 1) * PAGE_SIZE,
   });
-  const listHref = (n: number) => {
+  /** The current narrowing as a query string, with one part changed. */
+  const withFilter = (changes: Record<string, string | null>) => {
     const search = new URLSearchParams();
-    if (status) search.set("status", status);
-    if (n > 1) search.set("page", String(n));
+    const current: Record<string, string | null> = {
+      status,
+      ageMin: ageMin === null ? null : String(ageMin),
+      ageMax: ageMax === null ? null : String(ageMax),
+      where: location || null,
+      free: query.free === "yes" || query.free === "no" ? query.free : null,
+      ...changes,
+    };
+    for (const [key, value] of Object.entries(current)) {
+      if (value) search.set(key, value);
+    }
     const tail = search.toString();
     return `/dashboard/sessions/${session.id}${tail ? `?${tail}` : ""}`;
+  };
+  const listHref = (n: number) => {
+    const base = withFilter({});
+    if (n <= 1) return base;
+    return `${base}${base.includes("?") ? "&" : "?"}page=${n}`;
   };
 
   const flash =
@@ -341,7 +379,7 @@ export default async function SessionPage({
             return (
               <Link
                 key={which ?? "all"}
-                href={which ? `/dashboard/sessions/${session.id}?status=${which}` : `/dashboard/sessions/${session.id}`}
+                href={withFilter({ status: which })}
                 aria-current={current ? "page" : undefined}
                 className={`inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 py-2 whitespace-nowrap transition-colors sm:min-h-10 ${
                   current
@@ -354,6 +392,79 @@ export default async function SessionPage({
             );
           })}
         </nav>
+      ) : null}
+
+      {sessionCounts.total > 0 ? (
+        /*
+          The narrowing a director actually does: what the part needs. It is a
+          plain GET form, so it works with no script, the result is a URL that
+          can be sent to a colleague, and the back button undoes it. The
+          filtering happens in the database, so this holds at a thousand
+          submissions as well as at ten.
+        */
+        <form
+          method="get"
+          action={`/dashboard/sessions/${session.id}`}
+          className="mt-4 grid gap-4 rounded-xl border border-line bg-surface p-4 sm:grid-cols-2 sm:p-5 lg:grid-cols-4"
+        >
+          {status ? <input type="hidden" name="status" value={status} /> : null}
+          <Field label="Age from" htmlFor="ageMin" required={false}>
+            <Input
+              id="ageMin"
+              name="ageMin"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={120}
+              defaultValue={ageMin === null ? "" : String(ageMin)}
+            />
+          </Field>
+          <Field label="Age to" htmlFor="ageMax" required={false}>
+            <Input
+              id="ageMax"
+              name="ageMax"
+              type="number"
+              inputMode="numeric"
+              min={0}
+              max={120}
+              defaultValue={ageMax === null ? "" : String(ageMax)}
+            />
+          </Field>
+          <Field
+            label="Based near"
+            htmlFor="where"
+            hint="Part of a town or city is enough."
+            required={false}
+          >
+            <Input id="where" name="where" defaultValue={location} maxLength={60} />
+          </Field>
+          <Field label="Free for the shoot" htmlFor="free" required={false}>
+            <Select id="free" name="free" defaultValue={query.free === "yes" || query.free === "no" ? query.free : ""}>
+              <option value="">Anyone</option>
+              <option value="yes">Confirmed the dates</option>
+              <option value="no">Did not</option>
+            </Select>
+          </Field>
+          <div className="flex flex-wrap items-center gap-3 sm:col-span-2 lg:col-span-4">
+            <Button type="submit" size="sm">
+              Narrow the list
+            </Button>
+            {narrowed ? (
+              <>
+                <ButtonLink
+                  href={withFilter({ ageMin: null, ageMax: null, where: null, free: null })}
+                  variant="secondary"
+                  size="sm"
+                >
+                  Clear
+                </ButtonLink>
+                <p role="status" className="text-sm text-muted">
+                  {matching} of {status ? byStatus(status) : sessionCounts.total} match.
+                </p>
+              </>
+            ) : null}
+          </div>
+        </form>
       ) : null}
 
       {listed.length > 0 ? (

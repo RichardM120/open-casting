@@ -359,6 +359,7 @@ const submissions: Omit<
   | "guardianName"
   | "guardianEmail"
   | "guardianConsentAt"
+  | "guardianConfirmedAt"
   | "mediaFlaggedAt"
   | "mediaFlagReason"
 >[] = [
@@ -581,6 +582,7 @@ export function seedDatabase(): Database {
       guardianName: null,
       guardianEmail: null,
       guardianConsentAt: null,
+      guardianConfirmedAt: null,
       mediaFlaggedAt: null,
       mediaFlagReason: "",
     };

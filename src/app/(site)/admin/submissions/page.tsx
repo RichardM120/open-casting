@@ -25,8 +25,8 @@ export const metadata: Metadata = {
 
 const isStatus = (value: unknown): value is SubmissionStatus =>
   typeof value === "string" && (SUBMISSION_STATUSES as readonly string[]).includes(value);
-const isOnly = (value: unknown): value is "flagged" | "minors" | "media" =>
-  value === "flagged" || value === "minors" || value === "media";
+const isOnly = (value: unknown): value is "flagged" | "minors" | "media" | "waiting" =>
+  value === "flagged" || value === "minors" || value === "media" || value === "waiting";
 
 /**
  * Every submission on the site, newest first, whoever it was sent to.
@@ -60,7 +60,9 @@ export default async function AdminSubmissionsPage({
         ? counts.minors
         : only === "media"
           ? counts.withMedia
-          : counts.total;
+          : only === "waiting"
+            ? counts.waiting
+            : counts.total;
   const pages = Math.max(1, Math.ceil(matching / LIST_PAGE_SIZE));
   const page = Math.min(pageNumber(query.page), pages);
   const submissions = await listAllSubmissions({
@@ -100,6 +102,9 @@ export default async function AdminSubmissionsPage({
     { label: "Held back", count: counts.flagged, on: only === "flagged", to: href({ status: null, only: "flagged" }) },
     { label: "Under 18", count: counts.minors, on: only === "minors", to: href({ status: null, only: "minors" }) },
     { label: "With a file", count: counts.withMedia, on: only === "media", to: href({ status: null, only: "media" }) },
+    // A child's submission the casting team cannot see. This is the only place
+    // it shows, so a parent saying the email never arrived can be answered.
+    { label: "Waiting on a guardian", count: counts.waiting, on: only === "waiting", to: href({ status: null, only: "waiting" }) },
   ];
 
   return (
@@ -211,6 +216,9 @@ export default async function AdminSubmissionsPage({
                           </Badge>
                           {minor ? <Badge tone="amber">Under {ADULT_AGE}</Badge> : null}
                           {submission.mediaFlaggedAt ? <Badge tone="danger">Media held back</Badge> : null}
+                          {submission.guardianEmail && !submission.guardianConfirmedAt ? (
+                            <Badge tone="amber">Waiting on a guardian</Badge>
+                          ) : null}
                           {files > 0 ? (
                             <Badge tone="outline">
                               {files} {files === 1 ? "file" : "files"}

@@ -24,6 +24,7 @@ const SHAPE: Record<Action, { verb: string; tone: string }> = {
   "role.reopened": { verb: "reopened", tone: "bg-positive" },
   "role.removed": { verb: "removed", tone: "bg-danger" },
   "submission.received": { verb: "submitted for", tone: "bg-accent" },
+  "submission.guardian_confirmed": { verb: "confirmed a child's submission for", tone: "bg-positive" },
   "submission.status": { verb: "updated a submission on", tone: "bg-muted" },
   "submission.removed": { verb: "removed a submission from", tone: "bg-danger" },
   "media.flagged": { verb: "held back a photo or tape on", tone: "bg-danger" },

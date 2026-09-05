@@ -16,7 +16,7 @@ every pull request. It fails the build rather than warning.
 | `npm run lint` | ESLint, including the React hooks rules. |
 | `npm run typecheck` | `next typegen` then `tsc --noEmit`. Typegen first, because the route types are generated and a fresh checkout has no `.next`. The same script runs locally and in CI, so the two cannot disagree. |
 | `npm run build` **with no `DATABASE_URL`** | Every data page is `force-dynamic`; a build that needs a live database is a deploy that breaks when the database is slow. |
-| `npm run test:e2e` | Browser checks against a casting call build and a real Postgres: twenty suites, including the casting call's casting window, the one-submission-per-casting call rule, that suspending a client locks out every account under it, that the two sections carry their own navigation, the pre-launch wall, over a thousand submissions on one call, every page measured at 320px, and every page put through axe-core against WCAG 2.2 AA. |
+| `npm run test:e2e` | Browser checks against a casting call build and a real Postgres: twenty-one suites, including the casting call's casting window, the one-submission-per-casting call rule, that suspending a client locks out every account under it, that the two sections carry their own navigation, the pre-launch wall, over a thousand submissions on one call, that a child's submission reaches nobody until its guardian confirms, every page measured at 320px, and every page put through axe-core against WCAG 2.2 AA. |
 
 The end-to-end suites live in `test/suites/` and run through `test/run.mjs`,
 which gives each suite a dropped-and-reseeded database and its own server.
@@ -57,6 +57,15 @@ assertion, which is what would catch a Content Security Policy regression.
 - **A visible error boundary**, `src/app/error.tsx`. Without one, a server error shows the
   platform's own page, which says only that one happened. This one shows the digest, which
   is what matches a report to a log line.
+- **A child's submission is not one until the named guardian says so.** A tick on a form
+  says only that somebody at the keyboard ticked it. For an under-18 the guardian named on
+  the form is emailed a one-time link, sees whose submission it is and who would read it,
+  and confirms it themselves — a page with a button, so a mail scanner opening the link
+  confirms nothing. Until then the submission is invisible to the casting team: every list,
+  count, cap and export passes through one SQL clause (`CONFIRMED` in `src/lib/submissions.ts`),
+  and the media route refuses the file. If nobody confirms within seven days the nightly
+  sweep destroys it, files included — there is no lawful basis for holding a photograph of a
+  child on a consent that was never given.
 - **WCAG 2.2 AA, checked by machine on every push.** `test/suites/21-accessibility.mjs`
   runs axe-core over twenty-five page states — signed out, casting director, administrator,
   at 1280px and at 320px, and over the applicant's form in its error state — and fails the

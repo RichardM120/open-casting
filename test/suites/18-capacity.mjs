@@ -462,8 +462,8 @@ const CONSENT = `I consent to ${CO} and Open Casting processing my answer about 
       `INSERT INTO submissions
          (id, role_id, session_id, name, email, phone, location, age, reel_url, profile_url,
           cover_note, status, accepted_terms, accepted_at, terms_version, guardian_name,
-          guardian_email, guardian_consent_at, photo_url, videos, height_cm, residency,
-          available, submitted_at)
+          guardian_email, guardian_consent_at, guardian_confirmed_at, photo_url, videos,
+          height_cm, residency, available, submitted_at)
        SELECT 'sub_cap' || $3 || '_' || n, $1, $2,
               CASE WHEN n % 50 = 0 THEN 'Anastasia-Wilhelmina Featherstonehaugh-Cholmondeley-Wolstenholme'
                    WHEN n % 50 = 4 THEN 'Wolfeschlegelsteinhausenbergerdorffvoralternwaren'
@@ -485,6 +485,9 @@ const CONSENT = `I consent to ${CO} and Open Casting processing my answer about 
               now(), 'v1',
               CASE WHEN n % 25 = 0 THEN 'Guardian ' || n END,
               CASE WHEN n % 25 = 0 THEN 'guardian' || n || '@example.com' END,
+              CASE WHEN n % 25 = 0 THEN now() END,
+              -- These stand in for submissions already through the door, so
+              -- their guardians confirmed. One that has not is suite 22's.
               CASE WHEN n % 25 = 0 THEN now() END,
               CASE WHEN n % 4 = 0 THEN $5::text WHEN n % 10 = 1 THEN $6::text || n || '.jpg' END,
               CASE WHEN n % 5 = 0 THEN $7::jsonb ELSE '[]'::jsonb END,

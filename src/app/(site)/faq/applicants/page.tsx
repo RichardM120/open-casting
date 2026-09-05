@@ -237,9 +237,13 @@ export default function ApplicantFaqPage() {
         </FaqItem>
         <FaqItem q="I am under 18, or submitting for someone who is">
           <p>
-            A parent or guardian submits and must be present throughout. The production must get
-            a child performance licence from the local authority and provide a registered
-            chaperone. If they seem unaware of that, it tells you something.
+            A parent or guardian submits and must be present throughout. We email the guardian
+            named on the form to confirm it: nothing is shown to the casting team until they do,
+            and if nobody confirms within a week everything sent is deleted.
+          </p>
+          <p>
+            The production must also get a child performance licence from the local authority and
+            provide a registered chaperone. If they seem unaware of that, it tells you something.
           </p>
         </FaqItem>
       </FaqSection>
