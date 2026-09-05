@@ -3,7 +3,7 @@ import Link from "next/link";
 import { formatDate } from "@/lib/format";
 import { DEFAULT_INCLUSION_STATEMENT, retentionOf, type CastingSession } from "@/lib/types";
 
-import { CARD, SectionHead, cx } from "./ui";
+import { CARD, SectionHead, STACK, cx } from "./ui";
 
 /** The casting call's inclusive casting statement, or the default one; nothing when cleared. */
 export function InclusionStatement({ session }: { session: CastingSession }) {
@@ -40,7 +40,7 @@ export function YourData({
     new Date(Date.parse(`${session.productionEndsAt}T12:00:00Z`) + days * 86400000).toISOString(),
   );
   return (
-    <section aria-labelledby="your-data" className={cx(CARD, "mt-8")}>
+    <section aria-labelledby="your-data" className={cx(CARD, STACK)}>
       <SectionHead id="your-data" title="Your data" />
       <p className="mt-3 max-w-prose text-sm leading-relaxed text-muted">
         {session.company} holds what you send and uses it only to consider you for this call. It
@@ -48,7 +48,7 @@ export function YourData({
         correct it or have it deleted at any time.
       </p>
       <details className="group mt-1 text-sm" data-more="your-data">
-        <summary className="inline-flex min-h-10 cursor-pointer list-none items-center font-medium text-brand underline-offset-4 hover:underline [&::-webkit-details-marker]:hidden">
+        <summary className="inline-flex min-h-11 cursor-pointer list-none items-center font-medium text-brand underline underline-offset-4 hover:text-brand-hover sm:min-h-10 [&::-webkit-details-marker]:hidden">
           <span className="group-open:hidden">&hellip; more</span>
           <span className="hidden group-open:inline">Less</span>
           <span className="sr-only"> about your data</span>
@@ -77,7 +77,7 @@ export function YourData({
         <Row term="How to ask, or complain">
           Ask the casting team, or write to{" "}
           {reportTo ? (
-            <a href={`mailto:${reportTo}`} className="text-brand underline-offset-4 hover:underline">
+            <a href={`mailto:${reportTo}`} className="text-brand underline underline-offset-4 hover:text-brand-hover">
               {reportTo}
             </a>
           ) : (
@@ -89,7 +89,7 @@ export function YourData({
         </dl>
         <p className="mt-4 text-muted">
           The full{" "}
-          <Link href="/legal/submission-terms" className="text-brand underline-offset-4 hover:underline">
+          <Link href="/legal/submission-terms" className="text-brand underline underline-offset-4 hover:text-brand-hover">
             Terms of Submission
           </Link>{" "}
           say the same at length.

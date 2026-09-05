@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 
 export default function ApplicantFaqPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={[{ href: "/faq", label: "All FAQs" }, { label: "For applicants" }]} />
 
       <div className="mt-6">

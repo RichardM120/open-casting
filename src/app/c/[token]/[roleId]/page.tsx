@@ -9,7 +9,7 @@ import { DEFAULT_TAPE_GUIDANCE, SPECIAL_RETENTION_DAYS, retentionOf } from "@/li
 import { formatSeconds } from "@/lib/video";
 import { DeadlineBadge } from "@/components/deadline-badge";
 import { SubmissionForm, SubmissionsClosed } from "@/components/submission-form";
-import { Badge, CARD, cx, SectionHead } from "@/components/ui";
+import { Badge, CARD, STACK, SectionHead, cx } from "@/components/ui";
 import {
   ageRange,
   formatDateTime,
@@ -70,7 +70,7 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
   const upcoming = notYetOpen(window);
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
       <ApplicantMasthead heroUrl={session.heroUrl} heroKind={session.heroKind} name={session.name} />
       <Breadcrumb
         trail={[{ href: `/c/${token}`, label: `All roles for ${role.session.name}` }, { label: role.title }]}
@@ -120,7 +120,7 @@ export default async function RolePage({ params }: PageProps<"/c/[token]/[roleId
             . One submission per person per casting call, whichever role you go for.
           </p>
 
-          <section className={cx(CARD, "mt-8")} aria-labelledby="details-heading">
+          <section className={cx(CARD, STACK)} aria-labelledby="details-heading">
           <SectionHead id="details-heading" title="Details" line="Where, when, and who it is for." />
           <dl className="mt-5 grid grid-cols-2 gap-x-6 gap-y-5 sm:grid-cols-3">
             <Detail label="Location" value={role.location} />
@@ -240,7 +240,7 @@ function Detail({ label, value }: { label: string; value: string }) {
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <section className={cx(CARD, "mt-8")}>
+    <section className={cx(CARD, STACK)}>
       <SectionHead title={title} />
       <div className="mt-4 max-w-prose leading-relaxed text-text">{children}</div>
     </section>

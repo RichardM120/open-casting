@@ -28,7 +28,7 @@ const GUIDES = [
 
 export default function FaqPage() {
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
       <Eyebrow>Help</Eyebrow>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
         Questions, answered
@@ -42,7 +42,7 @@ export default function FaqPage() {
           <Link
             key={guide.href}
             href={guide.href}
-            className="group rounded-2xl border border-line-strong bg-raised p-7 transition-colors hover:border-accent"
+            className="group rounded-2xl border border-line-strong bg-raised p-5 transition-colors hover:border-accent sm:p-7"
           >
             <Eyebrow>{guide.eyebrow}</Eyebrow>
             <h2 className="mt-3 text-xl font-semibold tracking-tight transition-colors group-hover:text-brand">

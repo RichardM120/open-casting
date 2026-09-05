@@ -20,7 +20,7 @@ import { Logo } from "./logo";
  * the admin overview for anyone who got past the passcode.
  */
 const LINK =
-  "inline-flex min-h-10 items-center rounded-sm transition-colors hover:text-white focus-visible:outline-accent";
+  "inline-flex min-h-11 items-center rounded-sm transition-colors hover:text-white focus-visible:outline-accent sm:min-h-10";
 
 /** `plain` marks a link the browser must follow itself: the router's prefetch would open the door on sight. */
 type Column = { title: string; links: { href: string; label: string; plain?: boolean }[] };
@@ -153,6 +153,14 @@ export function SiteFooter({
               Registered in England and Wales
               {company.number ? ` no. ${company.number}` : ""}
               {company.office ? `. Registered office: ${company.office}` : "."}
+            </p>
+          ) : null}
+          {company.vat || company.ico ? (
+            <p>
+              {company.vat ? `VAT no. ${company.vat}` : ""}
+              {company.vat && company.ico ? ". " : ""}
+              {company.ico ? `Registered with the Information Commissioner's Office, no. ${company.ico}` : ""}
+              {company.ico ? "." : ""}
             </p>
           ) : null}
         </div>

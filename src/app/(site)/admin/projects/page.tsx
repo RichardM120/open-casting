@@ -7,7 +7,7 @@ import { AdminTabs } from "@/components/admin-tabs";
 import { adminTrail } from "@/lib/admin-nav";
 import { HelpNote } from "@/components/help-note";
 import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
-import { Badge, Button, CARD, cx, Eyebrow, Field, Input, SectionHead, Select } from "@/components/ui";
+import { Badge, Button, CARD, Eyebrow, Field, Input, STACK, SectionHead, Select, cx } from "@/components/ui";
 import { adminSetCallLimits, adminSetCallState } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
 import { listClients } from "@/lib/clients";
@@ -93,7 +93,7 @@ export default async function ProjectsPage({ searchParams }: PageProps<"/admin/p
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={adminTrail("/admin/projects")} />
       <AdminTabs pathname="/admin/projects" />
       <HelpNote title="What this screen is for">
@@ -139,14 +139,14 @@ export default async function ProjectsPage({ searchParams }: PageProps<"/admin/p
         </p>
       </div>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="filter-heading">
+      <section className={cx(CARD, STACK)} aria-labelledby="filter-heading">
         <SectionHead
           id="filter-heading"
           title="Narrow it down"
           line="By client, by where the call is in its life, and by when it closes."
           aside={
             clientId || state || from || to ? (
-              <Link href="/admin/projects" className="text-sm text-brand underline-offset-4 hover:underline">
+              <Link href="/admin/projects" className="text-sm text-brand underline underline-offset-4 hover:text-brand-hover">
                 Clear the filters
               </Link>
             ) : null
@@ -157,7 +157,7 @@ export default async function ProjectsPage({ searchParams }: PageProps<"/admin/p
             href={href({ state: null })}
             aria-current={state === null ? "page" : undefined}
             className={cx(
-              "inline-flex min-h-10 items-center rounded-full border px-4 py-2 whitespace-nowrap transition-colors",
+              "inline-flex min-h-11 items-center rounded-full border px-4 py-2 whitespace-nowrap transition-colors sm:min-h-10",
               state === null
                 ? "border-accent bg-accent-soft font-medium text-text"
                 : "border-line text-muted hover:border-accent hover:text-text",
@@ -171,7 +171,7 @@ export default async function ProjectsPage({ searchParams }: PageProps<"/admin/p
               href={href({ state: entry.key })}
               aria-current={state === entry.key ? "page" : undefined}
               className={cx(
-                "inline-flex min-h-10 items-center rounded-full border px-4 py-2 whitespace-nowrap transition-colors",
+                "inline-flex min-h-11 items-center rounded-full border px-4 py-2 whitespace-nowrap transition-colors sm:min-h-10",
                 state === entry.key
                   ? "border-accent bg-accent-soft font-medium text-text"
                   : "border-line text-muted hover:border-accent hover:text-text",
@@ -210,7 +210,7 @@ export default async function ProjectsPage({ searchParams }: PageProps<"/admin/p
         </form>
       </section>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="calls-heading">
+      <section className={cx(CARD, STACK)} aria-labelledby="calls-heading">
         <SectionHead
           id="calls-heading"
           title="Casting calls"
@@ -223,7 +223,7 @@ export default async function ProjectsPage({ searchParams }: PageProps<"/admin/p
 
         {calls.length > 0 ? (
           <>
-            <div className="relative mt-4 overflow-x-auto rounded-xl border border-line bg-surface">
+            <div className="relative mt-4 -mx-4 overflow-x-auto border-y border-line bg-surface sm:mx-0 sm:rounded-xl sm:border">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-line text-left text-xs text-muted">
@@ -249,7 +249,7 @@ export default async function ProjectsPage({ searchParams }: PageProps<"/admin/p
                         <td className="px-4 py-3">
                           <Link
                             href={`/dashboard/sessions/${call.id}`}
-                            className="block max-w-64 truncate font-medium text-brand underline-offset-4 hover:underline"
+                            className="block max-w-64 truncate font-medium text-brand underline underline-offset-4 hover:text-brand-hover"
                             title={call.name}
                           >
                             {call.name}
@@ -275,7 +275,7 @@ export default async function ProjectsPage({ searchParams }: PageProps<"/admin/p
                         <td className="px-4 py-3 whitespace-nowrap tabular-nums">
                           <Link
                             href={`/dashboard/sessions/${call.id}`}
-                            className="underline-offset-4 hover:text-brand hover:underline"
+                            className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-sm underline-offset-4 hover:text-brand hover:underline sm:min-h-0 sm:min-w-0"
                           >
                             {call.submissions}
                             {call.submissionCap === null ? "" : ` / ${call.submissionCap}`}
@@ -329,7 +329,7 @@ export default async function ProjectsPage({ searchParams }: PageProps<"/admin/p
                           </div>
                           {call.state === "purged" ? null : (
                             <details className="mt-2 text-xs" data-more={`edit-${call.id}`}>
-                              <summary className="cursor-pointer text-right text-muted underline-offset-4 hover:text-text hover:underline">
+                              <summary className="inline-flex min-h-11 cursor-pointer items-center text-right text-muted underline-offset-4 hover:text-text hover:underline sm:min-h-0">
                                 Cap and closing time
                               </summary>
                               <form

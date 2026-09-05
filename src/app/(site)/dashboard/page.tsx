@@ -3,7 +3,7 @@ import Link from "next/link";
 import { HelpNote } from "@/components/help-note";
 
 import { ActivityList } from "@/components/activity-list";
-import { Badge, ButtonLink, CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
+import { Badge, ButtonLink, CARD_GROUP, Eyebrow, STACK, SectionHead, cx } from "@/components/ui";
 import { listActivity } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
 import { formatDateTime, isOpen } from "@/lib/format";
@@ -59,7 +59,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
   const atLimit = user.maxSessions !== null && sessions.length >= user.maxSessions;
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
       <HelpNote title="What this screen is for" faq="/faq/casting-directors">
         <p dangerouslySetInnerHTML={{ __html: 'Every casting call you can see, with its numbers: submitted, still to review, shortlisted, called back, declined. Open one to post roles, publish it and read the submissions.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'Start a new one from <strong>New casting call</strong> in the navigation.' }} />
@@ -111,7 +111,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         {atLimit ? null : <ButtonLink href="/dashboard/sessions/new">New casting call</ButtonLink>}
       </div>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="calls-heading">
+      <section className={cx(CARD_GROUP, STACK)} aria-labelledby="calls-heading">
         <SectionHead
           id="calls-heading"
           title="Casting calls"
@@ -168,7 +168,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
                     {state.key === "draft" ? (
                       <Link
                         href={`/dashboard/sessions/${session.id}`}
-                        className="relative z-10 text-sm text-brand underline-offset-4 hover:underline"
+                        className="relative z-10 text-sm text-brand underline underline-offset-4 hover:text-brand-hover"
                       >
                         Continue setting up
                       </Link>
@@ -187,7 +187,7 @@ export default async function DashboardPage({ searchParams }: PageProps<"/dashbo
         ) : null}
       </section>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="activity-heading">
+      <section className={cx(CARD_GROUP, STACK)} aria-labelledby="activity-heading">
         <SectionHead
           id="activity-heading"
           title="Recent activity"
@@ -228,7 +228,7 @@ function Figures({
         No roles yet.{" "}
         <Link
           href={`/dashboard/roles/new?session=${sessionId}`}
-          className="relative z-10 text-brand underline-offset-4 hover:underline"
+          className="relative z-10 text-brand underline underline-offset-4 hover:text-brand-hover"
         >
           Post the first role
         </Link>

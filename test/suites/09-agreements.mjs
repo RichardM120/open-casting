@@ -38,7 +38,9 @@ await signIn(dir.p, `lg${t}@example.com`, password);
 await dir.p.waitForURL("**/welcome**", { timeout: 20000 });
 check("setup opens on the agreement", (await dir.p.getByText("Your agreement with opencasting.app").count()) > 0);
 check("the full text is there to read", (await dir.p.getByText(/Master Services Agreement and Data Processing Schedule/).count()) > 0);
-check("including the retention clause", (await dir.p.getByText(/thirty \(30\) calendar days following the designated Production End Date/).count()) > 0);
+check("including the retention clause", (await dir.p.getByText(/deleted at the end of the retention period following the designated Production End Date/).count()) > 0);
+check("which says what the default is and that a call keeps its own", (await dir.p.getByText(/thirty \(30\) calendar days unless a different period is recorded/).count()) > 0);
+check("and names the sub-processors as they are", (await dir.p.getByText(/Vercel Blob object storage/).count()) > 0 && (await dir.p.getByText(/Resend \(transactional email/).count()) > 0);
 check("and the indemnity", (await dir.p.getByText(/defend, indemnify, and hold harmless/).count()) > 0);
 check("nothing else is offered yet", (await dir.p.locator("#company").count()) === 0);
 await dir.p.screenshot({ path: `${SHOTS}/agreement.png`, fullPage: true });
@@ -64,11 +66,16 @@ check("and the dashboard opens", !dir.p.url().includes("/welcome"), dir.p.url())
 
 await dir.p.goto(`${BASE}/legal/agreement`, { waitUntil: "networkidle" });
 check("the acceptance is on record", (await dir.p.getByText(/You have accepted the current version/).count()) > 0);
-check("with the version", (await dir.p.getByText(/Version 2026-09-01, accepted/).count()) > 0);
+// Whatever the current version is: pinning the string here means a wording
+// change fails the build for the wrong reason.
+check("with the version", (await dir.p.getByText(/Version \d{4}-\d{2}-\d{2}, accepted/).count()) > 0);
 
 section("4 the administrator is the service provider, not a customer of it");
 await admin.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
 check("no agreement gate for the admin", !admin.p.url().includes("/welcome"), admin.p.url());
+
+/** The version of the Terms the applicant was actually shown. */
+let shown = "";
 
 section("5 an applicant accepts the Terms of Submission");
 const live = await openSession(dir.p, {
@@ -84,7 +91,8 @@ const token = await shareTokenForRole(dir.p, role);
   check("the terms are on the form", (await p.getByText("Terms of Submission").first().count()) > 0);
   check("summarised honestly", (await p.getByText(/never used to train AI|nothing is used to train AI/i).count()) > 0);
   check("with the full text a click away", (await p.getByRole("link", { name: /Read the full Terms of Submission/ }).count()) > 0);
-  check("and a version stated", (await p.getByText(/Version 2026-09-01/).count()) > 0);
+  shown = (await p.getByText(/Version \d{4}-\d{2}-\d{2}/).first().textContent()).match(/\d{4}-\d{2}-\d{2}/)[0];
+  check(`and a version stated: ${shown}`, Boolean(shown));
 
   await p.fill("#name", "Adult Applicant"); await p.fill("#email", `ad${t}@example.com`);
   await p.fill("#phone", "07700 900900"); await p.fill("#location", "Leeds"); await p.selectOption("#age", "34");
@@ -152,7 +160,8 @@ section("7 what was accepted is recorded against the submission");
     [live],
   );
   const [adult, child] = [rows.rows.find((r) => r.name === "Adult Applicant"), rows.rows.find((r) => r.name === "Child Applicant")];
-  check("the adult's terms version is stored", adult?.terms_version === "2026-09-01", JSON.stringify(adult));
+  // The version stored against the acceptance is the one they were shown.
+  check("the adult's terms version is the one on the form", adult?.terms_version === shown, JSON.stringify(adult));
   check("with no guardian", adult?.guardian_name === null);
   check("the child's guardian is stored", child?.guardian_name === "Pat Guardian", JSON.stringify(child));
   check("with the guardian's email", child?.guardian_email === `pg${t}@example.com`);
@@ -167,7 +176,7 @@ section("8 the public terms page stands on its own");
   check("readable without signing in", response.status() === 200);
   check("covers parental consent", (await p.getByText(/parent or legal guardian with legal parental responsibility/).count()) > 0);
   check("covers prohibited content", (await p.getByText(/nudity, semi-nudity, sexually explicit/).count()) > 0);
-  check("covers the 30-day purge", (await p.getByText(/thirty \(30\) calendar days after the formal conclusion/).count()) > 0);
+  check("covers the purge", (await p.getByText(/destroyed at the end of the retention period after the formal conclusion/).count()) > 0);
   check("and rules out AI training", (await p.getByText(/never be sold, commercialised, or used for automated AI model training/).count()) > 0);
   await c.close();
 }

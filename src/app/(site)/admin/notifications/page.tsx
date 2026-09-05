@@ -53,7 +53,7 @@ export default async function NotificationsPage({
       : [];
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={adminTrail("/admin/notifications")} />
       <AdminTabs pathname="/admin/notifications" />
       <HelpNote title="What this screen is for">
@@ -108,7 +108,7 @@ export default async function NotificationsPage({
             href={entry.key === "templates" ? "/admin/notifications" : "/admin/notifications?tab=log"}
             aria-current={tab === entry.key ? "page" : undefined}
             className={cx(
-              "inline-flex min-h-10 items-center rounded-full border px-4 py-2 whitespace-nowrap transition-colors",
+              "inline-flex min-h-11 items-center rounded-full border px-4 py-2 whitespace-nowrap transition-colors sm:min-h-10",
               tab === entry.key
                 ? "border-accent bg-accent-soft font-medium text-text"
                 : "border-line text-muted hover:border-accent hover:text-text",
@@ -217,7 +217,7 @@ export default async function NotificationsPage({
           />
           {messages.length > 0 ? (
             <>
-              <div className="relative mt-5 overflow-x-auto rounded-xl border border-line bg-surface">
+              <div className="relative mt-5 -mx-4 overflow-x-auto border-y border-line bg-surface sm:mx-0 sm:rounded-xl sm:border">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-line text-left text-xs text-muted">

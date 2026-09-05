@@ -31,7 +31,7 @@ export default async function EditRolePage({
   const sessions = await listVisibleSessions(user);
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={[{ href: "/dashboard", label: "Casting calls" }, { href: `/dashboard/sessions/${role.sessionId}`, label: role.production }, { href: `/dashboard/roles/${role.id}`, label: role.title }, { label: "Edit" }]} />
       <SetupProgress stage={3} sessionId={role.sessionId} />
       <HelpNote title="What this screen is for" faq="/faq/casting-directors">

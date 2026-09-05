@@ -1,6 +1,6 @@
 import { daysUntil, formatDate, formatDateTime, isOpen, notYetOpen } from "./format";
 import { purgeDate } from "./retention";
-import type { CastingSession } from "./types";
+import { retentionOf, type CastingSession } from "./types";
 
 /**
  * Where a casting call is in its life, as a traffic light. Green is taking
@@ -38,7 +38,7 @@ export function callState(session: CastingSession): CallState {
     };
   }
   if (daysUntil(session.productionEndsAt) <= 0) {
-    const deletion = purgeDate(session.productionEndsAt);
+    const deletion = purgeDate(session.productionEndsAt, retentionOf(session));
     const days = daysUntil(deletion);
     return {
       key: "closing",
@@ -70,12 +70,17 @@ export function callState(session: CastingSession): CallState {
     key: "review",
     label: "In review",
     tone: "amber",
-    line: `Closed ${formatDateTime(session.closedAt ?? session.closesAt)}. Production finishes ${formatDate(session.productionEndsAt)}; details are deleted 30 days after that.`,
+    line: `Closed ${formatDateTime(session.closedAt ?? session.closesAt)}. Production finishes ${formatDate(session.productionEndsAt)}; details are deleted ${retentionOf(session)} days after that.`,
     rank: 2,
   };
 }
 
-/** The card's edge and ground for a state. In progress has no ground of its own. */
+/**
+ * The card's edge and ground for a state. Every state has a ground of its own:
+ * on a phone the list is not inside a cream card any more, so a card with no
+ * background is an outline drawn on the page rather than something sitting on
+ * it.
+ */
 export function cardTone(state: CallState): string {
   switch (state.key) {
     case "live":
@@ -88,6 +93,6 @@ export function cardTone(state: CallState): string {
     case "purged":
       return "border-l-4 border-l-line-strong bg-surface";
     default:
-      return "border-l-4 border-l-transparent bg-transparent";
+      return "border-l-4 border-l-transparent bg-raised";
   }
 }

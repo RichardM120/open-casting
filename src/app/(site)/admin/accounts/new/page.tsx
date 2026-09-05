@@ -30,7 +30,7 @@ export default async function NewAccountPage() {
   const clients = await listClients();
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={adminTrail("/admin/accounts", [{ label: "Set up an account" }])} />
       <HelpNote title="What this screen is for">
         <p
@@ -61,7 +61,7 @@ export default async function NewAccountPage() {
         {clients.length === 0 ? (
           <p className="rounded-2xl border border-line-strong bg-raised p-4 text-sm text-muted sm:p-6">
             An account belongs to a client, so there is nothing to fill in yet.{" "}
-            <Link href="/admin/clients/new" className="text-brand underline-offset-4 hover:underline">
+            <Link href="/admin/clients/new" className="text-brand underline underline-offset-4 hover:text-brand-hover">
               Take on the first client
             </Link>
             , then come back.

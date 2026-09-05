@@ -34,7 +34,10 @@ export function HelpNote({
         {children}
         {faq ? (
           <p>
-            <Link href={faq} className="text-brand underline-offset-4 hover:underline">
+            <Link
+              href={faq}
+              className="inline-flex min-h-11 items-center rounded-sm text-brand underline underline-offset-4 hover:text-brand-hover sm:min-h-0"
+            >
               {faqLabel}
             </Link>
           </p>

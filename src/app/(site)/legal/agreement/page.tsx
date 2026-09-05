@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-
+import { Breadcrumb } from "@/components/breadcrumb";
 import { LegalText } from "@/components/legal-document";
 import { Eyebrow } from "@/components/ui";
 import { MSA } from "@/content/legal";
@@ -21,12 +20,8 @@ export default async function AgreementPage() {
   const mine = accepted.filter((entry) => entry.document === "msa");
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
-      {user ? (
-        <Link href="/dashboard" className="text-sm text-muted transition-colors hover:text-text">
-          ← Roles
-        </Link>
-      ) : null}
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
+      {user ? <Breadcrumb trail={[{ href: "/dashboard", label: "Casting calls" }, { label: "Your agreement" }]} /> : null}
 
       <Eyebrow className={user ? "mt-6 block" : undefined}>Your agreement</Eyebrow>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">

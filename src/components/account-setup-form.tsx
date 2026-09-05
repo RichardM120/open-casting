@@ -428,7 +428,7 @@ export function AccountSetupForm({ clients }: { clients: Client[] }) {
           is saved onto{" "}
           <Link
             href={chosen ? `/admin/clients/${chosen.id}` : "/admin/clients"}
-            className="text-brand underline-offset-4 hover:underline"
+            className="text-brand underline underline-offset-4 hover:text-brand-hover"
           >
             {chosen ? chosen.name : "the client"}
           </Link>

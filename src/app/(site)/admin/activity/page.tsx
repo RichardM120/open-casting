@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { HelpNote } from "@/components/help-note";
 
 import { ActivityList } from "@/components/activity-list";
-import { CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
+import { CARD_GROUP, Eyebrow, STACK, SectionHead, cx } from "@/components/ui";
 import { countActivity, listActivity } from "@/lib/activity";
 import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
 import { requireUser } from "@/lib/auth";
@@ -35,7 +35,7 @@ export default async function AdminActivityPage({
   });
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={adminTrail("/admin/activity")} />
       <AdminTabs pathname="/admin/activity" />
       <HelpNote title="What this screen is for">
@@ -50,7 +50,7 @@ export default async function AdminActivityPage({
         </p>
       </div>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="record-heading">
+      <section className={cx(CARD_GROUP, STACK)} aria-labelledby="record-heading">
         <SectionHead
           id="record-heading"
           title="The record"

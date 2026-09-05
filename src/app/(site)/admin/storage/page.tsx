@@ -6,7 +6,7 @@ import { Breadcrumb } from "@/components/breadcrumb";
 import { AdminTabs } from "@/components/admin-tabs";
 import { adminTrail } from "@/lib/admin-nav";
 import { HelpNote } from "@/components/help-note";
-import { Badge, CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
+import { Badge, CARD, CARD_GROUP, Eyebrow, STACK, SectionHead, cx } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { countOrphanedMedia, describeStore, storeUsage, uploadsEnabled } from "@/lib/blob";
 import { clientUsage, listClients } from "@/lib/clients";
@@ -108,7 +108,7 @@ export default async function StoragePage() {
     : [];
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={adminTrail("/admin/storage")} />
       <AdminTabs pathname="/admin/storage" />
       <HelpNote title="What this screen is for">
@@ -161,7 +161,7 @@ export default async function StoragePage() {
         </section>
       ) : (
         <section
-          className={cx(CARD, "mt-8")}
+          className={cx(CARD, STACK)}
           aria-labelledby="attention-heading"
         >
           <SectionHead
@@ -172,7 +172,7 @@ export default async function StoragePage() {
         </section>
       )}
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="files-heading">
+      <section className={cx(CARD, STACK)} aria-labelledby="files-heading">
         <SectionHead
           id="files-heading"
           title="The file store"
@@ -220,13 +220,13 @@ export default async function StoragePage() {
         ) : null}
       </section>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="database-heading">
+      <section className={cx(CARD, STACK)} aria-labelledby="database-heading">
         <SectionHead
           id="database-heading"
           title="The database"
           line={`${formatBytes(database.bytes)} in all, indexes included. ${counts.submissions} ${counts.submissions === 1 ? "submission" : "submissions"} across ${counts.sessions} ${counts.sessions === 1 ? "casting call" : "casting calls"}.`}
         />
-        <div className="relative mt-4 overflow-x-auto rounded-xl border border-line bg-surface">
+        <div className="relative mt-4 -mx-4 overflow-x-auto border-y border-line bg-surface sm:mx-0 sm:rounded-xl sm:border">
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-line text-left text-xs text-muted">
@@ -261,7 +261,7 @@ export default async function StoragePage() {
         </div>
       </section>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="retention-heading">
+      <section className={cx(CARD, STACK)} aria-labelledby="retention-heading">
         <SectionHead
           id="retention-heading"
           title="Due to be deleted"
@@ -277,7 +277,7 @@ export default async function StoragePage() {
           }
         />
         {schedule.due.length > 0 ? (
-          <div className="relative mt-4 overflow-x-auto rounded-xl border border-line bg-surface">
+          <div className="relative mt-4 -mx-4 overflow-x-auto border-y border-line bg-surface sm:mx-0 sm:rounded-xl sm:border">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line text-left text-xs text-muted">
@@ -293,7 +293,7 @@ export default async function StoragePage() {
                     <td className="px-4 py-3">
                       <Link
                         href={`/dashboard/sessions/${entry.id}`}
-                        className="font-medium text-brand underline-offset-4 hover:underline"
+                        className="font-medium text-brand underline underline-offset-4 hover:text-brand-hover"
                       >
                         {entry.name}
                       </Link>
@@ -327,7 +327,7 @@ export default async function StoragePage() {
 
         {schedule.purged.length > 0 ? (
           <details className="group mt-4 text-sm">
-            <summary className="cursor-pointer text-brand underline-offset-4 hover:underline">
+            <summary className="inline-flex min-h-11 cursor-pointer items-center text-brand underline underline-offset-4 hover:text-brand-hover sm:min-h-0">
               {schedule.purged.length}{" "}
               {schedule.purged.length === 1 ? "casting call has" : "casting calls have"} already
               had theirs destroyed
@@ -344,7 +344,7 @@ export default async function StoragePage() {
         ) : null}
       </section>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="sweep-heading">
+      <section className={cx(CARD, STACK)} aria-labelledby="sweep-heading">
         <SectionHead
           id="sweep-heading"
           title="The nightly sweep"
@@ -382,12 +382,19 @@ export default async function StoragePage() {
         )}
       </section>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="clients-heading">
+      <section className={cx(CARD_GROUP, STACK)} aria-labelledby="clients-heading">
         <SectionHead
           id="clients-heading"
           title="Against what they bought"
           line="How close each client is to the ceilings on their plan. A client with no ceiling is not listed."
-          aside={<Link href="/admin/clients" className="text-sm text-brand underline-offset-4 hover:underline">All clients</Link>}
+          aside={
+            <Link
+              href="/admin/clients"
+              className="inline-flex min-h-11 items-center rounded-sm text-sm text-brand underline underline-offset-4 hover:text-brand-hover sm:min-h-0"
+            >
+              All clients
+            </Link>
+          }
         />
         {clients.some((client) => client.maxSessions !== null) ? (
           <ul className="mt-5 flex flex-col gap-3">

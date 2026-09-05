@@ -26,18 +26,18 @@ export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   const error = Array.isArray(params.error) ? params.error[0] : params.error;
 
   return (
-    <div className="mx-auto grid max-w-5xl gap-12 px-4 py-16 sm:px-6 lg:grid-cols-2 lg:gap-16 lg:py-24">
+    <div className="mx-auto grid max-w-5xl gap-12 px-4 py-10 sm:px-6 sm:py-16 lg:grid-cols-2 lg:gap-16 lg:py-24">
       {/* Form first on a phone: whoever is signing in came to sign in. */}
       <div className="order-1 lg:order-2">
         <Eyebrow>Open Casting</Eyebrow>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight">Sign in</h1>
+        <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Sign in</h1>
         <p className="mt-3 text-sm leading-relaxed text-muted">
           The same sign-in for administrators, casting directors and production teams; what you
           can see follows from your account. Applicants never sign in: if you were sent a casting
           link, open that instead.
         </p>
 
-        <div className={cx(SPOTLIGHT, "mt-8 p-7")}>
+        <div className={cx(SPOTLIGHT, "mt-8 p-5 sm:p-7")}>
           <SignInForm next={next} google={googleConfigured()} notice={error} />
         </div>
       </div>

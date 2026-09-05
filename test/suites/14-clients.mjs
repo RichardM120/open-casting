@@ -109,8 +109,14 @@ section("5c the admin section carries its own navigation");
   check("and offers no test without one", (await admin.p.getByRole("button", { name: "Test the store" }).count()) === 0);
   check("the overview opens", (await admin.p.getByText("Open Casting, as a service").count()) > 0);
   const nav = await admin.p.locator("header nav").first().locator("a").allTextContents();
-  check(`admin nav: ${JSON.stringify(nav)}`, nav.includes("Clients") && nav.includes("Accounts"));
+  check(`admin nav: ${JSON.stringify(nav)}`, nav.includes("Clients"));
   check("and no Casting calls link, that being the other section", !nav.includes("Casting calls"));
+
+  // Accounts is not in the bar any more: it is a tab inside the Clients group,
+  // which is what keeps the bar to four items on a phone.
+  await admin.p.goto(`${BASE}/admin/clients`, { waitUntil: "networkidle" });
+  const tabs = await admin.p.getByRole("navigation", { name: "Clients pages" }).locator("a").allTextContents();
+  check(`Clients carries Accounts as a tab: ${JSON.stringify(tabs)}`, tabs.includes("Accounts"));
 
   await admin.p.goto(`${BASE}/dashboard`, { waitUntil: "networkidle" });
   const casting = await admin.p.locator("header nav").first().locator("a").allTextContents();

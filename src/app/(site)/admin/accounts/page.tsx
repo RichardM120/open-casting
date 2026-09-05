@@ -4,7 +4,7 @@ import { HelpNote } from "@/components/help-note";
 import { notFound } from "next/navigation";
 
 import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
-import { Badge, Button, ButtonLink, CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
+import { Badge, Button, ButtonLink, CARD_GROUP, Eyebrow, STACK, SectionHead, cx } from "@/components/ui";
 import { toggleAccountSuspended } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
 import { ROLE_LABELS, TIERS, type Tier } from "@/lib/types";
@@ -38,7 +38,7 @@ export default async function AccountsPage({ searchParams }: PageProps<"/admin/a
   });
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={adminTrail("/admin/accounts")} />
       <AdminTabs pathname="/admin/accounts" />
       <HelpNote title="What this screen is for">
@@ -59,7 +59,7 @@ export default async function AccountsPage({ searchParams }: PageProps<"/admin/a
         <ButtonLink href="/admin/accounts/new">New account</ButtonLink>
       </div>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="accounts-heading">
+      <section className={cx(CARD_GROUP, STACK)} aria-labelledby="accounts-heading">
       <SectionHead
         id="accounts-heading"
         title="Accounts"
@@ -121,7 +121,7 @@ export default async function AccountsPage({ searchParams }: PageProps<"/admin/a
                   What they may run comes from their client.{" "}
                   <Link
                     href={`/admin/clients/${account.client_id}`}
-                    className="text-brand underline-offset-4 hover:underline"
+                    className="text-brand underline underline-offset-4 hover:text-brand-hover"
                   >
                     Change it on {account.company}
                   </Link>

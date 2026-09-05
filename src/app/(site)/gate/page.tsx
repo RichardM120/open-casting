@@ -20,15 +20,15 @@ export default async function GatePage({ searchParams }: PageProps<"/gate">) {
   const next = typeof params.next === "string" && /^\/(?!\/)/.test(params.next) ? params.next : "/";
 
   return (
-    <div className="mx-auto max-w-md px-4 py-24 sm:px-6">
+    <div className="mx-auto max-w-md px-4 py-12 sm:px-6 sm:py-24">
       <Eyebrow>Not open yet</Eyebrow>
-      <h1 className="mt-3 text-3xl font-semibold tracking-tight">Open Casting</h1>
+      <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">Open Casting</h1>
       <p className="mt-4 text-sm leading-relaxed text-muted">
         This is being built and is not open to the public. If you have been given a passcode,
         enter it below.
       </p>
 
-      <div className={cx(SPOTLIGHT, "mt-8 p-7")}>
+      <div className={cx(SPOTLIGHT, "mt-8 p-5 sm:p-7")}>
         {gateOperable() ? (
           <GateForm next={next} />
         ) : (

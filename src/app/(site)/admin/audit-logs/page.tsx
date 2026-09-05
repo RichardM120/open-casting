@@ -7,7 +7,7 @@ import { AdminTabs } from "@/components/admin-tabs";
 import { adminTrail } from "@/lib/admin-nav";
 import { HelpNote } from "@/components/help-note";
 import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
-import { Badge, Button, CARD, cx, Eyebrow, Field, Input, SectionHead, Select } from "@/components/ui";
+import { Badge, Button, CARD, Eyebrow, Field, Input, STACK, SectionHead, Select, cx } from "@/components/ui";
 import { ACTIONS, countAudit, listAudit, type Action } from "@/lib/activity";
 import { requireUser } from "@/lib/auth";
 import { formatDateTime } from "@/lib/format";
@@ -59,7 +59,7 @@ export default async function AuditLogPage({ searchParams }: PageProps<"/admin/a
   };
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={adminTrail("/admin/audit-logs")} />
       <AdminTabs pathname="/admin/audit-logs" />
       <HelpNote title="What this screen is for">
@@ -85,7 +85,7 @@ export default async function AuditLogPage({ searchParams }: PageProps<"/admin/a
         </p>
       </div>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="log-heading">
+      <section className={cx(CARD, STACK)} aria-labelledby="log-heading">
         <SectionHead
           id="log-heading"
           title="The record"
@@ -96,7 +96,7 @@ export default async function AuditLogPage({ searchParams }: PageProps<"/admin/a
           }
           aside={
             search || action ? (
-              <Link href="/admin/audit-logs" className="text-sm text-brand underline-offset-4 hover:underline">
+              <Link href="/admin/audit-logs" className="text-sm text-brand underline underline-offset-4 hover:text-brand-hover">
                 Clear the search
               </Link>
             ) : null
@@ -130,7 +130,7 @@ export default async function AuditLogPage({ searchParams }: PageProps<"/admin/a
 
         {entries.length > 0 ? (
           <>
-            <div className="relative mt-5 overflow-x-auto rounded-xl border border-line bg-surface">
+            <div className="relative mt-5 -mx-4 overflow-x-auto border-y border-line bg-surface sm:mx-0 sm:rounded-xl sm:border">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b border-line text-left text-xs text-muted">

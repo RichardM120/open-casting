@@ -16,7 +16,7 @@ every pull request. It fails the build rather than warning.
 | `npm run lint` | ESLint, including the React hooks rules. |
 | `npm run typecheck` | `next typegen` then `tsc --noEmit`. Typegen first, because the route types are generated and a fresh checkout has no `.next`. The same script runs locally and in CI, so the two cannot disagree. |
 | `npm run build` **with no `DATABASE_URL`** | Every data page is `force-dynamic`; a build that needs a live database is a deploy that breaks when the database is slow. |
-| `npm run test:e2e` | Browser checks against a casting call build and a real Postgres: fourteen suites, including the casting call's casting window, the one-submission-per-casting call rule, that suspending a client locks out every account under it, that the two sections carry their own navigation, and the pre-launch wall. |
+| `npm run test:e2e` | Browser checks against a casting call build and a real Postgres: twenty suites, including the casting call's casting window, the one-submission-per-casting call rule, that suspending a client locks out every account under it, that the two sections carry their own navigation, the pre-launch wall, over a thousand submissions on one call, every page measured at 320px, and every page put through axe-core against WCAG 2.2 AA. |
 
 The end-to-end suites live in `test/suites/` and run through `test/run.mjs`,
 which gives each suite a dropped-and-reseeded database and its own server.
@@ -57,6 +57,22 @@ assertion, which is what would catch a Content Security Policy regression.
 - **A visible error boundary**, `src/app/error.tsx`. Without one, a server error shows the
   platform's own page, which says only that one happened. This one shows the digest, which
   is what matches a report to a log line.
+- **WCAG 2.2 AA, checked by machine on every push.** `test/suites/21-accessibility.mjs`
+  runs axe-core over twenty-five page states — signed out, casting director, administrator,
+  at 1280px and at 320px, and over the applicant's form in its error state — and fails the
+  build on any violation. The pass that introduced it fixed three real ones: links inside a
+  sentence told apart from the text by colour alone (1.4.1), white at 75% on the terracotta
+  bar at 4.23:1 where body text needs 4.5 (1.4.3), and the amber badge at 3.99:1 on its own
+  ground. What a machine cannot decide — whether the words make sense, whether a keyboard
+  can finish a task — still needs a person.
+- **Four rules for a phone**, held to at 320px and checked on every push by
+  `test/suites/20-mobile.mjs`: nothing pushes the page sideways; everything you tap on
+  purpose is at least 44px, the number Apple, Material and WCAG's AAA target agree on,
+  with the standard's own exceptions for a link inside a sentence and for a small target
+  with clear space around it; no text in the interface is under 12px; and no card is
+  drawn inside another card, because on a 320px screen the second frame costs a tenth of
+  the width. The tokens that carry them are `CARD`, `CARD_GROUP` and `STACK` in
+  `src/components/ui.tsx`, so the rules live in one place rather than at every call site.
 
 ## Yours: the Vercel dashboard
 

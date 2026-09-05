@@ -51,7 +51,7 @@ export default async function CastingCallPage({ params }: PageProps<"/c/[token]"
   const single = roles.length === 1;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
       <ApplicantMasthead heroUrl={session.heroUrl} heroKind={session.heroKind} name={session.name} />
       {preview ? (
         <p className="mb-8 rounded-xl border border-accent/40 bg-accent-soft px-4 py-3 text-sm leading-relaxed text-text">

@@ -17,17 +17,17 @@ export type LegalDocument = {
   clauses: Clause[];
 };
 
-const ENTITY = "CW Casting Limited / SeaGlass Digital";
+const ENTITY = "CW Casting Limited, trading as SeaGlass Digital";
 
 /* ------------------------------------------------------- for the customer -- */
 
 export const MSA: LegalDocument = {
   id: "msa",
-  version: "2026-09-01",
+  version: "2026-09-05",
   title: "Master Services Agreement and Data Processing Schedule",
-  updated: "September 2026",
+  updated: "5 September 2026",
   intro: [
-    `This Master Services Agreement ("Agreement") is entered into between ${ENTITY}, operating opencasting.app ("Service Provider"), and the customer named on the account ("Customer").`,
+    `This Master Services Agreement (“Agreement”) is entered into between ${ENTITY}, operating opencasting.app (“Service Provider”), and the customer named on the account (“Customer”).`,
     "By activating a project campaign, accessing, or using the opencasting.app platform (“Service”), Customer agrees to be bound by the terms of this Agreement and the attached Data Processing Schedule.",
     "Governed by the laws of England and Wales.",
   ],
@@ -66,8 +66,8 @@ export const MSA: LegalDocument = {
     {
       heading: "5. Data lifecycle and automated purge",
       body: [
-        "5.1 Post-production deletion. In strict compliance with UK GDPR data minimisation obligations, Customer acknowledges that all applicant media and submission form records will be permanently and irreversibly deleted thirty (30) calendar days following the designated Production End Date.",
-        "5.2 Customer export responsibility. Customer is solely responsible for executing bulk data and media exports prior to the expiry of the 30-day post-production grace period. Service Provider accepts no liability for un-exported data purged following the expiry of this period.",
+        "5.1 Post-production deletion. In strict compliance with UK GDPR data minimisation obligations, Customer acknowledges that all applicant media and submission form records will be permanently and irreversibly deleted at the end of the retention period following the designated Production End Date. That period is thirty (30) calendar days unless a different period is recorded on Customer’s account, and the period in force when a casting call is opened governs that casting call for its whole life.",
+        "5.2 Customer export responsibility. Customer is solely responsible for executing bulk data and media exports prior to the expiry of the retention period. Service Provider accepts no liability for un-exported data purged following the expiry of that period.",
         "5.3 Automated alerts. The platform will issue automated reminder notifications to Customer’s designated account administrator at fourteen (14) days and forty-eight (48) hours prior to final media purge.",
       ],
     },
@@ -83,9 +83,9 @@ export const MSA: LegalDocument = {
       body: [
         "Roles. Customer is the Data Controller, determining the purpose and legal basis of casting candidate data. Service Provider is the Data Processor, acting solely on Customer’s documented instructions via platform operations.",
         "Scope. Temporary transmission, hosting, triage, shortlisting, and secure export of talent audition records for television, film, commercial, and stage productions. Categories of data: names, dates of birth, contact details, location, guardian details, photographic headshots, video audition tapes, and biographical notes. Data subjects: casting applicants, actors, performers, and children submitted by parents or legal guardians.",
-        "Duration. The active casting window plus a maximum of thirty (30) calendar days following the production’s conclusion, after which data is permanently erased.",
+        "Duration. The active casting window plus the retention period recorded on Customer’s account — thirty (30) calendar days following the production’s conclusion unless otherwise agreed in writing — after which data is permanently erased.",
         "Processor obligations. Process only on documented instructions; bind authorised personnel to confidentiality; implement industry-standard technical and organisational measures including encryption at rest and TLS in transit, strict access control, and direct-to-storage presigned uploads; provide tools to assist with data subject rights under UK GDPR; notify Customer of a confirmed personal data breach without undue delay and within 48 hours; and delete all candidate personal data on expiry of the grace period.",
-        "Sub-processors. Customer provides general written authorisation for essential infrastructure sub-processors: Cloudflare Inc. (object storage), Neon Inc. (PostgreSQL), and Vercel Inc. (application hosting). Primary storage and server nodes reside in UK/EU data centres.",
+        "Sub-processors. Customer provides general written authorisation for essential infrastructure sub-processors: Vercel Inc. (application hosting and Vercel Blob object storage), Neon Inc. (PostgreSQL), Resend (transactional email — submission receipts, status updates and sign-in links), and, where a user chooses to sign in with Google, Google LLC (authentication only; no applicant data). Primary storage and server nodes reside in UK/EU data centres. Service Provider will give Customer notice of any intended change to this list, and Customer may object.",
         "Controller obligations. Customer warrants that it maintains a lawful basis for processing, ensures public landing pages carry the parental consent mechanisms required under the ICO Children’s Code, and accurately maintains each project’s Production End Date in the dashboard, which governs the automated retention and deletion lifecycle.",
       ],
     },
@@ -96,9 +96,9 @@ export const MSA: LegalDocument = {
 
 export const SUBMISSION_TERMS: LegalDocument = {
   id: "submission",
-  version: "2026-09-01",
+  version: "2026-09-05",
   title: "Terms of Submission and Acceptable Use Policy",
-  updated: "September 2026",
+  updated: "5 September 2026",
   intro: [
     "Please read these terms carefully before submitting any information, photographs, or video audition tapes (“Submissions”) through opencasting.app.",
     `The platform is an automated technical intermediary service operated by ${ENTITY}. Submissions are collected on behalf of the production company or casting director running this casting call (“the Production Team”).`,
@@ -132,7 +132,7 @@ export const SUBMISSION_TERMS: LegalDocument = {
       heading: "4. Data retention and automated deletion",
       body: [
         "Your submission is held securely for the duration of the casting and production review process.",
-        "In compliance with UK GDPR data minimisation principles, all photos, video audition tapes, and contact records are permanently and irreversibly destroyed thirty (30) calendar days after the formal conclusion of the production.",
+        "In compliance with UK GDPR data minimisation principles, all photos, video audition tapes, and contact records are permanently and irreversibly destroyed at the end of the retention period after the formal conclusion of the production. That period is thirty (30) calendar days unless the casting team has agreed a longer one, and the casting call you applied to states the exact date your details go.",
         "Your materials will never be sold, commercialised, or used for automated AI model training.",
       ],
     },

@@ -23,7 +23,7 @@ export default async function NewRolePage({ searchParams }: PageProps<"/dashboar
   // one exists. Saying so beats a form with an empty, required dropdown.
   if (sessions.length === 0) {
     return (
-      <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+      <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
         <Breadcrumb trail={[{ href: "/dashboard", label: "Casting calls" }, { label: "New role" }]} />
         <SetupProgress stage={2} />
         <HelpNote title="What this screen is for" faq="/faq/casting-directors">
@@ -49,7 +49,7 @@ export default async function NewRolePage({ searchParams }: PageProps<"/dashboar
   const production = sessions.find((session) => session.id === defaultSessionId) ?? sessions[0];
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={[{ href: "/dashboard", label: "Casting calls" }, { href: `/dashboard/sessions/${production.id}`, label: production.name }, { label: "New role" }]} />
       <SetupProgress stage={2} sessionId={requested} />
       <HelpNote title="What this screen is for" faq="/faq/casting-directors">

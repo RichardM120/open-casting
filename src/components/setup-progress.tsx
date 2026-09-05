@@ -88,7 +88,7 @@ export function SetupProgress({
                 <Link
                   href={href}
                   title={`${step.label}: ${step.point}`}
-                  className="group block rounded-sm"
+                  className="group block rounded-sm max-sm:flex max-sm:min-h-11 max-sm:flex-col max-sm:justify-center"
                 >
                   {body}
                 </Link>
@@ -110,7 +110,7 @@ export function SetupProgress({
           nextHref ? (
             <Link
               href={nextHref}
-              className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-brand underline-offset-4 hover:underline"
+              className="inline-flex shrink-0 items-center gap-1 text-sm font-medium text-brand underline underline-offset-4 hover:text-brand-hover"
             >
               Next: {next.label}
               <svg

@@ -568,7 +568,14 @@ section("21 the admin section is four groups, with tabs inside each");
   await p.goto(`${BASE}/admin`, { waitUntil: "networkidle" });
   const bar = await p.locator("header nav").first().locator("a").allTextContents();
   check(`the bar holds four groups and the FAQ: ${JSON.stringify(bar)}`, JSON.stringify(bar) === JSON.stringify(["Overview", "Clients", "Casting", "System", "FAQ"]));
-  check("the overview says what is in each group", (await p.getByRole("heading", { name: "Everything here" }).count()) === 1 && (await p.getByRole("link", { name: "Audit log", exact: true }).count()) >= 1);
+  // Each entry is one link over both its name and the line under it, so the
+  // target is the whole entry and a screen reader hears where it goes and
+  // what it is for in one go.
+  const entry = p.getByRole("link", { name: /^Audit log/ });
+  check("the overview says what is in each group",
+    (await p.getByRole("heading", { name: "Everything here" }).count()) === 1
+      && (await entry.count()) >= 1
+      && /the address and the target/.test(await entry.first().innerText()));
 
   await p.goto(`${BASE}/admin/storage`, { waitUntil: "networkidle" });
   const tabs = await p.locator('nav[aria-label="System pages"] a').allTextContents();

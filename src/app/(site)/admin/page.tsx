@@ -3,7 +3,7 @@ import Link from "next/link";
 import { HelpNote } from "@/components/help-note";
 
 import { ActivityList } from "@/components/activity-list";
-import { Button, ButtonLink, CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
+import { Button, ButtonLink, CARD, CARD_GROUP, Eyebrow, STACK, SectionHead, cx } from "@/components/ui";
 import { testFileStore } from "@/lib/actions";
 import { ADMIN_GROUPS } from "@/lib/admin-nav";
 import { listActivity } from "@/lib/activity";
@@ -45,7 +45,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
   );
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
       <HelpNote title="What this screen is for">
         <p dangerouslySetInnerHTML={{ __html: 'The service as a whole: who is paying, what they are using, and what has happened. Your own casting work lives in the casting director section.' }} />
         <p dangerouslySetInnerHTML={{ __html: 'The file store card says whether applicants can attach photos and videos, and can prove the store works from this deployment.' }} />
@@ -58,14 +58,14 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
         <p className="mt-3 max-w-2xl text-muted">
           Who is paying, what they are on, and what the site is doing. Your own casting work is in
           the{" "}
-          <Link href="/dashboard" className="text-brand underline-offset-4 hover:underline">
+          <Link href="/dashboard" className="text-brand underline underline-offset-4 hover:text-brand-hover">
             casting director section
           </Link>
           .
         </p>
       </div>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="service-heading">
+      <section className={cx(CARD, STACK)} aria-labelledby="service-heading">
         <SectionHead
           id="service-heading"
           title="The service"
@@ -92,7 +92,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
         </dl>
       </section>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="store-heading">
+      <section className={cx(CARD, STACK)} aria-labelledby="store-heading">
         <SectionHead
           id="store-heading"
           title="File store"
@@ -141,7 +141,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
       {/* Every page in the section, said in one line each. The bar above holds
           four groups; this is where to find what is inside one without going
           looking for it. */}
-      <section className={cx(CARD, "mt-8")} aria-labelledby="everything-heading">
+      <section className={cx(CARD_GROUP, STACK)} aria-labelledby="everything-heading">
         <SectionHead
           id="everything-heading"
           title="Everything here"
@@ -154,13 +154,15 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
               <ul className="mt-3 flex flex-col gap-2">
                 {group.pages.map((page) => (
                   <li key={page.href}>
+                    {/* The line under the name is part of the link, so the
+                        target is the whole entry rather than one word of it. */}
                     <Link
                       href={page.href}
-                      className="text-sm font-medium text-brand underline-offset-4 hover:underline"
+                      className="block rounded-sm py-1 underline-offset-4 hover:underline"
                     >
-                      {page.label}
+                      <span className="text-sm font-medium text-brand">{page.label}</span>
+                      <span className="block text-xs leading-relaxed text-muted">{page.line}</span>
                     </Link>
-                    <span className="block text-xs leading-relaxed text-muted">{page.line}</span>
                   </li>
                 ))}
               </ul>
@@ -169,7 +171,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
         </div>
       </section>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="latest-heading">
+      <section className={cx(CARD_GROUP, STACK)} aria-labelledby="latest-heading">
         <SectionHead
           id="latest-heading"
           title="Latest activity"

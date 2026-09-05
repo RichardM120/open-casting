@@ -8,7 +8,7 @@ import { adminTrail } from "@/lib/admin-nav";
 import { HelpNote } from "@/components/help-note";
 import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
 import { ProfilePhoto } from "@/components/profile-photo";
-import { Badge, Button, CARD, cx, Eyebrow, Field, Input, SectionHead } from "@/components/ui";
+import { Badge, Button, CARD_GROUP, Eyebrow, Field, Input, STACK, SectionHead, cx } from "@/components/ui";
 import { removeSubmission, setSubmissionMediaFlagged } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
 import { formatDateTime, formatRelative } from "@/lib/format";
@@ -103,7 +103,7 @@ export default async function AdminSubmissionsPage({
   ];
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={adminTrail("/admin/submissions")} />
       <AdminTabs pathname="/admin/submissions" />
       <HelpNote title="What this screen is for">
@@ -148,7 +148,7 @@ export default async function AdminSubmissionsPage({
         </p>
       </div>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="feed-heading">
+      <section className={cx(CARD_GROUP, STACK)} aria-labelledby="feed-heading">
         <SectionHead
           id="feed-heading"
           title="The feed"
@@ -166,7 +166,7 @@ export default async function AdminSubmissionsPage({
               href={chip.to}
               aria-current={chip.on ? "page" : undefined}
               className={cx(
-                "inline-flex min-h-10 items-center rounded-full border px-4 py-2 whitespace-nowrap transition-colors",
+                "inline-flex min-h-11 items-center rounded-full border px-4 py-2 whitespace-nowrap transition-colors sm:min-h-10",
                 chip.on
                   ? "border-accent bg-accent-soft font-medium text-text"
                   : "border-line text-muted hover:border-accent hover:text-text",
@@ -227,16 +227,21 @@ export default async function AdminSubmissionsPage({
                           · {submission.sessionName} · {submission.company}
                         </p>
                       </div>
-                      <p className="text-sm whitespace-nowrap text-muted">
-                        {formatRelative(submission.submittedAt)}
-                      </p>
-                      <Link
-                        href={showing ? href({}) : `${href({})}${href({}).includes("?") ? "&" : "?"}open=${submission.id}`}
-                        scroll={false}
-                        className="text-sm text-brand underline-offset-4 hover:underline"
-                      >
-                        {showing ? "Close" : "Open"}
-                      </Link>
+                      {/* When the row wraps, the time and the control take a
+                          line of their own rather than competing with the name
+                          for what is left of a phone's width. */}
+                      <div className="flex w-full items-center justify-between gap-3 sm:w-auto sm:justify-end">
+                        <p className="text-sm whitespace-nowrap text-muted">
+                          {formatRelative(submission.submittedAt)}
+                        </p>
+                        <Link
+                          href={showing ? href({}) : `${href({})}${href({}).includes("?") ? "&" : "?"}open=${submission.id}`}
+                          scroll={false}
+                          className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-sm text-sm text-brand underline underline-offset-4 hover:text-brand-hover sm:min-h-0 sm:min-w-0"
+                        >
+                          {showing ? "Close" : "Open"}
+                        </Link>
+                      </div>
                     </div>
 
                     {showing ? (
@@ -329,7 +334,7 @@ export default async function AdminSubmissionsPage({
                         </div>
 
                         <details className="mt-4 text-sm" data-more={`remove-${submission.id}`}>
-                          <summary className="cursor-pointer text-danger underline-offset-4 hover:underline">
+                          <summary className="inline-flex min-h-11 cursor-pointer items-center text-danger underline-offset-4 hover:underline sm:min-h-0">
                             Remove this submission
                           </summary>
                           <form

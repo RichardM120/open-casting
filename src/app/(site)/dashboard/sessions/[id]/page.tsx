@@ -10,7 +10,7 @@ import { ShareLink } from "@/components/share-link";
 import { PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
 import { ProfilePhoto } from "@/components/profile-photo";
 import { SubmissionStatusControl } from "@/components/submission-status-control";
-import { Badge, Button, ButtonLink, CARD, Eyebrow, SPOTLIGHT, SectionHead, buttonStyles, cx } from "@/components/ui";
+import { Badge, Button, ButtonLink, CARD, CARD_GROUP, Eyebrow, SPOTLIGHT, STACK, SectionHead, buttonStyles, cx } from "@/components/ui";
 import {
   emailSubmissionsSheet,
   publishCastingSession,
@@ -202,7 +202,7 @@ export default async function SessionPage({
   );
 
   const about = (
-    <section className={cx(CARD, "mt-8")} aria-labelledby="about-heading">
+    <section className={cx(CARD, STACK)} aria-labelledby="about-heading">
       <SectionHead id="about-heading" title="About this call" line={standing} />
       <p className="mt-5 max-w-prose leading-relaxed text-text">{session.synopsis}</p>
       <dl className="mt-5 grid gap-x-6 gap-y-4 sm:grid-cols-3">
@@ -230,7 +230,7 @@ export default async function SessionPage({
   );
 
   const rolesSection = (
-    <section className={cx(CARD, "mt-8")} aria-labelledby="roles-heading">
+    <section className={cx(CARD_GROUP, STACK)} aria-labelledby="roles-heading">
       <SectionHead
         id="roles-heading"
         title="Roles"
@@ -282,7 +282,7 @@ export default async function SessionPage({
   );
 
   const submissionsSection = (
-    <section className={cx(CARD, "mt-8")} aria-labelledby="submissions-heading">
+    <section className={cx(CARD, STACK)} aria-labelledby="submissions-heading">
       <SectionHead
         id="submissions-heading"
         title="Submissions"
@@ -343,7 +343,7 @@ export default async function SessionPage({
                 key={which ?? "all"}
                 href={which ? `/dashboard/sessions/${session.id}?status=${which}` : `/dashboard/sessions/${session.id}`}
                 aria-current={current ? "page" : undefined}
-                className={`inline-flex min-h-10 shrink-0 items-center rounded-full border px-4 py-2 whitespace-nowrap transition-colors ${
+                className={`inline-flex min-h-11 shrink-0 items-center rounded-full border px-4 py-2 whitespace-nowrap transition-colors sm:min-h-10 ${
                   current
                     ? "border-accent bg-accent-soft font-medium text-text"
                     : "border-line text-muted hover:border-accent hover:text-text"
@@ -358,7 +358,7 @@ export default async function SessionPage({
 
       {listed.length > 0 ? (
         <>
-          <div className="relative mt-4 overflow-x-auto rounded-xl border border-line bg-surface">
+          <div className="relative mt-4 -mx-4 overflow-x-auto border-y border-line bg-surface sm:mx-0 sm:rounded-xl sm:border">
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-line text-left text-xs text-muted">
@@ -400,7 +400,7 @@ export default async function SessionPage({
                     <td className="px-4 py-3">
                       <Link
                         href={`/dashboard/roles/${submission.roleId}`}
-                        className="text-brand underline-offset-4 hover:underline"
+                        className="text-brand underline underline-offset-4 hover:text-brand-hover"
                       >
                         {submission.roleTitle}
                       </Link>
@@ -436,7 +436,7 @@ export default async function SessionPage({
   );
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={[{ href: "/dashboard", label: "Casting calls" }, { label: session.name }]} />
       <SetupProgress stage={draft ? (roles.length === 0 ? 2 : 3) : 4} sessionId={session.id} />
       <HelpNote title="What to do on this screen" faq="/faq/casting-directors">
@@ -468,7 +468,7 @@ export default async function SessionPage({
       <div className="mt-8 flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <Eyebrow>{session.productionType}</Eyebrow>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">{session.name}</h1>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">{session.name}</h1>
           <p className="mt-2 text-muted">
             {session.productionCompany ? `${session.productionCompany} · ` : ""}open{" "}
             {formatDateTime(session.opensAt)} to{" "}
@@ -500,7 +500,7 @@ export default async function SessionPage({
 
       {user.role === "admin" ? (
         <details className="mt-10 rounded-2xl border border-danger/30 bg-raised p-6">
-          <summary className="cursor-pointer text-sm font-medium text-danger">
+          <summary className="inline-flex min-h-11 cursor-pointer items-center text-sm font-medium text-danger sm:min-h-0">
             Remove this casting call
           </summary>
           <form action={removeSession} className="mt-4 flex flex-col gap-4">
@@ -519,7 +519,7 @@ export default async function SessionPage({
               <strong className="text-text">Close early</strong> instead.
             </p>
             <label className="flex cursor-pointer items-center gap-2.5 text-sm text-muted">
-              <input type="checkbox" name="confirm" required className="size-4 accent-accent" />
+              <input type="checkbox" name="confirm" required className="size-5 accent-accent sm:size-4" />
               I understand this permanently deletes the roles and their submissions too.
             </label>
             <div>

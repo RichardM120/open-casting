@@ -29,7 +29,7 @@ export function AdminTabs({ pathname }: { pathname: string }) {
                 href={page.href}
                 aria-current={on ? "page" : undefined}
                 className={cx(
-                  "inline-flex min-h-10 items-center rounded-full border px-4 py-2 whitespace-nowrap transition-colors",
+                  "inline-flex min-h-11 items-center rounded-full border px-4 py-2 whitespace-nowrap transition-colors sm:min-h-10",
                   on
                     ? "border-accent bg-accent-soft font-medium text-text"
                     : "border-line text-muted hover:border-accent hover:text-text",

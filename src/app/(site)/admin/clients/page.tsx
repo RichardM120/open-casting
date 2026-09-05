@@ -3,7 +3,7 @@ import Link from "next/link";
 import { HelpNote } from "@/components/help-note";
 import { notFound } from "next/navigation";
 
-import { Badge, ButtonLink, CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
+import { Badge, ButtonLink, CARD_GROUP, Eyebrow, STACK, SectionHead, cx } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { clientUsage, countClients, listClients } from "@/lib/clients";
 import { LIST_PAGE_SIZE, Pagination, pageNumber } from "@/components/pagination";
@@ -45,7 +45,7 @@ export default async function ClientsPage({ searchParams }: PageProps<"/admin/cl
   });
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={adminTrail("/admin/clients")} />
       <AdminTabs pathname="/admin/clients" />
       <HelpNote title="What this screen is for">
@@ -76,7 +76,7 @@ export default async function ClientsPage({ searchParams }: PageProps<"/admin/cl
         <ButtonLink href="/admin/clients/new">New client</ButtonLink>
       </div>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="clients-heading">
+      <section className={cx(CARD_GROUP, STACK)} aria-labelledby="clients-heading">
         <SectionHead
           id="clients-heading"
           title="Clients"
@@ -93,13 +93,16 @@ export default async function ClientsPage({ searchParams }: PageProps<"/admin/cl
               return (
                 <li
                   key={client.id}
-                  className="rounded-xl border border-line bg-surface p-4 transition-colors hover:border-accent sm:p-5"
+                  className="relative rounded-xl border border-line bg-surface p-4 transition-colors hover:border-accent sm:p-5"
                 >
                   <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
                     <div className="min-w-0 flex-1">
+                      {/* The name's link is stretched over the card, so the
+                          target under a thumb is the whole row rather than
+                          one line of text in it. */}
                       <Link
                         href={`/admin/clients/${client.id}`}
-                        className="block truncate font-medium transition-colors hover:text-brand"
+                        className="block truncate font-medium transition-colors after:absolute after:inset-0 after:rounded-xl hover:text-brand"
                       >
                         {client.name}
                       </Link>

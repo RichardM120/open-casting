@@ -17,7 +17,7 @@ export default async function NewSessionPage() {
   const user = await requireUser("/dashboard/sessions/new");
 
   return (
-    <div className="mx-auto max-w-3xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-3xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={[{ href: "/dashboard", label: "Casting calls" }, { label: "New casting call" }]} />
       <SetupProgress stage={1} />
       <HelpNote title="What this screen is for" faq="/faq/casting-directors">

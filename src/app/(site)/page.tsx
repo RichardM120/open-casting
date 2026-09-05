@@ -26,7 +26,7 @@ export default async function HomePage() {
   if (await currentUser()) redirect("/dashboard");
 
   return (
-    <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 md:py-16">
+    <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 md:py-16">
       <HowItWorks />
 
       <section className={cx(CARD, "mt-16")} aria-labelledby="link-heading">
@@ -36,7 +36,7 @@ export default async function HomePage() {
           line="Applicants never sign in. Open the link you were sent: it goes straight to the roles and the form, and a call is only ever circulated by the team casting it."
         />
         <p className="mt-4 text-sm">
-          <Link href="/faq/applicants" className="text-brand underline-offset-4 hover:underline">
+          <Link href="/faq/applicants" className="text-brand underline underline-offset-4 hover:text-brand-hover">
             What the fields on a casting call mean
           </Link>
         </p>

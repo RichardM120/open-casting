@@ -228,7 +228,7 @@ export function RoleForm({
                 Part of{" "}
                 <a
                   href={`/dashboard/sessions/${role.sessionId}`}
-                  className="text-brand underline-offset-4 hover:underline"
+                  className="text-brand underline underline-offset-4 hover:text-brand-hover"
                 >
                   {sessions.find((session) => session.id === role.sessionId)?.name ??
                     role.production}
@@ -425,7 +425,7 @@ export function RoleForm({
                       <button
                         type="button"
                         onClick={() => set("optional")}
-                        className="text-sm text-brand underline-offset-4 hover:underline"
+                        className="text-sm text-brand underline underline-offset-4 hover:text-brand-hover"
                       >
                         Ask for it
                       </button>

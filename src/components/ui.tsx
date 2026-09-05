@@ -23,9 +23,14 @@ const BUTTON_VARIANTS: Record<ButtonVariant, string> = {
   signup: "bg-teal font-bold text-accent-ink hover:bg-teal-hover",
 };
 
-// Both sizes clear a comfortable touch target; the app gets used on phones.
+/**
+ * Every size clears 44px under a thumb, which is the number Apple, Material
+ * and WCAG's AAA target all settle on, and well past the 24px AA floor. The
+ * small size drops to 40 from `sm` up, where there is a pointer to aim with
+ * and a row of buttons should not read as a row of slabs.
+ */
 const BUTTON_SIZES: Record<ButtonSize, string> = {
-  sm: "min-h-10 px-4 py-2 text-sm",
+  sm: "min-h-11 px-4 py-2 text-sm sm:min-h-10",
   md: "min-h-11 px-6 py-2 text-sm",
   lg: "min-h-12 px-7 py-2 text-lg",
 };
@@ -95,6 +100,27 @@ export function Badge({
 /** The shape of a section's container: cream, a line, soft corners. For a <section>, which Card's div cannot be. */
 export const CARD = "rounded-2xl border border-line-strong bg-raised p-4 shadow-card sm:p-6";
 
+/**
+ * A section whose contents are cards in their own right: the list of casting
+ * calls, the submissions feed, the groups on the admin overview.
+ *
+ * On a phone it is not a card at all. A frame inside a frame costs 32px of a
+ * 320px screen — a tenth of the width, spent on a second border nobody needs
+ * — so below `sm` this is a heading with its rows beneath it and the rows get
+ * the screen's own gutter. From `sm` there is room for both and the frame
+ * comes back. Every other card keeps CARD.
+ */
+export const CARD_GROUP =
+  "sm:rounded-2xl sm:border sm:border-line-strong sm:bg-raised sm:p-6 sm:shadow-card";
+
+/**
+ * The gap from one card to the next. A phone shows one card at a time, so a
+ * 32px trough between them is scrolling for nothing; 24px separates them just
+ * as clearly. From `sm` two sit side by side or close together and the wider
+ * gap does the work.
+ */
+export const STACK = "mt-6 sm:mt-8";
+
 export function Card({
   children,
   className,
@@ -155,10 +181,20 @@ export function SectionHead({
   className?: string;
 }) {
   return (
-    <div className={cx("flex flex-wrap items-end justify-between gap-x-6 gap-y-3", className)}>
+    // On a phone the aside wraps onto its own line, and a row of buttons
+    // hanging off the bottom of a wrapped heading reads as an accident:
+    // below `sm` everything is aligned to the left edge instead.
+    <div
+      className={cx(
+        "flex flex-wrap items-start justify-between gap-x-6 gap-y-3 sm:items-end",
+        className,
+      )}
+    >
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-3">
-          <h2 id={id} className="text-2xl font-semibold tracking-tight">
+          {/* 24px is a lot of a 288px card. It steps down to 20 on a phone,
+              which still reads as the heading of the section it opens. */}
+          <h2 id={id} className="text-xl font-semibold tracking-tight sm:text-2xl">
             {title}
           </h2>
           {tag ? <Nudge>{tag}</Nudge> : null}
@@ -180,7 +216,9 @@ export function EmptyState({
   action?: ReactNode;
 }) {
   return (
-    <div className="rounded-2xl border border-dashed border-line-strong px-6 py-12 text-center">
+    // Inside a card already, so the phone padding is the card's; this adds
+    // only what the dashed edge needs to sit off the words.
+    <div className="rounded-2xl border border-dashed border-line-strong px-4 py-10 text-center sm:px-6 sm:py-12">
       <p className="text-lg font-medium">{title}</p>
       <p className="mx-auto mt-2 max-w-md text-sm text-muted">{description}</p>
       {action ? <div className="mt-6 flex justify-center">{action}</div> : null}
@@ -378,7 +416,7 @@ export function Checkbox({
       <input
         type="checkbox"
         {...props}
-        className="size-4 accent-accent"
+        className="size-5 accent-accent sm:size-4"
       />
       <span>
         {label}

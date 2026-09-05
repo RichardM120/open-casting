@@ -32,14 +32,14 @@ export function Breadcrumb({ trail }: { trail: Crumb[] }) {
               {crumb.href && !last ? (
                 <Link
                   href={crumb.href}
-                  className="inline-flex min-h-8 items-center rounded-sm underline-offset-4 transition-colors hover:text-text hover:underline"
+                  className="inline-flex min-h-11 items-center rounded-sm underline-offset-4 transition-colors hover:text-text hover:underline sm:min-h-8"
                 >
                   {crumb.label}
                 </Link>
               ) : (
                 <span
                   aria-current={last ? "page" : undefined}
-                  className={last ? "inline-flex min-h-8 items-center font-medium text-text" : "inline-flex min-h-8 items-center"}
+                  className={last ? "inline-flex min-h-11 items-center font-medium text-text sm:min-h-8" : "inline-flex min-h-11 items-center sm:min-h-8"}
                 >
                   {crumb.label}
                 </span>

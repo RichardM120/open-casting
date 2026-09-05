@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 
-import { CARD, cx, SectionHead } from "./ui";
+import { CARD, cx, SectionHead, STACK } from "./ui";
 
 export function FaqSection({
   title,
@@ -12,7 +12,7 @@ export function FaqSection({
   children: ReactNode;
 }) {
   return (
-    <section className={cx(CARD, "mt-8")}>
+    <section className={cx(CARD, STACK)}>
       <SectionHead title={title} line={intro} />
       <div className="mt-5 flex flex-col gap-2.5">{children}</div>
     </section>
@@ -32,7 +32,7 @@ export function FaqItem({ q, children }: { q: string; children: ReactNode }) {
           +
         </span>
       </summary>
-      <div className="flex flex-col gap-3 px-4 pb-4 sm:px-6 sm:pb-6 text-sm leading-relaxed text-muted [&_a]:text-brand [&_a]:underline-offset-4 hover:[&_a]:underline">
+      <div className="flex flex-col gap-3 px-4 pb-4 sm:px-6 sm:pb-6 text-sm leading-relaxed text-muted [&_a]:text-brand [&_a]:underline [&_a]:underline-offset-4 hover:[&_a]:text-brand-hover">
         {children}
       </div>
     </details>

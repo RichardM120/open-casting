@@ -7,7 +7,7 @@ import { ActivityList } from "@/components/activity-list";
 import { DeadlineBadge } from "@/components/deadline-badge";
 import { StatusBadge } from "@/components/status-badge";
 import { SubmissionStatusControl } from "@/components/submission-status-control";
-import { Badge, Button, ButtonLink, CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
+import { Badge, Button, ButtonLink, CARD, Eyebrow, STACK, SectionHead, cx } from "@/components/ui";
 import { removeRole, toggleRoleClosed } from "@/lib/actions";
 import { listActivity } from "@/lib/activity";
 import { currentUser, requireUser } from "@/lib/auth";
@@ -72,7 +72,7 @@ export default async function RoleSubmissionsPage({
   const open = isOpen(roleWindow(role));
 
   return (
-    <div className="mx-auto max-w-5xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={[{ href: "/dashboard", label: "Casting calls" }, { href: `/dashboard/sessions/${role.sessionId}`, label: role.production }, { label: role.title }]} />
       <SetupProgress stage={role.session.publishedAt ? 4 : 3} sessionId={role.sessionId} />
       <HelpNote title="What to do on this screen" faq="/faq/casting-directors">
@@ -96,7 +96,7 @@ export default async function RoleSubmissionsPage({
       <div className="mt-8 flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <Eyebrow>{role.production}</Eyebrow>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight sm:text-4xl">{role.title}</h1>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">{role.title}</h1>
           <p className="mt-2 text-muted">
             {role.location} · playing age {ageRange(role.ageMin, role.ageMax)} · closes{" "}
             {formatDateTime(role.session.closesAt)}
@@ -126,7 +126,7 @@ export default async function RoleSubmissionsPage({
         </div>
       </div>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="submissions-heading">
+      <section className={cx(CARD, STACK)} aria-labelledby="submissions-heading">
         <SectionHead
           id="submissions-heading"
           title="Submissions"
@@ -174,7 +174,7 @@ export default async function RoleSubmissionsPage({
         ) : null}
       </section>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="history-heading">
+      <section className={cx(CARD, STACK)} aria-labelledby="history-heading">
         <SectionHead id="history-heading" title="History" line="Everything that happened to this role, newest first." />
         <div className="mt-5">
           <ActivityList
@@ -186,7 +186,7 @@ export default async function RoleSubmissionsPage({
 
       {user.role === "admin" ? (
         <details className="mt-10 rounded-2xl border border-danger/30 bg-raised p-6">
-          <summary className="cursor-pointer text-sm font-medium text-danger">
+          <summary className="inline-flex min-h-11 cursor-pointer items-center text-sm font-medium text-danger sm:min-h-0">
             Remove this role
           </summary>
           <form action={removeRole} className="mt-4 flex flex-col gap-4">
@@ -201,7 +201,7 @@ export default async function RoleSubmissionsPage({
               <strong className="text-text">Close early</strong> instead.
             </p>
             <label className="flex cursor-pointer items-center gap-2.5 text-sm text-muted">
-              <input type="checkbox" name="confirm" required className="size-4 accent-accent" />
+              <input type="checkbox" name="confirm" required className="size-5 accent-accent sm:size-4" />
               I understand this permanently deletes the submissions too.
             </label>
             <div>
@@ -339,7 +339,7 @@ function SubmissionCard({
 
       {submission.acceptedTerms ? (
         <details className="mt-4 rounded-xl border border-line bg-raised p-4">
-          <summary className="cursor-pointer text-xs text-muted">
+          <summary className="inline-flex min-h-11 cursor-pointer items-center text-xs text-muted sm:min-h-0">
             Accepted your terms on {formatDate(submission.acceptedAt ?? submission.submittedAt)}
           </summary>
           <p className="mt-3 text-xs leading-relaxed whitespace-pre-line text-faint">

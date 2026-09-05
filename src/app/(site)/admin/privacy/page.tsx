@@ -6,7 +6,7 @@ import { Breadcrumb } from "@/components/breadcrumb";
 import { AdminTabs } from "@/components/admin-tabs";
 import { adminTrail } from "@/lib/admin-nav";
 import { HelpNote } from "@/components/help-note";
-import { Badge, Button, CARD, cx, Eyebrow, Field, Input, SectionHead, Select, Textarea } from "@/components/ui";
+import { Badge, Button, CARD, CARD_GROUP, Eyebrow, Field, Input, STACK, SectionHead, Select, Textarea, cx } from "@/components/ui";
 import { closeAccessRequest, eraseApplicant, logAccessRequest, runRetentionSweep } from "@/lib/actions";
 import { requireUser } from "@/lib/auth";
 import { formatDate, formatDateTime, formatRelative } from "@/lib/format";
@@ -49,7 +49,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/admin/pr
   const overdue = open.filter((request) => request.daysLeft < 0).length;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={adminTrail("/admin/privacy")} />
       <AdminTabs pathname="/admin/privacy" />
       <HelpNote title="What this screen is for">
@@ -96,7 +96,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/admin/pr
         </p>
       </div>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="requests-heading">
+      <section className={cx(CARD_GROUP, STACK)} aria-labelledby="requests-heading">
         <SectionHead
           id="requests-heading"
           title="Requests"
@@ -129,7 +129,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/admin/pr
                   <div className="flex flex-wrap gap-2">
                     <Link
                       href={`/admin/privacy?who=${encodeURIComponent(request.email)}`}
-                      className="inline-flex min-h-10 items-center rounded-full border border-line-strong bg-surface px-4 py-2 text-sm transition-colors hover:border-accent hover:text-brand"
+                      className="inline-flex min-h-11 items-center rounded-full border sm:min-h-10 border-line-strong bg-surface px-4 py-2 text-sm transition-colors hover:border-accent hover:text-brand"
                     >
                       Look them up
                     </Link>
@@ -173,7 +173,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/admin/pr
 
         {closed.length > 0 ? (
           <details className="mt-4 text-sm" data-more="answered">
-            <summary className="cursor-pointer text-brand underline-offset-4 hover:underline">
+            <summary className="inline-flex min-h-11 cursor-pointer items-center text-brand underline underline-offset-4 hover:text-brand-hover sm:min-h-0">
               {closed.length} answered
             </summary>
             <ul data-requests="answered" className="mt-3 flex flex-col gap-2 text-muted">
@@ -189,7 +189,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/admin/pr
         ) : null}
       </section>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="lookup-heading">
+      <section className={cx(CARD, STACK)} aria-labelledby="lookup-heading">
         <SectionHead
           id="lookup-heading"
           title="What is held about one person"
@@ -212,7 +212,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/admin/pr
             </p>
           ) : (
             <>
-              <div className="relative mt-5 overflow-x-auto rounded-xl border border-line bg-surface">
+              <div className="relative mt-5 -mx-4 overflow-x-auto border-y border-line bg-surface sm:mx-0 sm:rounded-xl sm:border">
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="border-b border-line text-left text-xs text-muted">
@@ -265,7 +265,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/admin/pr
               </div>
 
               <details className="mt-5 text-sm" data-more="erase">
-                <summary className="cursor-pointer text-danger underline-offset-4 hover:underline">
+                <summary className="inline-flex min-h-11 cursor-pointer items-center text-danger underline-offset-4 hover:underline sm:min-h-0">
                   Erase everything held about them
                 </summary>
                 <form
@@ -297,7 +297,7 @@ export default async function PrivacyPage({ searchParams }: PageProps<"/admin/pr
         ) : null}
       </section>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="rules-heading">
+      <section className={cx(CARD, STACK)} aria-labelledby="rules-heading">
         <SectionHead
           id="rules-heading"
           title="What goes on its own"

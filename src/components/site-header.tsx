@@ -127,14 +127,14 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
         <div className="ml-auto flex items-center gap-2 sm:gap-3">
           {user ? (
             <>
-              <span className="hidden text-sm text-white/75 md:inline" title={user.email}>
+              <span className="hidden text-sm text-white/85 md:inline" title={user.email}>
                 {user.company}
               </span>
               <form action={signOut}>
                 <button
                   type="submit"
                   className={cx(
-                    "min-h-10 rounded-full px-3 py-2 text-sm whitespace-nowrap text-white/85 transition-colors hover:bg-white/10 hover:text-white",
+                    "min-h-11 rounded-full px-3 py-2 text-sm whitespace-nowrap text-white/85 transition-colors hover:bg-white/10 hover:text-white sm:min-h-10",
                     FOCUS,
                   )}
                 >
@@ -165,9 +165,9 @@ export function SiteHeader({ user }: { user: SessionUser | null }) {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cx(
-                  "flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 py-2 text-[11px] leading-none font-medium transition-colors",
+                  "flex min-h-14 min-w-0 flex-1 flex-col items-center justify-center gap-1 px-1 py-2 text-[0.75rem] leading-none font-medium transition-colors",
                   FOCUS,
-                  item.action || active ? "text-white" : "text-white/75 hover:text-white",
+                  item.action || active ? "text-white" : "text-white/85 hover:text-white",
                 )}
               >
                 <span

@@ -5,7 +5,7 @@ import { AgreementStep, FinishStep, ProfileStep, StepIndicator } from "@/compone
 import { LegalScroller } from "@/components/legal-document";
 import { MSA } from "@/content/legal";
 import { hasAccepted } from "@/lib/agreements";
-import { ButtonLink, CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
+import { ButtonLink, CARD, Eyebrow, STACK, SectionHead, cx } from "@/components/ui";
 import { requireUser } from "@/lib/auth";
 import { ROLE_LABELS, type UserRole } from "@/lib/types";
 
@@ -63,7 +63,7 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
   const step = needsAgreement ? 1 : Math.max(asked, offset + 1);
 
   return (
-    <div className="mx-auto max-w-2xl px-4 py-16 sm:px-6">
+    <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-16">
       <Eyebrow>Setting up</Eyebrow>
       <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">
         {needsAgreement
@@ -86,7 +86,7 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
         <StepIndicator step={step} total={total} />
       </div>
 
-      <div className={cx(CARD, "mt-8")}>
+      <div className={cx(CARD, STACK)}>
         {needsAgreement ? (
           <>
             <SectionHead
@@ -140,7 +140,7 @@ export default async function WelcomePage({ searchParams }: PageProps<"/welcome"
               The{" "}
               <Link
                 href="/faq/casting-directors"
-                className="text-brand underline-offset-4 hover:underline"
+                className="text-brand underline underline-offset-4 hover:text-brand-hover"
               >
                 casting director guide
               </Link>{" "}

@@ -21,10 +21,17 @@ export function companyDetails(): {
   name: string;
   number: string | null;
   office: string | null;
+  vat: string | null;
+  ico: string | null;
 } {
   return {
     name: process.env.COMPANY_NAME?.trim() || "CW Casting Limited",
     number: process.env.COMPANY_NUMBER?.trim() || null,
     office: process.env.REGISTERED_OFFICE?.trim() || null,
+    // A VAT-registered business has to show its number where it trades, and a
+    // data controller that has paid the ICO fee should show its registration:
+    // an applicant handing over a headshot can then check who is asking.
+    vat: process.env.VAT_NUMBER?.trim() || null,
+    ico: process.env.ICO_REGISTRATION?.trim() || null,
   };
 }

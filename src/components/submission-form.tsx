@@ -28,7 +28,7 @@ function TapeGuidance({ text }: { text: string }) {
     .filter(Boolean);
   return (
     <details className="group mt-5 rounded-xl border border-line bg-surface p-4">
-      <summary className="cursor-pointer text-sm font-semibold tracking-tight">
+      <summary className="inline-flex min-h-11 cursor-pointer items-center text-sm font-semibold tracking-tight sm:min-h-0">
         How to tape
         <span className="ml-2 text-xs font-normal text-muted group-open:hidden">Show</span>
       </summary>
@@ -267,7 +267,7 @@ export function SubmissionForm({
 
   if (state.status === "success") {
     return (
-      <div className="rounded-2xl border border-line-strong bg-raised p-7">
+      <div className="rounded-2xl border border-line-strong bg-raised p-5 sm:p-7">
         <p className="text-xs font-semibold tracking-[0.18em] text-positive uppercase">
           Submission sent
         </p>
@@ -293,7 +293,7 @@ export function SubmissionForm({
 
   if (agentRoute && represented !== "no") {
     return (
-      <div className={cx(SPOTLIGHT, "p-7")}>
+      <div className={cx(SPOTLIGHT, "p-5 sm:p-7")}>
         <div className="flex flex-wrap items-center gap-3">
           <h2 className="text-xl font-semibold tracking-tight">Before you start</h2>
           <Nudge>Start here</Nudge>
@@ -304,7 +304,7 @@ export function SubmissionForm({
             <button
               type="button"
               onClick={() => setRepresented("no")}
-              className="mt-4 text-sm text-brand underline-offset-4 hover:underline"
+              className="mt-4 text-sm text-brand underline underline-offset-4 hover:text-brand-hover"
             >
               I am not represented after all
             </button>
@@ -332,7 +332,7 @@ export function SubmissionForm({
     <form
       ref={formRef}
       action={withUploads}
-      className={cx(SPOTLIGHT, "p-7")}
+      className={cx(SPOTLIGHT, "p-5 sm:p-7")}
     >
       <div className="flex flex-wrap items-center gap-3">
         <h2 className="text-xl font-semibold tracking-tight">Submit for this role</h2>
@@ -350,7 +350,7 @@ export function SubmissionForm({
       <p className="mt-2">
         <Link
           href="/faq/applicants"
-          className="text-sm text-brand underline-offset-4 hover:underline"
+          className="text-sm text-brand underline underline-offset-4 hover:text-brand-hover"
         >
           What each field means
         </Link>
@@ -806,7 +806,7 @@ export function SubmissionForm({
             href="/legal/submission-terms"
             target="_blank"
             rel="noopener"
-            className="text-brand underline-offset-4 hover:underline"
+            className="text-brand underline underline-offset-4 hover:text-brand-hover"
           >
             Read the full Terms of Submission and Acceptable Use Policy ↗
           </Link>
@@ -872,7 +872,7 @@ export function SubmissionsClosed({
   backTo: string;
 }) {
   return (
-    <div className="rounded-2xl border border-dashed border-line-strong p-7">
+    <div className="rounded-2xl border border-dashed border-line-strong p-5 sm:p-7">
       <h2 className="text-lg font-semibold tracking-tight">
         {opensOn
           ? "Submissions have not opened yet"

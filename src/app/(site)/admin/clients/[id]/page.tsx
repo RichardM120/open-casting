@@ -4,7 +4,7 @@ import { HelpNote } from "@/components/help-note";
 import { notFound } from "next/navigation";
 
 import { ClientForm } from "@/components/client-form";
-import { Badge, Button, ButtonLink, CARD, cx, Eyebrow, SectionHead } from "@/components/ui";
+import { Badge, Button, ButtonLink, CARD, Eyebrow, STACK, SectionHead, cx } from "@/components/ui";
 import { removeClient, toggleClientSuspended } from "@/lib/actions";
 import { currentUser, requireUser } from "@/lib/auth";
 import { clientUsage, getClient } from "@/lib/clients";
@@ -56,7 +56,7 @@ export default async function ClientPage({
             : null;
 
   return (
-    <div className="mx-auto max-w-4xl px-4 py-12 sm:px-6">
+    <div className="mx-auto max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
       <Breadcrumb trail={adminTrail("/admin/clients", [{ label: client.name }])} />
       <HelpNote title="What to do on this screen">
         <p dangerouslySetInnerHTML={{ __html: 'Change what this client is on here: the plan, the ceilings and the access date. Every account under them inherits it, so there is nothing to set per account.' }} />
@@ -75,7 +75,7 @@ export default async function ClientPage({
       <div className="mt-6 flex flex-wrap items-start justify-between gap-4">
         <div>
           <Eyebrow>Client</Eyebrow>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight">{client.name}</h1>
+          <h1 className="mt-3 text-3xl font-semibold tracking-tight md:text-4xl">{client.name}</h1>
           <p className="mt-2 text-muted">
             {client.tier ? TIERS[client.tier].label : "No plan set"} · on since{" "}
             {formatDate(client.createdAt)}
@@ -85,7 +85,7 @@ export default async function ClientPage({
         {client.suspendedAt ? <Badge tone="danger">Suspended</Badge> : null}
       </div>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="usage-heading">
+      <section className={cx(CARD, STACK)} aria-labelledby="usage-heading">
       <SectionHead id="usage-heading" title="Usage" line="What this client is using against what it bought." />
       <dl className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-4">
         <Stat label="Accounts" value={used?.accounts ?? 0} />
@@ -102,7 +102,7 @@ export default async function ClientPage({
       </dl>
       </section>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="accounts-heading">
+      <section className={cx(CARD, STACK)} aria-labelledby="accounts-heading">
         <SectionHead
           id="accounts-heading"
           title="Accounts"
@@ -118,7 +118,7 @@ export default async function ClientPage({
             No accounts yet.{" "}
             <Link
               href="/admin/accounts"
-              className="text-brand underline-offset-4 hover:underline"
+              className="text-brand underline underline-offset-4 hover:text-brand-hover"
             >
               Make the first one
             </Link>
@@ -153,7 +153,7 @@ export default async function ClientPage({
       client.paymentTermsDays !== null ||
       client.address ||
       client.notes ? (
-        <section className={cx(CARD, "mt-8")} aria-labelledby="details-heading">
+        <section className={cx(CARD, STACK)} aria-labelledby="details-heading">
           <SectionHead
             id="details-heading"
             title="Details"
@@ -201,7 +201,7 @@ export default async function ClientPage({
         </div>
       </section>
 
-      <section className={cx(CARD, "mt-8")} aria-labelledby="stopping-heading">
+      <section className={cx(CARD, STACK)} aria-labelledby="stopping-heading">
         <SectionHead
           id="stopping-heading"
           title="Stopping this client"

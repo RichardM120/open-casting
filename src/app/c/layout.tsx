@@ -38,7 +38,7 @@ export default function ApplicantLayout({ children }: { children: ReactNode }) {
           {reportTo ? (
             <>
               : report it to{" "}
-              <a href={`mailto:${reportTo}`} className="text-brand underline-offset-4 hover:underline">
+              <a href={`mailto:${reportTo}`} className="text-brand underline underline-offset-4 hover:text-brand-hover">
                 {reportTo}
               </a>
               .
@@ -52,7 +52,7 @@ export default function ApplicantLayout({ children }: { children: ReactNode }) {
           Every submission made through this page is covered by UK GDPR and the{" "}
           <Link
             href="/legal/submission-terms"
-            className="text-brand underline-offset-4 hover:underline"
+            className="text-brand underline underline-offset-4 hover:text-brand-hover"
           >
             Terms of Submission
           </Link>
